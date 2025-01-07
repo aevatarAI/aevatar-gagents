@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AiSmart.GAgent.SocialAgent</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AevatarGAgents.Autogen\AevatarGAgents.Autogen.csproj" />
+      <ProjectReference Include="..\AevatarGAgents.Basic\AevatarGAgents.Basic.csproj" />
+      <ProjectReference Include="..\AevatarGAgents.MicroAI\AevatarGAgents.MicroAI.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Volo.Abp.Core" Version="8.2.0" />
+    </ItemGroup>
+
+</Project>

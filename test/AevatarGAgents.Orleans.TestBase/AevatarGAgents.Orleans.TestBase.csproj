@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AISmart</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AElf.Client" Version="1.3.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Orleans.TestingHost" />
+        <PackageReference Include="Volo.Abp.ObjectMapping" />
+        <PackageReference Include="Volo.Abp.EventBus" />
+    </ItemGroup>
+
+</Project>

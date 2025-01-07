@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AevatarGAgents.Common</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Abp" Version="8.2.0" />
+      <PackageReference Include="Abp.AutoMapper" Version="8.2.0" />
+      <PackageReference Include="Aevatar.Core" Version="1.0.2" />
+      <PackageReference Include="Aevatar.Core.Abstractions" Version="1.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="BasicGAgents\" />
+    </ItemGroup>
+
+</Project>

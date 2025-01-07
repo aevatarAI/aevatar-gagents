@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AiSmart.GAgent.TestAgent</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AevatarGAgents.Autogen\AevatarGAgents.Autogen.csproj" />
+      <ProjectReference Include="..\AevatarGAgents.MicroAI\AevatarGAgents.MicroAI.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\" />
+      <Folder Include="GAgents\" />
+      <Folder Include="GEvents\" />
+    </ItemGroup>
+
+</Project>
