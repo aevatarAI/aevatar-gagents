@@ -18,8 +18,6 @@ public class PumpFunProvider : IPumpFunProvider,ISingletonDependency
     private readonly string _callBackUrl;
     private readonly string _accessToke;
 
-
-
     public PumpFunProvider(ILogger<PumpFunProvider> logger, IOptionsMonitor<PumpfunOptions> pumpfunOptions)
     {
         _logger = logger;
