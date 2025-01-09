@@ -1,9 +1,9 @@
-﻿using AevatarGAgents.MicroAI.Options;
+﻿using Aevatar.GAgents.MicroAI.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 
-namespace AiSmart.GAgent.SocialAgent;
+namespace Aevatar.GAgents.SocialAgent;
 
 [DependsOn(
     typeof(AbpAutoMapperModule)

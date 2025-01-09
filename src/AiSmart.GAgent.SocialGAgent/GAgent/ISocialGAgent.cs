@@ -1,6 +1,6 @@
-using AevatarGAgents.MicroAI.Agent;
+using Aevatar.GAgents.MicroAI.Agent;
 
-namespace AiSmart.GAgent.SocialAgent.GAgent;
+namespace Aevatar.GAgents.SocialAgent.GAgent;
 
 public interface ISocialGAgent:IMicroAIGAgent
 {

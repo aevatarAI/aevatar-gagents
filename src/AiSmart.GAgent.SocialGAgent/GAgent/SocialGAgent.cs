@@ -2,17 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AevatarGAgents.MicroAI.Agent;
-using AevatarGAgents.MicroAI.Agent.GEvents;
-using AevatarGAgents.MicroAI.Grains;
-using AiSmart.GAgent.SocialAgent.GAgent;
+using Aevatar.GAgents.MicroAI.Agent;
+using Aevatar.GAgents.MicroAI.Agent.GEvents;
+using Aevatar.GAgents.MicroAI.Grains;
+using Aevatar.GAgents.SocialAgent.GAgent;
 using Json.Schema.Generation;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
-using AevatarGAgents.Common.BasicGEvent.SocialGEvent;
+using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 
-namespace AiSmart.GAgent.TestAgent;
+namespace Aevatar.GAgents.TestAgent;
 
 [Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]

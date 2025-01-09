@@ -40,8 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\AevatarGAgents.AElf\AevatarGAgents.AElf.csproj" />
-    <ProjectReference Include="..\..\src\AevatarGAgents.Autogen\AevatarGAgents.Autogen.csproj" />
+    <ProjectReference Include="..\..\src\Aevatar.GAgents.AElf\Aevatar.GAgents.AElf.csproj" />
+    <ProjectReference Include="..\..\src\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj" />
     <ProjectReference Include="..\AevatarGAgents.Orleans.TestBase\AevatarGAgents.Orleans.TestBase.csproj" />
   </ItemGroup>
 

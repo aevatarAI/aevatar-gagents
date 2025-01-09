@@ -1,11 +1,9 @@
 # aevatar-gagents
 
 ## 🚀 Introduction
-***
  **Aevatar GAgents** is a custom intelligent agent solution designed to enable developers to customize agents and quickly create, manage, and deploy them on **Aevatar Station**.
  
 ## Prerequisites
-***
 ### 1. Tech Stack
 - .NET 8.0 SDK
 - ABP 8.2.0
@@ -18,7 +16,6 @@
 - dotnet add package Aevatar.Core.Abstractions --version 1.0.2 --source https://www.myget.org/F/aelf-project-dev/api/v3/index.json
 
 ## How to create an Agent?
-***
 
 ### 1. Create a class for Agent storage, and the class must inherit from StateBase.
 **For example:**
@@ -99,5 +96,4 @@ Explanation:
 ⚠️⚠️'[EventHandler]‘ EventHandlerAttribute is necessary ⚠️⚠️
 
 ## License
-***
 Distributed under the MIT License. See [License](LICENSE) for more information.

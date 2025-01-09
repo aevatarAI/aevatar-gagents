@@ -9,29 +9,29 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{04DBDB01-7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Orleans.TestBase", "test\AevatarGAgents.Orleans.TestBase\AevatarGAgents.Orleans.TestBase.csproj", "{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.AElf", "src\AevatarGAgents.AElf\AevatarGAgents.AElf.csproj", "{DF51070F-0462-44B6-8A50-3270FBAAC230}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AElf", "src\Aevatar.GAgents.AElf\Aevatar.GAgents.AElf.csproj", "{DF51070F-0462-44B6-8A50-3270FBAAC230}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Twitter", "src\AevatarGAgents.Twitter\AevatarGAgents.Twitter.csproj", "{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Twitter", "src\Aevatar.GAgents.Twitter\Aevatar.GAgents.Twitter.csproj", "{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Telegram", "src\AevatarGAgents.Telegram\AevatarGAgents.Telegram.csproj", "{3DBEFD1D-29AF-4A7A-AC6D-6C844BA27241}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Telegram", "src\Aevatar.GAgents.Telegram\Aevatar.GAgents.Telegram.csproj", "{3DBEFD1D-29AF-4A7A-AC6D-6C844BA27241}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Pumpfun", "src\AevatarGAgents.Pumpfun\AevatarGAgents.Pumpfun.csproj", "{06B4C285-3678-417B-99A5-D471BB70DA83}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Pumpfun", "src\Aevatar.GAgents.Pumpfun\Aevatar.GAgents.Pumpfun.csproj", "{06B4C285-3678-417B-99A5-D471BB70DA83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Autogen", "src\AevatarGAgents.Autogen\AevatarGAgents.Autogen.csproj", "{28AC92B6-377F-4A1E-8D08-0352D3AB4663}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Autogen", "src\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj", "{28AC92B6-377F-4A1E-8D08-0352D3AB4663}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansTestKit", "test\OrleansTestKit\OrleansTestKit.csproj", "{09CDE043-09EC-4D2A-9112-6F9138455795}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansTestKit.Tests", "test\OrleansTestKit.Tests\OrleansTestKit.Tests.csproj", "{C09D0934-CD67-47A0-9179-806C05ABFB26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.MicroAI", "src\AevatarGAgents.MicroAI\AevatarGAgents.MicroAI.csproj", "{F8C887E6-77D0-47C2-8B6B-FFB51E094396}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MicroAI", "src\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj", "{F8C887E6-77D0-47C2-8B6B-FFB51E094396}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.NamingContest", "src\AevatarGAgents.NamingContest\AevatarGAgents.NamingContest.csproj", "{4EBBE2C2-7C37-4D3F-9F38-916A2758BDD1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest", "src\Aevatar.GAgents.NamingContest\Aevatar.GAgents.NamingContest.csproj", "{4EBBE2C2-7C37-4D3F-9F38-916A2758BDD1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.SocialAgent", "src\AiSmart.GAgent.SocialGAgent\AevatarGAgents.SocialAgent.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.SocialAgent", "src\AiSmart.GAgent.SocialGAgent\Aevatar.GAgents.SocialAgent.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Rag", "src\AevatarGAgents.Rag\AevatarGAgents.Rag.csproj", "{954A1691-46F9-4DF2-AE75-B2420AC9AEDA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Rag", "src\Aevatar.GAgents.Rag\Aevatar.GAgents.Rag.csproj", "{954A1691-46F9-4DF2-AE75-B2420AC9AEDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Basic", "src\AevatarGAgents.Basic\AevatarGAgents.Basic.csproj", "{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Basic", "src\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj", "{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
