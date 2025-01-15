@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MicroAI.Agent.GEvents;
+using Aevatar.GAgents.MicroAI.Agent.SEvents;
 using Aevatar.GAgents.NamingContest.Common;
-using Orleans;
 
-namespace Aevatar.GAgents.NamingContest.TrafficGAgent;
+namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 
 [GenerateSerializer]
 public class NamedCompleteGEvent : NameContentGEvent
@@ -93,6 +90,8 @@ public class HostSummaryGEvent : EventBase
     [Id(0)] public Guid HostId { get; set; }
     
     [Id(1)] public List<MicroAIMessage> History { get; set; } = new List<MicroAIMessage>();
+    
+    [Id(2)] public GrainId GroupId { get; set; }
     
     
 }

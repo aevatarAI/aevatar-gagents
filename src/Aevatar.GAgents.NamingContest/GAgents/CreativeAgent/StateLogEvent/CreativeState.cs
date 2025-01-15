@@ -2,7 +2,6 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.TestAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgents.MicroAI.Agent.GEvents;
 using Aevatar.GAgents.MicroAI.Agent.SEvents;
-using Aevatar.GAgents.NamingContest.HostGAgent;
 
 
 namespace Aevatar.GAgent.NamingContest.CreativeAgent;
@@ -16,22 +15,22 @@ public class CreativeState : StateBase
     [Id(5)] public Guid GroupId { get; set; }
     [Id(6)] public int ExecuteStep { get; set; } = 0;
 
-    public void Apply(AddHistoryChatSEvent @event)
+    public void Apply(AddHistoryChatStateLogEvent @event)
     {
         RecentMessages.Enqueue(@event.Message);
     }
 
-    public void Apply(ClearHistoryChatSEvent @event)
+    public void Apply(ClearHistoryChatStateLogEvent @event)
     {
         RecentMessages.Clear();
     }
 
-    public void Apply(SetNamingSEvent @event)
+    public void Apply(SetNamingStateLogEvent @event)
     {
         Naming = @event.Naming;
     }
 
-    public void Apply(SetAgentInfoSEvent @event)
+    public void Apply(SetAgentInfoStateLogEvent @event)
     {
         AgentName = @event.AgentName;
         AgentResponsibility = @event.Description;
