@@ -1,6 +1,8 @@
+
+
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.GAgents.NamingContest.CreativeGAgent;
+namespace Aevatar.GAgent.NamingContest.CreativeAgent;
 
 public class CreativeGEvent:GEventBase
 {

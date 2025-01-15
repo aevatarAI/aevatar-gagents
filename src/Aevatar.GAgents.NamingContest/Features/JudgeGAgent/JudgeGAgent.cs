@@ -35,8 +35,8 @@ public class JudgeGAgent : MicroAIGAgent, IJudgeGAgent
         history.AddRange(State.RecentMessages);
         history.Add(new MicroAIMessage(Role.User.ToString(), @event.NamingReply));
 
-        List<AIMessageGEvent> sEvent = new List<AIMessageGEvent>();
-        sEvent.Add(new AIReceiveMessageGEvent()
+        List<AIMessageSEvent> sEvent = new List<AIMessageSEvent>();
+        sEvent.Add(new AiReceiveMessageSEvent()
             { Message = new MicroAIMessage(Role.User.ToString(), @event.NamingReply) });
         var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
             .SendAsync(@event.NamingReply, history);
@@ -46,7 +46,7 @@ public class JudgeGAgent : MicroAIGAgent, IJudgeGAgent
             var namingReply = message.Content;
             var score = int.Parse(namingReply);
 
-            sEvent.Add(new AIReceiveMessageGEvent()
+            sEvent.Add(new AiReceiveMessageSEvent()
                 { Message = new MicroAIMessage(Role.Assistant.ToString(), namingReply) });
         }
 
@@ -58,7 +58,7 @@ public class JudgeGAgent : MicroAIGAgent, IJudgeGAgent
     public async Task HandleEventAsync(TrafficNamingContestOver @event)
     {
         await PublishAsync(new JudgeOverGEvent() { NamingQuestion = @event.NamingQuestion });
-        RaiseEvent(new AIClearMessageGEvent());
+        RaiseEvent(new AIClearMessageSEvent());
         await ConfirmEvents();
     }
 

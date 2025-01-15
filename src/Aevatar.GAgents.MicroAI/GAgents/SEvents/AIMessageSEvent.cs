@@ -2,10 +2,10 @@ using System;
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace Aevatar.GAgents.MicroAI.Agent.GEvents;
+namespace Aevatar.GAgents.MicroAI.Agent.SEvents;
 
 [GenerateSerializer]
-public class AIMessageGEvent :GEventBase
+public class AIMessageSEvent
 {
     [Id(0)] public Guid Id { get; set; } = Guid.NewGuid();
 }

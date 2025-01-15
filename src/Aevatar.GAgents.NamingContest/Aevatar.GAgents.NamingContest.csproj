@@ -1,19 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>AiSmart.GAgent.TestAgent</RootNamespace>
     </PropertyGroup>
 
+    
+
     <ItemGroup>
-      <ProjectReference Include="..\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj" />
-      <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
+      <PackageReference Include="Aevatar.Core" />
+      <PackageReference Include="Aevatar.Core.Abstractions" />
+<!--      <PackageReference Include="AutoGen.Core" />-->
+      <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="System.Text.Json" />
+        <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
     </ItemGroup>
 
     <ItemGroup>

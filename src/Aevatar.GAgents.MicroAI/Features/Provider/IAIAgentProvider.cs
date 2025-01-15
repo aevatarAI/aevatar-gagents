@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aevatar.GAgents.MicroAI.Agent.GEvents;
+using Aevatar.GAgents.MicroAI.Agent.SEvents;
 using AutoGen.Core;
 using AutoGen.SemanticKernel;
 

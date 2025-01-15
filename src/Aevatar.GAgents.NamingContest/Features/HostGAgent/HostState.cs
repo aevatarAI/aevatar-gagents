@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.NamingContest.CreativeGAgent;
+using Aevatar.GAgents.MicroAI.Agent.SEvents;
 using Orleans;
 
 namespace Aevatar.GAgents.NamingContest.HostGAgent;

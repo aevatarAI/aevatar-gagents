@@ -1,7 +1,7 @@
-using System.Threading.Tasks;
 using Aevatar.GAgents.MicroAI.Agent;
 
-namespace Aevatar.GAgents.NamingContest.CreativeGAgent;
+
+namespace Aevatar.GAgent.NamingContest.CreativeAgent;
 
 public interface ICreativeGAgent:IMicroAIGAgent
 {
@@ -10,4 +10,5 @@ public interface ICreativeGAgent:IMicroAIGAgent
 
     Task<string> GetCreativeName();
 
+    Task<int> GetExecuteStep();
 }

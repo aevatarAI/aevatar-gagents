@@ -5,13 +5,13 @@ using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.GAgents.MicroAI.Agent;
 using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.MicroAI.Grains;
 using Aevatar.GAgents.NamingContest.Common;
 using AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.NamingContest.CreativeGAgent;
+using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.NamingContest.VoteGAgent;
+using IChatAgentGrain = Aevatar.GAgents.MicroAI.Grains.IChatAgentGrain;
 
 namespace Aevatar.GAgents.NamingContest.TrafficGAgent;
 
