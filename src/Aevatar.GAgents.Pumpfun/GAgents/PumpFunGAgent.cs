@@ -30,6 +30,12 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, GEventBase>, IPumpFu
     }
 
     [EventHandler]
+    public async Task TaskHandleEventAsync(PumpFunReceiveMessageEvent @event)
+    {
+        // await PublishAsync(new ());
+    }
+    
+    [EventHandler]
     public async Task HandleEventAsync(PumpFunSendMessageEvent @event)
     {
         _logger.LogInformation("PumpFunSendMessageEvent:" + JsonConvert.SerializeObject(@event));

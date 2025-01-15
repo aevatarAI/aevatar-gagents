@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Aevatar.GAgents.MicroAI.Agent;
 using Aevatar.GAgents.MicroAI.Agent.GEvents;
 using Aevatar.GAgents.MicroAI.Grains;
-using Aevatar.GAgents.SocialAgent.GAgent;
+using Aevatar.GAgents.SocialChat.GAgent;
 using Json.Schema.Generation;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
