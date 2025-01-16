@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.MicroAI.Agent.GEvents;
 
 [GenerateSerializer]
-public class AIMessageGEvent :GEventBase
+public class AIMessageGEvent :StateLogEventBase<AIMessageGEvent>
 {
     [Id(0)] public Guid Id { get; set; } = Guid.NewGuid();
 }

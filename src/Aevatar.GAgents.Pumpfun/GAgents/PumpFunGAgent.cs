@@ -16,7 +16,7 @@ namespace Aevatar.GAgents.PumpFun.Agent;
 [Description("Handle PumpFun")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, GEventBase>, IPumpFunGAgent
+public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, IPumpFunGAgent
 {
     private readonly ILogger<PumpFunGAgent> _logger;
     public PumpFunGAgent(ILogger<PumpFunGAgent> logger) : base(logger)

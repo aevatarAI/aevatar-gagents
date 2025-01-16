@@ -4,7 +4,7 @@ using Orleans;
 namespace Aevatar.GAgents.PumpFun.Agent.GEvents;
 
 [GenerateSerializer]
-public class SetPumpFunConfigEvent : GEventBase
+public class SetPumpFunConfigEvent : PumpfunSEventBase
 {
     [Id(0)] public string ChatId { get; set; }
     

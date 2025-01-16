@@ -15,7 +15,7 @@ using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 
 namespace Aevatar.GAgents.TestAgent;
 
-[Description("I can chat with users.")]
+[System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class SocialGAgent : MicroAIGAgent, ISocialGAgent
@@ -35,6 +35,8 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
         });
         
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
+        aiResponseEvent.RequestId = @event.RequestId;
+        
         try
         {
             var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)

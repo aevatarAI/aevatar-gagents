@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aevatar.Core" />
     <PackageReference Include="Aevatar.Core.Abstractions" />
     <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
     <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" />

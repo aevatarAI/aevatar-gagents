@@ -15,6 +15,8 @@ public class TelegramGAgentState : StateBase
     [Id(3)] public string BotName { get; set; } 
     
     [Id(4)] public string Token { get; set; } 
+    [Id(5)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
+    
     public void Apply(ReceiveMessageSEvent receiveMessageSEvent)
     {
         PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
@@ -34,4 +36,19 @@ public class TelegramGAgentState : StateBase
         Token = setTelegramConfigEvent.Token;
     }
 
+    public void Apply(TelegramRequestSEvent @event)
+    {
+        if (SocialRequestList.Contains(@event.RequestId) == false)
+        {
+            SocialRequestList.Add(@event.RequestId);
+        }
+    }
+
+    public void Apply(TelegramSocialResponseSEvent @event)
+    {
+        if (SocialRequestList.Contains(@event.ResponseId))
+        {
+            SocialRequestList.Remove(@event.ResponseId);
+        }
+    }
 }
