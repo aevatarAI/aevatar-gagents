@@ -103,7 +103,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
         {
             if (!reply.IsNullOrWhiteSpace())
             {
-                await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.JudgeAsking, GetRealJudgeId(),
+                await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.JudgeAsking, GetRealJudgeId(),
                     NamingRoleType.Judge, State.AgentName, reply, prompt));
             }
 
@@ -137,7 +137,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
         {
             if (!defaultScore.IsNullOrWhiteSpace())
             {
-                await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.JudgeScore, GetRealJudgeId(),
+                await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.JudgeScore, GetRealJudgeId(),
                     NamingRoleType.Judge, State.AgentName, defaultScore, prompt));
             }
 
@@ -146,25 +146,25 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(SingleVoteCharmingEvent @event)
+    public async Task HandleEventAsync(SingleVoteCharmingGEvent gEvent)
     {
-        var agentNames = string.Join(" and ", @event.AgentIdNameDictionary.Values);
+        var agentNames = string.Join(" and ", gEvent.AgentIdNameDictionary.Values);
         var prompt = NamingConstants.VotePrompt.Replace("$AgentNames$", agentNames);
         try
         {
             var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
-                .SendAsync(prompt, @event.VoteMessage);
+                .SendAsync(prompt, gEvent.VoteMessage);
 
             if (message != null && !message.Content.IsNullOrEmpty())
             {
                 var namingReply = message.Content.Replace("\"", "").ToLower();
-                var agent = @event.AgentIdNameDictionary.FirstOrDefault(x => x.Value.ToLower().Equals(namingReply));
+                var agent = gEvent.AgentIdNameDictionary.FirstOrDefault(x => x.Value.ToLower().Equals(namingReply));
                 var winner = agent.Key;
                 await PublishAsync(new VoteCharmingCompleteEvent()
                 {
                     Winner = winner,
                     VoterId = GetRealJudgeId(),
-                    Round = @event.Round
+                    Round = gEvent.Round
                 });
             }
         }

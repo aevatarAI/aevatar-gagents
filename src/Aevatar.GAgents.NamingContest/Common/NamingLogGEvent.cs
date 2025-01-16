@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.NamingContest.Common;
 
 [GenerateSerializer]
-public class NamingLogEvent : EventBase
+public class NamingLogGEvent : EventBase
 {
     [Id(0)] public Guid EventId = Guid.NewGuid();
     [Id(1)] public NamingContestStepEnum Step { get; set; }
@@ -15,7 +15,7 @@ public class NamingLogEvent : EventBase
     [Id(5)] public string Content { get; set; }
     [Id(6)] public long Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-    public NamingLogEvent(NamingContestStepEnum step, Guid agentId, NamingRoleType roleType = NamingRoleType.None,
+    public NamingLogGEvent(NamingContestStepEnum step, Guid agentId, NamingRoleType roleType = NamingRoleType.None,
         string agentName = "", string content = "")
     {
         Step = step;

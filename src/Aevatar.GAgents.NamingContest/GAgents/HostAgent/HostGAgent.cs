@@ -73,7 +73,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
                 HostName = State.AgentName,
             });
             
-            await publishingAgent.PublishEventAsync(new NamingAILogEvent(
+            await publishingAgent.PublishEventAsync(new NamingAiLogGEvent(
                 NamingContestStepEnum.HostSummary,
                 this.GetPrimaryKey(),
                 NamingRoleType.Host, 

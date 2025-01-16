@@ -139,7 +139,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 CreativeName = State.AgentName,
             });
 
-            await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.Naming, this.GetPrimaryKey(),
+            await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.Naming, this.GetPrimaryKey(),
                 NamingRoleType.Contestant, State.AgentName,
                 JsonSerializer.Serialize(new NamingResponse(namingReply, string.Empty)), prompt));
 
@@ -234,7 +234,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                     AssembleMessageUtil.AssembleDebateContent(State.AgentName, debateReply))
             });
 
-            await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.Debate, this.GetPrimaryKey(),
+            await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.Debate, this.GetPrimaryKey(),
                 NamingRoleType.Contestant, State.AgentName, debateReply, prompt));
             await base.ConfirmEvents();
 
@@ -283,7 +283,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                         AssembleMessageUtil.AssembleDiscussionContent(State.AgentName, discussionReply))
                 });
 
-                await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.Discussion, this.GetPrimaryKey(),
+                await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.Discussion, this.GetPrimaryKey(),
                     NamingRoleType.Contestant, State.AgentName, discussionReply, prompt));
             }
 
@@ -356,7 +356,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
             await PublishAsync(new CreativeSummaryCompleteGEvent()
                 { SummaryName = summary.Name, Reason = summary.Reason, GraindId = this.GetPrimaryKey() });
 
-            await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.DiscussionSummary, this.GetPrimaryKey(),
+            await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.DiscussionSummary, this.GetPrimaryKey(),
                 NamingRoleType.Contestant, State.AgentName, JsonSerializer.Serialize(summary), prompt));
 
 
@@ -429,7 +429,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                         AssembleMessageUtil.AssembleCreativeAnswer(State.AgentName, answer))
                 });
 
-                await PublishAsync(new NamingAILogEvent(NamingContestStepEnum.JudgeAsking, this.GetPrimaryKey(),
+                await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.JudgeAsking, this.GetPrimaryKey(),
                     NamingRoleType.Contestant, State.AgentName, answer, prompt));
             }
 
@@ -552,25 +552,25 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(SingleVoteCharmingEvent @event)
+    public async Task HandleEventAsync(SingleVoteCharmingGEvent gEvent)
     {
-        Logger.LogInformation("SingleVoteCharmingEvent recieve {info}", JsonSerializer.Serialize(@event));
-        var agentNames = string.Join(" and ", @event.AgentIdNameDictionary.Values);
+        Logger.LogInformation("SingleVoteCharmingEvent recieve {info}", JsonSerializer.Serialize(gEvent));
+        var agentNames = string.Join(" and ", gEvent.AgentIdNameDictionary.Values);
         var prompt = NamingConstants.VotePrompt.Replace("$AgentNames$", agentNames);
         var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
-            .SendAsync(prompt, @event.VoteMessage);
+            .SendAsync(prompt, gEvent.VoteMessage);
 
         if (message != null && !message.Content.IsNullOrEmpty())
         {
             var namingReply = message.Content.Replace("\"", "").ToLower();
-            var agent = @event.AgentIdNameDictionary.FirstOrDefault(x => x.Value.ToLower().Equals(namingReply));
+            var agent = gEvent.AgentIdNameDictionary.FirstOrDefault(x => x.Value.ToLower().Equals(namingReply));
             var winner = agent.Key;
 
             await PublishAsync(new VoteCharmingCompleteEvent()
             {
                 Winner = winner,
                 VoterId = this.GetPrimaryKey(),
-                Round = @event.Round
+                Round = gEvent.Round
             });
             Logger.LogInformation("VoteCharmingCompleteEvent send");
         }
