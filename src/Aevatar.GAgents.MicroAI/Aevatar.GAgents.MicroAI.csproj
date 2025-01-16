@@ -1,22 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\common.props" />
-
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <Nullable>enable</Nullable>
         <RootNamespace>AISmart</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aevatar.Core" />
-        <PackageReference Include="Aevatar.Core.Abstractions" />
-        <PackageReference Include="AutoGen" />
         <PackageReference Include="AutoGen.Core" />
-        <PackageReference Include="Volo.Abp.AutoMapper" />
-    </ItemGroup>
-
-    <ItemGroup>
+        <PackageReference Include="AutoGen.SemanticKernel" />
         <PackageReference Include="Microsoft.SemanticKernel" />
         <PackageReference Include="Microsoft.SemanticKernel.Core" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" />
@@ -26,7 +19,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
     </ItemGroup>
-
 
 
     <ItemGroup>

@@ -1,18 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>AiSmart.GAgent.TestAgent</RootNamespace>
+        <RootNamespace>Aevatar.GAgents.NamingContest</RootNamespace>
     </PropertyGroup>
-
-    
 
     <ItemGroup>
       <PackageReference Include="Aevatar.Core" />
       <PackageReference Include="Aevatar.Core.Abstractions" />
-<!--      <PackageReference Include="AutoGen.Core" />-->
       <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
