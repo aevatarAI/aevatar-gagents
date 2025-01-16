@@ -9,7 +9,7 @@ using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
-using AiSmart.GAgent.TestAgent.NamingContest.VoteAgent;
+using AiSmart.GAgent.NamingContest.VoteAgent;
 using AutoGen.Core;
 using Microsoft.Extensions.Logging;
 using Orleans.Streams;
@@ -30,7 +30,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
     {
         Logger.LogInformation($"[CreativeGAgent] GroupChatStartGEvent start GrainId:{this.GetPrimaryKey().ToString()}");
         RaiseEvent(new SetExecuteStep { Step = 1 });
-        await base.ConfirmEvents();
+        await ConfirmEvents();
         if (@event.IfFirstStep == true)
         {
             RaiseEvent(new AddHistoryChatStateLogEvent()
@@ -83,17 +83,16 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(TrafficInformCreativeGEvent @event)
+    public Task HandleEventAsync(TrafficInformCreativeGEvent @event)
     {
         if (@event.CreativeGrainId != this.GetPrimaryKey())
         {
-            return;
+            return Task.CompletedTask;
         }
 
         Logger.LogInformation(
             $"[CreativeGAgent] TrafficInformCreativeGEvent start GrainId:{this.GetPrimaryKey().ToString()}");
 
-        var namingReply = string.Empty;
         var prompt = NamingConstants.NamingPrompt;
         try
         {
@@ -104,8 +103,9 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
         catch (Exception ex)
         {
             _logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
-            namingReply = NamingConstants.DefaultCreativeNaming;
         }
+
+        return Task.CompletedTask;
     }
     
     private async Task HandleAIEventAsync(MicroAIMessage? microAIMessage,TrafficInformCreativeGEvent @event)
@@ -151,7 +151,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
 
             RaiseEvent(new SetNamingStateLogEvent { Naming = namingReply });
 
-            await base.ConfirmEvents();
+            await ConfirmEvents();
 
             // Logger.LogInformation(
             //     $"[CreativeGAgent] TrafficInformCreativeGEvent End GrainId:{this.GetPrimaryKey().ToString()}");
@@ -189,7 +189,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 AssembleMessageUtil.AssembleDebateContent(@event.CreativeName, @event.DebateReply))
         });
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -287,7 +287,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                     NamingRoleType.Contestant, State.AgentName, discussionReply, prompt));
             }
 
-            await base.ConfirmEvents();
+            await ConfirmEvents();
         }
     }
 
@@ -334,11 +334,11 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
         }
         catch (Exception ex)
         {
-            Logger.LogError("[Creative] CreativeSummaryGEvent error");
+            Logger.LogError(ex,"[Creative] CreativeSummaryGEvent error");
         }
         finally
         {
-            if (summary.Name.IsNullOrEmpty())
+            if (summary!.Name.IsNullOrEmpty())
             {
                 var random = new Random();
                 var index = random.Next(0, @event.CreativeNames.Count);
@@ -360,7 +360,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 NamingRoleType.Contestant, State.AgentName, JsonSerializer.Serialize(summary), prompt));
 
 
-            await base.ConfirmEvents();
+            await ConfirmEvents();
         }
     }
 
@@ -378,7 +378,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 AssembleMessageUtil.AssembleDiscussionSummary(@event.SummaryName, @event.Reason))
         });
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -417,7 +417,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
         }
         catch (Exception ex)
         {
-            Logger.LogError("[Creative] CreativeSummaryGEvent error");
+            Logger.LogError(ex,"[Creative] CreativeSummaryGEvent error");
         }
         finally
         {

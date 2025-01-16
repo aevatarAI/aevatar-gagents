@@ -5,7 +5,7 @@ namespace Aevatar.GAgents.MicroAI.Model;
 
 
 [GenerateSerializer]
-public class AiClearStateLogEvent:AIMessageStateLogEvent
+public class AIClearStateLogEvent:AIMessageStateLogEvent
 {
     
 }

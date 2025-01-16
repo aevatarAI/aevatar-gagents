@@ -1,7 +1,7 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.MicroAI.Model;
 
-namespace AiSmart.GAgent.TestAgent.NamingContest.VoteAgent;
+namespace AiSmart.GAgent.NamingContest.VoteAgent;
 
 [GenerateSerializer]
 public class VoteCharmingGEvent:EventBase

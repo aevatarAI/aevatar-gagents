@@ -30,7 +30,7 @@ public class MicroAIGAgentState: StateBase
         AddMessage(aiReplyStateLogEvent.Message);
     }
 
-    public void Apply(AiClearStateLogEvent clearStateLogEvent)
+    public void Apply(AIClearStateLogEvent clearStateLogEvent)
     {
         RecentMessages = new Queue<MicroAIMessage>();
     }
