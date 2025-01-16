@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.MicroAI.Agent.SEvents;
 using Orleans;
 
-namespace Aevatar.GAgents.MicroAI.GAgent;
+namespace Aevatar.GAgents.MicroAI.Model;
 
 [GenerateSerializer]
 public class MicroAIGAgentState: StateBase
@@ -16,23 +14,23 @@ public class MicroAIGAgentState: StateBase
     [Id(3)] public Queue<MicroAIMessage> RecentMessages = new Queue<MicroAIMessage>();
     [Id(4)] public Guid GroupId { get; set; }
 
-    public void Apply(AISetAgentMessageSEvent aiSetAgentMessageSEvent)
+    public void Apply(AISetAgentStateLogEvent aiSetAgentStateLogEvent)
     {
-        AgentName = aiSetAgentMessageSEvent.AgentName;
-        AgentResponsibility = aiSetAgentMessageSEvent.AgentResponsibility;
+        AgentName = aiSetAgentStateLogEvent.AgentName;
+        AgentResponsibility = aiSetAgentStateLogEvent.AgentResponsibility;
     }
     
-    public void Apply(AiReceiveMessageSEvent aiReceiveMessageSEvent)
+    public void Apply(AiReceiveStateLogEvent aiReceiveStateLogEvent)
     {
-        AddMessage(aiReceiveMessageSEvent.Message);
+        AddMessage(aiReceiveStateLogEvent.Message);
     }
     
-    public void Apply(AiReplyMessageSEvent aiReplyMessageSEvent)
+    public void Apply(AiReplyStateLogEvent aiReplyStateLogEvent)
     {
-        AddMessage(aiReplyMessageSEvent.Message);
+        AddMessage(aiReplyStateLogEvent.Message);
     }
 
-    public void Apply(AIClearMessageSEvent clearMessageSEvent)
+    public void Apply(AiClearStateLogEvent clearStateLogEvent)
     {
         RecentMessages = new Queue<MicroAIMessage>();
     }

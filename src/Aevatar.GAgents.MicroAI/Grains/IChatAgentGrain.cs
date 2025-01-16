@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
-using Aevatar.GAgents.MicroAI.Agent.SEvents;
+using Aevatar.GAgents.MicroAI.Model;
 using Orleans;
 
 namespace Aevatar.GAgents.MicroAI.GAgent;

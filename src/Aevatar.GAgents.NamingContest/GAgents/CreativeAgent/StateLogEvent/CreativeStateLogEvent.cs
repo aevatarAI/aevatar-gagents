@@ -1,7 +1,7 @@
 
 
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MicroAI.Agent.SEvents;
+using Aevatar.GAgents.MicroAI.Model;
 
 namespace Aevatar.GAgent.TestAgent.NamingContest.CreativeAgent;
 

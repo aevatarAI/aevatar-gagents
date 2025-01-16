@@ -4,9 +4,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.MicroAI.GAgent.StateLogEvent;
-using Aevatar.GAgents.MicroAI.Grains;
+using Aevatar.GAgents.MicroAI.Model;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 
@@ -33,16 +31,13 @@ public abstract class MicroAIGAgent : GAgentBase<MicroAIGAgentState, AIMessageSt
 
     public async Task SetAgent(string agentName, string agentResponsibility)
     {
-        // RaiseEvent(new AISetAgentMessageSEvent
-        // {
-        //     AgentName = agentName,
-        //     AgentResponsibility = agentResponsibility
-        // });
-        // await ConfirmEvents();
-        
-        State.AgentName = agentName;
-        State.AgentResponsibility = agentResponsibility;
-        
+        RaiseEvent(new AISetAgentStateLogEvent
+        {
+            AgentName = agentName,
+            AgentResponsibility = agentResponsibility
+        });
+        await ConfirmEvents();
+
 
         await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility);
     }
@@ -51,12 +46,12 @@ public abstract class MicroAIGAgent : GAgentBase<MicroAIGAgentState, AIMessageSt
         int? seed = null,
         int? maxTokens = null)
     {
-        // RaiseEvent(new AISetAgentMessageSEvent
-        // {
-        //     AgentName = agentName,
-        //     AgentResponsibility = agentResponsibility
-        // });
-        // await ConfirmEvents();
+        RaiseEvent(new AISetAgentStateLogEvent
+        {
+            AgentName = agentName,
+            AgentResponsibility = agentResponsibility
+        });
+        await ConfirmEvents();
         
         State.AgentName = agentName;
         State.AgentResponsibility = agentResponsibility;

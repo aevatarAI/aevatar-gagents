@@ -1,5 +1,5 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MicroAI.Agent.SEvents;
+using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
 
 namespace Aevatar.GAgent.NamingContest.TrafficGAgent;

@@ -2,7 +2,7 @@ using System;
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace Aevatar.GAgents.MicroAI.GAgent.StateLogEvent;
+namespace Aevatar.GAgents.MicroAI.Model;
 
 [GenerateSerializer]
 public class AIMessageStateLogEvent:StateLogEventBase<AIMessageStateLogEvent>
