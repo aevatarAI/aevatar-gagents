@@ -1,3 +1,4 @@
+using System;
 using Aevatar.Core.Abstractions;
 using Orleans;
 
@@ -13,4 +14,16 @@ public class PumpFunReceiveMessageGEvent : PumpfunSEventBase
 public class PumpfunSEventBase : StateLogEventBase<PumpfunSEventBase>
 {
     
+}
+
+[GenerateSerializer]
+public class PumpfunRequestSEvent : PumpfunSEventBase
+{
+    [Id(0)] public Guid RequestId { get; set; }
+}
+
+[GenerateSerializer]
+public class PumpfunSocialResponseSEvent : PumpfunSEventBase
+{
+    [Id(0)] public Guid ResponseId { get; set; }
 }
