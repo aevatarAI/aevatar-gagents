@@ -77,7 +77,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
             }
         }
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
 
         // Logger.LogInformation($"[CreativeGAgent] GroupChatStartGEvent End GrainId:{this.GetPrimaryKey().ToString()}");
     }
@@ -172,7 +172,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 AssembleMessageUtil.AssembleNamingContent(@event.CreativeName, @event.NamingReply))
         });
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -236,7 +236,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
 
             await PublishAsync(new NamingAiLogGEvent(NamingContestStepEnum.Debate, this.GetPrimaryKey(),
                 NamingRoleType.Contestant, State.AgentName, debateReply, prompt));
-            await base.ConfirmEvents();
+            await ConfirmEvents();
 
             // Logger.LogInformation(
             //     $"[CreativeGAgent] TrafficInformDebateGEvent End GrainId:{this.GetPrimaryKey().ToString()}");
@@ -310,7 +310,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 AssembleMessageUtil.AssembleDiscussionContent(@event.CreativeName, @event.DiscussionReply))
         });
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -394,6 +394,9 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
             Message = new MicroAIMessage(Role.User.ToString(),
                 AssembleMessageUtil.AssembleJudgeAsking(@event.JudgeName, @event.Reply))
         });
+        
+        await ConfirmEvents();
+
     }
 
     [EventHandler]
@@ -412,7 +415,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
                 .SendAsync(prompt, State.RecentMessages.ToList());
             if (response != null && !response.Content.IsNullOrEmpty())
             {
-                answer = response.Content.ToString();
+                answer = response.Content;
             }
         }
         catch (Exception ex)
@@ -456,6 +459,8 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
             Message = new MicroAIMessage(Role.User.ToString(),
                 AssembleMessageUtil.AssembleCreativeAnswer(@event.CreativeName, @event.Answer))
         });
+
+        await ConfirmEvents();
     }
 
     public Task<MicroAIGAgentState> GetStateAsync()
@@ -471,7 +476,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
     public async Task SetAgent(string agentName, string agentResponsibility)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = agentName, Description = agentResponsibility });
-        await base.ConfirmEvents();
+        await ConfirmEvents();
 
         IChatAgentGrain chatAgentGrain = GrainFactory.GetGrain<IChatAgentGrain>(agentName);
         await chatAgentGrain.SetAgentAsync(agentResponsibility);
@@ -483,7 +488,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
         await stream.SubscribeAsync(ChatAgentGrainEventHandler);
     }
     
-    private async Task ChatAgentGrainEventHandler(MicroAIEventMessage message, StreamSequenceToken token = null)
+    private async Task ChatAgentGrainEventHandler(MicroAIEventMessage message, StreamSequenceToken? token = null)
     {
         try
         {
@@ -525,7 +530,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
         int? maxTokens = null)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = agentName, Description = agentResponsibility });
-        await base.ConfirmEvents();
+        await ConfirmEvents();
 
         await GrainFactory.GetGrain<IChatAgentGrain>(agentName)
             .SetAgentWithTemperature(agentResponsibility, temperature, seed, maxTokens);
@@ -575,7 +580,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
             Logger.LogInformation("VoteCharmingCompleteEvent send");
         }
 
-        await base.ConfirmEvents();
+        await ConfirmEvents();
     }
 }
 
