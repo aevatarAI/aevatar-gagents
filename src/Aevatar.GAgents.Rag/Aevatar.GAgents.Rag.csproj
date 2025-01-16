@@ -1,9 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\common.props"/>
-
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <Nullable>enable</Nullable>
         <RootNamespace>AISmart</RootNamespace>
     </PropertyGroup>
@@ -11,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="Volo.Abp.ObjectExtending"/>
+        <PackageReference Include="Volo.Abp.AutoMapper"/>
     </ItemGroup>
     
 </Project>

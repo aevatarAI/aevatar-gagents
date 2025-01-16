@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CA9AC87F-097
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{04DBDB01-70F4-4E06-B468-8F87850B22BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Orleans.TestBase", "test\AevatarGAgents.Orleans.TestBase\AevatarGAgents.Orleans.TestBase.csproj", "{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AElf", "src\Aevatar.GAgents.AElf\Aevatar.GAgents.AElf.csproj", "{DF51070F-0462-44B6-8A50-3270FBAAC230}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Twitter", "src\Aevatar.GAgents.Twitter\Aevatar.GAgents.Twitter.csproj", "{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19}"
@@ -39,10 +37,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -96,7 +90,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{DF51070F-0462-44B6-8A50-3270FBAAC230} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{3DBEFD1D-29AF-4A7A-AC6D-6C844BA27241} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}

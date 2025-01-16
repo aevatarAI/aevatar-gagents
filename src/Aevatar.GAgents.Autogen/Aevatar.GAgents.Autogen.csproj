@@ -1,20 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>AISmart.GAgent.Autogen</RootNamespace>
+        <RootNamespace>AISmart.GAgents.Autogen</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aevatar.Core" Version="1.0.2" />
-      <PackageReference Include="AutoGen" />
-      <PackageReference Include="AutoGen.Core" Version="0.2.1" />
-      <PackageReference Include="AutoGen.OpenAI" Version="0.2.1" />
-      <PackageReference Include="AutoGen.SemanticKernel" Version="0.2.1" />
-      <PackageReference Include="Castle.Core" Version="4.2.1" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="AutoGen.Core"/>
+      <PackageReference Include="AutoGen.OpenAI"/>
+      <PackageReference Include="AutoGen.SemanticKernel"/>
+      <PackageReference Include="Castle.Core"/>
+      <PackageReference Include="Newtonsoft.Json"/>
+        <PackageReference Include="Aevatar.Core"/>
+        <PackageReference Include="Aevatar.Core.Abstractions"/>
+        <PackageReference Include="Aevatar.EventSourcing.Core"/>
+        <PackageReference Include="Microsoft.Orleans.Core"/>
+        <PackageReference Include="Volo.Abp.Core"/>
+        <PackageReference Include="Volo.Abp.AutoMapper"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -7,7 +7,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
     <PackageDescription>A unit test toolkit for Microsoft Orleans that does not require a real silo. Instead, tests are run with a mock grain activation context.</PackageDescription>
-    <PackageIcon>logo_128.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageOutputPath Condition=" '$(PackageOutputPath)'=='' ">$(ProjectRoot)/artifacts/$(Configuration)</PackageOutputPath>
     <PackageProjectUrl>https://github.com/OrleansContrib/OrleansTestKit</PackageProjectUrl>
@@ -16,7 +15,7 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Version>8.2.2</Version>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,10 +27,14 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="JetBrains.Annotations" />
     <PackageReference Include="Microsoft.Orleans.Reminders" />
     <PackageReference Include="Microsoft.Orleans.Streaming" />
     <PackageReference Include="Microsoft.Orleans.Runtime" />
     <PackageReference Include="Microsoft.Orleans.EventSourcing" />
+    <PackageReference Include="Aevatar.Core.Abstractions" />
+    <PackageReference Include="Aevatar.Core" />
+    <PackageReference Include="Aevatar.EventSourcing.Core" />
     <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -40,9 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.AElf\Aevatar.GAgents.AElf.csproj" />
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj" />
-    <ProjectReference Include="..\AevatarGAgents.Orleans.TestBase\AevatarGAgents.Orleans.TestBase.csproj" />
+    <ProjectReference Include="Aevatar.EventSourcing.Core" />
   </ItemGroup>
 
 </Project>

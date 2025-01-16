@@ -1,21 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Aevatar.GAgents.Common</RootNamespace>
+        <RootNamespace>Aevatar.GAgents.Basic</RootNamespace>
     </PropertyGroup>
-
+    
     <ItemGroup>
-      <PackageReference Include="Abp" Version="8.2.0" />
-      <PackageReference Include="Abp.AutoMapper" Version="8.2.0" />
-      <PackageReference Include="Aevatar.Core" Version="1.0.2" />
-      <PackageReference Include="Aevatar.Core.Abstractions" Version="1.0.2" />
+        <PackageReference Include="AElf.Kernel.Types"/>
+        <PackageReference Include="AElf.Sdk.CSharp" />
+        <PackageReference Include="AElf.Client" />
+        <PackageReference Include="AElf.Types" />
+        <PackageReference Include="Aevatar.Core"/>
+        <PackageReference Include="Aevatar.Core.Abstractions"/>
+        <PackageReference Include="Aevatar.EventSourcing.Core"/>
+        <PackageReference Include="Microsoft.Orleans.Core"/>
+        <PackageReference Include="Volo.Abp.Core"/>
+        <PackageReference Include="Volo.Abp.AutoMapper"/>
     </ItemGroup>
-
+    
     <ItemGroup>
       <Folder Include="BasicGAgents\" />
     </ItemGroup>
-
 </Project>

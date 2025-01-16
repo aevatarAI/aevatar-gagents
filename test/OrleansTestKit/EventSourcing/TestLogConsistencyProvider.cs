@@ -1,4 +1,5 @@
-using AISmart.EventSourcing.Core.Storage;
+using Aevatar.EventSourcing.Core;
+using Aevatar.EventSourcing.Core.Storage;
 using Orleans.EventSourcing;
 using Orleans.Storage;
 
@@ -23,7 +24,7 @@ public class TestLogConsistencyProvider : ILogViewAdaptorFactory
         where TLogView : class, new() where TLogEntry : class
     {
         return new LogViewAdaptor<TLogView, TLogEntry>(hostGrain, initialState, _grainStorage, grainTypeName,
-            new TestLogConsistencyProtocolServices(), _logConsistentStorage, null);
+            new TestLogConsistencyProtocolServices(), new InMemoryLogConsistentStorage(), null);
     }
 
     public bool UsesStorageProvider => true;
