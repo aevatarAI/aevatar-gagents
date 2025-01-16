@@ -13,8 +13,4 @@
       <PackageReference Include="Aevatar.Core.Abstractions" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="BasicGAgents\" />
-    </ItemGroup>
-
 </Project>
