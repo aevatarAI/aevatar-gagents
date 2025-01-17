@@ -15,15 +15,16 @@ public class TwitterGAgentState : StateBase
     [Id(3)] public string TokenSecret { get; set; }
     [Id(4)] public Dictionary<string, string> RepliedTweets { get; set; }
     [Id(5)] public string UserName { get; set; }
-    
-    public void Apply(BindTwitterAccountGEvent bindTwitterAccountGEvent)
+    [Id(6)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
+
+    public void Apply(BindTwitterAccountSEvent bindTwitterAccountSEvent)
     {
-        UserId = bindTwitterAccountGEvent.UserId;
-        Token = bindTwitterAccountGEvent.Token;
-        TokenSecret = bindTwitterAccountGEvent.TokenSecret;
-        UserName = bindTwitterAccountGEvent.UserName;
+        UserId = bindTwitterAccountSEvent.UserId;
+        Token = bindTwitterAccountSEvent.Token;
+        TokenSecret = bindTwitterAccountSEvent.TokenSecret;
+        UserName = bindTwitterAccountSEvent.UserName;
     }
-    
+
     public void Apply(UnbindTwitterAccountEvent unbindTwitterAccountEvent)
     {
         Token = "";
@@ -31,12 +32,28 @@ public class TwitterGAgentState : StateBase
         UserId = "";
         UserName = "";
     }
-    
-    public void Apply(ReplyTweetGEvent replyTweetGEvent)
+
+    public void Apply(ReplyTweetSEvent replyTweetSEvent)
     {
-        if (!replyTweetGEvent.TweetId.IsNullOrEmpty())
+        if (!replyTweetSEvent.TweetId.IsNullOrEmpty())
         {
-            RepliedTweets[replyTweetGEvent.TweetId] = replyTweetGEvent.Text;
+            RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
+        }
+    }
+
+    public void Apply(TweetRequestSEvent @event)
+    {
+        if (SocialRequestList.Contains(@event.RequestId) == false)
+        {
+            SocialRequestList.Add(@event.RequestId);
+        }
+    }
+
+    public void Apply(TweetSocialResponseSEvent @event)
+    {
+        if (SocialRequestList.Contains(@event.ResponseId))
+        {
+            SocialRequestList.Remove(@event.ResponseId);
         }
     }
 }

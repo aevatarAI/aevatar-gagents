@@ -1,4 +1,4 @@
-﻿using Aevatar.GAgents.MicroAI.Options;
+﻿using Aevatar.GAgents.MicroAI.GAgent;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;

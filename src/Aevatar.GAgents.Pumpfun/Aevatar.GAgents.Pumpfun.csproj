@@ -9,11 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="AElf.Sdk.CSharp" />
+        <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Microsoft.Orleans.EventSourcing" />
         <PackageReference Include="Volo.Abp.AutoMapper" />
     </ItemGroup>

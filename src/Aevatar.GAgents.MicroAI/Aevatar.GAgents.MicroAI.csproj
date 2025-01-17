@@ -15,7 +15,7 @@
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
     </ItemGroup>

@@ -1,21 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
-using Aevatar.GAgents.MicroAI.Agent;
-using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.MicroAI.Grains;
+
 using Aevatar.GAgents.SocialChat.GAgent;
 using Json.Schema.Generation;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
+using Aevatar.GAgents.MicroAI.GAgent;
+using Aevatar.GAgents.MicroAI.Model;
 
 namespace Aevatar.GAgents.TestAgent;
 
-[Description("I can chat with users.")]
+[System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public class SocialGAgent : MicroAIGAgent, ISocialGAgent
@@ -35,6 +30,8 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
         });
         
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
+        aiResponseEvent.RequestId = @event.RequestId;
+        
         try
         {
             var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)

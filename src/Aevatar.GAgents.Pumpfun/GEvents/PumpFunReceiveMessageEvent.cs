@@ -8,13 +8,10 @@ namespace Aevatar.GAgents.PumpFun.EventDtos;
 [GenerateSerializer]
 public class PumpFunReceiveMessageEvent : EventBase
 {
-    [Description("Unique identifier for the chat from which the message was received.")]
-    [Id(0)]  public string? ChatId { get; set; }
-    
     [Description("The replyId of request message.")]
-    [Id(1)]  public string? ReplyId { get; set; }
+    [Id(0)]  public string? ReplyId { get; set; }
     
     [Description("Text content of the received message.")]
-    [Id(2)] public string? RequestMessage { get; set; }
+    [Id(1)] public string? RequestMessage { get; set; }
     
 }

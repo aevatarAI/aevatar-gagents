@@ -3,7 +3,7 @@ using Orleans;
 namespace Aevatar.GAgents.Twitter.Agent.GEvents;
 
 [GenerateSerializer]
-public class BindTwitterAccountGEvent : TweetGEvent
+public class BindTwitterAccountSEvent : TweetSEvent
 {
     [Id(0)] public string UserId { get; set; }
     [Id(1)] public string Token { get; set; }

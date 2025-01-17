@@ -1,4 +1,4 @@
-using Aevatar.GAgents.MicroAI.Agent;
+using Aevatar.GAgents.MicroAI.GAgent;
 
 namespace Aevatar.GAgents.SocialChat.GAgent;
 

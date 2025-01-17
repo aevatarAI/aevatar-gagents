@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.PumpFun.Agent.GEvents;
 using Aevatar.GAgents.PumpFun.EventDtos;
 using Aevatar.GAgents.PumpFun.Grains;
@@ -16,7 +17,7 @@ namespace Aevatar.GAgents.PumpFun.Agent;
 [Description("Handle PumpFun")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, GEventBase>, IPumpFunGAgent
+public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, IPumpFunGAgent
 {
     private readonly ILogger<PumpFunGAgent> _logger;
     public PumpFunGAgent(ILogger<PumpFunGAgent> logger) : base(logger)
@@ -32,9 +33,53 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, GEventBase>, IPumpFu
     [EventHandler]
     public async Task TaskHandleEventAsync(PumpFunReceiveMessageEvent @event)
     {
-        // await PublishAsync(new ());
+        if (@event.ReplyId.IsNullOrEmpty() || @event.RequestMessage.IsNullOrEmpty())
+        {
+            _logger.LogError($"[PumpFunGAgent] PumpFunReceiveMessageEvent ReplyId is IsNullOrEmpty, replyId:{@event.ReplyId} requestMessage:{@event.RequestMessage}");
+            return;
+        }
+        
+        var requestId = Guid.NewGuid();
+        RaiseEvent(new PumpfunRequestSEvent() { RequestId = requestId });
+        await ConfirmEvents();
+
+        await PublishAsync(new SocialGEvent()
+        {
+            RequestId = requestId,
+            Content = @event.RequestMessage,
+            MessageId = @event.ReplyId,
+        });
     }
-    
+
+    [EventHandler]
+    public async Task HandleEventAsync(SocialResponseGEvent @event)
+    {
+        if (@event.ReplyMessageId.IsNullOrEmpty())
+        {
+            _logger.LogError($"[PumpFunGAgent] SocialResponseGEvent ReplyMessageId is IsNullOrEmpty");
+            return;
+        }
+        
+        if (@event.RequestId != Guid.Empty)
+        {
+            if (State.SocialRequestList.Contains(@event.RequestId))
+            {
+                RaiseEvent(new PumpfunSocialResponseSEvent() { ResponseId = @event.RequestId });
+                await ConfirmEvents();
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        _logger.LogDebug("[PumpFunGAgent] HandleEventAsync SocialResponseEvent, content: {text}, id: {id}",
+            @event.ResponseContent, @event.ReplyMessageId);
+        
+        await GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyMessageId))
+            .SendMessageAsync(@event.ReplyMessageId, @event.ResponseContent);
+    }
+
     [EventHandler]
     public async Task HandleEventAsync(PumpFunSendMessageEvent @event)
     {
@@ -55,7 +100,6 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, GEventBase>, IPumpFu
                 .SendMessageAsync(@event.ReplyId, @event.ReplyMessage);
             _logger.LogInformation("PumpFunSendMessageEvent3,grainId:" + 
                                    GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyId)).GetGrainId());
-
         }
     }
     
