@@ -4,7 +4,7 @@ using Orleans;
 namespace Aevatar.GAgents.AElf.Agent.GEvents;
 
 [GenerateSerializer]
-public  class SendTransactionSEvent:  TransactionSEvent
+public  class SendTransactionStateLogEvent:  TransactionStateLogEvent
 {
    
     [Id(1)] public Guid CreateTransactionGEventId { get; set; }

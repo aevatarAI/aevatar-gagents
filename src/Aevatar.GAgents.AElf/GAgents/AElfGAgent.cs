@@ -15,7 +15,7 @@ namespace Aevatar.GAgents.AElf.Agent;
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionSEvent>, IAElfAgent
+public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>, IAElfAgent
 {
     public AElfGAgent(ILogger<AElfGAgent> logger) : base(logger)
     {
@@ -27,74 +27,74 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionSEvent>, IAElfA
     }
 
     [EventHandler]
-    protected async Task ExecuteAsync(CreateTransactionEvent gEventData)
+    protected async Task ExecuteAsync(CreateTransactionGEvent gGEventData)
     {
-       var gEvent = new CreateTransactionSEvent
+       var createTransactionStateLogEvent = new CreateTransactionStateLogEvent
         {
-            ChainId = gEventData.ChainId,
-            SenderName = gEventData.SenderName,
-            ContractAddress = gEventData.ContractAddress,
-            MethodName = gEventData.MethodName,
+            ChainId = gGEventData.ChainId,
+            SenderName = gGEventData.SenderName,
+            ContractAddress = gGEventData.ContractAddress,
+            MethodName = gGEventData.MethodName,
         };
-        RaiseEvent(gEvent);
+        RaiseEvent(createTransactionStateLogEvent);
         await ConfirmEvents();
-        _= GrainFactory.GetGrain<ITransactionGrain>(gEvent.Id).SendAElfTransactionAsync(
+        _= GrainFactory.GetGrain<ITransactionGrain>(createTransactionStateLogEvent.Id).SendAElfTransactionAsync(
             new SendTransactionDto
             {
-                Id = gEvent.Id,
-                ChainId = gEventData.ChainId,
-                SenderName = gEventData.SenderName,
-                ContractAddress = gEventData.ContractAddress,
-                MethodName = gEventData.MethodName,
-                Param = gEventData.Param
+                Id = createTransactionStateLogEvent.Id,
+                ChainId = gGEventData.ChainId,
+                SenderName = gGEventData.SenderName,
+                ContractAddress = gGEventData.ContractAddress,
+                MethodName = gGEventData.MethodName,
+                Param = gGEventData.Param
             });
-        Logger.LogInformation("ExecuteAsync: AElf {MethodName}", gEventData.MethodName);
+        Logger.LogInformation("ExecuteAsync: AElf {MethodName}", gGEventData.MethodName);
     }
     
     [EventHandler]
-    public Task ExecuteAsync(SendTransactionCallBackEvent gEventData)
+    public Task ExecuteAsync(SendTransactionCallBackGEvent gGEventData)
     {
-        RaiseEvent(new SendTransactionSEvent
+        RaiseEvent(new SendTransactionStateLogEvent
         {
-            CreateTransactionGEventId = gEventData.CreateTransactionGEventId,
-            ChainId = gEventData.ChainId,
-            TransactionId = gEventData.TransactionId
+            CreateTransactionGEventId = gGEventData.CreateTransactionGEventId,
+            ChainId = gGEventData.ChainId,
+            TransactionId = gGEventData.TransactionId
         });
        
-        _= GrainFactory.GetGrain<ITransactionGrain>(gEventData.Id).LoadAElfTransactionResultAsync(
+        _= GrainFactory.GetGrain<ITransactionGrain>(gGEventData.Id).LoadAElfTransactionResultAsync(
             new QueryTransactionDto
             {
-                CreateTransactionGEventId = gEventData.CreateTransactionGEventId,
-                ChainId = gEventData.ChainId,
-                TransactionId = gEventData.TransactionId
+                CreateTransactionGEventId = gGEventData.CreateTransactionGEventId,
+                ChainId = gGEventData.ChainId,
+                TransactionId = gGEventData.TransactionId
             });
         return Task.CompletedTask;
     }
 
     [EventHandler]
-    public async Task ExecuteAsync(QueryTransactionCallBackEvent gEventData)
+    public async Task ExecuteAsync(QueryTransactionCallBackGEvent gGEventData)
     {
-        if (gEventData.IsSuccess)
+        if (gGEventData.IsSuccess)
         {
-            RaiseEvent(new TransactionSuccessSEvent
+            RaiseEvent(new TransactionSuccessStateLogEvent
             {
-                CreateTransactionGEventId = gEventData.CreateTransactionGEventId
+                CreateTransactionGEventId = gGEventData.CreateTransactionGEventId
             });
         }
         else
         {
-            RaiseEvent(new TransactionFailedSEvent()
+            RaiseEvent(new TransactionFailedStateLogEvent()
             {
-                CreateTransactionGEventId = gEventData.CreateTransactionGEventId,
-                Error = gEventData.Error
+                CreateTransactionGEventId = gGEventData.CreateTransactionGEventId,
+                Error = gGEventData.Error
             });
         }
         await ConfirmEvents();
     }
 
-    public async Task ExecuteTransactionAsync(CreateTransactionEvent gEventData)
+    public async Task ExecuteTransactionAsync(CreateTransactionGEvent gGEventData)
     {
-        await ExecuteAsync( gEventData);
+        await ExecuteAsync( gGEventData);
     }
 
     public async Task<AElfAgentGState> GetAElfAgentDto()
@@ -107,7 +107,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionSEvent>, IAElfA
     
 
     
-    protected Task ExecuteAsync(TransactionSEvent eventData)
+    protected Task ExecuteAsync(TransactionStateLogEvent eventData)
     {
         return Task.CompletedTask;
     }
@@ -115,7 +115,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionSEvent>, IAElfA
 
 public interface IAElfAgent : IGrainWithGuidKey
 { 
-    Task ExecuteTransactionAsync(CreateTransactionEvent gEventData);
+    Task ExecuteTransactionAsync(CreateTransactionGEvent gGEventData);
     Task<AElfAgentGState> GetAElfAgentDto();
 }
 

@@ -1,10 +1,9 @@
-using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace Aevatar.GAgents.AElf.Agent.Events;
+namespace Aevatar.GAgents.AElf.Agent.GEvents;
 
 [GenerateSerializer]
-public  class CreateTransactionEvent: EventBase
+public  class CreateTransactionStateLogEvent: TransactionStateLogEvent
 {
     [Id(1)] public string ChainId { get; set; }
     [Id(2)] public string SenderName{ get; set; }

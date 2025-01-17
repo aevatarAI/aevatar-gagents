@@ -5,7 +5,7 @@ using AElf.Client.MultiToken;
 using Aevatar.GAgents.AElf.Agent.Event;
 using Aevatar.GAgents.AElf.Dto;
 using Aevatar.GAgents.AElf.Provider;
-using Aevatar.GAgents.Common.PublishGAgent;
+using Aevatar.GAgents.Basic.PublishGAgent;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Providers;
@@ -29,7 +29,7 @@ public class TransactionGrain : Grain<AElfTransactionState>, ITransactionGrain
             sendTransactionDto.MethodName, new TransferInput());
         var sendTransactionAsync =  await _AElfNodeProvider.SendTransactionAsync(sendTransactionDto.ChainId,transaction);
         var publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-        await publishingAgent.PublishEventAsync(new SendTransactionCallBackEvent
+        await publishingAgent.PublishEventAsync(new SendTransactionCallBackGEvent
         {
             TransactionId = sendTransactionAsync.TransactionId,
             
@@ -67,7 +67,7 @@ public class TransactionGrain : Grain<AElfTransactionState>, ITransactionGrain
             _Logger.LogError(e,"Transaction query timed out.");
         }
         var publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-        await publishingAgent.PublishEventAsync(new QueryTransactionCallBackEvent()
+        await publishingAgent.PublishEventAsync(new QueryTransactionCallBackGEvent()
                 {
                     TransactionId =  queryTransactionDto.TransactionId
                 });

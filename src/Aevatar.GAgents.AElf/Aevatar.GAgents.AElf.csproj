@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\common.props"/>
+    <Import Project="..\..\common.props" />
 
     <PropertyGroup>
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
@@ -9,19 +9,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AElf.Sdk.CSharp"/>
-        <PackageReference Include="AElf.Client"/>
-        <PackageReference Include="AElf.Types"/>
+        <PackageReference Include="AElf.Sdk.CSharp" />
+        <PackageReference Include="AElf.Client" />
+        <PackageReference Include="AElf.Types" />
         <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" />
         <PackageReference Include="Volo.Abp.Core" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj"/>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Features\"/>
+        <Folder Include="Features\" />
     </ItemGroup>
 
 </Project>

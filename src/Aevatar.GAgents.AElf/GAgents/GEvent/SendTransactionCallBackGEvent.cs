@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.AElf.Agent.Event;
 
 [GenerateSerializer]
-public  class SendTransactionCallBackEvent :EventBase
+public  class SendTransactionCallBackGEvent :EventBase
 {
     [Id(0)] public Guid Id { get; set; }
     
