@@ -4,7 +4,7 @@ using Orleans;
 namespace Aevatar.GAgents.Autogen.Events.InternalEvents;
 
 [GenerateSerializer]
-public class PassThroughExecutorEvent : AutoGenInternalEventBase
+public class PassThroughExecutorGEvent : AutoGenInternalEventBase
 {
     [Id(0)] public Guid TaskId { get; set; }
     [Id(1)] public string AgentName { get; set; }

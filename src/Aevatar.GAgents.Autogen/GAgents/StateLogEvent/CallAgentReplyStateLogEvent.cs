@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.Autogen.EventSourcingEvent;
 
 [GenerateSerializer]
-public class CallAgentReply:AutogenEventBase
+public class CallAgentReplyStateLogEvent:AutogenStateLogEvent
 {
     [Id(0)] public string AgentName { get; set; }
     [Id(1)] public Guid  EventId { get; set; }

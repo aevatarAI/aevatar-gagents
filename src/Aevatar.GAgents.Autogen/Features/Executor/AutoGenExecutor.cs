@@ -44,7 +44,7 @@ public class AutoGenExecutor : Grain, IAutoGenExecutor
         catch (Exception e)
         {
             _logger.LogError(e, "[AutogenExecutor] ExecuteTaskAsync error, TaskInfo:{@TaskInfo}", taskInfo);
-            await PublishInternalEvent(new AutoGenExecutorEvent()
+            await PublishInternalEvent(new AutoGenExecutorGEvent()
             {
                 TaskId = _taskId,
                 ExecuteStatus = TaskExecuteStatus.Break,
@@ -85,7 +85,7 @@ public class AutoGenExecutor : Grain, IAutoGenExecutor
             if (completeEvent != null)
             {
                 // var publishGrain = _clusterClient.GetGrain<IPublishingGAgent>(_publishGrainId);
-                await PublishInternalEvent(new AutoGenExecutorEvent()
+                await PublishInternalEvent(new AutoGenExecutorGEvent()
                 {
                     TaskId = _taskId,
                     ExecuteStatus = TaskExecuteStatus.Finish,
@@ -103,7 +103,7 @@ public class AutoGenExecutor : Grain, IAutoGenExecutor
             if (breakInfo != null)
             {
                 // var publishGrain = _clusterClient.GetGrain<IPublishingGAgent>(_publishGrainId);
-                await PublishInternalEvent(new AutoGenExecutorEvent()
+                await PublishInternalEvent(new AutoGenExecutorGEvent()
                 {
                     TaskId = _taskId,
                     ExecuteStatus = TaskExecuteStatus.Break,
@@ -123,7 +123,7 @@ public class AutoGenExecutor : Grain, IAutoGenExecutor
             if (handleEventSchema != null)
             {
                 // var publishGrain = _clusterClient.GetGrain<IPublishingGAgent>(_publishGrainId);
-                await PublishInternalEvent(new AutoGenExecutorEvent()
+                await PublishInternalEvent(new AutoGenExecutorGEvent()
                 {
                     TaskId = _taskId,
                     ExecuteStatus = TaskExecuteStatus.Progressing,
@@ -288,7 +288,7 @@ public class AutoGenExecutor : Grain, IAutoGenExecutor
             { AgentName = agentName, EventName = eventName, Parameters = parameters });
 
         // var publishGrain = _clusterClient.GetGrain<IPublishingGAgent>(_publishGrainId);
-        await PublishInternalEvent(new PassThroughExecutorEvent()
+        await PublishInternalEvent(new PassThroughExecutorGEvent()
             { AgentName = agentName, EventName = eventName, PassThroughData = eventData, TaskId = _taskId });
 
         return callEventOrignalData;

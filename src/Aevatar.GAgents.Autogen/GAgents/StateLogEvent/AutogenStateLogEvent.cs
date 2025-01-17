@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.Autogen.EventSourcingEvent;
 
 [GenerateSerializer]
-public class AutogenEventBase:GEventBase
+public class AutogenStateLogEvent:StateLogEventBase <AutogenStateLogEvent>
 {
     [Id(0)] public Guid TaskId { get; set; }
 }

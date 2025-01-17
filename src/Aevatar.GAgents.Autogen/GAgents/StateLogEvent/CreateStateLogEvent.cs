@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.Autogen.EventSourcingEvent;
 
 [GenerateSerializer]
-public class Create:AutogenEventBase
+public class CreateStateLogEvent:AutogenStateLogEvent
 {
     [Id(0)] public List<AutogenMessage> Messages { get; set; } = new List<AutogenMessage>();
     [Id(1)] public long CreateTime { get; set; }

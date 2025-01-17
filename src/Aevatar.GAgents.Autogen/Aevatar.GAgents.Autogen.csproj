@@ -8,17 +8,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoGen.Core"/>
-      <PackageReference Include="AutoGen.OpenAI"/>
-      <PackageReference Include="AutoGen.SemanticKernel"/>
-      <PackageReference Include="Castle.Core"/>
-      <PackageReference Include="Newtonsoft.Json"/>
-        <PackageReference Include="Aevatar.Core"/>
-        <PackageReference Include="Aevatar.Core.Abstractions"/>
-        <PackageReference Include="Aevatar.EventSourcing.Core"/>
-        <PackageReference Include="Microsoft.Orleans.Core"/>
-        <PackageReference Include="Volo.Abp.Core"/>
-        <PackageReference Include="Volo.Abp.AutoMapper"/>
+      <PackageReference Include="AutoGen.Core" />
+      <PackageReference Include="AutoGen.OpenAI" />
+      <PackageReference Include="AutoGen.SemanticKernel" />
+      <PackageReference Include="Castle.Core" />
+      <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Aevatar.Core" />
+        <PackageReference Include="Aevatar.Core.Abstractions" />
+        <PackageReference Include="Aevatar.EventSourcing.Core" />
+        <PackageReference Include="Microsoft.Orleans.Core" />
+        <PackageReference Include="Volo.Abp.Core" />
+        <PackageReference Include="Volo.Abp.AutoMapper" />
     </ItemGroup>
 
     <ItemGroup>

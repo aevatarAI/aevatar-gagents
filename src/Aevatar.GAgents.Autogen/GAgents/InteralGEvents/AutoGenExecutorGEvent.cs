@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.Autogen.Events.InternalEvents;
 
 [GenerateSerializer]
-public class AutoGenExecutorEvent : AutoGenInternalEventBase
+public class AutoGenExecutorGEvent : AutoGenInternalEventBase
 {
     [Id(0)]public Guid TaskId { get; set; }
     [Id(1)] public TaskExecuteStatus ExecuteStatus { get; set; }

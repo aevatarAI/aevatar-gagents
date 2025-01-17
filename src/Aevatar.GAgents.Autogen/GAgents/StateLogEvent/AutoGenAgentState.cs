@@ -17,7 +17,7 @@ public class AutoGenAgentState : StateBase
     [Id(1)] public Dictionary<Guid, RequestInfo> EventToTaskDic = new Dictionary<Guid, RequestInfo>();
     [Id(2)] public Dictionary<Guid, List<Guid>> TaskToEventDic = new Dictionary<Guid, List<Guid>>();
 
-    public void Apply(Break @event)
+    public void Apply(BreakStateLogEvent @event)
     {
         var state = GetStateInfo(@event.TaskId);
         if (state == null)
@@ -71,7 +71,7 @@ public class AutoGenAgentState : StateBase
         return EventToTaskDic.TryGetValue(eventId, out var requestInfo) ? requestInfo : null;
     }
     
-    public void Apply(CallAgentReply @event)
+    public void Apply(CallAgentReplyStateLogEvent @event)
     {
         if (!EventToTaskDic.TryGetValue(@event.EventId, out var taskList))
         {
@@ -88,7 +88,7 @@ public class AutoGenAgentState : StateBase
         state.ChatHistory.Add(@event.Reply);
     }
 
-    public void Apply(CallerProgressing @event)
+    public void Apply(CallerProgressingStateLogEvent @event)
     {
         var state = GetStateInfo(@event.TaskId);
         if (state == null)
@@ -100,7 +100,7 @@ public class AutoGenAgentState : StateBase
         // state.CurrentCallInfo = @event.CurrentCallInfo;
     }
 
-    public void Apply(Complete @event)
+    public void Apply(CompleteStateLogEvent @event)
     {
         var state = GetStateInfo(@event.TaskId);
         if (state == null)
@@ -114,7 +114,7 @@ public class AutoGenAgentState : StateBase
         AutoGenStateDic.Remove(@event.TaskId);
     }
 
-    public void Apply(Create @event)
+    public void Apply(CreateStateLogEvent @event)
     {
         var state = new AutoGenAgentStateInfo();
         state.TaskId = @event.TaskId;
@@ -124,16 +124,16 @@ public class AutoGenAgentState : StateBase
         AutoGenStateDic.Add(@event.TaskId, state);
     }
 
-    public void Apply(PublishEvent @event)
+    public void Apply(PublishStateLogEvent stateLogEvent)
     {
-        var state = GetStateInfo(@event.TaskId);
+        var state = GetStateInfo(stateLogEvent.TaskId);
         if (state == null)
         {
             return;
         }
 
         state.RaiseEventCount += 1;
-        StartEvent(@event.TaskId, @event.AgentName, @event.EventName, @event.EventId);
+        StartEvent(stateLogEvent.TaskId, stateLogEvent.AgentName, stateLogEvent.EventName, stateLogEvent.EventId);
     }
 
     private AutoGenAgentStateInfo? GetStateInfo(Guid taskId)
