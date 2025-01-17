@@ -1,15 +1,11 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Aevatar.Core;
+using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
-using Orleans.Providers;
 
-namespace Aevatar.GAgents.Common.GroupGAgent;
+namespace Aevatar.GAgents.Basic.GroupGAgent;
 
-[StorageProvider(ProviderName = "PubSubStore")]
-[LogConsistencyProvider(ProviderName = "LogStorage")]
-public class GroupGAgent : GAgentBase<GroupAgentState, GroupGEvent>
+[GAgent("group")]
+public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>
 {
     public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
     {
@@ -22,18 +18,18 @@ public class GroupGAgent : GAgentBase<GroupAgentState, GroupGEvent>
 
     protected override Task OnRegisterAgentAsync(Guid agentGuid)
     {
-        ++State.RegisteredAgents;
+        ++State.RegisteredGAgents;
         return Task.CompletedTask;
     }
 
     protected override Task OnUnregisterAgentAsync(Guid agentGuid)
     {
-        --State.RegisteredAgents;
+        --State.RegisteredGAgents;
         return Task.CompletedTask;
     }
     
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
-        State.RegisteredAgents = 0;
+        State.RegisteredGAgents = 0;
     }
 }

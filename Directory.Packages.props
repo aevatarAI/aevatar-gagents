@@ -29,6 +29,10 @@
     <PackageVersion Include="Microsoft.Orleans.Streaming" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.TestingHost" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Core" Version="$(OrleansVerion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.32.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.32.0-alpha" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.32.0-alpha" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.32.0" />
     <!-- ABP packages -->
     <PackageVersion Include="Volo.Abp.Account.Application" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Account.Application.Contracts" Version="$(AbpVersion)" />
@@ -98,6 +102,7 @@
     <PackageVersion Include="AutoGen.SemanticKernel" Version="0.2.1" />
     <PackageVersion Include="Castle.Core" Version="4.2.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="System.Text.Json" Version="9.0.0" />
     <!-- Test packages -->
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.2" />

@@ -1,0 +1,123 @@
+
+using Aevatar.Core;
+using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.GroupGAgent;
+using Aevatar.GAgents.Basic.PublishGAgent;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
+namespace AiSmart.GAgent.NamingContest.VoteAgent;
+
+public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent>, IVoteCharmingGAgent
+{
+    public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger) : base(logger)
+    {
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(InitVoteCharmingGEvent @event)
+    {
+        if (!State.VoterIds.IsNullOrEmpty())
+        {
+            return;
+        }
+
+        RaiseEvent(new InitVoteCharmingStateLogEvent
+        {
+            GrainGuidList = new List<Guid>(),
+            TotalBatches = @event.TotalBatches,
+            Round = @event.Round,
+            GrainGuidTypeDictionary = new Dictionary<Guid, string>(),
+            GroupList = @event.groupList,
+        });
+
+        await ConfirmEvents();
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(VoteCharmingGEvent @event)
+    {
+        Logger.LogInformation(
+            "VoteCharmingEvent receive {info},TotalBatches:{TotalBatches},CurrentBatch:{CurrentBatch}",
+            JsonConvert.SerializeObject(@event), State.TotalBatches, State.CurrentBatch);
+
+        if (State.GroupList.Count == 0)
+        {
+            return;
+        }
+
+        var voteGroupList = GetVoteGroupList();
+        if (voteGroupList.Count == 0)
+        {
+            Logger.LogInformation("[VoteCharmingGAgent] VoteCharmingEvent trafficList.Count == 0 ");
+        }
+
+        foreach (var groupId in voteGroupList)
+        {
+            var groupAgent = GrainFactory.GetGrain<GroupGAgent>(groupId);
+            var childrenAgent = await groupAgent.GetChildrenAsync();
+            var publishAgentId = childrenAgent.FirstOrDefault(f => f.ToString().StartsWith("publishinggagent"));
+            IPublishingGAgent publishAgent;
+            if (!publishAgentId.IsDefault)
+            {
+                publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(publishAgentId);
+            }
+            else
+            {
+                publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(new Guid());
+                await groupAgent.RegisterAsync(publishAgent);
+            }
+
+            await publishAgent.PublishEventAsync(new SingleVoteCharmingGEvent
+            {
+                AgentIdNameDictionary = @event.AgentIdNameDictionary,
+                VoteMessage = @event.VoteMessage,
+                Round = @event.Round,
+                VoteCharmingGrainId = this.GetPrimaryKey()
+            });
+
+            Logger.LogInformation("SingleVoteCharmingEvent send");
+        }
+
+        RaiseEvent(new GroupVoteCompleteStateLogEvent
+        {
+            VoteGroupList = voteGroupList,
+        });
+
+        await ConfirmEvents();
+    }
+
+    public override Task<string> GetDescriptionAsync()
+    {
+        return Task.FromResult(
+            "Represents an agent responsible for voting charming agents.");
+    }
+
+    private List<Guid> GetVoteGroupList()
+    {
+        if (State.TotalGroupCount <= State.GroupHasVoteCount + 1)
+        {
+            return State.GroupList;
+        }
+
+        var result = new List<Guid>();
+        var random = new Random();
+        var basicDenominator = Math.Ceiling((double)State.TotalGroupCount / 2);
+        var basicNumerator = Math.Abs(basicDenominator - State.GroupList.Count);
+        if (basicNumerator / 2 >= random.Next(0, (int)basicNumerator))
+        {
+            return result;
+        }
+
+        var basis = (double)basicNumerator / (double)basicDenominator;
+        int randomCount = (int)Math.Ceiling(State.GroupList.Count * (1 - basis));
+        randomCount = Math.Max(randomCount / 2, randomCount);
+        if (randomCount == 0)
+        {
+            return result;
+        }
+
+        result = State.GroupList.OrderBy(x => random.Next()).Take(randomCount).ToList();
+        return result;
+    }
+}

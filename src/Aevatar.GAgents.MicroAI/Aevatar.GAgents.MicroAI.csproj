@@ -1,26 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\common.props" />
+    <Import Project="..\..\common.props" />
+    <PropertyGroup>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AISmart</RootNamespace>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-    <Nullable>enable</Nullable>
-    <RootNamespace>AISmart</RootNamespace>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="AutoGen.Core" />
+        <PackageReference Include="AutoGen.SemanticKernel" />
+        <PackageReference Include="Microsoft.SemanticKernel" />
+        <PackageReference Include="Microsoft.SemanticKernel.Core" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Aevatar.Core" />
-    <PackageReference Include="Aevatar.Core.Abstractions" />
-    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
-    <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" />
-    <PackageReference Include="Volo.Abp.AutoMapper" />
-    <PackageReference Include="AutoGen.Core" />
-    <PackageReference Include="AutoGen.SemanticKernel"  />
-    <PackageReference Include="Volo.Abp.Core" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Features\" />
+    </ItemGroup>
 
 </Project>

@@ -1,17 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
-using Aevatar.GAgents.MicroAI.Agent;
-using Aevatar.GAgents.MicroAI.Agent.GEvents;
-using Aevatar.GAgents.MicroAI.Grains;
+
 using Aevatar.GAgents.SocialChat.GAgent;
 using Json.Schema.Generation;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
+using Aevatar.GAgents.MicroAI.GAgent;
+using Aevatar.GAgents.MicroAI.Model;
 
 namespace Aevatar.GAgents.TestAgent;
 

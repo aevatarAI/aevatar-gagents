@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.GAgents.Common.PublishGAgent;
+namespace Aevatar.GAgents.Basic.PublishGAgent;
 
 public interface IPublishingGAgent : IGAgent
 {

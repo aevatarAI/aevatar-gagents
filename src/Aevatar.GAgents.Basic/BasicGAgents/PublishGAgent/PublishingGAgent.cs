@@ -1,15 +1,16 @@
-using System;
-using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.Logging;
-using Orleans.Providers;
 
-namespace Aevatar.GAgents.Common.PublishGAgent;
+namespace Aevatar.GAgents.Basic.PublishGAgent;
 
-[StorageProvider(ProviderName = "PubSubStore")]
-[LogConsistencyProvider(ProviderName = "LogStorage")]
-public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingGEvent>, IPublishingGAgent
+[GenerateSerializer]
+public class PublishingAgentState : StateBase
+{
+}
+
+[GAgent("publishing")]
+public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {
     public PublishingGAgent(ILogger<PublishingGAgent> logger) : base(logger)
     {
