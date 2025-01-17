@@ -23,8 +23,8 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
     public  async Task<SocialResponseGEvent> HandleEventAsync(SocialGEvent @event)
     {
         _logger.LogInformation("handle SocialEvent, content: {content}", @event.Content);
-        List<AIMessageGEvent> list = new List<AIMessageGEvent>();
-        list.Add(new AIReceiveMessageGEvent
+        List<AIMessageStateLogEvent> list = new List<AIMessageStateLogEvent>();
+        list.Add(new AiReceiveStateLogEvent
         {
             Message = new MicroAIMessage("user", @event.Content)
         });
@@ -39,7 +39,7 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
             if (message != null && !message.Content.IsNullOrEmpty())
             {
                 _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message.Content);
-                list.Add(new AIReplyMessageGEvent()
+                list.Add(new AiReplyStateLogEvent()
                 {
                     Message = message
                 });
