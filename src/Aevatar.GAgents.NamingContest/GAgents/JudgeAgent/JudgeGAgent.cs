@@ -8,12 +8,13 @@ using Aevatar.GAgent.NamingContest.TrafficGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
+using AiSmart.GAgent.NamingContest.JudgeAgent.Dto;
 using AiSmart.GAgent.NamingContest.VoteAgent;
 using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.JudgeAgent;
 
-public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJudgeGAgent
+public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventBase, InitJudgeDto>, IJudgeGAgent
 {
     public JudgeGAgent(ILogger<JudgeGAgent> logger) : base(logger)
     {
@@ -174,19 +175,9 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
         }
     }
 
-
     private Guid GetRealJudgeId()
     {
         return State.CloneJudgeId == Guid.Empty ? this.GetPrimaryKey() : State.CloneJudgeId;
-    }
-
-    public async Task<IJudgeGAgent> Clone()
-    {
-        var judgeGAgent = GrainFactory.GetGrain<IJudgeGAgent>(Guid.NewGuid());
-        await judgeGAgent.SetRealJudgeGrainId(this.GetPrimaryKey());
-        await judgeGAgent.SetAgent(State.AgentName, State.AgentResponsibility);
-
-        return judgeGAgent;
     }
 
     public async Task SetRealJudgeGrainId(Guid judgeGrainId)
@@ -234,6 +225,19 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
     public Task<MicroAIGAgentState> GetAgentState()
     {
         throw new NotImplementedException();
+    }
+
+    public async override Task InitializeAsync(InitJudgeDto initializeDto)
+    {
+        RaiseEvent(new AISetAgentStateLogEvent
+        {
+            AgentName = initializeDto.AgentName,
+            AgentResponsibility = initializeDto.AgentResponsibility,
+            CloneJudge = initializeDto.CloneJudgeId
+        });
+        await ConfirmEvents();
+
+        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName).SetAgentAsync(initializeDto.AgentResponsibility);
     }
 }
 

@@ -106,7 +106,6 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
         return Task.CompletedTask;
     }
 
-
     public Task SetAgentWithRandomLLMAsync(string systemMessage)
     {
         string llm = GetRandomLlmType();

@@ -1,9 +1,9 @@
-
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
+using Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
@@ -15,7 +15,9 @@ using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.TrafficAgent;
 
-public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEventStateLogEvent>, ISecondTrafficGAgent
+public class SecondRoundTrafficGAgent :
+    GAgentBase<SecondTrafficState, TrafficEventStateLogEvent, EventBase, InitSecondRoundTrafficDto>,
+    ISecondTrafficGAgent
 {
     public SecondRoundTrafficGAgent(ILogger<SecondRoundTrafficGAgent> logger) : base(logger)
     {
@@ -29,7 +31,7 @@ public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEv
             Logger.LogWarning("[SecondRoundTrafficGAgent] GroupStartEvent has processed");
             return;
         }
-        
+
         RaiseEvent(new TrafficNameStartSEvent { Content = @event.Message });
         RaiseEvent(new ChangeNamingStepSEvent { Step = NamingContestStepEnum.NamingStart });
         RaiseEvent(new AddChatHistorySEvent()
@@ -337,7 +339,7 @@ public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEv
 
         await PublishToHostGAgentGroup(selectedId);
     }
-    
+
     private async Task PublishToHostGAgentGroup(Guid selectedId)
     {
         var hostGroupGAgentId = Helper.GetHostGroupGrainId();
@@ -358,34 +360,12 @@ public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEv
         }
 
         await publishingAgent.PublishEventAsync(
-            new HostSummaryGEvent() { HostId = selectedId, History = State.ChatHistory,GroupId = await this.GetParentAsync()});
+            new HostSummaryGEvent()
+                { HostId = selectedId, History = State.ChatHistory, GroupId = await this.GetParentAsync() });
     }
 
     public async Task SetAgent(string agentName, string agentResponsibility)
     {
-        RaiseEvent(new TrafficSetAgentSEvent
-        {
-            AgentName = agentName,
-            Description = agentResponsibility
-        });
-        await ConfirmEvents();
-
-        await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility);
-    }
-
-    public async Task SetAgentWithTemperatureAsync(string agentName, string agentResponsibility, float temperature,
-        int? seed = null,
-        int? maxTokens = null)
-    {
-        RaiseEvent(new TrafficSetAgentSEvent
-        {
-            AgentName = agentName,
-            Description = agentResponsibility
-        });
-        await ConfirmEvents();
-
-        await GrainFactory.GetGrain<IChatAgentGrain>(agentName)
-            .SetAgentWithTemperature(agentResponsibility, temperature, seed, maxTokens);
     }
 
     public Task<MicroAIGAgentState> GetAgentState()
@@ -435,5 +415,24 @@ public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEv
     public Task<int> GetProcessStep()
     {
         return Task.FromResult((int)State.NamingStep);
+    }
+
+    public override async Task InitializeAsync(InitSecondRoundTrafficDto initializeDto)
+    {
+        RaiseEvent(new SecondTrafficSetAgentSEvent()
+        {
+            CreativeList = initializeDto.CreativeList,
+            JudgeAgentList = initializeDto.JudgeAgentList,
+            HostAgentList = initializeDto.HostAgentList,
+            HostGroupId = initializeDto.HostGroupId,
+            MostCharmingId = initializeDto.MostCharmingId,
+            AgentName = initializeDto.AgentName,
+            AgentDescription = initializeDto.AgentDescription,
+            AskJudgeCount = initializeDto.AskJudgeCount,
+            Round = initializeDto.Round,
+            Step = initializeDto.Step,
+        });
+
+        await ConfirmEvents();
     }
 }

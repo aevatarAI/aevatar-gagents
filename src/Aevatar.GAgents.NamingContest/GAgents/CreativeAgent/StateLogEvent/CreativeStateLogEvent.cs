@@ -19,7 +19,8 @@ public class AddHistoryChatStateLogEvent : CreativeStateLogEvent
 
 [GenerateSerializer]
 public class ClearHistoryChatStateLogEvent : CreativeStateLogEvent
-{  
+{ 
+    
 }
 
 [GenerateSerializer]
@@ -33,10 +34,4 @@ public class SetAgentInfoStateLogEvent : CreativeStateLogEvent
 {
     [Id(0)] public  string AgentName { get; set; }
     [Id(1)] public string Description { get; set; }
-}
-
-[GenerateSerializer]
-public class SetExecuteStep : CreativeStateLogEvent
-{
-    [Id(0)] public int Step { get; set; }
 }

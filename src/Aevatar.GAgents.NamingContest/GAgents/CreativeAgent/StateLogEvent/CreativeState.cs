@@ -12,7 +12,6 @@ public class CreativeState : StateBase
     [Id(3)] public Queue<MicroAIMessage> RecentMessages = new Queue<MicroAIMessage>();
     [Id(4)] public string Naming { get; set; }
     [Id(5)] public Guid GroupId { get; set; }
-    [Id(6)] public int ExecuteStep { get; set; } = 0;
 
     public void Apply(AddHistoryChatStateLogEvent @event)
     {
@@ -33,10 +32,5 @@ public class CreativeState : StateBase
     {
         AgentName = @event.AgentName;
         AgentResponsibility = @event.Description;
-    }
-
-    public void Apply(SetExecuteStep @event)
-    {
-        ExecuteStep = @event.Step;
     }
 }

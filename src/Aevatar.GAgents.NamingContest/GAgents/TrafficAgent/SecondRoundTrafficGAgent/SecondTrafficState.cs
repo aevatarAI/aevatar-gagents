@@ -1,5 +1,3 @@
-
-
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
 using Aevatar.GAgents.MicroAI.Model;
@@ -9,24 +7,39 @@ namespace AiSmart.GAgent.NamingContest.TrafficAgent;
 
 public class SecondTrafficState : StateBase
 {
-    [Id(0)] public List<Guid> CalledGrainIdList { get; set; } = new List<Guid>();
     [Id(1)] public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
-    [Id(2)] public Guid CurrentGrainId { get; set; }
-    [Id(3)] public string NamingContent { get; set; }
     [Id(4)] public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
     [Id(5)] public int AskJudgeCount { get; set; }
-    [Id(6)] public List<Guid> AskingJudges { get; set; } = new List<Guid>();
-    [Id(7)] public List<MicroAIMessage> ChatHistory { get; set; } = new List<MicroAIMessage>();
-    [Id(8)] public int DiscussionCount { get; set; }
     [Id(9)] public string AgentName { get; set; }
     [Id(10)] public string AgentDescription { get; set; }
-    [Id(11)] public string Summary { get; set; }
-    [Id(12)] public  int JudgeScoreCount { get; set; }
     [Id(13)] public int Round { get; set; }
-    
+    [Id(16)] public int Step { get; set; }
     [Id(14)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
+    [Id(3)] public Guid HostGroupId { get; set; }
+    [Id(14)] public Guid MostCharmingId { get; set; }
+
+
+    [Id(0)] public List<Guid> CalledGrainIdList { get; set; } = new List<Guid>();
+    [Id(2)] public Guid CurrentGrainId { get; set; }
+    [Id(3)] public string NamingContent { get; set; }
+    [Id(7)] public List<MicroAIMessage> ChatHistory { get; set; } = new List<MicroAIMessage>();
+    [Id(8)] public int DiscussionCount { get; set; }
+    [Id(12)] public int JudgeScoreCount { get; set; }
     [Id(15)] public NamingContestStepEnum NamingStep { get; set; }
-    [Id(12)] public int Step { get; set; }
+
+    public void Apply(SecondTrafficSetAgentSEvent @event)
+    {
+        CreativeList = @event.CreativeList;
+        JudgeAgentList = @event.JudgeAgentList;
+        HostAgentList = @event.HostAgentList;
+        HostGroupId = @event.HostGroupId;
+        MostCharmingId = @event.MostCharmingId;
+        AgentName = @event.AgentName;
+        AgentDescription = @event.AgentDescription;
+        AskJudgeCount = @event.AskJudgeCount;
+        Round = @event.Round;
+        Step = @event.Step;
+    }
 
     public void Apply(TrafficCallSelectGrainIdSEvent sEvent)
     {
@@ -64,7 +77,7 @@ public class SecondTrafficState : StateBase
     {
         this.JudgeAgentList.Add(@event.JudgeGrainId);
     }
-    
+
     public void Apply(AddHostSEvent @event)
     {
         this.HostAgentList.Add(@event.HostGrainId);
@@ -89,11 +102,6 @@ public class SecondTrafficState : StateBase
         AskJudgeCount = @event.AskingJudgeCount;
     }
 
-    public void Apply(AddAskingJudgeSEvent @event)
-    {
-        AskingJudges.Add(@event.AskingJudgeGrainId);
-    }
-
     public void Apply(SetDiscussionSEvent @event)
     {
         DiscussionCount = @event.DiscussionCount;
@@ -102,12 +110,6 @@ public class SecondTrafficState : StateBase
     public void Apply(DiscussionCountReduceSEvent @event)
     {
         DiscussionCount -= 1;
-    }
-
-    public void Apply(TrafficSetAgentSEvent @event)
-    {
-        AgentName = @event.AgentName;
-        AgentDescription = @event.Description;
     }
 
     public void Apply(AddScoreJudgeCountSEvent @event)
@@ -119,7 +121,7 @@ public class SecondTrafficState : StateBase
     {
         Round = @event.RoundCount;
     }
-    
+
     public void Apply(ChangeNamingStepSEvent @event)
     {
         NamingStep = @event.Step;

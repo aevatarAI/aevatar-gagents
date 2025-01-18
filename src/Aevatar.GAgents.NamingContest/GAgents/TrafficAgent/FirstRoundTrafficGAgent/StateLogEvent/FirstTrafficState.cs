@@ -8,42 +8,28 @@ namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 
 public class FirstTrafficState : StateBase
 {
-    [Id(0)] public List<Guid> CalledGrainIdList { get; set; } = new List<Guid>();
-    [Id(1)] public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
-    [Id(2)] public Guid CurrentGrainId { get; set; }
-    [Id(3)] public string NamingContent { get; set; }
-    [Id(4)] public string AgentName { get; set; }
-    [Id(5)] public string Description { get; set; }
-    [Id(6)] public int DebateRoundCount { get; set; }
-    [Id(7)] public List<Guid> DebateList { get; set; }
-    [Id(8)] public NamingContestStepEnum NamingStep { get; set; }
-
-    [Id(9)] public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
-    [Id(10)] public List<MicroAIMessage> ChatHistory { get; set; } = new List<MicroAIMessage>();
+    [Id(0)] public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
+    [Id(1)] public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
+    [Id(2)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
+    [Id(3)] public Guid HostGroupId { get; set; }
+    [Id(4)] public int Step { get; set; }
+    [Id(5)] public Guid MostCharmingId { get; set; }
     
-    [Id(11)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
-    [Id(12)] public int Step { get; set; }
-
-    // public void Apply(TrafficCallSelectGrainIdSEvent sEvent)
-    // {
-    //     CurrentGrainId = sEvent.GrainId;
-    // }
-
-    // public void Apply(TrafficNameStartSEvent @event)
-    // {
-    //     NamingContent = @event.Content;
-    // }
-
-    // public void Apply(TrafficGrainCompleteSEvent sEvent)
-    // {
-    //     CalledGrainIdList.Add(sEvent.CompleteGrainId);
-    //     CurrentGrainId = Guid.Empty;
-    // }
-
-    public void Apply(TrafficSetAgentSEvent @event)
+    [Id(6)] public List<Guid> CalledGrainIdList { get; set; } = new List<Guid>();
+    [Id(7)] public Guid CurrentGrainId { get; set; }
+    [Id(8)] public string NamingContent { get; set; }
+    [Id(9)] public int DebateRoundCount { get; set; }
+    [Id(10)] public NamingContestStepEnum NamingStep { get; set; }
+    [Id(11)] public List<MicroAIMessage> ChatHistory { get; set; } = new List<MicroAIMessage>();
+    
+    public void Apply(FirstTrafficSetAgentSEvent @event)
     {
-        AgentName = @event.AgentName;
-        Description = @event.Description;
+        CreativeList = @event.CreativeList;
+        JudgeAgentList = @event.JudgeAgentList;
+        HostAgentList = @event.HostAgentList;
+        HostGroupId = @event.HostGroupId;
+        Step = @event.Step;
+        MostCharmingId = @event.MostCharmingId;
     }
 
     public void Apply(AddCreativeAgent @event)

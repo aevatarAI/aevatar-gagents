@@ -7,12 +7,13 @@ using Aevatar.GAgents.Basic.PublishGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
+using AiSmart.GAgent.NamingContest.HostAgent.Dto;
 using AutoGen.Core;
 using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.HostAgent;
 
-public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
+public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, InitHostDto>, IHostGAgent
 {
     private readonly ILogger<HostGAgent> _logger;
 
@@ -102,14 +103,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
         throw new NotImplementedException();
     }
 
-    public async Task SetAgent(string agentName, string agentResponsibility)
-    {
-        RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = agentName, Description = agentResponsibility });
-        await base.ConfirmEvents();
-
-        await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility);
-    }
-
     public async Task SetAgentWithTemperatureAsync(string agentName, string agentResponsibility, float temperature,
         int? seed = null,
         int? maxTokens = null)
@@ -134,5 +127,13 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
     public Task<string> GetCreativeName()
     {
         return Task.FromResult(State.AgentName);
+    }
+
+    public async override Task InitializeAsync(InitHostDto initializeDto)
+    {
+        RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
+        await base.ConfirmEvents();
+
+        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName).SetAgentAsync(initializeDto.AgentResponsibility);
     }
 }
