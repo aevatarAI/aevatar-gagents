@@ -15,6 +15,7 @@ namespace AISmart.GAgent.Telegram.Agent;
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(TelegramGAgent))]
 public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, ITelegramGAgent
 {
     public TelegramGAgent(ILogger<TelegramGAgent> logger) : base(logger)

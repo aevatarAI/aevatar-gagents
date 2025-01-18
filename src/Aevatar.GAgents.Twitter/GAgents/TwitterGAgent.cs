@@ -15,6 +15,7 @@ namespace Aevatar.GAgents.Twitter.Agent;
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(TwitterGAgent))]
 public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitterGAgent
 {
     private readonly ILogger<TwitterGAgent> _logger;

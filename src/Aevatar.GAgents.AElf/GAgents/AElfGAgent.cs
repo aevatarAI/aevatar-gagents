@@ -15,12 +15,13 @@ namespace Aevatar.GAgents.AElf.Agent;
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(AElfGAgent))]
 public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>, IAElfAgent
 {
     public AElfGAgent(ILogger<AElfGAgent> logger) : base(logger)
     {
     }
-    
+
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a aelf thread is published.");
@@ -29,7 +30,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
     [EventHandler]
     protected async Task ExecuteAsync(CreateTransactionGEvent gGEventData)
     {
-       var createTransactionStateLogEvent = new CreateTransactionStateLogEvent
+        var createTransactionStateLogEvent = new CreateTransactionStateLogEvent
         {
             ChainId = gGEventData.ChainId,
             SenderName = gGEventData.SenderName,
@@ -38,7 +39,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
         };
         RaiseEvent(createTransactionStateLogEvent);
         await ConfirmEvents();
-        _= GrainFactory.GetGrain<ITransactionGrain>(createTransactionStateLogEvent.Id).SendAElfTransactionAsync(
+        _ = GrainFactory.GetGrain<ITransactionGrain>(createTransactionStateLogEvent.Id).SendAElfTransactionAsync(
             new SendTransactionDto
             {
                 Id = createTransactionStateLogEvent.Id,
@@ -50,7 +51,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
             });
         Logger.LogInformation("ExecuteAsync: AElf {MethodName}", gGEventData.MethodName);
     }
-    
+
     [EventHandler]
     public Task ExecuteAsync(SendTransactionCallBackGEvent gGEventData)
     {
@@ -60,8 +61,8 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
             ChainId = gGEventData.ChainId,
             TransactionId = gGEventData.TransactionId
         });
-       
-        _= GrainFactory.GetGrain<ITransactionGrain>(gGEventData.Id).LoadAElfTransactionResultAsync(
+
+        _ = GrainFactory.GetGrain<ITransactionGrain>(gGEventData.Id).LoadAElfTransactionResultAsync(
             new QueryTransactionDto
             {
                 CreateTransactionGEventId = gGEventData.CreateTransactionGEventId,
@@ -89,12 +90,13 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
                 Error = gGEventData.Error
             });
         }
+
         await ConfirmEvents();
     }
 
     public async Task ExecuteTransactionAsync(CreateTransactionGEvent gGEventData)
     {
-        await ExecuteAsync( gGEventData);
+        await ExecuteAsync(gGEventData);
     }
 
     public async Task<AElfAgentGState> GetAElfAgentDto()
@@ -104,9 +106,8 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
         aelfAgentDto.PendingTransactions = State.PendingTransactions;
         return aelfAgentDto;
     }
-    
 
-    
+
     protected Task ExecuteAsync(TransactionStateLogEvent eventData)
     {
         return Task.CompletedTask;
@@ -114,8 +115,7 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
 }
 
 public interface IAElfAgent : IGrainWithGuidKey
-{ 
+{
     Task ExecuteTransactionAsync(CreateTransactionGEvent gGEventData);
     Task<AElfAgentGState> GetAElfAgentDto();
 }
-

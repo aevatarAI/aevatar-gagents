@@ -13,6 +13,7 @@ namespace Aevatar.GAgents.TestAgent;
 [System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(SocialGAgent))]
 public class SocialGAgent : MicroAIGAgent, ISocialGAgent
 {
     public SocialGAgent(ILogger<MicroAIGAgent> logger) : base(logger)

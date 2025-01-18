@@ -9,7 +9,7 @@ public class PublishingAgentState : StateBase
 {
 }
 
-[GAgent("publishing")]
+[GAgent(nameof(PublishingGAgent))]
 public class PublishingGAgent : GAgentBase<PublishingAgentState, PublishingStateLogEvent>, IPublishingGAgent
 {
     public PublishingGAgent(ILogger<PublishingGAgent> logger) : base(logger)
