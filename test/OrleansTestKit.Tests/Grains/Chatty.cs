@@ -20,7 +20,7 @@ public class Chatty : Grain, IChatty
         return Task.FromResult(_recievedMessage);
     }
 
-    protected IStreamProvider Provider => this.GetStreamProvider("AISmart");
+    protected IStreamProvider Provider => this.GetStreamProvider("Aevatar");
     protected IAsyncStream<ChattyMessage> ChattyStream => Provider.GetStream<ChattyMessage>(Guid.Empty);
 
     public async Task SendChat(string msg)

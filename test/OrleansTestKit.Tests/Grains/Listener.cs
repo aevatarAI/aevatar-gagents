@@ -9,7 +9,7 @@ public class Listener : Grain, IListener
 
     public override Task OnActivateAsync(CancellationToken cancellationToken)
     {
-        var stream = this.GetStreamProvider("AISmart").GetStream<ChatMessage>(Guid.Empty);
+        var stream = this.GetStreamProvider("Aevatar").GetStream<ChatMessage>(Guid.Empty);
 
         stream.SubscribeAsync((data, token) =>
         {

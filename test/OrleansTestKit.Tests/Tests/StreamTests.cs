@@ -221,7 +221,7 @@ public class StreamTests : TestKitBase
 
         foreach (var handle in handlers)
         {
-            handle.ProviderName.Should().Be("AISmart");
+            handle.ProviderName.Should().Be("Aevatar");
             handle.HandleId.Should().NotBeEmpty();
             handle.StreamId.Should().NotBeNull();
             handle.StreamId.Namespace.Should().NotBeNull();

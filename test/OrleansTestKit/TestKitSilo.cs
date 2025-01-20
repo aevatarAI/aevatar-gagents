@@ -1,5 +1,8 @@
 ﻿using System.Linq.Expressions;
-
+using Aevatar.Core.Abstractions;
+using Aevatar.EventSourcing.Core;
+using Aevatar.EventSourcing.Core.Hosting;
+using Aevatar.EventSourcing.Core.LogConsistency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -7,6 +10,7 @@ using Moq;
 using Orleans.EventSourcing;
 using Orleans.Metadata;
 using Orleans.Serialization;
+using Orleans.Serialization.Cloning;
 using Orleans.Serialization.Configuration;
 using Orleans.Serialization.Serializers;
 using Orleans.Storage;
@@ -20,7 +24,7 @@ using Orleans.Timers;
 namespace Orleans.TestKit;
 
 /// <summary>
-/// The central abstraction for the OrleansTestKit-- stands up multiple services and provides a centralized abstraction for interacting with test grains
+/// The central abstraction for the OrleansTestKit -- stands up multiple services and provides a centralized abstraction for interacting with test grains
 /// </summary>
 public sealed class TestKitSilo
 {
@@ -34,7 +38,7 @@ public sealed class TestKitSilo
 
     private readonly TestGrainRuntime _grainRuntime;
 
-    private readonly Dictionary<Type, IGrainBase> _createdGrains = new();
+    private readonly Dictionary<GrainId, IGrainBase> _createdGrains = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestKitSilo"/> class.
@@ -54,30 +58,26 @@ public sealed class TestKitSilo
         var mockOptionsManager = new Mock<IOptions<TypeManifestOptions>>();
         mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
         var codecProvider = new CodecProvider(ServiceProvider, mockOptionsManager.Object);
-        // LogConsistencyProvider =
-        //     new TestLogConsistencyProvider(ServiceProvider, TestLogConsistentStorage, TestGrainStorage);
+        LogConsistencyProvider =
+            new TestLogConsistencyProvider(ServiceProvider, new InMemoryLogConsistentStorage(), TestGrainStorage);
         ServiceProvider.AddKeyedService<ILogViewAdaptorFactory>("LogStorage", LogConsistencyProvider);
-        // ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
-        //     new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
-        // ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
-        // ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
-        //     ProtocolServices);
+        ProtocolServices = new DefaultProtocolServices(new Mock<IGrainContext>().Object, NullLoggerFactory.Instance,
+            new DeepCopier(codecProvider, new CopyContextPool(codecProvider)), null!);
+        ServiceProvider.AddService<ILogConsistencyProtocolServices>(ProtocolServices);
+        ServiceProvider.AddService<Factory<IGrainContext, ILogConsistencyProtocolServices>>(sp =>
+            ProtocolServices);
 
         GrainRuntime =
             new TestGrainRuntime(GrainFactory, TimerRegistry, ReminderRegistry, ServiceProvider, StorageManager);
         ServiceProvider.AddService<IGrainRuntime>(GrainRuntime);
         _grainCreator = new TestGrainCreator(GrainRuntime, ReminderRegistry, TestGrainStorage, ServiceProvider);
 
-        // ServiceProvider.AddService<IAElfNodeProvider>(new MockAElfNodeProvider());
-        
-        // var manager = new AgentDescriptionManager();
-        // ServiceProvider.AddService(manager);
-        // ServiceProvider.AddService(new AutoGenExecutor(NullLogger<AutoGenExecutor>.Instance, GrainFactory, manager, new TestChatAgentProvider()));
         ServiceProvider.AddService<IGrainStorage>(TestGrainStorage);
         var provider = new ServiceCollection()
             .AddSingleton<GrainTypeResolver>()
             .AddSingleton<IGrainTypeProvider, AttributeGrainTypeProvider>()
             .AddSerializer()
+            .AddInMemoryBasedLogConsistencyProvider("LogStorage")
             .BuildServiceProvider();
 
         _grainTypeResolver = provider.GetRequiredService<GrainTypeResolver>();
@@ -115,8 +115,8 @@ public sealed class TestKitSilo
     public TestTimerRegistry TimerRegistry { get; }
 
     public TestLogConsistencyProvider LogConsistencyProvider { get; set; }
-    // public DefaultProtocolServices ProtocolServices { get; set; }
-    // public InMemoryLogConsistentStorage TestLogConsistentStorage { get; set; } = new();
+    public DefaultProtocolServices ProtocolServices { get; set; }
+    public InMemoryLogConsistentStorage TestLogConsistentStorage { get; set; } = new();
 
     public Task<T> CreateGrainAsync<T>(long id) where T : IGrainBase, IGrainWithIntegerKey =>
         CreateGrainAsync<T>(GrainIdKeyExtensions.CreateIntegerKey(id));
@@ -243,13 +243,15 @@ public sealed class TestKitSilo
     public async Task<T> CreateGrainAsync<T>(IdSpan identity, CancellationToken cancellation = default)
         where T : IGrainBase
     {
-        if (_createdGrains.ContainsKey(typeof(T)))
+        var grainType = _grainTypeResolver.GetGrainType(typeof(T));
+        var grainId = GrainId.Create(grainType, identity);
+        if (_createdGrains.TryGetValue(grainId, out var storedGrain))
         {
-            var createdGrain = (T)_createdGrains[typeof(T)];
-            // if (typeof(IGAgent).IsAssignableFrom(typeof(T)) && ((IGAgent)createdGrain).GetGrainId().Key == identity)
-            // {
-            //     return createdGrain;
-            // }
+            var createdGrain = (T)storedGrain;
+            if (typeof(IGAgent).IsAssignableFrom(typeof(T)) && ((IGAgent)createdGrain).GetGrainId().Key == identity)
+            {
+                return createdGrain;
+            }
         }
 
         // Add state attribute mapping for storage facets
@@ -286,13 +288,8 @@ public sealed class TestKitSilo
         await grain.OnActivateAsync(cancellation).ConfigureAwait(false);
         _activatedGrains.Add(grain);
 
-        _createdGrains[typeof(T)] = grain;
+        _createdGrains[grainId] = grain;
 
         return (T)grain;
-    }
-
-    public bool IsGrainTypeCreated(Type grainType)
-    {
-        return _createdGrains.ContainsKey(grainType);
     }
 }
