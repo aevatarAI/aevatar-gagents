@@ -32,7 +32,6 @@ public class VoteCharmingState : StateBase
         TotalGroupCount += addGroup;
     }
     
-
     public void Apply(GroupVoteCompleteStateLogEvent @event)
     {
         if (@event.VoteGroupList.Count > 0)

@@ -241,8 +241,6 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
     }
 }
 
-
-
 public class JudgeVoteChatResponse
 {
     [JsonPropertyName(@"name")] public string Name { get; set; } = "";
