@@ -15,7 +15,7 @@ public class SecondTrafficState : StateBase
     [Id(13)] public int Round { get; set; }
     [Id(16)] public int Step { get; set; }
     [Id(14)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
-    [Id(3)] public Guid HostGroupId { get; set; }
+    [Id(3)] public GrainId HostGroupId { get; set; }
     [Id(14)] public Guid MostCharmingId { get; set; }
 
 

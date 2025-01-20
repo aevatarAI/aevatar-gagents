@@ -304,8 +304,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
     private async Task PublishMostCharmingEventAsync()
     {
         IVoteCharmingGAgent voteCharmingGAgent =
-            GrainFactory.GetGrain<IVoteCharmingGAgent>(Helper.GetVoteCharmingGrainId(1,
-                State.Step));
+            GrainFactory.GetGrain<IVoteCharmingGAgent>(State.MostCharmingId);
 
         GrainId grainId = await voteCharmingGAgent.GetParentAsync();
 
@@ -353,9 +352,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
 
     private async Task PublishToHostGAgentGroup(Guid selectedId)
     {
-        var hostGroupGAgentId = Helper.GetHostGroupGrainId();
-        var hostGroupGAgent = GrainFactory.GetGrain<GroupGAgent>(hostGroupGAgentId);
-
+        var hostGroupGAgent = GrainFactory.GetGrain<IGAgent>(State.HostGroupId);
         GrainId grainId = await hostGroupGAgent.GetParentAsync();
 
         IPublishingGAgent publishingAgent;

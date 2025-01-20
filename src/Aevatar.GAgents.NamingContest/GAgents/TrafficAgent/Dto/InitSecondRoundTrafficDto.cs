@@ -12,6 +12,6 @@ public class InitSecondRoundTrafficDto:InitializationEventBase
     public int Round { get; set; }
     public int Step { get; set; }
     public List<Guid> HostAgentList { get; set; } = new List<Guid>();
-    public Guid HostGroupId { get; set; }
+    public GrainId HostGroupId { get; set; }
     public Guid MostCharmingId { get; set; }
 }

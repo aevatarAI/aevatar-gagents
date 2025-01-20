@@ -7,7 +7,7 @@ public class InitFirstRoundTrafficDto:InitializationEventBase
     public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
     public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
     public List<Guid> HostAgentList { get; set; } = new List<Guid>();
-    public Guid HostGroupId { get; set; }
+    public GrainId HostGroupId { get; set; }
     public int Step { get; set; }
     public Guid MostCharmingId { get; set; }
 }

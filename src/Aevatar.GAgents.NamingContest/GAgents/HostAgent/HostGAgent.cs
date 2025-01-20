@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.HostAgent;
 
-public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, InitHostDto>, IHostGAgent
+public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, InitHostDto>, IHostGAgent
 {
     private readonly ILogger<HostGAgent> _logger;
 
@@ -34,7 +34,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, Ini
         var prompt = NamingConstants.SummaryPrompt;
         try
         {
-            
             var response = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
                 .SendAsync(prompt, @event.History);
 
@@ -51,20 +50,20 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, Ini
         finally
         {
             var groupGAgentId = @event.GroupId;
-            var groupGAgent = GrainFactory.GetGrain<GroupGAgent>(groupGAgentId);
-            
-            GrainId grainId = await groupGAgent.GetParentAsync();
+            var groupGAgent = GrainFactory.GetGrain<IGAgent>(groupGAgentId);
+            List<GrainId> grainIdList = await groupGAgent.GetChildrenAsync();
+
+            var grainId = grainIdList.First(f => f.ToString().StartsWith("publishinggagent"));
 
             IPublishingGAgent publishingAgent;
-
-            if (grainId != null && grainId.ToString().StartsWith("publishinggagent"))
+            if (grainId != default)
             {
                 publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(grainId);
             }
             else
             {
                 publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-                await publishingAgent.RegisterAsync(groupGAgent);
+                await groupGAgent.RegisterAsync(publishingAgent);
             }
 
             await publishingAgent.PublishEventAsync(new HostSummaryCompleteGEvent()
@@ -73,13 +72,13 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, Ini
                 SummaryReply = summaryReply,
                 HostName = State.AgentName,
             });
-            
+
             await publishingAgent.PublishEventAsync(new NamingAiLogGEvent(
                 NamingContestStepEnum.HostSummary,
                 this.GetPrimaryKey(),
-                NamingRoleType.Host, 
+                NamingRoleType.Host,
                 State.AgentName,
-                summaryReply, 
+                summaryReply,
                 prompt));
 
             RaiseEvent(new AddHistoryChatStateLogEvent()
@@ -87,7 +86,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, Ini
                 Message = new MicroAIMessage(Role.User.ToString(),
                     AssembleMessageUtil.AssembleNamingContent(State.AgentName, summaryReply))
             });
-            
 
             await base.ConfirmEvents();
         }
@@ -131,9 +129,11 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent,EventBase, Ini
 
     public async override Task InitializeAsync(InitHostDto initializeDto)
     {
-        RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
+        RaiseEvent(new SetAgentInfoStateLogEvent
+            { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
         await base.ConfirmEvents();
 
-        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName).SetAgentAsync(initializeDto.AgentResponsibility);
+        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName)
+            .SetAgentAsync(initializeDto.AgentResponsibility);
     }
 }
