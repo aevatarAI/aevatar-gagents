@@ -183,7 +183,7 @@ public class SecondRoundTrafficGAgent :
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the first second traffic agent");
     }
 
     private async Task DispatchCreativeDiscussion()

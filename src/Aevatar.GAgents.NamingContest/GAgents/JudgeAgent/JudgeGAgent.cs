@@ -194,7 +194,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the judge agent");
     }
 
     public async Task SetAgent(string agentName, string agentResponsibility)

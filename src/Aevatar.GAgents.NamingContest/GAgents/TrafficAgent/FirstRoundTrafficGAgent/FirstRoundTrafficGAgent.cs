@@ -189,7 +189,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the first round traffic agent");
     }
 
     private async Task DispatchCreativeAgent()

@@ -22,7 +22,7 @@ public class LogEventGAgent : GAgentBase<LogEventState, LogEventStateEvent, Even
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the logEvent agent");
     }
 
     public override async Task InitializeAsync(InitLogEvent initializeDto)

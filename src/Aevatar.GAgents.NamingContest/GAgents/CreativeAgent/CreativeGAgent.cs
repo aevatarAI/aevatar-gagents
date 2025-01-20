@@ -463,7 +463,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the creative agent");
     }
 
     public async Task SetAgent(string agentName, string agentResponsibility)

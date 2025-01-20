@@ -99,7 +99,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult("the host agent");
     }
 
     public async Task SetAgentWithTemperatureAsync(string agentName, string agentResponsibility, float temperature,
