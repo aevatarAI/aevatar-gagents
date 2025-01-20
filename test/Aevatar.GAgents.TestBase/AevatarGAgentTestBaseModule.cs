@@ -1,4 +1,5 @@
 using Aevatar.Core;
+using Aevatar.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Auditing;
