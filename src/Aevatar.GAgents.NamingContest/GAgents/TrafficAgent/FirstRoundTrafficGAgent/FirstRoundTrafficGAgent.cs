@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 
+[GAgent(nameof(FirstRoundTrafficGAgent))]
 public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEventStateLogEvent, EventBase, InitFirstRoundTrafficDto>, IFirstTrafficGAgent
 {
     public FirstRoundTrafficGAgent(ILogger<FirstRoundTrafficGAgent> logger) : base(logger)

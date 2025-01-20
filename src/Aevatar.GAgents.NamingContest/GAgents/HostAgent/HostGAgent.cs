@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.HostAgent;
 
+[GAgent(nameof(HostGAgent))]
 public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, InitHostDto>, IHostGAgent
 {
     private readonly ILogger<HostGAgent> _logger;

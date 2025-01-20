@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.JudgeAgent;
 
+[GAgent(nameof(JudgeGAgent))]
 public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventBase, InitJudgeDto>, IJudgeGAgent
 {
     public JudgeGAgent(ILogger<JudgeGAgent> logger) : base(logger)

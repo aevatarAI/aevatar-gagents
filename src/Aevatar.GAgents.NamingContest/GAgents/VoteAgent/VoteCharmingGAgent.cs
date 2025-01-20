@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 
 namespace AiSmart.GAgent.NamingContest.VoteAgent;
 
+[GAgent(nameof(VoteCharmingGAgent))]
 public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent, EventBase, InitVoteAgent>, IVoteCharmingGAgent
 {
     public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger) : base(logger)

@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.NamingContest.GAgents.LogEventAgent;
 
+[GAgent(nameof(LogEventGAgent))]
 public class LogEventGAgent : GAgentBase<LogEventState, LogEventStateEvent, EventBase, InitLogEvent>, ILogEventGAgent
 {
     public LogEventGAgent(ILogger logger) : base(logger)

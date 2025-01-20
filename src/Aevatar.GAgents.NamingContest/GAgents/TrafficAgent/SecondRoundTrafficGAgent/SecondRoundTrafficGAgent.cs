@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.TrafficAgent;
 
+[GAgent(nameof(SecondRoundTrafficGAgent))]
 public class SecondRoundTrafficGAgent :
     GAgentBase<SecondTrafficState, TrafficEventStateLogEvent, EventBase, InitSecondRoundTrafficDto>,
     ISecondTrafficGAgent
