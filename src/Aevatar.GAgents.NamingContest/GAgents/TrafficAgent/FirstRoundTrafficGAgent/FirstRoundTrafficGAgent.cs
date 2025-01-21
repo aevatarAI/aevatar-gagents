@@ -3,6 +3,7 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
@@ -346,29 +347,13 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
         await ConfirmEvents();
 
         await PublishToHostGAgentGroup(selectedId);
-
-
         // await PublishAsync(new HostSummaryGEvent() { HostId = selectedId, History = State.ChatHistory });
     }
 
     private async Task PublishToHostGAgentGroup(Guid selectedId)
     {
-        var hostGroupGAgent = GrainFactory.GetGrain<IGAgent>(State.HostGroupId);
-        GrainId grainId = await hostGroupGAgent.GetParentAsync();
-
-        IPublishingGAgent publishingAgent;
-
-        if (grainId.ToString().StartsWith("publishinggagent"))
-        {
-            publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(grainId);
-        }
-        else
-        {
-            publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-            await publishingAgent.RegisterAsync(hostGroupGAgent);
-        }
-
-        await publishingAgent.PublishEventAsync(
+        var hostGroupGAgent = GrainFactory.GetGrain<IGroupGAgent>(State.HostGroupId);
+        await hostGroupGAgent.PublishEventAsync(
             new HostSummaryGEvent()
                 { HostId = selectedId, History = State.ChatHistory, GroupId = await this.GetParentAsync() });
     }

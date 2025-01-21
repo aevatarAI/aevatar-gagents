@@ -2,6 +2,7 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
@@ -51,30 +52,15 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
         finally
         {
             var groupGAgentId = @event.GroupId;
-            var groupGAgent = GrainFactory.GetGrain<IGAgent>(groupGAgentId);
-            List<GrainId> grainIdList = await groupGAgent.GetChildrenAsync();
-
-            var grainId = grainIdList.First(f => f.ToString().StartsWith("publishinggagent"));
-
-            IPublishingGAgent publishingAgent;
-            if (grainId != default)
-            {
-                publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(grainId);
-            }
-            else
-            {
-                publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-                await groupGAgent.RegisterAsync(publishingAgent);
-            }
-
-            await publishingAgent.PublishEventAsync(new HostSummaryCompleteGEvent()
+            var groupGAgent = GrainFactory.GetGrain<IGroupGAgent>(groupGAgentId);
+            await groupGAgent.PublishEventAsync(new HostSummaryCompleteGEvent()
             {
                 HostId = this.GetPrimaryKey(),
                 SummaryReply = summaryReply,
                 HostName = State.AgentName,
             });
 
-            await publishingAgent.PublishEventAsync(new NamingAiLogGEvent(
+            await groupGAgent.PublishEventAsync(new NamingAiLogGEvent(
                 NamingContestStepEnum.HostSummary,
                 this.GetPrimaryKey(),
                 NamingRoleType.Host,

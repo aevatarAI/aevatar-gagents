@@ -1,6 +1,7 @@
 
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
 using AiSmart.GAgent.NamingContest.VoteAgent.Dto;
@@ -36,21 +37,21 @@ public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStat
 
         foreach (var groupId in voteGroupList)
         {
-            var groupAgent = GrainFactory.GetGrain<IGAgent>(groupId);
-            var childrenAgent = await groupAgent.GetChildrenAsync();
-            var publishAgentId = childrenAgent.FirstOrDefault(f => f.ToString().StartsWith("publishinggagent"));
-            IPublishingGAgent publishAgent;
-            if (!publishAgentId.IsDefault)
-            {
-                publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(publishAgentId);
-            }
-            else
-            {
-                publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(new Guid());
-                await groupAgent.RegisterAsync(publishAgent);
-            }
+            var groupAgent = GrainFactory.GetGrain<IGroupGAgent>(groupId);
+            // var childrenAgent = await groupAgent.GetChildrenAsync();
+            // var publishAgentId = childrenAgent.FirstOrDefault(f => f.ToString().StartsWith("publishinggagent"));
+            // IPublishingGAgent publishAgent;
+            // if (!publishAgentId.IsDefault)
+            // {
+            //     publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(publishAgentId);
+            // }
+            // else
+            // {
+            //     publishAgent = GrainFactory.GetGrain<IPublishingGAgent>(new Guid());
+            //     await groupAgent.RegisterAsync(publishAgent);
+            // }
 
-            await publishAgent.PublishEventAsync(new SingleVoteCharmingGEvent
+            await groupAgent.PublishEventAsync(new SingleVoteCharmingGEvent
             {
                 AgentIdNameDictionary = @event.AgentIdNameDictionary,
                 VoteMessage = @event.VoteMessage,

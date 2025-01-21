@@ -187,9 +187,9 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
         await ConfirmEvents();
     }
 
-    public Task<MicroAIGAgentState> GetStateAsync()
+    public Task<JudgeState> GetStateAsync()
     {
-        throw new NotImplementedException();
+        return Task.FromResult(State);
     }
 
     public override Task<string> GetDescriptionAsync()
