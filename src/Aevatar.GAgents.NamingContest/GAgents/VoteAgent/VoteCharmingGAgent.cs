@@ -11,10 +11,25 @@ using Newtonsoft.Json;
 namespace AiSmart.GAgent.NamingContest.VoteAgent;
 
 [GAgent(nameof(VoteCharmingGAgent))]
-public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent, EventBase, InitVoteAgent>, IVoteCharmingGAgent
+public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent>, IVoteCharmingGAgent
 {
     public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger) : base(logger)
     {
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(InitVoteAgent @event)
+    {
+        RaiseEvent(new InitVoteCharmingStateLogEvent
+        {
+            GrainGuidList = new List<Guid>(),
+            TotalBatches = @event.TotalBatches,
+            Round = @event.Round,
+            GrainGuidTypeDictionary = new Dictionary<Guid, string>(),
+            GroupList = @event.GroupList,
+        });
+
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -102,19 +117,5 @@ public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStat
 
         result = State.GroupList.OrderBy(x => random.Next()).Take(randomCount).ToList();
         return result;
-    }
-
-    public override async Task InitializeAsync(InitVoteAgent initializeDto)
-    { 
-        RaiseEvent(new InitVoteCharmingStateLogEvent
-        {
-            GrainGuidList = new List<Guid>(),
-            TotalBatches = initializeDto.TotalBatches,
-            Round = initializeDto.Round,
-            GrainGuidTypeDictionary = new Dictionary<Guid, string>(),
-            GroupList = initializeDto.GroupList,
-        });
-
-        await ConfirmEvents();
     }
 }
