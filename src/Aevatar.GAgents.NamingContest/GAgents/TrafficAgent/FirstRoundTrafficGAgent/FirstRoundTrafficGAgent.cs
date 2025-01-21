@@ -297,7 +297,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
 
         Logger.LogInformation(
             $"[FirstRoundTrafficGAgent] DispatchJudgeAgent GrainId:{this.GetPrimaryKey().ToString()}, Judge:{selectedId.ToString()}");
-        await PublishAsync(new JudgeVoteGEVent() { JudgeGrainId = selectedId, History = State.ChatHistory });
+        await PublishAsync(new JudgeVoteGEvent() { JudgeGrainId = selectedId, History = State.ChatHistory });
     }
 
     private async Task PublishMostCharmingEventAsync()
@@ -404,6 +404,11 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
     public Task<MicroAIGAgentState> GetAgentState()
     {
         throw new NotImplementedException();
+    }
+    
+    public Task<FirstTrafficState> GetGAgentState()
+    {
+        return Task.FromResult(State);
     }
 
     public async Task AddCreativeAgent(string creativeName, Guid creativeGrainId)

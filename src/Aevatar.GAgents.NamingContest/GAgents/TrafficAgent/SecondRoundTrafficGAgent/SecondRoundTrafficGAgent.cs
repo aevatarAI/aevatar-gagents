@@ -177,6 +177,11 @@ public class SecondRoundTrafficGAgent : GAgentBase<SecondTrafficState, TrafficEv
     {
         throw new NotImplementedException();
     }
+    
+    public Task<SecondTrafficState> GetGAgentState()
+    {
+        return Task.FromResult(State);
+    }
 
     public override Task<string> GetDescriptionAsync()
     {

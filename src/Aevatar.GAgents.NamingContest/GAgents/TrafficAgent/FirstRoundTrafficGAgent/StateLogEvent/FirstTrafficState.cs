@@ -29,10 +29,10 @@ public class FirstTrafficState : StateBase
     //     CurrentGrainId = sEvent.GrainId;
     // }
 
-    // public void Apply(TrafficNameStartSEvent @event)
-    // {
-    //     NamingContent = @event.Content;
-    // }
+    public void Apply(TrafficNameStartSEvent @event)
+    {
+        NamingContent = @event.Content;
+    }
 
     // public void Apply(TrafficGrainCompleteSEvent sEvent)
     // {

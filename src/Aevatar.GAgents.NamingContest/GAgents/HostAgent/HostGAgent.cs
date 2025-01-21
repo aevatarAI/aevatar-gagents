@@ -96,6 +96,11 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
     {
         throw new NotImplementedException();
     }
+    
+    public Task<HostState> GetGAgentState()
+    {
+        return Task.FromResult(State);
+    }
 
     public override Task<string> GetDescriptionAsync()
     {

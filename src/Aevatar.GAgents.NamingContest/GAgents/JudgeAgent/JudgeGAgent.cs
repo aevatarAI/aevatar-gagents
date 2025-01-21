@@ -28,7 +28,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(JudgeVoteGEVent @event)
+    public async Task HandleEventAsync(JudgeVoteGEvent @event)
     {
         if (@event.JudgeGrainId != this.GetPrimaryKey())
         {
@@ -198,6 +198,11 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent>, IJud
     public Task<MicroAIGAgentState> GetStateAsync()
     {
         throw new NotImplementedException();
+    }
+    
+    public Task<JudgeState> GetGAgentState()
+    {
+        return Task.FromResult(State);
     }
 
     public override Task<string> GetDescriptionAsync()

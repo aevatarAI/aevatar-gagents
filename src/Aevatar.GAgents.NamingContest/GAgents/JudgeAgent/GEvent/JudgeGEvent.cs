@@ -12,7 +12,7 @@ public class JudgeOverGEvent : EventBase
 }
 
 [GenerateSerializer]
-public class JudgeVoteGEVent : EventBase
+public class JudgeVoteGEvent : EventBase
 {
     [Id(0)] public Guid JudgeGrainId { get; set; }
 

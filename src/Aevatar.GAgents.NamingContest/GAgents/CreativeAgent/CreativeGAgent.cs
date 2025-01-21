@@ -540,6 +540,11 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent>, 
     {
         throw new NotImplementedException();
     }
+    
+    public Task<CreativeState> GetGAgentState()
+    {
+        return Task.FromResult(State);
+    }
 
     public Task<string> GetCreativeNaming()
     {
