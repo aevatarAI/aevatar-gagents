@@ -418,9 +418,18 @@ public class SecondRoundTrafficGAgent :
 
     public override async Task InitializeAsync(InitSecondRoundTrafficDto initializeDto)
     {
+        var creativeList = new List<CreativeInfo>();
+        foreach (var item in initializeDto.CreativeList)
+        {
+            var creativeAgent = GrainFactory.GetGrain<ICreativeGAgent>(item);
+            var agentName = await creativeAgent.GetCreativeName();
+            var naming = await creativeAgent.GetCreativeNaming();
+            creativeList.Add(new CreativeInfo() { CreativeGrainId = item, CreativeName = agentName, Naming = naming});
+        }
+
         RaiseEvent(new SecondTrafficSetAgentSEvent()
         {
-            CreativeList = initializeDto.CreativeList,
+            CreativeList = creativeList,
             JudgeAgentList = initializeDto.JudgeAgentList,
             HostAgentList = initializeDto.HostAgentList,
             HostGroupId = initializeDto.HostGroupId,

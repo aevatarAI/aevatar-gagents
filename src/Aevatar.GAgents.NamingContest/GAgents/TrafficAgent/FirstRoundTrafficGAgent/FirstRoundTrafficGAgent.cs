@@ -1,7 +1,7 @@
-
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
+using Aevatar.GAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
@@ -12,14 +12,14 @@ using Aevatar.GAgents.NamingContest.Common;
 using AiSmart.GAgent.NamingContest.JudgeAgent;
 using AiSmart.GAgent.NamingContest.VoteAgent;
 using AutoGen.Core;
-
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 
 [GAgent(nameof(FirstRoundTrafficGAgent))]
-public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEventStateLogEvent, EventBase, InitFirstRoundTrafficDto>, IFirstTrafficGAgent
+public class FirstRoundTrafficGAgent :
+    GAgentBase<FirstTrafficState, TrafficEventStateLogEvent, EventBase, InitFirstRoundTrafficDto>, IFirstTrafficGAgent
 {
     public FirstRoundTrafficGAgent(ILogger<FirstRoundTrafficGAgent> logger) : base(logger)
     {
@@ -408,9 +408,17 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
     // }
     public override async Task InitializeAsync(InitFirstRoundTrafficDto initializeDto)
     {
+        var creativeList = new List<CreativeInfo>();
+        foreach (var item in initializeDto.CreativeList)
+        {
+            var creativeAgent = GrainFactory.GetGrain<ICreativeGAgent>(item);
+            var agentName = await creativeAgent.GetCreativeName();
+            creativeList.Add(new CreativeInfo() { CreativeGrainId = item, CreativeName = agentName });
+        }
+
         RaiseEvent(new FirstTrafficSetAgentSEvent()
         {
-            CreativeList = initializeDto.CreativeList,
+            CreativeList = creativeList,
             JudgeAgentList = initializeDto.JudgeAgentList,
             HostAgentList = initializeDto.HostAgentList,
             HostGroupId = initializeDto.HostGroupId,

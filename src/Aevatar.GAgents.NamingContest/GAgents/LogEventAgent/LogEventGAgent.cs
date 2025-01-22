@@ -48,12 +48,12 @@ public class LogEventGAgent : GAgentBase<LogEventState, LogEventStateEvent, Even
             if (eventWrapper.Event is NamingAiLogGEvent logEvent)
             {
                 await GrainFactory.GetGrain<INamingContestGrain>("NamingContestGrain")
-                    .SendMessageAsync(State.groupId, logEvent, State.CallBackUrl);
+                    .SendMessageAsync(State.GroupId, logEvent, State.CallBackUrl);
             }
             else if (eventWrapper.Event is NamingLogGEvent namingLogEvent)
             {
                 await GrainFactory.GetGrain<INamingContestGrain>("NamingContestGrain")
-                    .SendMessageAsync(State.groupId, namingLogEvent, State.CallBackUrl);
+                    .SendMessageAsync(State.GroupId, namingLogEvent, State.CallBackUrl);
             }
         }
     }
