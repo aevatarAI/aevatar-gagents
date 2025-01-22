@@ -36,7 +36,7 @@ public static class StreamExtensions
     /// <param name="streamNamespace">The stream namespace.</param>
     /// <returns>The stream probe</returns>
     public static TestStream<T> AddStreamProbe<T>(this TestKitSilo silo, Guid id, string? streamNamespace) =>
-        AddStreamProbe<T>(silo, id, streamNamespace, "AISmart");
+        AddStreamProbe<T>(silo, id, streamNamespace, "Aevatar");
 
     /// <summary>
     /// Adds a stream probe for Guid.Empty
@@ -69,7 +69,7 @@ public static class StreamExtensions
     /// <param name="streamNamespace">The stream namespace.</param>
     /// <returns>The stream probe</returns>
     public static TestStream<T> AddStreamProbe<T>(this TestKitSilo silo, string id, string? streamNamespace) =>
-        AddStreamProbe<T>(silo, id, streamNamespace, "AISmart");
+        AddStreamProbe<T>(silo, id, streamNamespace, "Aevatar");
 
     /// <summary>
     /// Adds a stream probe for Guid.Empty
@@ -91,7 +91,7 @@ public static class StreamExtensions
     /// <param name="id">The stream id.</param>
     /// <returns>The stream probe</returns>
     public static TestStream<T> AddStreamProbe<T>(this TestKitSilo silo, StreamId id) =>
-        AddStreamProbe<T>(silo, id, "AISmart");
+        AddStreamProbe<T>(silo, id, "Aevatar");
 
     /// <summary>
     /// Adds a stream probe for Guid.Empty

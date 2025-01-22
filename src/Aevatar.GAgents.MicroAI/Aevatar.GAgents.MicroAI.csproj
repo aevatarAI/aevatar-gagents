@@ -1,24 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\common.props" />
+    <Import Project="..\..\common.props" />
+    <PropertyGroup>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AISmart</RootNamespace>
+    </PropertyGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <RootNamespace>AISmart</RootNamespace>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="AutoGen.Core" />
+        <PackageReference Include="AutoGen.SemanticKernel" />
+        <PackageReference Include="Microsoft.SemanticKernel" />
+        <PackageReference Include="Microsoft.SemanticKernel.Core" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Abp.AutoMapper" Version="8.2.0" />
-    <PackageReference Include="Aevatar.Core" Version="1.0.2" />
-    <PackageReference Include="Aevatar.Core.Abstractions" Version="1.0.2" />
-    <PackageReference Include="AutoGen" />
-    <PackageReference Include="AutoGen.Core" Version="0.2.1" />
-    <PackageReference Include="AutoGen.SemanticKernel" Version="0.2.1" />
-  </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Features\" />
+        <Folder Include="Ratelimit\" />
+    </ItemGroup>
 
 </Project>

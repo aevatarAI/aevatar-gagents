@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-
-namespace Aevatar.GAgents.NamingContest.Common;
+namespace Aevatar.GAgent.NamingContest.Common;
 
 public static class NamingConstants
 {
@@ -63,13 +61,22 @@ public static class NamingConstants
         
     public static string VotePrompt = "The following is the discussion about naming between user $AgentNames$. Please select the one that attracts you most and only return the user's name";
 
-    public static string SummaryPrompt = " summarize the contestant's performance.";
+    public static string SummaryPrompt = " Please summarize the contestant's performance in concise terms. And The summary must not exceed 100 words.";
     
     public const string AgentPrefixCreative = "creativegagent";
     public const string AgentPrefixJudge = "judgegagent";
     public const string FirstRound = "1";
     public const string SecondRound = "2";
     public const string ThirdRound = "3";
+    public const string CreativeDefaultSummary = """
+                                                 The key points of naming are:
+                                                 (1)Clear and easy to understand
+                                                 (2)Simple and intuitive
+                                                 (3)Semantically clear
+                                                 (4)Consistent style
+                                                 (5)Relevant to the context or field
+                                                 (6)Avoid confusion or ambiguity
+                                                 """;
     public static Dictionary<string, int> RoundTotalBatchesMap = new Dictionary<string, int> { { "1", 50 }, { "2", 20 }, { "3", 6 } };
     public const int DefaultTotalTotalBatches = 20;
 

@@ -1,24 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>AiSmart.GAgent.TestAgent</RootNamespace>
+        <RootNamespace>Aevatar.GAgents.NamingContest</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj" />
-      <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
+      <PackageReference Include="Aevatar.Core" />
+      <PackageReference Include="Aevatar.Core.Abstractions" />
+        <PackageReference Include="Aevatar.EventSourcing.Core" />
       <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\" />
-      <Folder Include="GAgents\" />
+        <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <Folder Include="GEvents\" />
     </ItemGroup>
 

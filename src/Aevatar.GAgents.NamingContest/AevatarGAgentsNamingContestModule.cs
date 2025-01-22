@@ -1,4 +1,4 @@
-﻿using Aevatar.GAgents.MicroAI.Options;
+﻿using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.NamingContest.Common;
 using Aevatar.GAgents.NamingContest.Options;
 using Microsoft.Extensions.DependencyInjection;

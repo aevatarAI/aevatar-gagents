@@ -2,7 +2,6 @@ using Aevatar.GAgents.PumpFun.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
-using AbpAutoMapperModule = Abp.AutoMapper.AbpAutoMapperModule;
 
 namespace Aevatar.GAgents.PumpFun;
 

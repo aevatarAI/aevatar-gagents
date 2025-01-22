@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CA9AC87F-097
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{04DBDB01-70F4-4E06-B468-8F87850B22BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AevatarGAgents.Orleans.TestBase", "test\AevatarGAgents.Orleans.TestBase\AevatarGAgents.Orleans.TestBase.csproj", "{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AElf", "src\Aevatar.GAgents.AElf\Aevatar.GAgents.AElf.csproj", "{DF51070F-0462-44B6-8A50-3270FBAAC230}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Twitter", "src\Aevatar.GAgents.Twitter\Aevatar.GAgents.Twitter.csproj", "{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19}"
@@ -27,11 +25,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MicroAI", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest", "src\Aevatar.GAgents.NamingContest\Aevatar.GAgents.NamingContest.csproj", "{4EBBE2C2-7C37-4D3F-9F38-916A2758BDD1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.SocialAgent", "src\AiSmart.GAgent.SocialGAgent\Aevatar.GAgents.SocialAgent.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.SocialChat", "src\AiSmart.GAgent.SocialGAgent\Aevatar.GAgents.SocialChat.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Rag", "src\Aevatar.GAgents.Rag\Aevatar.GAgents.Rag.csproj", "{954A1691-46F9-4DF2-AE75-B2420AC9AEDA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Basic", "src\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj", "{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.TestBase", "test\Aevatar.GAgents.TestBase\Aevatar.GAgents.TestBase.csproj", "{C6556366-58A6-47BB-8391-051EA47C5173}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest.Test", "test\Aevatar.GAgents.NamingContest.Test\Aevatar.GAgents.NamingContest.Test.csproj", "{577DAE99-279B-4DCB-8120-BCED72BCA478}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +41,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF51070F-0462-44B6-8A50-3270FBAAC230}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -91,12 +89,19 @@ Global
 		{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2D7581FC-F078-4DF6-911E-B0C7D7F23E15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6556366-58A6-47BB-8391-051EA47C5173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6556366-58A6-47BB-8391-051EA47C5173}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6556366-58A6-47BB-8391-051EA47C5173}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6556366-58A6-47BB-8391-051EA47C5173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{3C0B0690-0E0F-464E-ACEF-FE46D2ADA54F} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{DF51070F-0462-44B6-8A50-3270FBAAC230} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{FC90D79E-F03C-49F0-98DC-9AF61DA1BE19} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{3DBEFD1D-29AF-4A7A-AC6D-6C844BA27241} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
@@ -109,6 +114,8 @@ Global
 		{CC99AB12-4463-4386-BF17-CE0E26797E23} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{954A1691-46F9-4DF2-AE75-B2420AC9AEDA} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{2D7581FC-F078-4DF6-911E-B0C7D7F23E15} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{C6556366-58A6-47BB-8391-051EA47C5173} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{577DAE99-279B-4DCB-8120-BCED72BCA478} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

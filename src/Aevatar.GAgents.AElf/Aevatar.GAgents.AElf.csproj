@@ -1,29 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\common.props" />
+    <Import Project="..\..\common.props" />
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <RootNamespace>AISmart</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Aevatar-GAgents-AElf</RootNamespace>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AElf.Kernel.Types" Version="1.10.0" />
-    <PackageReference Include="AElf.Sdk.CSharp" />
-    <PackageReference Include="AElf.Client" Version="1.1.0" />
-    <PackageReference Include="AElf.Types" Version="1.10.0" />
-    <PackageReference Include="Aevatar.Core" Version="1.1.0" />
-    <PackageReference Include="Aevatar.Core.Abstractions" Version="1.1.0" />
-    <PackageReference Include="Aevatar.EventSourcing.Core" Version="1.1.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="AElf.Sdk.CSharp" />
+        <PackageReference Include="AElf.Client" />
+        <PackageReference Include="AElf.Types" />
+        <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" />
+        <PackageReference Include="Volo.Abp.Core" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\" />
-  </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Features\" />
+    </ItemGroup>
 
 </Project>

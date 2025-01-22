@@ -2,7 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.GAgents.Common.GroupGAgent;
 
-public class GroupGEvent : GEventBase
+public class GroupGEvent : StateLogEventBase<GroupGEvent>
 {
     
 }

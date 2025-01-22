@@ -1,12 +1,10 @@
-using System;
-using System.Threading.Tasks;
 using Aevatar.GAgents.NamingContest.Common;
-using Aevatar.GAgents.NamingContest.VoteGAgent;
+using AiSmart.GAgent.NamingContest.VoteAgent;
 
-namespace Aevatar.GAgents.NamingContest.Provider;
+namespace Aevatar.GAgents.NamingContest.Features.Provider;
 
 public interface INameContestProvider
 {
-    public Task SendMessageAsync(Guid groupId,NamingAILogEvent? namingLogEvent,string callBackUrl);
-    public Task SendMessageAsync(Guid groupId,VoteCharmingCompleteEvent? namingLogEvent,string callBackUrl);
+    public Task SendMessageAsync(Guid groupId, NamingLogGEvent? namingLogEvent, string callBackUrl);
+    public Task SendMessageAsync(Guid groupId, VoteCharmingCompleteEvent? namingLogEvent, string callBackUrl);
 }

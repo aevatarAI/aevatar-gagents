@@ -1,15 +1,12 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Aevatar.Core;
+using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Microsoft.Extensions.Logging;
-using Orleans.Providers;
 
-namespace Aevatar.GAgents.Common.GroupGAgent;
+namespace Aevatar.GAgents.Basic.GroupGAgent;
 
-[StorageProvider(ProviderName = "PubSubStore")]
-[LogConsistencyProvider(ProviderName = "LogStorage")]
-public class GroupGAgent : GAgentBase<GroupAgentState, GroupGEvent>
+[GAgent(nameof(GroupGAgent))]
+public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>, IGroupGAgent
 {
     public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
     {
@@ -20,20 +17,30 @@ public class GroupGAgent : GAgentBase<GroupAgentState, GroupGEvent>
         return Task.FromResult("An agent to inform other agents when a social event is published.");
     }
 
+    public async Task PublishEventAsync<T>(T @event) where T : EventBase
+    {
+        if (@event == null)
+        {
+            throw new ArgumentNullException(nameof(@event));
+        }
+
+        await PublishAsync(@event);
+    }
+
     protected override Task OnRegisterAgentAsync(Guid agentGuid)
     {
-        ++State.RegisteredAgents;
+        ++State.RegisteredGAgents;
         return Task.CompletedTask;
     }
 
     protected override Task OnUnregisterAgentAsync(Guid agentGuid)
     {
-        --State.RegisteredAgents;
+        --State.RegisteredGAgents;
         return Task.CompletedTask;
     }
-    
+
     protected override async Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
-        State.RegisteredAgents = 0;
+        State.RegisteredGAgents = 0;
     }
 }

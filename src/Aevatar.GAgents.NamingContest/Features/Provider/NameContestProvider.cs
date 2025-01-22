@@ -1,17 +1,14 @@
-using System;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using Aevatar.GAgents.NamingContest.Common;
-using Aevatar.GAgents.NamingContest.VoteGAgent;
+using AiSmart.GAgent.NamingContest.VoteAgent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Volo.Abp.DependencyInjection;
 
-namespace Aevatar.GAgents.NamingContest.Provider;
+namespace Aevatar.GAgents.NamingContest.Features.Provider;
 
-public class NameContestProvider : INameContestProvider,ISingletonDependency
+public class NameContestProvider: INameContestProvider,ISingletonDependency
 {
     private readonly ILogger<NameContestProvider> _logger;
 
@@ -22,17 +19,14 @@ public class NameContestProvider : INameContestProvider,ISingletonDependency
         _logger = logger;
     }
     
-    public async Task SendMessageAsync(Guid groupId,NamingAILogEvent? namingLogEvent,string callBackUrl)
+    public async Task SendMessageAsync(Guid groupId,NamingLogGEvent? namingLogEvent,string callBackUrl)
     {
-        
         // Serialize the request object to JSON
         var json = JsonConvert.SerializeObject(namingLogEvent, new JsonSerializerSettings
         {
             NullValueHandling = NullValueHandling.Ignore
         });
         
-        
-
         try
         {
             JsonNode? jsonObject = JsonNode.Parse(json);
@@ -56,7 +50,7 @@ public class NameContestProvider : INameContestProvider,ISingletonDependency
         }
         catch (HttpRequestException e)
         {
-            _logger.LogError($"request NameContest callback url error: {e.Message}");
+            _logger.LogError($"request NamingLogEvent NameContest callback url error: {e.Message}, callbackUrl:{callBackUrl} ");
         }
     }
 
@@ -68,8 +62,6 @@ public class NameContestProvider : INameContestProvider,ISingletonDependency
             NullValueHandling = NullValueHandling.Ignore
         });
         
-        
-
         try
         {
             JsonNode? jsonObject = JsonNode.Parse(json);
@@ -93,7 +85,7 @@ public class NameContestProvider : INameContestProvider,ISingletonDependency
         }
         catch (HttpRequestException e)
         {
-            _logger.LogError($"request NameContest VoteCharmingCompleteEvent  callback url error: {e.Message}");
+            _logger.LogError($"request NameContest VoteCharmingCompleteEvent  callback url error: {e.Message}, callbackUrl:{callBackUrl}");
         }
     }
 }

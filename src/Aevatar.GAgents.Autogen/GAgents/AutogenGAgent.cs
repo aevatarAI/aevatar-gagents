@@ -34,7 +34,7 @@ public interface IAutogenGAgent : IGAgent
 
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
-public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IAutogenGAgent
+public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenStateLogEvent>, IAutogenGAgent
 {
     private IStreamProvider StreamProvider => this.GetStreamProvider(CommonConstants.StreamProvider);
     private readonly IRagProvider _ragProvider;
@@ -80,7 +80,7 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IA
 
         await PublishEventToExecutor(eventData.EventId, history);
 
-        RaiseEvent(new Create()
+        RaiseEvent(new CreateStateLogEvent()
         {
             TaskId = eventData.EventId,
             Messages = history,
@@ -127,7 +127,7 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IA
                 return;
             }
 
-            RaiseEvent(new CallAgentReply()
+            RaiseEvent(new CallAgentReplyStateLogEvent()
             {
                 EventId = eventId,
                 Reply = new AutogenMessage(Role.Assistant.ToString(), reply)
@@ -159,33 +159,33 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IA
     }
 
     [EventHandler]
-    public async Task ExecuteAsync(AutoGenExecutorEvent eventData)
+    public async Task ExecuteAsync(AutoGenExecutorGEvent gEventData)
     {
-        switch (eventData.ExecuteStatus)
+        switch (gEventData.ExecuteStatus)
         {
             case TaskExecuteStatus.Progressing:
-                base.RaiseEvent(new CallerProgressing()
+                base.RaiseEvent(new CallerProgressingStateLogEvent()
                 {
-                    TaskId = eventData.TaskId,
-                    CurrentCallInfo = eventData.CurrentCallInfo,
+                    TaskId = gEventData.TaskId,
+                    CurrentCallInfo = gEventData.CurrentCallInfo,
                 });
                 break;
             case TaskExecuteStatus.Break:
                 Logger.LogDebug(
-                    $"[AutogenGAgent] Task Break,TaskId:{eventData.TaskId}, finish content:{eventData.EndContent}");
-                RaiseEvent(new Break()
+                    $"[AutogenGAgent] Task Break,TaskId:{gEventData.TaskId}, finish content:{gEventData.EndContent}");
+                RaiseEvent(new BreakStateLogEvent()
                 {
-                    TaskId = eventData.TaskId,
-                    BreakReason = eventData.EndContent
+                    TaskId = gEventData.TaskId,
+                    BreakReason = gEventData.EndContent
                 });
                 break;
             case TaskExecuteStatus.Finish:
                 Logger.LogDebug(
-                    $"[AutogenGAgent] Task Finished,TaskId:{eventData.TaskId}, finish content:{eventData.EndContent}");
-                RaiseEvent(new Complete()
+                    $"[AutogenGAgent] Task Finished,TaskId:{gEventData.TaskId}, finish content:{gEventData.EndContent}");
+                RaiseEvent(new CompleteStateLogEvent()
                 {
-                    TaskId = eventData.TaskId,
-                    Summary = eventData.EndContent
+                    TaskId = gEventData.TaskId,
+                    Summary = gEventData.EndContent
                 });
                 break;
         }
@@ -207,12 +207,12 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IA
         var stream = StreamProvider.GetStream<AutoGenInternalEventBase>(streamId);
         await stream.SubscribeAsync(async (message, token) =>
         {
-            if (message is AutoGenExecutorEvent @event1)
+            if (message is AutoGenExecutorGEvent @event1)
             {
                 await ExecuteAsync(@event1);
             }
 
-            if (message is PassThroughExecutorEvent @event2)
+            if (message is PassThroughExecutorGEvent @event2)
             {
                 var taskInfo = State.GetStateInfoByTaskId(@event2.TaskId);
                 if (taskInfo == null)
@@ -232,7 +232,7 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenEventBase>, IA
                 Logger.LogInformation(
                     $"[AutogenGAgent] Publish Event, EventId{@event2.TaskId.ToString()}, eventId:{eventId.ToString()}, publish content: {JsonSerializer.Serialize(@event2.PassThroughData)}");
 
-                RaiseEvent(new PublishEvent()
+                RaiseEvent(new PublishStateLogEvent()
                 {
                     TaskId = @event2.TaskId,
                     EventId = eventId,

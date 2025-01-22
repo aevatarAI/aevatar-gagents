@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -14,6 +15,7 @@ namespace AISmart.GAgent.Telegram.Agent;
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(TelegramGAgent))]
 public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, ITelegramGAgent
 {
     public TelegramGAgent(ILogger<TelegramGAgent> logger) : base(logger)
@@ -54,6 +56,10 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
             Logger.LogDebug("Message reception repeated for Telegram Message ID: " + @event.MessageId);
             return;
         }
+        
+        var requestId = Guid.NewGuid();
+        RaiseEvent(new TelegramRequestSEvent() { RequestId = requestId });
+        await ConfirmEvents();
 
         RaiseEvent(new ReceiveMessageSEvent
         {
@@ -76,17 +82,30 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
     public async Task HandleEventAsync(SendMessageGEvent @event)
     {
         Logger.LogDebug("Publish SendMessageEvent for Telegram Message: " + @event.Message);
-        await SendMessageAsync(@event.Message,@event.ChatId,@event.ReplyMessageId);
+        await SendMessageAsync(@event.Message, @event.ChatId, @event.ReplyMessageId);
     }
-    
+
     [EventHandler]
     public async Task HandleEventAsync(SocialResponseGEvent @event)
     {
+        if (@event.RequestId != Guid.Empty)
+        {
+            if (State.SocialRequestList.Contains(@event.RequestId))
+            {
+                RaiseEvent(new TelegramSocialResponseSEvent() { ResponseId = @event.RequestId });
+                await ConfirmEvents();
+            }
+            else
+            {
+                return;
+            }
+        }
+
         Logger.LogDebug("SocialResponse for Telegram Message: " + @event.ResponseContent);
-        await SendMessageAsync(@event.ResponseContent,@event.ChatId,@event.ReplyMessageId);
+        await SendMessageAsync(@event.ResponseContent, @event.ChatId, @event.ReplyMessageId);
     }
 
-    private async Task SendMessageAsync(string message,string chatId,string? replyMessageId)
+    private async Task SendMessageAsync(string message, string chatId, string? replyMessageId)
     {
         if (replyMessageId != null)
         {
@@ -94,7 +113,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
             {
                 ReplyMessageId = replyMessageId,
                 ChatId = chatId,
-                Message = message 
+                Message = message
             });
             await ConfirmEvents();
         }
@@ -106,8 +125,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
 
 public interface ITelegramGAgent : IStateGAgent<TelegramGAgentState>
 {
-    Task RegisterTelegramAsync( string botName,string token);
-    
-    Task UnRegisterTelegramAsync( string botName);
-    
+    Task RegisterTelegramAsync(string botName, string token);
+
+    Task UnRegisterTelegramAsync(string botName);
 }
