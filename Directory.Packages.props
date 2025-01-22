@@ -19,7 +19,10 @@
     <PackageVersion Include="AElf.Sdk.CSharp" Version="1.5.0" />
     <PackageVersion Include="AElf.Types" Version="1.5.0" />
     <PackageVersion Include="AElf.OpenTelemetry" Version="8.2.0" />
-    
+    <PackageVersion Include="ManagedCode.Orleans.RateLimiting.Client" Version="0.0.8" />
+    <PackageVersion Include="ManagedCode.Orleans.RateLimiting.Core" Version="0.0.8" />
+    <PackageVersion Include="ManagedCode.Orleans.RateLimiting.Server" Version="0.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
     <!-- Orleans packages -->
     <PackageVersion Include="Microsoft.Orleans.Client" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Core.Abstractions" Version="9.0.1" />
@@ -116,6 +119,7 @@
     <PackageVersion Include="Shouldly" Version="4.2.1" />
     <PackageVersion Include="xunit" Version="2.7.0" />
     <PackageVersion Include="xunit.analyzers" Version="1.11.0" />
+    <PackageVersion Include="xunit.extensibility.core" Version="2.7.0" />
     <PackageVersion Include="xunit.extensibility.execution" Version="2.7.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.7" />
     <PackageVersion Include="DotNetAnalyzers.DocumentationAnalyzers" Version="1.0.0-beta.59" />

@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.TestBase", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest.Test", "test\Aevatar.GAgents.NamingContest.Test\Aevatar.GAgents.NamingContest.Test.csproj", "{577DAE99-279B-4DCB-8120-BCED72BCA478}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MicroAI.Tests", "test\Aevatar.GAgents.MicroAI.Tests\Aevatar.GAgents.MicroAI.Tests.csproj", "{60D9C4DF-BBD8-4156-B266-BF5353D1D80F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,10 @@ Global
 		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{577DAE99-279B-4DCB-8120-BCED72BCA478}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60D9C4DF-BBD8-4156-B266-BF5353D1D80F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60D9C4DF-BBD8-4156-B266-BF5353D1D80F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60D9C4DF-BBD8-4156-B266-BF5353D1D80F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60D9C4DF-BBD8-4156-B266-BF5353D1D80F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,6 +122,7 @@ Global
 		{2D7581FC-F078-4DF6-911E-B0C7D7F23E15} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{C6556366-58A6-47BB-8391-051EA47C5173} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{577DAE99-279B-4DCB-8120-BCED72BCA478} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{60D9C4DF-BBD8-4156-B266-BF5353D1D80F} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

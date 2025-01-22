@@ -10,6 +10,9 @@
     <ItemGroup>
         <PackageReference Include="AutoGen.Core" />
         <PackageReference Include="AutoGen.SemanticKernel" />
+        <PackageReference Include="ManagedCode.Orleans.RateLimiting.Client" />
+        <PackageReference Include="ManagedCode.Orleans.RateLimiting.Core" />
+        <PackageReference Include="ManagedCode.Orleans.RateLimiting.Server" />
         <PackageReference Include="Microsoft.SemanticKernel" />
         <PackageReference Include="Microsoft.SemanticKernel.Core" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Amazon" />
@@ -23,7 +26,6 @@
 
     <ItemGroup>
         <Folder Include="Features\" />
-        <Folder Include="Ratelimit\" />
     </ItemGroup>
 
 </Project>
