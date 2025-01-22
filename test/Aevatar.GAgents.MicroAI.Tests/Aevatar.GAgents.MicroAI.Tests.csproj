@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\common.props" />
+    <PropertyGroup>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <RootNamespace>Aevatar.GAgents.MicroAi.Tests</RootNamespace>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <PackageReference Include="ManagedCode.Orleans.RateLimiting.Server" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" />
+        <PackageReference Include="Volo.Abp.Core" />
+        <PackageReference Include="Aevatar.Core" />
+        <PackageReference Include="Aevatar.Core.Abstractions" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.extensibility.core" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+        <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\OrleansTestKit\OrleansTestKit.csproj" />
+        <ProjectReference Include="..\OrleansTestKit.Tests\OrleansTestKit.Tests.csproj" />
+    </ItemGroup>
+
+</Project>

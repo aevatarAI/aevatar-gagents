@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.MicroAI.Model;
+using Aevatar.Httpclient;
 using AutoGen.Core;
 using AutoGen.SemanticKernel;
 using AutoGen.SemanticKernel.Extension;
@@ -25,6 +29,8 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
     private readonly MicroAIOptions _options;
     private readonly AIModelOptions _aiModelOptions;
     private readonly ILogger<ChatAgentGrain> _logger;
+
+    private readonly IHttpRateLimitClientFactory _httpRateLimitClientFactory;
     // private readonly ICQRSProvider _cqrsProvider;
 
     private IStreamProvider StreamProvider => this.GetStreamProvider(CommonConstants.StreamProvider);
@@ -32,11 +38,13 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
 
     public ChatAgentGrain(IOptions<MicroAIOptions> options, 
         IOptions<AIModelOptions> aiModelOptions, 
+        IHttpRateLimitClientFactory httpRateLimitClientFactory,
         ILogger<ChatAgentGrain> logger)
 
     {
         _options = options.Value;
         _aiModelOptions = aiModelOptions.Value;
+        _httpRateLimitClientFactory = httpRateLimitClientFactory;
         _logger = logger;
         // _cqrsProvider = cqrsProvider;
     }
@@ -90,10 +98,22 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
        
     }
 
-    public Task SetAgentAsync(string systemMessage)
+    public async Task SetAgentAsync(string systemMessage)
     {
+        
+        var permit = 10;
+        var options = new FixedWindowRateLimiterOptions()
+        {
+            Window = TimeSpan.FromSeconds(1),
+            PermitLimit = permit,
+            AutoReplenishment = true,
+            QueueLimit = permit * 10,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        };
+
+        HttpClient httpClient =  await _httpRateLimitClientFactory.GeHttpRateLimitClientAsync(_options.Endpoint, options);
         var kernelBuilder = Kernel.CreateBuilder()
-            .AddAzureOpenAIChatCompletion(_options.Model, _options.Endpoint, _options.ApiKey);
+            .AddAzureOpenAIChatCompletion(_options.Model, _options.Endpoint, _options.ApiKey,httpClient:httpClient);
         var systemName = this.GetPrimaryKeyString();
         var kernel = kernelBuilder.Build();
         var kernelAgent = new SemanticKernelAgent(
@@ -103,7 +123,6 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
             .RegisterMessageConnector();
 
         _agent = kernelAgent;
-        return Task.CompletedTask;
     }
 
     public Task SetAgentWithRandomLLMAsync(string systemMessage)
