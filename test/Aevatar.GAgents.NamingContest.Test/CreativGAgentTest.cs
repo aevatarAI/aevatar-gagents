@@ -19,10 +19,14 @@ public class CreativGAgentTest: GAgentTestKitBase
             "Late basketball legend known for the 'Mamba Mentality' and five NBA championships. Remembered for intense dedication and a relentless pursuit of greatness.";
         await creativeGAgent.SetAgent(name, bio);
         
-        GroupChatStartGEvent groupChatStartGEvent = new GroupChatStartGEvent();
+        GroupChatStartGEvent groupChatStartGEvent = new GroupChatStartGEvent()
+        {
+            IfFirstStep = true, 
+            ThemeDescribe = "lion"
+        };
         await creativeGAgent.HandleEventAsync(groupChatStartGEvent);
 
-        CreativeState state = await creativeGAgent.GetGAgentState();
+        CreativeState state = await creativeGAgent.GetStateAsync();
         
         state.AgentName.ShouldBe(expected: await creativeGAgent.GetCreativeName());
         state.AgentResponsibility.ShouldBe(expected: bio);
