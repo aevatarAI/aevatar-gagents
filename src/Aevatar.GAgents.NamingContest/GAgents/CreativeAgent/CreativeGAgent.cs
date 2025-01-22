@@ -466,13 +466,13 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         return Task.FromResult("the creative agent");
     }
 
-    public async Task SetAgent(string agentName, string agentResponsibility)
+    public async Task SetAgent(string agentName, string agentResponsibility, string llm)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = agentName, Description = agentResponsibility });
         await ConfirmEvents();
 
         IChatAgentGrain chatAgentGrain = GrainFactory.GetGrain<IChatAgentGrain>(agentName);
-        await chatAgentGrain.SetAgentAsync(agentResponsibility);
+        await chatAgentGrain.SetAgentAsync(agentResponsibility, llm);
 
         // do stream subscription before calling this Long Running Task
         // var agentGuid = chatAgentGrain.GetPrimaryKeyString();
@@ -568,7 +568,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         await ConfirmEvents();
 
         IChatAgentGrain chatAgentGrain = GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName);
-        await chatAgentGrain.SetAgentAsync(initializeDto.AgentResponsibility);
+        await chatAgentGrain.SetAgentAsync(initializeDto.AgentResponsibility, initializeDto.Llm);
 
         //do stream subscription before calling this Long Running Task
         // var agentGuid = chatAgentGrain.GetPrimaryKeyString();

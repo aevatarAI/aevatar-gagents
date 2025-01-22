@@ -202,7 +202,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
         return Task.FromResult("the judge agent");
     }
 
-    public async Task SetAgent(string agentName, string agentResponsibility)
+    public async Task SetAgent(string agentName, string agentResponsibility, string llm)
     {
         RaiseEvent(new AISetAgentStateLogEvent
         {
@@ -211,7 +211,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
         });
         await ConfirmEvents();
 
-        await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility);
+        await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility, llm);
     }
 
     public async Task SetAgentWithTemperatureAsync(string agentName, string agentResponsibility, float temperature,
@@ -243,7 +243,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
         });
         await ConfirmEvents();
 
-        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName).SetAgentAsync(initializeDto.AgentResponsibility);
+        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName).SetAgentAsync(initializeDto.AgentResponsibility,initializeDto.Llm);
     }
 }
 

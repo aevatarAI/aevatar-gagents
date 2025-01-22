@@ -126,6 +126,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
         await base.ConfirmEvents();
 
         await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName)
-            .SetAgentAsync(initializeDto.AgentResponsibility);
+            .SetAgentAsync(initializeDto.AgentResponsibility, initializeDto.Llm);
     }
 }
