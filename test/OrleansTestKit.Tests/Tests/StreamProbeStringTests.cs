@@ -14,7 +14,7 @@ public class StreamProbeStringTests : TestKitBase
 
         var stream = Silo.AddStreamProbe<object>(streamId);
 
-        AssertStream(stream, "AISmart", typeof(object).Name, streamId);
+        AssertStream(stream, "Aevatar", typeof(object).Name, streamId);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class StreamProbeStringTests : TestKitBase
 
         var stream = Silo.AddStreamProbe<object>(streamId, ns);
 
-        AssertStream(stream, "AISmart", ns, streamId);
+        AssertStream(stream, "Aevatar", ns, streamId);
     }
 
     [Fact]

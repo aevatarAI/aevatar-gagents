@@ -3,11 +3,14 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.3.1</AevatarCoreVersion>
-    <AevatarEventSoucingVersion>1.3.1</AevatarEventSoucingVersion>
-    <AevatarAbstractionsVersion>1.3.1</AevatarAbstractionsVersion>
+    <AevatarCoreVersion>1.3.10</AevatarCoreVersion>
+    <AevatarEventSoucingVersion>1.3.10</AevatarEventSoucingVersion>
+    <AevatarAbstractionsVersion>1.3.10</AevatarAbstractionsVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
+    <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarAbstractionsVersion)" />
+    <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
@@ -95,9 +98,6 @@
     <PackageVersion Include="Volo.Abp.TestBase" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Uow" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="3.1.4" />
-    <PackageVersion Include="Aevatar.Core" Version="1.3.1" />
-    <PackageVersion Include="Aevatar.EventSourcing.Core" Version="1.3.1" />
-    <PackageVersion Include="Aevatar.Core.Abstractions" Version="1.3.1" />
     <PackageVersion Include="AutoGen.Core" Version="0.2.1" />
     <PackageVersion Include="AutoGen.OpenAI" Version="0.2.1" />
     <PackageVersion Include="AutoGen.SemanticKernel" Version="0.2.1" />

@@ -10,6 +10,7 @@
     <ItemGroup>
       <PackageReference Include="Aevatar.Core" />
       <PackageReference Include="Aevatar.Core.Abstractions" />
+        <PackageReference Include="Aevatar.EventSourcing.Core" />
       <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
@@ -18,8 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\" />
-      <Folder Include="GAgents\" />
       <Folder Include="GEvents\" />
     </ItemGroup>
 

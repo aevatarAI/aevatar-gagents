@@ -42,10 +42,29 @@ public class TrafficNameStartSEvent : TrafficEventStateLogEvent
 }
 
 [GenerateSerializer]
-public class TrafficSetAgentSEvent : TrafficEventStateLogEvent
+public class FirstTrafficSetAgentSEvent : TrafficEventStateLogEvent
 {
-    [Id(0)] public string AgentName { get; set; }
-    [Id(1)] public string Description { get; set; }
+    [Id(0)] public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
+    [Id(1)] public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
+    [Id(2)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
+    [Id(3)] public GrainId HostGroupId { get; set; }
+    [Id(4)] public int Step { get; set; }
+    [Id(5)] public Guid MostCharmingId { get; set; }
+}
+
+[GenerateSerializer]
+public class SecondTrafficSetAgentSEvent : TrafficEventStateLogEvent
+{
+    [Id(0)] public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
+    [Id(1)] public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();
+    [Id(2)] public int AskJudgeCount { get; set; }
+    [Id(3)] public string AgentName { get; set; }
+    [Id(4)] public string AgentDescription { get; set; }
+    [Id(5)] public int Round { get; set; }
+    [Id(6)] public int Step { get; set; }
+    [Id(7)] public List<Guid> HostAgentList { get; set; } = new List<Guid>();
+    [Id(8)] public GrainId HostGroupId { get; set; }
+    [Id(9)] public Guid MostCharmingId { get; set; }
 }
 
 [GenerateSerializer]

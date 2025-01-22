@@ -2,17 +2,20 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
+using AiSmart.GAgent.NamingContest.HostAgent.Dto;
 using AutoGen.Core;
 using Microsoft.Extensions.Logging;
 
 namespace AiSmart.GAgent.NamingContest.HostAgent;
 
-public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
+[GAgent(nameof(HostGAgent))]
+public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, InitHostDto>, IHostGAgent
 {
     private readonly ILogger<HostGAgent> _logger;
 
@@ -33,7 +36,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
         var prompt = NamingConstants.SummaryPrompt;
         try
         {
-            
             var response = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
                 .SendAsync(prompt, @event.History);
 
@@ -50,35 +52,20 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
         finally
         {
             var groupGAgentId = @event.GroupId;
-            var groupGAgent = GrainFactory.GetGrain<GroupGAgent>(groupGAgentId);
-            
-            GrainId grainId = await groupGAgent.GetParentAsync();
-
-            IPublishingGAgent publishingAgent;
-
-            if (grainId != null && grainId.ToString().StartsWith("publishinggagent"))
-            {
-                publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(grainId);
-            }
-            else
-            {
-                publishingAgent = GrainFactory.GetGrain<IPublishingGAgent>(Guid.NewGuid());
-                await publishingAgent.RegisterAsync(groupGAgent);
-            }
-
-            await publishingAgent.PublishEventAsync(new HostSummaryCompleteGEvent()
+            var groupGAgent = GrainFactory.GetGrain<IGroupGAgent>(groupGAgentId);
+            await groupGAgent.PublishEventAsync(new HostSummaryCompleteGEvent()
             {
                 HostId = this.GetPrimaryKey(),
                 SummaryReply = summaryReply,
                 HostName = State.AgentName,
             });
-            
-            await publishingAgent.PublishEventAsync(new NamingAiLogGEvent(
+
+            await groupGAgent.PublishEventAsync(new NamingAiLogGEvent(
                 NamingContestStepEnum.HostSummary,
                 this.GetPrimaryKey(),
-                NamingRoleType.Host, 
+                NamingRoleType.Host,
                 State.AgentName,
-                summaryReply, 
+                summaryReply,
                 prompt));
 
             RaiseEvent(new AddHistoryChatStateLogEvent()
@@ -86,7 +73,6 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
                 Message = new MicroAIMessage(Role.User.ToString(),
                     AssembleMessageUtil.AssembleNamingContent(State.AgentName, summaryReply))
             });
-            
 
             await base.ConfirmEvents();
         }
@@ -104,15 +90,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
 
     public override Task<string> GetDescriptionAsync()
     {
-        throw new NotImplementedException();
-    }
-
-    public async Task SetAgent(string agentName, string agentResponsibility)
-    {
-        RaiseEvent(new SetAgentInfoStateLogEvent { AgentName = agentName, Description = agentResponsibility });
-        await base.ConfirmEvents();
-
-        await GrainFactory.GetGrain<IChatAgentGrain>(agentName).SetAgentAsync(agentResponsibility);
+        return Task.FromResult("the host agent");
     }
 
     public async Task SetAgentWithTemperatureAsync(string agentName, string agentResponsibility, float temperature,
@@ -139,5 +117,15 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent>, IHostGAgent
     public Task<string> GetCreativeName()
     {
         return Task.FromResult(State.AgentName);
+    }
+
+    public async override Task InitializeAsync(InitHostDto initializeDto)
+    {
+        RaiseEvent(new SetAgentInfoStateLogEvent
+            { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
+        await base.ConfirmEvents();
+
+        await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName)
+            .SetAgentAsync(initializeDto.AgentResponsibility);
     }
 }

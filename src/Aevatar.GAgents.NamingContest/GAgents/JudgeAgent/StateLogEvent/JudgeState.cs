@@ -9,13 +9,14 @@ public class JudgeState : StateBase
 {
     [Id(1)] public string AgentName { get; set; }
     [Id(2)] public string AgentResponsibility { get; set; }
-    [Id(3)] public Queue<MicroAIMessage> RecentMessages = new Queue<MicroAIMessage>();
     [Id(4)] public Guid CloneJudgeId = Guid.Empty;
+    [Id(3)] public Queue<MicroAIMessage> RecentMessages = new Queue<MicroAIMessage>();
     
     public void Apply(AISetAgentStateLogEvent aiSetAgentStateLogEvent)
     {
         AgentName = aiSetAgentStateLogEvent.AgentName;
         AgentResponsibility = aiSetAgentStateLogEvent.AgentResponsibility;
+        CloneJudgeId = aiSetAgentStateLogEvent.CloneJudge;
     }
     
     public void Apply(AiReceiveStateLogEvent aiReceiveStateLogEvent)
