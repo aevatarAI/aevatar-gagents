@@ -1,7 +1,6 @@
 using System;
 using Aevatar.GAgents.MicroAI.GAgent;
 using AutoGen.Core;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
@@ -13,16 +12,14 @@ namespace Aevatar.GAgents.MicroAI;
 public class KernelAgentFactory : IKernelAgentFactory
 {
     private readonly AIModelOptions _aiModelOptions;
-    private readonly ILogger<KernelAgentFactory> _logger;
 
-    public KernelAgentFactory(IOptions<AIModelOptions> aiModelOptions,
-        ILogger<KernelAgentFactory> logger)
+    public KernelAgentFactory(IOptions<AIModelOptions> aiModelOptions
+        )
 
     {
         _aiModelOptions = aiModelOptions.Value;
-        _logger = logger;
     }
-
+    
     public MiddlewareStreamingAgent<SemanticKernelAgent> CreateAgent(string systemName, string llmType,
         string systemMessage)
     {

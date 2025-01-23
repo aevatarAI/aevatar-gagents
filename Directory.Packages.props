@@ -12,7 +12,7 @@
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarAbstractionsVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
-    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
+    <PackageVersion Include="JetBrains.Annotations" Version="2024.2.0" />
     <!-- AElf packages -->
     <PackageVersion Include="AElf.Client" Version="1.1.0" />
     <PackageVersion Include="AElf.ExceptionHandler.ABP" Version="8.2.8" />
