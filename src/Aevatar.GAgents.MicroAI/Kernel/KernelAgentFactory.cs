@@ -77,9 +77,7 @@ public class KernelAgentFactory : IKernelAgentFactory
                 // Add Google Gemini Chat Completion to the KernelBuilder.
                 kernelBuilder.AddGoogleAIGeminiChatCompletion(
                     modelId: googleOptions.Model,
-                    apiKey: googleOptions.ApiKey,
-                    apiVersion: GoogleAIVersion.V1, // Optional: API version.
-                    serviceId: googleOptions.ServiceId // Optional: Target a specific service.
+                    apiKey: googleOptions.ApiKey
                 );
                 #pragma warning restore SKEXP0070
 
