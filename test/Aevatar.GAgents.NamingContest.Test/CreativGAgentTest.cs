@@ -1,5 +1,6 @@
 using Aevatar.GAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
+using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.NamingContest.Common;
 using AiSmart.GAgent.NamingContest.VoteAgent;
 using Shouldly;
@@ -17,7 +18,8 @@ public class CreativGAgentTest: GAgentTestKitBase
         var name = "Kobe Bryant";
         var bio =
             "Late basketball legend known for the 'Mamba Mentality' and five NBA championships. Remembered for intense dedication and a relentless pursuit of greatness.";
-        await creativeGAgent.SetAgent(name, bio);
+        var llm = LLMTypesConstant.AzureOpenAI;
+        await creativeGAgent.SetAgent(name, bio, llm);
         
         GroupChatStartGEvent groupChatStartGEvent = new GroupChatStartGEvent()
         {

@@ -40,4 +40,8 @@
         <PackageReference Include="Moq" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
+    </ItemGroup>
+
 </Project>

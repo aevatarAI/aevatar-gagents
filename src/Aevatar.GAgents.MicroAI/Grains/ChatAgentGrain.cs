@@ -26,19 +26,22 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
     private readonly AIModelOptions _aiModelOptions;
     private readonly ILogger<ChatAgentGrain> _logger;
     // private readonly ICQRSProvider _cqrsProvider;
+    private readonly IKernelAgentFactory _kernelAgentFactory;
 
     private IStreamProvider StreamProvider => this.GetStreamProvider(CommonConstants.StreamProvider);
     
 
     public ChatAgentGrain(IOptions<MicroAIOptions> options, 
         IOptions<AIModelOptions> aiModelOptions, 
-        ILogger<ChatAgentGrain> logger)
+        ILogger<ChatAgentGrain> logger,
+        IKernelAgentFactory kernelAgentFactory)
 
     {
         _options = options.Value;
         _aiModelOptions = aiModelOptions.Value;
         _logger = logger;
         // _cqrsProvider = cqrsProvider;
+        _kernelAgentFactory = kernelAgentFactory;
     }
 
     public async Task<MicroAIMessage?> SendAsync(string message, List<MicroAIMessage>? chatHistory)
@@ -92,59 +95,29 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
 
     public Task SetAgentAsync(string systemMessage)
     {
-        var kernelBuilder = Kernel.CreateBuilder()
-            .AddAzureOpenAIChatCompletion(_options.Model, _options.Endpoint, _options.ApiKey);
         var systemName = this.GetPrimaryKeyString();
-        var kernel = kernelBuilder.Build();
-        var kernelAgent = new SemanticKernelAgent(
-                kernel: kernel,
-                name: systemName,
-                systemMessage: systemMessage)
-            .RegisterMessageConnector();
-
-        _agent = kernelAgent;
+        _agent = _kernelAgentFactory.CreateAgent(systemName, LLMTypesConstant.AzureOpenAI, systemMessage);
         return Task.CompletedTask;
     }
 
     public Task SetAgentWithRandomLLMAsync(string systemMessage)
     {
-        string llm = GetRandomLlmType();
+        var llm = GetRandomLlmType();
         return SetAgentAsync(systemMessage, llm);
     }
 
     public Task SetAgentAsync(string systemMessage, string llm)
     {
-        var kernelBuilder = Kernel.CreateBuilder();
-
-        ConfigureKernelBuilder(kernelBuilder, llm, _aiModelOptions);
-
-
-        var kernel = kernelBuilder.Build();
         var systemName = this.GetPrimaryKeyString();
-        var kernelAgent = new SemanticKernelAgent(
-                kernel: kernel,
-                name: systemName,
-                systemMessage: systemMessage)
-            .RegisterMessageConnector();
-
-        _agent = kernelAgent;
+        _agent = _kernelAgentFactory.CreateAgent(systemName, llm, systemMessage);
         return Task.CompletedTask;
     }
 
     public Task SetAgentWithTemperature(string systemMessage, float temperature, int? seed = null,
         int? maxTokens = null)
     {
-        var kernelBuilder = Kernel.CreateBuilder()
-            .AddAzureOpenAIChatCompletion(_options.Model, _options.Endpoint, _options.ApiKey);
         var systemName = this.GetPrimaryKeyString();
-        var kernel = kernelBuilder.Build();
-        var kernelAgent = new SemanticKernelAgent(
-                kernel: kernel,
-                name: systemName,
-                systemMessage: systemMessage)
-            .RegisterMessageConnector();
-
-        _agent = kernelAgent;
+        _agent = _kernelAgentFactory.CreateAgent(systemName, LLMTypesConstant.AzureOpenAI, systemMessage);
         return Task.CompletedTask;
     }
 

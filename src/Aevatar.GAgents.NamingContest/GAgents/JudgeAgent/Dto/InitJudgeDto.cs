@@ -7,4 +7,6 @@ public class InitJudgeDto:InitializationEventBase
     public string AgentName { get; set; }
     public string AgentResponsibility { get; set; }
     public Guid CloneJudgeId = Guid.Empty;
+    
+    public string Llm { get; set; }
 }

@@ -18,5 +18,7 @@ public class AevatarGAgentsMicroAIModule : AbpModule
         });
         var configuration = context.Services.GetConfiguration();
         context.Services.Configure<MicroAIOptions>(configuration.GetSection("AutogenConfig"));
+        context.Services.AddSingleton<IKernelAgentFactory, KernelAgentFactory>();
+
     }
 }

@@ -3,6 +3,8 @@ using Aevatar.Core.Abstractions;
 using Aevatar.EventSourcing.Core;
 using Aevatar.EventSourcing.Core.Hosting;
 using Aevatar.EventSourcing.Core.LogConsistency;
+using Aevatar.GAgents.MicroAI;
+using Aevatar.GAgents.MicroAI.GAgent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -53,7 +55,27 @@ public sealed class TestKitSilo
         ReminderRegistry = new TestReminderRegistry();
         StreamProviderManager = new TestStreamProviderManager(ServiceProvider, Options);
         ServiceProvider.AddService<IReminderRegistry>(ReminderRegistry);
-
+        var mockAIModelOptions = new Mock<IOptions<AIModelOptions>>();
+        mockAIModelOptions.Setup(m => m.Value).Returns(new AIModelOptions()
+        {
+            AzureOpenAI = new MicroAIOptions()
+            {
+                Model = "",
+                ServiceId = "",
+                ApiKey = "",
+                Endpoint = ""
+            },
+            GoogleGemini = new MicroAIOptions()
+            {
+                Model = "",
+                ServiceId = "",
+                ApiKey = "",
+                Endpoint = ""
+            }
+        });
+        KernelAgentFactory = new KernelAgentFactory(mockAIModelOptions.Object);
+        
+        ServiceProvider.AddService<IKernelAgentFactory>(KernelAgentFactory);
         // Event Sourcing
         var mockOptionsManager = new Mock<IOptions<TypeManifestOptions>>();
         mockOptionsManager.Setup(m => m.Value).Returns(new TypeManifestOptions());
@@ -99,6 +121,9 @@ public sealed class TestKitSilo
 
     /// <summary>Gets the manager of all test silo reminders.</summary>
     public TestReminderRegistry ReminderRegistry { get; }
+    
+    public KernelAgentFactory KernelAgentFactory { get; }
+
 
     /// <summary>Gets the service provider used when creating new instances.</summary>
     public TestServiceProvider ServiceProvider { get; }
