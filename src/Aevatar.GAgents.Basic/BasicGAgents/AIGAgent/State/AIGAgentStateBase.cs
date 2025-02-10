@@ -1,7 +1,7 @@
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace Aevatar.AI.State;
+namespace Aevatar.GAgents.Basic.State;
 
 [GenerateSerializer]
 public abstract class AIGAgentStateBase : StateBase

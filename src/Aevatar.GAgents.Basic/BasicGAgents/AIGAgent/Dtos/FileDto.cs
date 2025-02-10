@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace Aevatar.AI.Dtos;
+namespace Aevatar.GAgents.Basic.Dtos;
 
 [GenerateSerializer]
 public class FileDto

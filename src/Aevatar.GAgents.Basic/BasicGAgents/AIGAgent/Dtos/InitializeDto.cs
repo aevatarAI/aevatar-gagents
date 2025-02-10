@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Orleans;
 
-namespace Aevatar.AI.Dtos;
+namespace Aevatar.GAgents.Basic.Dtos;
 
 [GenerateSerializer]
 public class InitializeDto

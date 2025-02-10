@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using Aevatar.AI.Dtos;
+using Aevatar.GAgents.Basic.Dtos;
 
-namespace Aevatar.AI.Agent;
+namespace Aevatar.GAgents.Basic;
 
 public interface IAIGAgent
 {

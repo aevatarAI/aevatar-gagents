@@ -1,14 +1,14 @@
 
 using Aevatar.AI.Brain;
 using Aevatar.AI.BrainFactory;
-using Aevatar.AI.Dtos;
-using Aevatar.AI.State;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.Dtos;
+using Aevatar.GAgents.Basic.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Aevatar.AI.Agent;
+namespace Aevatar.GAgents.Basic;
 
 public abstract class AIGAgentBase<TState, TStateLogEvent> : GAgentBase<TState, TStateLogEvent>, IAIGAgent
     where TState : AIGAgentStateBase, new()
