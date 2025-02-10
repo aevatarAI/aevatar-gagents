@@ -91,14 +91,14 @@ public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStat
             "Represents an agent responsible for voting charming agents.");
     }
 
-    private List<GrainId> GetVoteGroupList()
+    private List<Guid> GetVoteGroupList()
     {
         if (State.TotalGroupCount <= State.GroupHasVoteCount + 1)
         {
             return State.GroupList;
         }
 
-        var result = new List<GrainId>();
+        var result = new List<Guid>();
         var random = new Random();
         var basicDenominator = Math.Ceiling((double)State.TotalGroupCount / 2);
         var basicNumerator = Math.Abs(basicDenominator - State.GroupList.Count);

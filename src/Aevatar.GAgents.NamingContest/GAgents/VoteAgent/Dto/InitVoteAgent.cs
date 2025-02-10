@@ -6,5 +6,5 @@ public class InitVoteAgent : EventBase
 {
     [Id(1)] public int TotalBatches { get; set; }
     [Id(2)] public int Round { get; set; }
-    [Id(4)] public List<GrainId> GroupList { get; set; } = new List<GrainId>();
+    [Id(4)] public List<Guid> GroupList { get; set; } = new List<Guid>();
 }

@@ -10,7 +10,7 @@ public class VoteCharmingState : StateBase
     [Id(2)] public int CurrentBatch { get; set; }
     [Id(3)] public int Round { get; set; }
     [Id(4)] public Dictionary<Guid, string> VoterIdTypeDictionary { get; set; } = new();
-    [Id(5)] public List<GrainId> GroupList { get; set; } = new List<GrainId>();
+    [Id(5)] public List<Guid> GroupList { get; set; } = new List<Guid>();
     [Id(6)] public int TotalGroupCount { get; set; } = 0;
     [Id(7)] public int GroupHasVoteCount { get; set; } = 0;
 

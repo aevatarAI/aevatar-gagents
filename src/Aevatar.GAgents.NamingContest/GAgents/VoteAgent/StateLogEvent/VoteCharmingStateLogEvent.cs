@@ -19,7 +19,7 @@ public class InitVoteCharmingStateLogEvent : VoteCharmingStateLogEvent
 
     [Id(2)] public int Round { get; set; }
     [Id(3)] public Dictionary<Guid, string> GrainGuidTypeDictionary { get; set; }
-    [Id(4)] public List<GrainId> GroupList { get; set; } = new List<GrainId>();
+    [Id(4)] public List<Guid> GroupList { get; set; } = new List<Guid>();
 }
 
 
@@ -27,5 +27,5 @@ public class InitVoteCharmingStateLogEvent : VoteCharmingStateLogEvent
 [GenerateSerializer]
 public class GroupVoteCompleteStateLogEvent : VoteCharmingStateLogEvent
 {
-    [Id(0)] public List<GrainId> VoteGroupList { get; set; }
+    [Id(0)] public List<Guid> VoteGroupList { get; set; }
 }
