@@ -1,19 +1,19 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.GroupChat.Abstract;
-using Aevatar.GAgents.GroupChat.Features.Common;
-using Aevatar.GAgents.GroupChat.Features.ExecuteAgent;
-using Aevatar.GAgents.GroupChat.GEvent;
-using Aevatar.GAgents.GroupChat.SEvent;
+using Aevatar.GAgents.Pipeline.Abstract;
+using Aevatar.GAgents.Pipeline.Features.Common;
+using Aevatar.GAgents.Pipeline.Features.ExecuteAgent;
+using Aevatar.GAgents.Pipeline.GEvent;
+using Aevatar.GAgents.Pipeline.SEvent;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Streams;
 
-namespace Aevatar.GAgents.GroupChat.GAgent;
+namespace Aevatar.GAgents.Pipeline.GAgent;
 
-public class GroupChatGAgent<TInput> : GAgentBase<GroupChatState, GroupChatLogEventBase>, IPipelineGAgent
+public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, IPipelineGAgent
 {
-    public GroupChatGAgent(ILogger logger) : base(logger)
+    public PipelineGAgent(ILogger logger) : base(logger)
     {
     }
 
@@ -88,8 +88,8 @@ public class GroupChatGAgent<TInput> : GAgentBase<GroupChatState, GroupChatLogEv
             return false;
         }
 
-        List<GroupChatLogEventBase> events = new List<GroupChatLogEventBase>();
-        events.Add(new StartGroupChatLogEvent());
+        List<PipelineLogEventBase> events = new List<PipelineLogEventBase>();
+        events.Add(new StartPipelineLogEvent());
         events.Add(new ActiveJobLogEvent() { JobId = State.TopUpstream.GrainId, InputParam = startMessage });
         RaiseEvents(events);
 
@@ -113,9 +113,9 @@ public class GroupChatGAgent<TInput> : GAgentBase<GroupChatState, GroupChatLogEv
         _ = grain.ExecuteJobAsync(jobInfo);
     }
 
-    private async Task SubscribeStream(IGrainWithGuidKey grain)
+    private async Task SubscribeStream(IExecuteJob grain)
     {
-        var streamId = StreamId.Create(CommonConstants.SteamProvider, grain.GetGrainId().ToString());
+        var streamId = StreamId.Create(CommonConstants.SteamProvider, grain.GetPrimaryKey());
         var stream = StreamProvider.GetStream<JobExecuteBase>(streamId);
         await stream.SubscribeAsync(async (message, token) =>
         {
@@ -129,7 +129,7 @@ public class GroupChatGAgent<TInput> : GAgentBase<GroupChatState, GroupChatLogEv
 
     private async Task JobCompleteHandler(JobExecuteResultInfo executeResult)
     {
-        List<GroupChatLogEventBase> events = new List<GroupChatLogEventBase>();
+        List<PipelineLogEventBase> events = new List<PipelineLogEventBase>();
         events.Add(new JobFinishLogEvent() { JobId = executeResult.JobId });
 
         var jobInfo = State.GetJobInfo(executeResult.JobId);
@@ -153,7 +153,7 @@ public class GroupChatGAgent<TInput> : GAgentBase<GroupChatState, GroupChatLogEv
         // complete
         if (State.ActiveJobs.Count == 0)
         {
-            RaiseEvent( new GroupChatCompleteLogEvent());
+            RaiseEvent( new PipelineCompleteLogEvent());
             await ConfirmEvents();
         }
     }

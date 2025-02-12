@@ -1,15 +1,15 @@
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.GAgents.GroupChat.SEvent;
+namespace Aevatar.GAgents.Pipeline.SEvent;
 
 [GenerateSerializer]
-public class GroupChatLogEventBase: StateLogEventBase <GroupChatLogEventBase>
+public class PipelineLogEventBase: StateLogEventBase <PipelineLogEventBase>
 {
     
 }
 
 [GenerateSerializer]
-public class OrchestrateJobLogEvent : GroupChatLogEventBase
+public class OrchestrateJobLogEvent : PipelineLogEventBase
 {
     public Guid ParentId { get; set; }
     public string ParentFullName { get; set; }
@@ -19,32 +19,32 @@ public class OrchestrateJobLogEvent : GroupChatLogEventBase
 }
 
 [GenerateSerializer]
-public class ClearJobLogEvent : GroupChatLogEventBase
+public class ClearJobLogEvent : PipelineLogEventBase
 {
     
 }
 
 [GenerateSerializer]
-public class ActiveJobLogEvent : GroupChatLogEventBase
+public class ActiveJobLogEvent : PipelineLogEventBase
 {
     [Id(0)] public Guid JobId { get; set; }
     [Id(1)] public Object InputParam { get; set; }
 }
 
 [GenerateSerializer]
-public class JobFinishLogEvent : GroupChatLogEventBase
+public class JobFinishLogEvent : PipelineLogEventBase
 {
     [Id(0)] public Guid JobId { get; set; }
 }
 
 [GenerateSerializer]
-public class StartGroupChatLogEvent : GroupChatLogEventBase
+public class StartPipelineLogEvent : PipelineLogEventBase
 {
     
 }
 
 [GenerateSerializer]
-public class GroupChatCompleteLogEvent : GroupChatLogEventBase
+public class PipelineCompleteLogEvent : PipelineLogEventBase
 {
     
 } 

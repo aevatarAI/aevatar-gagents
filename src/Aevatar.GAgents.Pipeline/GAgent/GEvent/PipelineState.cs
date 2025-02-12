@@ -1,7 +1,7 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.GroupChat.SEvent;
+using Aevatar.GAgents.Pipeline.SEvent;
 
-namespace Aevatar.GAgents.GroupChat.GEvent;
+namespace Aevatar.GAgents.Pipeline.GEvent;
 
 [GenerateSerializer]
 public class GroupChatState : StateBase
@@ -55,12 +55,12 @@ public class GroupChatState : StateBase
         ActiveJobs.Remove(@event.JobId);
     }
 
-    public void Apply(StartGroupChatLogEvent @event)
+    public void Apply(StartPipelineLogEvent @event)
     {
         ExecuteStatus = ExecuteStatus.Progress;
     }
 
-    public void Apply(GroupChatCompleteLogEvent @event)
+    public void Apply(PipelineCompleteLogEvent @event)
     {
         ExecuteStatus = ExecuteStatus.WaitForStart;
     }

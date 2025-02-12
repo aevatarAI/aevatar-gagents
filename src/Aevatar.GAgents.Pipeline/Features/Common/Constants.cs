@@ -1,4 +1,4 @@
-namespace Aevatar.GAgents.GroupChat.Features.Common;
+namespace Aevatar.GAgents.Pipeline.Features.Common;
 
 internal static class CommonConstants
 {

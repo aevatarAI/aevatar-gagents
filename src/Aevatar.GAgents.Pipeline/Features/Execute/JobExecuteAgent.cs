@@ -1,9 +1,9 @@
-using Aevatar.GAgents.GroupChat.Abstract;
-using Aevatar.GAgents.GroupChat.Features.Common;
+using Aevatar.GAgents.Pipeline.Abstract;
+using Aevatar.GAgents.Pipeline.Features.Common;
 using Microsoft.Extensions.Logging;
 using Orleans.Streams;
 
-namespace Aevatar.GAgents.GroupChat.Features.ExecuteAgent;
+namespace Aevatar.GAgents.Pipeline.Features.ExecuteAgent;
 
 internal class JobExecuteAgent : Grain, IExecuteJob
 {

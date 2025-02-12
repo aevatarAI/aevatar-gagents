@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace Aevatar.GAgents.GroupChat.Abstract;
+namespace Aevatar.GAgents.Pipeline.Abstract;
 
 public interface IJob<in TParam, TResult> : IGrainWithGuidKey
 {

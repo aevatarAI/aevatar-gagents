@@ -35,7 +35,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.TestBase", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest.Test", "test\Aevatar.GAgents.NamingContest.Test\Aevatar.GAgents.NamingContest.Test.csproj", "{577DAE99-279B-4DCB-8120-BCED72BCA478}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat", "src\Aevatar.GAgents.GroupChat\Aevatar.GAgents.GroupChat.csproj", "{7AE23A02-8D90-4F31-BC25-9A0C326E5B4E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Pipeline", "src\Aevatar.GAgents.Pipeline\Aevatar.GAgents.Pipeline.csproj", "{7AE23A02-8D90-4F31-BC25-9A0C326E5B4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

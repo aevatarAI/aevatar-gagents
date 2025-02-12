@@ -1,13 +1,13 @@
 ﻿using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 
-namespace Aevatar.GAgents.GroupChat;
+namespace Aevatar.GAgents.Pipeline;
 
 
 [DependsOn(
     typeof(AbpAutoMapperModule)
 )]
-public class AevatarGAgentsGroupChatModule: AbpModule
+public class AevatarGAgentsPipelinetModule: AbpModule
 {
     
 }

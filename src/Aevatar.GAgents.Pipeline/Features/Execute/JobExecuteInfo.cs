@@ -1,4 +1,4 @@
-namespace Aevatar.GAgents.GroupChat.Features.ExecuteAgent;
+namespace Aevatar.GAgents.Pipeline.Features.ExecuteAgent;
 
 [GenerateSerializer]
 public class JobExecuteBase
