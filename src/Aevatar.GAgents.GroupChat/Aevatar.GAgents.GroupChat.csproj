@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Aevatar.GAgents.Pipeline</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Aevatar.Core" />
+      <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
+      <PackageReference Include="Volo.Abp.AutoMapper" />
+      <PackageReference Include="Volo.Abp.Core" />
+    </ItemGroup>
+
+</Project>

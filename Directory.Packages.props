@@ -19,7 +19,6 @@
     <PackageVersion Include="AElf.Sdk.CSharp" Version="1.5.0" />
     <PackageVersion Include="AElf.Types" Version="1.5.0" />
     <PackageVersion Include="AElf.OpenTelemetry" Version="8.2.0" />
-    
     <!-- Orleans packages -->
     <PackageVersion Include="Microsoft.Orleans.Client" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Core.Abstractions" Version="9.0.1" />
