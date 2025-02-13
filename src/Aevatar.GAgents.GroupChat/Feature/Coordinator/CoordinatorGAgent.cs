@@ -7,7 +7,7 @@ using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Coordinator;
 
-public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, CoordinatorLogEventBase>, ICoordinatorGAgent
+public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, CoordinatorLogEventBase>, ICoordinatorGAgent
 {
     private IDisposable _timer;
     private List<InterestInfo> _interestInfoList = new List<InterestInfo>();
@@ -24,7 +24,7 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
 
     public async Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event)
     {
-        if (@event.BlackboardId != State.BlackboardId)
+        if (@event.BlackboardId != this.GetPrimaryKey())
         {
             return;
         }
@@ -37,15 +37,15 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
         // group chat finished
         if (@event.TalkResponse.IfContinue == false)
         {
-            await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
+            await PublishAsync(new GroupChatFinishEvent() { BlackboardId = this.GetPrimaryKey() });
             return;
         }
 
         // next round
-        if (await NeedGetMemberInterestValue(_groupMembers, State.BlackboardId))
+        if (await NeedGetMemberInterestValue(_groupMembers, this.GetPrimaryKey()))
         {
             await PublishAsync(new EvaluationInterestEvent()
-                { BlackboardId = State.BlackboardId, ChatTerm = State.ChatTerm });
+                { BlackboardId = this.GetPrimaryKey(), ChatTerm = State.ChatTerm });
         }
         else
         {
@@ -55,7 +55,7 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
 
     public async Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResultEvent @event)
     {
-        if (@event.BlackboardId != State.BlackboardId || @event.ChatTerm < State.ChatTerm)
+        if (@event.BlackboardId != this.GetPrimaryKey() || @event.ChatTerm < State.ChatTerm)
         {
             return;
         }
@@ -65,7 +65,7 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
 
     public async Task HandleCoordinatorPongEventAsync(CoordinatorPongEvent @event)
     {
-        if (@event.BlackboardId != State.BlackboardId)
+        if (@event.BlackboardId != this.GetPrimaryKey())
         {
             return;
         }
@@ -80,12 +80,6 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
         member.UpdateTime = DateTime.Now;
     }
 
-    public async Task SetBlackboardAsync(Guid blackboardId)
-    {
-        RaiseEvent(new SetBlackboardLogEvent() { BlackboardId = blackboardId });
-        await ConfirmEvents();
-    }
-    
     protected async virtual Task<Guid> CoordinatorToSpeak(List<InterestInfo> interestInfos, List<GroupMember> members)
     {
         var randList = new List<Guid>();
@@ -144,7 +138,7 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
 
     private async Task CoordinatorPing(CancellationToken token)
     {
-        if (await NeedGetMemberInterestValue(_groupMembers, State.BlackboardId))
+        if (await NeedGetMemberInterestValue(_groupMembers, this.GetPrimaryKey()))
         {
             if (await NeedSelectSpeaker(_interestInfoList, _groupMembers))
             {
@@ -155,7 +149,7 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
         var ifSendPingMsg = await CheckSendCoordinatorPingEventAsync(DateTime.Now);
         if (ifSendPingMsg)
         {
-            await PublishAsync(new CoordinatorPingEvent() { BlackboardId = State.BlackboardId });
+            await PublishAsync(new CoordinatorPingEvent() { BlackboardId = this.GetPrimaryKey() });
             var leaveMember = new List<Guid>();
             foreach (var member in _groupMembers)
             {
@@ -181,14 +175,13 @@ public class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, Coordinato
             return;
         }
         
-        await PublishAsync(new SpeechEvent() { BlackboardId = State.BlackboardId, Speaker = speaker });
+        await PublishAsync(new SpeechEvent() { BlackboardId = this.GetPrimaryKey(), Speaker = speaker });
     }
 
 }
 
-public interface ICoordinatorGAgent : IGrainWithGuidKey,IGAgent
+public interface ICoordinatorGAgent : IGAgent
 {
-    Task SetBlackboardAsync(Guid blackboardId);
     Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event);
     Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResultEvent @event);
     Task HandleCoordinatorPongEventAsync(CoordinatorPongEvent @event);

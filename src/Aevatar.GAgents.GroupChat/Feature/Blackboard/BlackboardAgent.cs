@@ -10,7 +10,7 @@ using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Blackboard;
 
-public class BlackboardAgent<T> : GAgentBase<BlackboardState, BlackboardLogEvent, EventBase, BlackboardInitDto>, IBlackboardGAgent where T:CoordinatorGAgentBase
+public class BlackboardAgent: GAgentBase<BlackboardState, BlackboardLogEvent, EventBase, BlackboardInitDto>, IBlackboardGAgent
 {
     public BlackboardAgent(ILogger logger) : base(logger)
     {

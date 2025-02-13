@@ -5,7 +5,6 @@ namespace GroupChat.GAgent.Feature.Coordinator.LogEvent;
 [GenerateSerializer]
 public class CoordinatorStateBase : StateBase
 {
-    [Id(0)] public Guid BlackboardId { get; set; }
     [Id(1)] public int ChatTerm { get; set; } = 0;
     [Id(2)] public bool IfTriggerCoordinate = false;
 
@@ -13,11 +12,6 @@ public class CoordinatorStateBase : StateBase
     {
         ChatTerm += 1;
         IfTriggerCoordinate = false;
-    }
-
-    public void Apply(SetBlackboardLogEvent @event)
-    {
-        BlackboardId = @event.BlackboardId;
     }
 
     public void Apply(TriggerCoordinator @event)
