@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.JavaScript;
 using Aevatar.Core;
 using GroupChat.GAgent.Feature.Coordinator.LogEvent;
 using Microsoft.Extensions.Logging;
@@ -7,19 +8,28 @@ using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Coordinator;
 
-public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, CoordinatorLogEventBase>, ICoordinatorGAgent
+public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, CoordinatorLogEventBase>,
+    ICoordinatorGAgent
 {
-    private IDisposable _timer;
+    private IDisposable? _timer;
     private List<InterestInfo> _interestInfoList = new List<InterestInfo>();
     private List<GroupMember> _groupMembers = new List<GroupMember>();
+    private DateTime _latestSendInterestTime = DateTime.Now;
 
-    public CoordinatorGAgentBase(ILogger logger) : base(logger)
+    public CoordinatorGAgentBase(ILogger<CoordinatorGAgentBase> logger) : base(logger)
     {
     }
 
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Blackboard coordinator");
+    }
+
+    public Task StartAsync()
+    {
+        TryStartTimer();
+
+        return Task.CompletedTask;
     }
 
     public async Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event)
@@ -29,7 +39,7 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
             return;
         }
 
-        RaiseEvent(new AddChatTermLogEvent());
+        RaiseEvent(new AddChatTermLogEvent() { IfComplete = @event.TalkResponse.IfContinue });
         await ConfirmEvents();
 
         _interestInfoList.Clear();
@@ -37,15 +47,21 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
         // group chat finished
         if (@event.TalkResponse.IfContinue == false)
         {
-            await PublishAsync(new GroupChatFinishEvent() { BlackboardId = this.GetPrimaryKey() });
+            await PublishAsync(new GroupChatFinishEventForCoordinator() { BlackboardId = this.GetPrimaryKey() });
+            if (_timer != null)
+            {
+                _timer.Dispose();
+            }
+
             return;
         }
 
         // next round
-        if (await NeedGetMemberInterestValue(_groupMembers, this.GetPrimaryKey()))
+        if (await NeedCheckMemberInterestValue(_groupMembers, this.GetPrimaryKey()))
         {
-            await PublishAsync(new EvaluationInterestEvent()
+            await PublishAsync(new EvaluationInterestEventForCoordinator()
                 { BlackboardId = this.GetPrimaryKey(), ChatTerm = State.ChatTerm });
+            _latestSendInterestTime = DateTime.Now;
         }
         else
         {
@@ -53,14 +69,23 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
         }
     }
 
-    public async Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResultEvent @event)
+    public async Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResponseEvent @event)
     {
         if (@event.BlackboardId != this.GetPrimaryKey() || @event.ChatTerm < State.ChatTerm)
         {
             return;
         }
 
-        _interestInfoList.Add(new InterestInfo() { MemberId = @event.MemberId, InterestValue = @event.InterestValue });
+        var member = _interestInfoList.Find(f => f.MemberId == @event.MemberId);
+        if (member == null)
+        {
+            _interestInfoList.Add(new InterestInfo()
+                { MemberId = @event.MemberId, InterestValue = @event.InterestValue });
+        }
+        else
+        {
+            member.InterestValue = @event.InterestValue;
+        }
     }
 
     public async Task HandleCoordinatorPongEventAsync(CoordinatorPongEvent @event)
@@ -91,7 +116,7 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
                 return interestInfo[0].MemberId;
             }
 
-            randList = interestInfos.Take(5).Select(s=>s.MemberId).ToList();
+            randList = interestInfos.Take(5).Select(s => s.MemberId).ToList();
         }
 
         if (randList.Count == 0)
@@ -110,7 +135,7 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
         return randList[randomNum];
     }
 
-    protected virtual Task<bool> NeedGetMemberInterestValue(List<GroupMember> members, Guid blackboardId)
+    protected virtual Task<bool> NeedCheckMemberInterestValue(List<GroupMember> members, Guid blackboardId)
     {
         return Task.FromResult(false);
     }
@@ -129,27 +154,60 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
     {
         return Task.FromResult(interestInfos.Count >= (members.Count * 2) / 3);
     }
-    
+
     protected override Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {
-        _timer = this.RegisterGrainTimer(CoordinatorPing, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        TryStartTimer();
         return Task.CompletedTask;
     }
 
-    private async Task CoordinatorPing(CancellationToken token)
+    private void TryStartTimer()
     {
-        if (await NeedGetMemberInterestValue(_groupMembers, this.GetPrimaryKey()))
+        _timer ??= this.RegisterGrainTimer(BackgroundWork, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private async Task BackgroundWork(CancellationToken token)
+    {
+        await TryDriveProgress();
+        await TryConnectMember();
+    }
+
+    private async Task TryDriveProgress()
+    {
+        if (await NeedCheckMemberInterestValue(_groupMembers, this.GetPrimaryKey()) == false)
         {
-            if (await NeedSelectSpeaker(_interestInfoList, _groupMembers))
+            return;
+        }
+
+        if (State.IfTriggerCoordinate == false)
+        {
+            var ifCoordinator = false;
+            if (_groupMembers.Count > 0)
             {
-                await Coordinator();
+                var ifSelectSpeaker = await NeedSelectSpeaker(_interestInfoList, _groupMembers);
+                if (ifSelectSpeaker)
+                {
+                    ifCoordinator = await Coordinator();
+                }
+            }
+
+            if (ifCoordinator == false &&
+                (DateTime.Now - _latestSendInterestTime).Seconds > 5 &&
+                _interestInfoList.Count <= (_groupMembers.Count * 2) / 3)
+            {
+                await PublishAsync(new EvaluationInterestEventForCoordinator()
+                    { BlackboardId = this.GetPrimaryKey(), ChatTerm = State.ChatTerm });
+                _latestSendInterestTime = DateTime.Now;
             }
         }
-        
+    }
+
+    private async Task TryConnectMember()
+    {
         var ifSendPingMsg = await CheckSendCoordinatorPingEventAsync(DateTime.Now);
         if (ifSendPingMsg)
         {
-            await PublishAsync(new CoordinatorPingEvent() { BlackboardId = this.GetPrimaryKey() });
+            await PublishAsync(new CoordinatorPingEventForCoordinator() { BlackboardId = this.GetPrimaryKey() });
             var leaveMember = new List<Guid>();
             foreach (var member in _groupMembers)
             {
@@ -166,23 +224,28 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
             }
         }
     }
-    
-    private async Task Coordinator()
+
+    private async Task<bool> Coordinator()
     {
         var speaker = await CoordinatorToSpeak(_interestInfoList, _groupMembers);
         if (speaker == Guid.Empty)
         {
-            return;
+            return false;
         }
-        
-        await PublishAsync(new SpeechEvent() { BlackboardId = this.GetPrimaryKey(), Speaker = speaker });
-    }
 
+        await PublishAsync(new SpeechEventForCoordinator() { BlackboardId = this.GetPrimaryKey(), Speaker = speaker });
+
+        RaiseEvent(new TriggerCoordinator());
+        await ConfirmEvents();
+
+        return true;
+    }
 }
 
 public interface ICoordinatorGAgent : IGAgent
 {
+    Task StartAsync();
     Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event);
-    Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResultEvent @event);
+    Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResponseEvent @event);
     Task HandleCoordinatorPongEventAsync(CoordinatorPongEvent @event);
 }

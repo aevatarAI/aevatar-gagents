@@ -7,11 +7,13 @@ public class CoordinatorStateBase : StateBase
 {
     [Id(1)] public int ChatTerm { get; set; } = 0;
     [Id(2)] public bool IfTriggerCoordinate = false;
+    [Id(3)] public bool IfComplete = false;
 
     public void Apply(AddChatTermLogEvent @event)
     {
         ChatTerm += 1;
         IfTriggerCoordinate = false;
+        IfComplete = @event.IfComplete;
     }
 
     public void Apply(TriggerCoordinator @event)

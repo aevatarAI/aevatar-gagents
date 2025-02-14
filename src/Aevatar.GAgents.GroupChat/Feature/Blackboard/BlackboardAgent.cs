@@ -10,15 +10,34 @@ using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Blackboard;
 
-public class BlackboardAgent: GAgentBase<BlackboardState, BlackboardLogEvent, EventBase, BlackboardInitDto>, IBlackboardGAgent
+public class BlackboardAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
+    IBlackboardGAgent
 {
-    public BlackboardAgent(ILogger logger) : base(logger)
+    public BlackboardAgent(ILogger<BlackboardAgent> logger) : base(logger)
     {
     }
 
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("blackboard");
+    }
+
+    public async Task<bool> SetTopic(string topic)
+    {
+        if (State.MessageList.Count > 0)
+        {
+            return false;
+        }
+
+        RaiseEvent(new AddChatHistoryLogEvent()
+            { MessageType = MessageType.BlackboardTopic, Content = topic });
+        await ConfirmEvents();
+
+        var coordinator = GrainFactory.GetGrain<ICoordinatorGAgent>(this.GetPrimaryKey());
+        await RegisterAsync(coordinator);
+
+        await coordinator.StartAsync();
+        return true;
     }
 
     public Task<List<ChatMessage>> GetContent()
@@ -29,18 +48,27 @@ public class BlackboardAgent: GAgentBase<BlackboardState, BlackboardLogEvent, Ev
     [EventHandler]
     public async Task HandleEventAsync(SpeechResponseEvent @event)
     {
-        RaiseEvent(new AddChatHistoryLogEvent()
+        if (@event.BlackboardId != this.GetPrimaryKey())
         {
-            AgentName = @event.MemberName, MemberId = @event.MemberId, MessageType = MessageType.User, Content = @event.TalkResponse.TalkContent
-        });
-        await ConfirmEvents();
+            return;
+        }
+
+        if (@event.TalkResponse.SkipSpeak == false)
+        {
+            RaiseEvent(new AddChatHistoryLogEvent()
+            {
+                AgentName = @event.MemberName, MemberId = @event.MemberId, MessageType = MessageType.User,
+                Content = @event.TalkResponse.SpeakContent
+            });
+            await ConfirmEvents();
+        }
 
         var coordinatorAgent = GetICoordinatorGAgent();
         await coordinatorAgent.HandleSpeechResponseEventAsync(@event);
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(EvaluationInterestResultEvent @event)
+    public async Task HandleEventAsync(EvaluationInterestResponseEvent @event)
     {
         var coordinatorAgent = GetICoordinatorGAgent();
         await coordinatorAgent.HandleEvaluationInterestResultEventAsync(@event);
@@ -52,30 +80,57 @@ public class BlackboardAgent: GAgentBase<BlackboardState, BlackboardLogEvent, Ev
         var coordinatorAgent = GetICoordinatorGAgent();
         await coordinatorAgent.HandleCoordinatorPongEventAsync(@event);
     }
-    
+
+    #region Proxy coordinator event to memeber;
+
     [EventHandler]
-    public async Task HandleEventAsync(EventFromCoordinatorBase @event)
+    public async Task HandleEventAsync(GroupChatFinishEventForCoordinator @event)
     {
         // proxy coordinator event to group
-        await PublishAsync(@event);
+        await PublishAsync(new GroupChatFinishEvent()
+        {
+            BlackboardId = @event.BlackboardId
+        });
     }
 
-    public override async Task InitializeAsync(BlackboardInitDto initializationEvent)
+    [EventHandler]
+    public async Task HandleEventAsync(EvaluationInterestEventForCoordinator @event)
     {
-        RaiseEvent(new AddChatHistoryLogEvent(){MessageType= MessageType.BlackboardTopic, Content = initializationEvent.Topic});
-        await ConfirmEvents();
-        
-        var coordinator = GrainFactory.GetGrain<ICoordinatorGAgent>(this.GetPrimaryKey());
-        await SubscribeToAsync(coordinator);
+        await PublishAsync(new EvaluationInterestEvent()
+            { BlackboardId = @event.BlackboardId, ChatTerm = @event.ChatTerm });
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(CoordinatorPingEventForCoordinator @event)
+    {
+        // proxy coordinator event to group
+        await PublishAsync(new CoordinatorPingEvent()
+        {
+            BlackboardId = @event.BlackboardId,
+        });
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(SpeechEventForCoordinator @event)
+    {
+        // proxy coordinator event to group
+        await PublishAsync(new SpeechEvent()
+        {
+            BlackboardId = @event.BlackboardId,
+            Speaker = @event.Speaker
+        });
     }
 
     private ICoordinatorGAgent GetICoordinatorGAgent()
     {
         return GrainFactory.GetGrain<ICoordinatorGAgent>(this.GetPrimaryKey());
     }
+
+    #endregion
 }
 
-public interface IBlackboardGAgent : IGrainWithGuidKey
+public interface IBlackboardGAgent : IGAgent
 {
+    public Task<bool> SetTopic(string topic);
     public Task<List<ChatMessage>> GetContent();
 }

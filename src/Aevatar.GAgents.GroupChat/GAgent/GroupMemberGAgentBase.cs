@@ -9,9 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace GroupChat.GAgent;
 
-public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemberLogEvent>
+public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemberLogEvent>, IGroupMember
 {
-    protected GroupMemberGAgent(ILogger logger) : base(logger)
+    protected GroupMemberGAgent(ILogger<GroupMemberGAgent> logger) : base(logger)
     {
     }
 
@@ -21,7 +21,7 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
         var history = await GetMessageFromBlackboard(@event.BlackboardId);
         var score = await EvaluationInterestValueAsync(@event.BlackboardId, history);
 
-        await PublishAsync(new EvaluationInterestResultEvent()
+        await PublishAsync(new EvaluationInterestResponseEvent()
         {
             MemberId = this.GetPrimaryKey(), BlackboardId = @event.BlackboardId, InterestValue = score,
             ChatTerm = @event.ChatTerm
@@ -51,6 +51,15 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
         await GroupChatFinishAsync(@event.BlackboardId);
     }
 
+    [EventHandler]
+    public async Task HandleEventAsync(CoordinatorPingEvent @event)
+    {
+        if (await IgnoreBlackboardPingEvent(@event.BlackboardId) == false)
+        {
+            await PublishAsync(new CoordinatorPongEvent() { BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName});
+        }
+    }
+
     protected abstract Task<int> EvaluationInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
 
     protected abstract Task<TalkResponse> SpeechAsync(Guid blackboardId, List<ChatMessage> messages);
@@ -60,9 +69,14 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
         return Task.CompletedTask;
     }
 
-    protected async Task SetMemberName(string agentName)
+    protected virtual Task<bool> IgnoreBlackboardPingEvent(Guid blackboardId)
     {
-        RaiseEvent(new SetMemberName() { MemberName = agentName });
+        return Task.FromResult(false);
+    }
+    
+    public async Task SetMemberName(string agentName)
+    {
+        RaiseEvent(new SetMemberNameLogEvent() { MemberName = agentName });
 
         await ConfirmEvents();
     }
@@ -74,4 +88,9 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
 
         return history;
     }
+}
+
+public interface IGroupMember : IGAgent
+{
+    Task SetMemberName(string agentName);
 }

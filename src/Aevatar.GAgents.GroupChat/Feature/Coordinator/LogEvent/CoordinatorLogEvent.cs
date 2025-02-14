@@ -11,7 +11,7 @@ public class CoordinatorLogEventBase:StateLogEventBase<CoordinatorLogEventBase>
 [GenerateSerializer]
 public class AddChatTermLogEvent : CoordinatorLogEventBase
 {
-    
+    [Id(0)] public bool IfComplete { get; set; }
 }
 
 [GenerateSerializer]
