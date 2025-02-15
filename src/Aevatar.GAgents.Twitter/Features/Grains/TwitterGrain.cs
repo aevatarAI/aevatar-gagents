@@ -12,34 +12,33 @@ using Orleans.Providers;
 namespace Aevatar.GAgents.Twitter.Grains;
 
 [StorageProvider(ProviderName = "PubSubStore")]
-public class TwitterGrain : Grain<TwitterState>, ITwitterGrain
+public class TwitterGrain : Grain, ITwitterGrain
 {
     private readonly ITwitterProvider _twitterProvider;
     private ILogger<TwitterGrain> _logger;
-    private readonly IOptionsMonitor<TwitterOptions> _twitterOptions;
-    
-    public TwitterGrain(ITwitterProvider twitterProvider, 
-        ILogger<TwitterGrain> logger, 
-        IOptionsMonitor<TwitterOptions> twitterOptions) 
+
+    public TwitterGrain(ITwitterProvider twitterProvider,
+        ILogger<TwitterGrain> logger)
     {
         _twitterProvider = twitterProvider;
         _logger = logger;
-        _twitterOptions = twitterOptions;
-    }
-    
-    public async Task CreateTweetAsync(string text, string token, string tokenSecret)
-    {
-        await _twitterProvider.PostTwitterAsync(text, token, tokenSecret);
-    }
-    
-    public async Task ReplyTweetAsync(string text, string tweetId, string token, string tokenSecret)
-    {
-        await _twitterProvider.ReplyAsync(text, tweetId, token, tokenSecret);
     }
 
-    public async Task<List<Tweet>> GetRecentMentionAsync(string userName)
+    public async Task CreateTweetAsync(string consumerKey, string consumerSecret, string text, string token,
+        string tokenSecret)
     {
-        var mentionList = await _twitterProvider.GetMentionsAsync(userName);
-        return mentionList.Take(_twitterOptions.CurrentValue.ReplyLimit).ToList();
+        await _twitterProvider.PostTwitterAsync(consumerKey, consumerSecret, text, token, tokenSecret);
+    }
+
+    public async Task ReplyTweetAsync(string consumerKey, string consumerSecret, string text, string tweetId,
+        string token, string tokenSecret)
+    {
+        await _twitterProvider.ReplyAsync(consumerKey, consumerSecret, text, tweetId, token, tokenSecret);
+    }
+
+    public async Task<List<Tweet>> GetRecentMentionAsync(string userName, string bearToken, int replyLimit)
+    {
+        var mentionList = await _twitterProvider.GetMentionsAsync(userName, bearToken);
+        return mentionList.Take(replyLimit).ToList();
     }
 }
