@@ -16,7 +16,7 @@ public class GroupChatState : StateBase
     {
         if (JobInfos.TryGetValue(@event.ParentId, out var parentJob) == false)
         {
-            parentJob = new JobInfo(@event.ParentFullName, @event.ParentId);
+            parentJob = new JobInfo(@event.ParentType, @event.ParentId);
             JobInfos.Add(@event.ParentId, parentJob);
         }
 
@@ -25,7 +25,7 @@ public class GroupChatState : StateBase
         parentJob.AddChildren(@event.ChildrenId);
         if (JobInfos.TryGetValue(@event.ChildrenId, out var childrenJob) == false)
         {
-            childrenJob = new JobInfo(@event.ChildrenFullName, @event.ChildrenId);
+            childrenJob = new JobInfo(@event.ChildrenType, @event.ChildrenId);
             JobInfos.Add(@event.ChildrenId, childrenJob);
         }
 
@@ -80,13 +80,13 @@ public class GroupChatState : StateBase
 [GenerateSerializer]
 public class JobInfo
 {
-    [Id(0)] public string FullName { get; set; }
+    [Id(0)] public Type JobType { get; set; }
     [Id(1)] public Guid GrainId { get; set; }
     [Id(3)] public List<Guid> DownStreamList { get; set; }
 
-    public JobInfo(string fullName, Guid grainId)
+    public JobInfo(Type jobType, Guid grainId)
     {
-        FullName = fullName;
+        JobType = jobType;
         GrainId = grainId;
         DownStreamList = new List<Guid>();
     }

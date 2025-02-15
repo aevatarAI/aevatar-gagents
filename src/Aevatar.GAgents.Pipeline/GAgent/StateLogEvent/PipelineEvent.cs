@@ -3,25 +3,23 @@ using Aevatar.Core.Abstractions;
 namespace Aevatar.GAgents.Pipeline.SEvent;
 
 [GenerateSerializer]
-public class PipelineLogEventBase: StateLogEventBase <PipelineLogEventBase>
+public class PipelineLogEventBase : StateLogEventBase<PipelineLogEventBase>
 {
-    
 }
 
 [GenerateSerializer]
 public class OrchestrateJobLogEvent : PipelineLogEventBase
 {
-    public Guid ParentId { get; set; }
-    public string ParentFullName { get; set; }
-    
-    public Guid ChildrenId { get; set; }
-    public string ChildrenFullName { get; set; }
+    [Id(0)] public Guid ParentId { get; set; }
+    [Id(1)] public Type ParentType { get; set; }
+
+    [Id(2)] public Guid ChildrenId { get; set; }
+    [Id(3)] public Type ChildrenType { get; set; }
 }
 
 [GenerateSerializer]
 public class ClearJobLogEvent : PipelineLogEventBase
 {
-    
 }
 
 [GenerateSerializer]
@@ -40,11 +38,9 @@ public class JobFinishLogEvent : PipelineLogEventBase
 [GenerateSerializer]
 public class StartPipelineLogEvent : PipelineLogEventBase
 {
-    
 }
 
 [GenerateSerializer]
 public class PipelineCompleteLogEvent : PipelineLogEventBase
 {
-    
-} 
+}

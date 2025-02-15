@@ -19,19 +19,15 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
 using IHost host = builder.Build();
 await host.StartAsync();
 
-//
-// var gAgentFactory = host.Services.GetRequiredService<IGAgentFactory>();
-// var gAgentManager = host.Services.GetRequiredService<IGAgentManager>();
-// var allAgentType = gAgentManager.GetAvailableGAgentTypes();
-
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
 var pipelineAgent = client.GetGrain<IPipelineGAgent>(Guid.NewGuid());
-var test = client.GetGrain<ITest>(Guid.NewGuid());
 var designer = client.GetGrain<IDesignerGAgent>(Guid.NewGuid());
 var product = client.GetGrain<IProductGAgent>(Guid.NewGuid());
-var programmer = client.GetGrain<IProgrammerGAgent>(Guid.NewGuid());
+var programmer1 = client.GetGrain<IProgrammerGAgent>(Guid.NewGuid());
+var programmer2 = client.GetGrain<IProgrammerGAgent>(Guid.NewGuid());
 await pipelineAgent.OrchestrateJobAsync(product, designer);
-await pipelineAgent.OrchestrateJobAsync(designer, programmer);
+await pipelineAgent.OrchestrateJobAsync(designer, programmer1);
+await pipelineAgent.OrchestrateJobAsync(designer, programmer2);
 
 await pipelineAgent.StartAsync(new ProductRequirements() { Content = "this is product requirement" });
 

@@ -18,6 +18,7 @@ public class DesignerGAgent : GAgentBase<DesignerGAgentState, DesignerGAgentLogE
 
     public Task<JobProgressResult<FrameworkDesign>> ProcessAsync(ProductDesign param)
     {
+        Console.WriteLine("this is framework design");
         return Task.FromResult(new JobProgressResult<FrameworkDesign>()
             { Result = new FrameworkDesign() { Content = "this is framework design" } });
     }
@@ -33,7 +34,7 @@ public class DesignerGAgentLogEvent : StateLogEventBase<DesignerGAgentLogEvent>
 {
 }
 
-public interface IDesignerGAgent : IGAgent, IJob<ProductDesign, FrameworkDesign>
+public interface IDesignerGAgent : IJob<ProductDesign, FrameworkDesign>
 {
 }
 

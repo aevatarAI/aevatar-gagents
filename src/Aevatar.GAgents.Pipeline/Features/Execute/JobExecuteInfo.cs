@@ -9,7 +9,7 @@ public class JobExecuteBase
 public class JobExecuteInfo : JobExecuteBase
 {
     [Id(0)] public Guid JobId { get; set; }
-    [Id(1)] public string JobFullName { get; set; }
+    [Id(1)] public Type JobType { get; set; }
     [Id(2)] public object JobInputParam { get; set; }
 }
 

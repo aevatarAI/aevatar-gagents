@@ -18,8 +18,9 @@ public class ProgrammerGAgent : GAgentBase<ProgrammerGAgentState, ProgrammerGAge
 
     public Task<JobProgressResult<ProgramCode>> ProcessAsync(FrameworkDesign param)
     {
+        Console.WriteLine("this is Programmer design");
         return Task.FromResult(new JobProgressResult<ProgramCode>()
-            { Result = new ProgramCode() { Content = "this is product design" } });
+            { Result = new ProgramCode() { Content = "this is Programmer design" } });
     }
 }
 
@@ -33,7 +34,7 @@ public class ProgrammerGAgentLogEvent : StateLogEventBase<ProgrammerGAgentLogEve
 {
 }
 
-public interface IProgrammerGAgent : IJob<FrameworkDesign, ProgramCode>, IGAgent
+public interface IProgrammerGAgent : IJob<FrameworkDesign, ProgramCode>
 {
 }
 

@@ -29,12 +29,10 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         {
             return false;
         }
-        
+
         var parentId = upstream.GetPrimaryKey();
-        var parentFullName = upstream.GetType().FullName;
 
         var childrenId = downstream.GetPrimaryKey();
-        var childrenFullName = downstream.GetType().FullName;
         if (State.CheckHasUpstream(childrenId))
         {
             return false;
@@ -43,10 +41,10 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         RaiseEvent(new OrchestrateJobLogEvent()
         {
             ParentId = parentId,
-            ParentFullName = parentFullName,
+            ParentType = upstream.GetType(),
 
             ChildrenId = childrenId,
-            ChildrenFullName = childrenFullName,
+            ChildrenType = downstream.GetType(),
         });
 
         await ConfirmEvents();
@@ -60,7 +58,7 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         {
             return false;
         }
-        
+
         RaiseEvent(new ClearJobLogEvent());
         await ConfirmEvents();
         return true;
@@ -78,14 +76,22 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
             return false;
         }
 
-        var stepType = Type.GetType(State.TopUpstream.FullName);
-        
+        var stepType = State.TopUpstream.JobType;
+
         if (stepType == null)
         {
             return false;
         }
 
-        if (startMessage.GetType() != stepType)
+        var jobObj = stepType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IJob<,>));
+        if (jobObj == null)
+        {
+            return false;
+        }
+
+        var genericArguments = jobObj.GetGenericArguments();
+        if (startMessage.GetType() != genericArguments[0])
         {
             return false;
         }
@@ -97,15 +103,15 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
 
         await ConfirmEvents();
 
-        await StartJob(State.TopUpstream.GrainId, State.TopUpstream.FullName, startMessage);
+        await StartJob(State.TopUpstream.GrainId, State.TopUpstream.JobType, startMessage);
 
         return true;
     }
 
-    private async Task StartJob(Guid grainId, string grainFullName, object input)
+    private async Task StartJob(Guid grainId, Type jobType, object input)
     {
         await PublishEventToExecutor(new JobExecuteInfo()
-            { JobId = grainId, JobFullName = grainFullName, JobInputParam = input });
+            { JobId = grainId, JobType = jobType, JobInputParam = input });
     }
 
     private async Task PublishEventToExecutor(JobExecuteInfo jobInfo)
@@ -135,7 +141,7 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         events.Add(new JobFinishLogEvent() { JobId = executeResult.JobId });
 
         var jobInfo = State.GetJobInfo(executeResult.JobId);
-        
+
         // do downstream job
         if (jobInfo != null && executeResult.IfContinue)
         {
@@ -143,9 +149,9 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
             {
                 var childrenJob = State.GetJobInfo(childrenId);
                 if (childrenJob == null) continue;
-                
-                await StartJob(childrenJob.GrainId, childrenJob.FullName, executeResult.ExecuteResponse);
-                events.Add(new ActiveJobLogEvent(){JobId = childrenId, InputParam = executeResult.ExecuteResponse});
+
+                await StartJob(childrenJob.GrainId, childrenJob.JobType, executeResult.ExecuteResponse);
+                events.Add(new ActiveJobLogEvent() { JobId = childrenId, InputParam = executeResult.ExecuteResponse });
             }
         }
 
@@ -155,7 +161,7 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         // complete
         if (State.ActiveJobs.Count == 0)
         {
-            RaiseEvent( new PipelineCompleteLogEvent());
+            RaiseEvent(new PipelineCompleteLogEvent());
             await ConfirmEvents();
         }
     }

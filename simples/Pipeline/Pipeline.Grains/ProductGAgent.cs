@@ -9,6 +9,8 @@ public class ProductGAgent : GAgentBase<ProductGAgentState,ProductGAgentLogEvent
 {
     public Task<JobProgressResult<ProductDesign>> ProcessAsync(ProductRequirements param)
     {
+        
+        Console.WriteLine("this is product design");
         return Task.FromResult(new JobProgressResult<ProductDesign>()
             { Result = new ProductDesign() { Content = "this is product design" } });
     }
@@ -35,18 +37,18 @@ public class ProductGAgentLogEvent : StateLogEventBase<ProductGAgentLogEvent>
     
 }
 
-public interface IProductGAgent : IJob<ProductRequirements, ProductDesign>,IGAgent
+public interface IProductGAgent : IJob<ProductRequirements, ProductDesign>
 {
 }
 
 [GenerateSerializer]
 public class ProductRequirements
 {
-    public string Content { get; set; }
+    [Id(0)]public string Content { get; set; }
 }
 
 [GenerateSerializer]
 public class ProductDesign
 {
-    public string Content { get; set; }
+    [Id(0)]public string Content { get; set; }
 }
