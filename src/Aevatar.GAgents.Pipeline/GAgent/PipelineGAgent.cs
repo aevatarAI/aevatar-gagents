@@ -1,3 +1,4 @@
+using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Pipeline.Abstract;
@@ -13,7 +14,7 @@ namespace Aevatar.GAgents.Pipeline.GAgent;
 
 public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, IPipelineGAgent
 {
-    public PipelineGAgent(ILogger logger) : base(logger)
+    public PipelineGAgent(ILogger<PipelineGAgent> logger) : base(logger)
     {
     }
 
@@ -78,6 +79,7 @@ public class PipelineGAgent : GAgentBase<GroupChatState, PipelineLogEventBase>, 
         }
 
         var stepType = Type.GetType(State.TopUpstream.FullName);
+        
         if (stepType == null)
         {
             return false;
