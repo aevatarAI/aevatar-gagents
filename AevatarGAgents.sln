@@ -25,7 +25,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MicroAI", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.NamingContest", "src\Aevatar.GAgents.NamingContest\Aevatar.GAgents.NamingContest.csproj", "{4EBBE2C2-7C37-4D3F-9F38-916A2758BDD1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.SocialChat", "src\AiSmart.GAgent.SocialGAgent\Aevatar.GAgents.SocialChat.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.SocialChat", "src\Aevatar.GAgent.SocialGAgent\Aevatar.GAgents.SocialChat.csproj", "{CC99AB12-4463-4386-BF17-CE0E26797E23}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Rag", "src\Aevatar.GAgents.Rag\Aevatar.GAgents.Rag.csproj", "{954A1691-46F9-4DF2-AE75-B2420AC9AEDA}"
 EndProject
