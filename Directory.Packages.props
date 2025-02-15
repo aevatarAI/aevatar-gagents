@@ -11,6 +11,8 @@
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarAbstractionsVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />
+    <PackageVersion Include="Aevatar.AI.Abstractions" Version="1.3.10" />
+    <PackageVersion Include="Aevatar.AI.SemanticKernel" Version="1.3.10" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
