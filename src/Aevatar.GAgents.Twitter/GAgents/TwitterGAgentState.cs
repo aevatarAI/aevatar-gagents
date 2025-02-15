@@ -17,7 +17,7 @@ public class TwitterGAgentState : StateBase
     [Id(4)] public Dictionary<string, string> RepliedTweets { get; set; }
     [Id(5)] public string UserName { get; set; }
     [Id(6)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
-    [Id(7)] public InitTwitterOptionsDto TwitterOptions { get; set; }
+    [Id(7)] public InitTwitterOptions TwitterOptions { get; set; }
 
     public void Apply(BindTwitterAccountSEvent bindTwitterAccountSEvent)
     {
@@ -61,7 +61,7 @@ public class TwitterGAgentState : StateBase
 
     public void Apply(TwitterOptionsSEvent @event)
     {
-        TwitterOptions = new InitTwitterOptionsDto()
+        TwitterOptions = new InitTwitterOptions()
         {
             ConsumerKey = @event.ConsumerKey,
             ConsumerSecret = @event.ConsumerSecret,
@@ -70,4 +70,16 @@ public class TwitterGAgentState : StateBase
             ReplyLimit = @event.ReplyLimit,
         };
     }
+}
+
+
+
+[GenerateSerializer]
+public class InitTwitterOptions : InitializationEventBase
+{
+    [Id(0)] public string ConsumerKey { get; set; }
+    [Id(1)] public string ConsumerSecret { get; set; }
+    [Id(2)] public string EncryptionPassword { get; set; }
+    [Id(3)] public string BearerToken { get; set; }
+    [Id(4)] public int ReplyLimit { get; set; }
 }
