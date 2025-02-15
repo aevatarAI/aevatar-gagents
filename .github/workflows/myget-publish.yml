@@ -23,7 +23,7 @@ jobs:
           Aevatar.GAgents.Twitter,
           Aevatar.GAgents.Telegram,
           Aevatar.GAgents.Pumpfun,
-          Aevatar.GAgents.SocialAgent
+          Aevatar.GAgents.SocialGAgent
         ]
     steps:
       - name: Checkout code
