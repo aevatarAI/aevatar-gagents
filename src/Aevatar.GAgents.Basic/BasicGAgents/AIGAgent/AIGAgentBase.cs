@@ -130,7 +130,6 @@ public abstract class AIGAgentBase<TState, TStateLogEvent> : GAgentBase<TState, 
         }
 
         AIGAgentTransitionState(state, @event);
-        TransitionState(state, @event);
     }
     
     protected virtual void AIGAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
