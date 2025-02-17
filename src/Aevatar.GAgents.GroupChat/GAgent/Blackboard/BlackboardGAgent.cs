@@ -4,16 +4,14 @@ using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.Feature.Coordinator;
 using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
-using GroupChat.GAgent.Feature.Blackboard.Dto;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
-using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Blackboard;
 
-public class BlackboardAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
+public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
     IBlackboardGAgent
 {
-    public BlackboardAgent(ILogger<BlackboardAgent> logger) : base(logger)
+    public BlackboardGAgent(ILogger<BlackboardGAgent> logger) : base(logger)
     {
     }
 
