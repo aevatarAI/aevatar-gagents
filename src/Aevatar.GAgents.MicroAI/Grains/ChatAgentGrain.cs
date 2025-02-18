@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.MicroAI.Model;
 using AutoGen.Core;
@@ -27,7 +28,7 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
     private readonly ILogger<ChatAgentGrain> _logger;
     // private readonly ICQRSProvider _cqrsProvider;
 
-    private IStreamProvider StreamProvider => this.GetStreamProvider(CommonConstants.StreamProvider);
+    private IStreamProvider StreamProvider => this.GetStreamProvider(AevatarCoreConstants.StreamProvider);
     
 
     public ChatAgentGrain(IOptions<MicroAIOptions> options, 
@@ -71,7 +72,7 @@ public class ChatAgentGrain : Grain, IChatAgentGrain
     public async Task SendEventAsync(string message, List<MicroAIMessage>? chatHistory,object requestEvent)
     {
         var agentGuid = this.GetPrimaryKeyString();
-        var streamId = StreamId.Create(CommonConstants.StreamNamespace, agentGuid);
+        var streamId = StreamId.Create(AevatarCoreConstants.StreamNamespace, agentGuid);
         var stream = StreamProvider.GetStream<MicroAIEventMessage>(streamId);
         MicroAIMessage? microAIMessage = null;
 

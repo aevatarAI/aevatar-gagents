@@ -40,8 +40,7 @@ public class AutogenGAgent : GAgentBase<AutoGenAgentState, AutogenStateLogEvent>
     private readonly IRagProvider _ragProvider;
     private readonly int _maxRaiseEventCount = 50;
 
-    public AutogenGAgent(ILogger<AutogenGAgent> logger,
-        IRagProvider ragProvider) : base(logger)
+    public AutogenGAgent(IRagProvider ragProvider)
     {
         _ragProvider = ragProvider;
     }

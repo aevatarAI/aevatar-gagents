@@ -17,10 +17,6 @@ namespace AiSmart.GAgent.NamingContest.JudgeAgent;
 [GAgent(nameof(JudgeGAgent))]
 public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventBase, InitJudgeDto>, IJudgeGAgent
 {
-    public JudgeGAgent(ILogger<JudgeGAgent> logger) : base(logger)
-    {
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(TrafficNamingContestOver @event)
     {
@@ -233,7 +229,7 @@ public class JudgeGAgent : GAgentBase<JudgeState, JudgeCloneStateLogEvent,EventB
         throw new NotImplementedException();
     }
 
-    public async override Task InitializeAsync(InitJudgeDto initializeDto)
+    protected async override Task PerformConfigAsync(InitJudgeDto initializeDto)
     {
         RaiseEvent(new AISetAgentStateLogEvent
         {

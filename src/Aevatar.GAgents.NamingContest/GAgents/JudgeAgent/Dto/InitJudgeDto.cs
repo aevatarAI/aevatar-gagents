@@ -2,7 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace AiSmart.GAgent.NamingContest.JudgeAgent.Dto;
 
-public class InitJudgeDto:InitializationEventBase
+public class InitJudgeDto:ConfigurationBase
 {
     public string AgentName { get; set; }
     public string AgentResponsibility { get; set; }

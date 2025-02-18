@@ -2,12 +2,12 @@
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 
-namespace Aevatar.GAgents.Common;
+namespace Aevatar.GAgents.Basic;
 
 [DependsOn(
     typeof(AbpAutoMapperModule)
 )]
-public class AevatarGAgentsCommonModule:AbpModule
+public class AevatarDefaultGAgentsModule : AbpModule
 {
-    
+
 }

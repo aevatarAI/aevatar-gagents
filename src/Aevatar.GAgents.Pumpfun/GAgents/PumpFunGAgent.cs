@@ -20,13 +20,6 @@ namespace Aevatar.GAgents.PumpFun.Agent;
 [GAgent(nameof(PumpFunGAgent))]
 public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, IPumpFunGAgent
 {
-    private readonly ILogger<PumpFunGAgent> _logger;
-
-    public PumpFunGAgent(ILogger<PumpFunGAgent> logger) : base(logger)
-    {
-        _logger = logger;
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult(
@@ -38,7 +31,7 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
     {
         if (@event.ReplyId.IsNullOrEmpty() || @event.RequestMessage.IsNullOrEmpty())
         {
-            _logger.LogError(
+            Logger.LogError(
                 $"[PumpFunGAgent] PumpFunReceiveMessageEvent ReplyId is IsNullOrEmpty, replyId:{@event.ReplyId} requestMessage:{@event.RequestMessage}");
             return;
         }
@@ -60,7 +53,7 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
     {
         if (@event.ReplyMessageId.IsNullOrEmpty())
         {
-            _logger.LogError($"[PumpFunGAgent] SocialResponseGEvent ReplyMessageId is IsNullOrEmpty");
+            Logger.LogError($"[PumpFunGAgent] SocialResponseGEvent ReplyMessageId is IsNullOrEmpty");
             return;
         }
 
@@ -77,7 +70,7 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
             }
         }
 
-        _logger.LogDebug("[PumpFunGAgent] HandleEventAsync SocialResponseEvent, content: {text}, id: {id}",
+        Logger.LogDebug("[PumpFunGAgent] HandleEventAsync SocialResponseEvent, content: {text}, id: {id}",
             @event.ResponseContent, @event.ReplyMessageId);
 
         await GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyMessageId))
@@ -87,7 +80,7 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
     [EventHandler]
     public async Task HandleEventAsync(PumpFunSendMessageEvent @event)
     {
-        _logger.LogInformation("PumpFunSendMessageEvent:" + JsonConvert.SerializeObject(@event));
+        Logger.LogInformation("PumpFunSendMessageEvent:" + JsonConvert.SerializeObject(@event));
         if (@event.ReplyId != null)
         {
             PumpFunSendMessageGEvent pumpFunSendMessageGEvent = new PumpFunSendMessageGEvent()
@@ -99,24 +92,24 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
 
             RaiseEvent(pumpFunSendMessageGEvent);
             await ConfirmEvents();
-            _logger.LogInformation("PumpFunSendMessageEvent2:" +
-                                   JsonConvert.SerializeObject(@pumpFunSendMessageGEvent));
+            Logger.LogInformation("PumpFunSendMessageEvent2:" +
+                                  JsonConvert.SerializeObject(@pumpFunSendMessageGEvent));
             await GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyId))
                 .SendMessageAsync(@event.ReplyId, @event.ReplyMessage);
-            _logger.LogInformation("PumpFunSendMessageEvent3,grainId:" +
-                                   GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyId)).GetGrainId());
+            Logger.LogInformation("PumpFunSendMessageEvent3,grainId:" +
+                                  GrainFactory.GetGrain<IPumpFunGrain>(Guid.Parse(@event.ReplyId)).GetGrainId());
         }
     }
 
     public async Task SetPumpFunConfig(string chatId)
     {
-        _logger.LogInformation("PumpFunGAgent SetPumpFunConfig, chatId:" + chatId);
+        Logger.LogInformation("PumpFunGAgent SetPumpFunConfig, chatId:" + chatId);
         RaiseEvent(new SetPumpFunConfigEvent()
         {
             ChatId = chatId
         });
         await ConfirmEvents();
-        _logger.LogInformation("PumpFunGAgent SetPumpFunConfig2, chatId:" + chatId);
+        Logger.LogInformation("PumpFunGAgent SetPumpFunConfig2, chatId:" + chatId);
     }
 }
 

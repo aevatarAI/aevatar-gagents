@@ -21,13 +21,6 @@ namespace Aevatar.GAgent.NamingContest.CreativeAgent;
 public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, EventBase, InitCreativeDto>,
     ICreativeGAgent
 {
-    private readonly ILogger<CreativeGAgent> _logger;
-
-    public CreativeGAgent(ILogger<CreativeGAgent> logger) : base(logger)
-    {
-        _logger = logger;
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(GroupChatStartGEvent @event)
     {
@@ -102,7 +95,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
+            Logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
         }
 
         return Task.CompletedTask;
@@ -125,7 +118,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
+            Logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
             namingReply = NamingConstants.DefaultCreativeNaming;
         }
         finally
@@ -214,7 +207,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Creative] TrafficInformDebateGEvent error");
+            Logger.LogError(ex, "[Creative] TrafficInformDebateGEvent error");
             debateReply = NamingConstants.DefaultDebateContent;
         }
         finally
@@ -263,7 +256,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Creative] DiscussionGEvent error");
+            Logger.LogError(ex, "[Creative] DiscussionGEvent error");
         }
         finally
         {
@@ -486,7 +479,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         try
         {
             // Log or debug received message for verification
-            _logger.LogInformation($"Received message: {message}");
+            Logger.LogInformation($"Received message: {message}");
 
             // Step 1: Process the incoming message
             // Replace this with actual logic depending on what you need to do with the data
@@ -501,7 +494,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         catch (Exception ex)
         {
             // Step 3: Handle any exceptions gracefully
-            _logger.LogError($"Error in processing message: {ex.Message}");
+            Logger.LogError($"Error in processing message: {ex.Message}");
 
             // Optional: Add error tracking or retry logic here
             throw; // Re-throw exception if you want to propagate it
@@ -561,7 +554,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         await ConfirmEvents();
     }
 
-    public async override Task InitializeAsync(InitCreativeDto initializeDto)
+    protected override async Task PerformConfigAsync(InitCreativeDto initializeDto)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent
             { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });

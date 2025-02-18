@@ -13,18 +13,9 @@ using Aevatar.GAgents.Twitter.Grains;
 namespace Aevatar.GAgents.Twitter.Agent;
 
 [Description("Handle telegram")]
-[StorageProvider(ProviderName = "PubSubStore")]
-[LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TwitterGAgent))]
 public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitterGAgent
 {
-    private readonly ILogger<TwitterGAgent> _logger;
-
-    public TwitterGAgent(ILogger<TwitterGAgent> logger) : base(logger)
-    {
-        _logger = logger;
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult(
@@ -34,7 +25,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
     [EventHandler]
     public async Task HandleEventAsync(ReceiveReplyGEvent @event)
     {
-        _logger.LogInformation("HandleEventAsync ReceiveReplyEvent, id: {id} ", @event.TweetId);
+        Logger.LogInformation("HandleEventAsync ReceiveReplyEvent, id: {id} ", @event.TweetId);
 
         var requestId = Guid.NewGuid();
         RaiseEvent(new TweetRequestSEvent() { RequestId = requestId });
@@ -51,7 +42,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
     [EventHandler]
     public async Task HandleEventAsync(CreateTweetGEvent @event)
     {
-        _logger.LogDebug("HandleEventAsync CreateTweetEvent, text: {text}", @event.Text);
+        Logger.LogDebug("HandleEventAsync CreateTweetEvent, text: {text}", @event.Text);
         if (@event.Text.IsNullOrEmpty())
         {
             return;
@@ -59,7 +50,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
 
         if (State.UserId.IsNullOrEmpty())
         {
-            _logger.LogDebug("HandleEventAsync SocialResponseEvent null userId");
+            Logger.LogDebug("HandleEventAsync SocialResponseEvent null userId");
             return;
         }
 
@@ -90,11 +81,11 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
             }
         }
 
-        _logger.LogDebug("HandleEventAsync SocialResponseEvent, content: {text}, id: {id}",
+        Logger.LogDebug("HandleEventAsync SocialResponseEvent, content: {text}, id: {id}",
             @event.ResponseContent, @event.ReplyMessageId);
         if (State.UserId.IsNullOrEmpty())
         {
-            _logger.LogDebug("HandleEventAsync SocialResponseEvent null userId");
+            Logger.LogDebug("HandleEventAsync SocialResponseEvent null userId");
             return;
         }
 
@@ -120,20 +111,20 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
     [EventHandler]
     public async Task HandleEventAsync(ReplyMentionGEvent @event)
     {
-        _logger.LogDebug("HandleEventAsync ReplyMentionEvent");
+        Logger.LogDebug("HandleEventAsync ReplyMentionEvent");
         if (State.UserId.IsNullOrEmpty())
         {
-            _logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
+            Logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
             return;
         }
 
         var mentionTweets =
             await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).GetRecentMentionAsync(State.UserName);
-        _logger.LogDebug("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
+        Logger.LogDebug("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
         foreach (var tweet in mentionTweets)
         {
-            _logger.LogDebug("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
-                             "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
+            Logger.LogDebug("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
+                            "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
             if (!State.RepliedTweets.Keys.Contains(tweet.Id))
             {
                 var requestId = Guid.NewGuid();
@@ -152,7 +143,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
 
     public async Task BindTwitterAccountAsync(string userName, string userId, string token, string tokenSecret)
     {
-        _logger.LogDebug("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
+        Logger.LogDebug("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
             userId, userName);
         RaiseEvent(new BindTwitterAccountSEvent()
         {
@@ -166,7 +157,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
 
     public async Task UnbindTwitterAccountAsync()
     {
-        _logger.LogDebug("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
+        Logger.LogDebug("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
         RaiseEvent(new UnbindTwitterAccountEvent()
         {
         });

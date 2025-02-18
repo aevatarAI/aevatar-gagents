@@ -3,10 +3,7 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
-using Aevatar.GAgents.Basic.GroupGAgent;
-using Aevatar.GAgents.Basic.PublishGAgent;
-using Aevatar.GAgents.MicroAI.GAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
 using AiSmart.GAgent.NamingContest.JudgeAgent;
@@ -21,10 +18,6 @@ namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 [GAgent(nameof(FirstRoundTrafficGAgent))]
 public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEventStateLogEvent, EventBase, InitFirstRoundTrafficDto>, IFirstTrafficGAgent
 {
-    public FirstRoundTrafficGAgent(ILogger<FirstRoundTrafficGAgent> logger) : base(logger)
-    {
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(GroupStartGEvent gEvent)
     {
@@ -415,7 +408,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
     //
     //     TransitionState(state, @event);
     // }
-    public override async Task InitializeAsync(InitFirstRoundTrafficDto initializeDto)
+    protected override async Task PerformConfigAsync(InitFirstRoundTrafficDto initializeDto)
     {
         RaiseEvent(new FirstTrafficSetAgentSEvent()
         {

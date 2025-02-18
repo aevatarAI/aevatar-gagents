@@ -2,9 +2,7 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
-using Aevatar.GAgents.Basic.GroupGAgent;
-using Aevatar.GAgents.Basic.PublishGAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
@@ -17,13 +15,6 @@ namespace AiSmart.GAgent.NamingContest.HostAgent;
 [GAgent(nameof(HostGAgent))]
 public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, InitHostDto>, IHostGAgent
 {
-    private readonly ILogger<HostGAgent> _logger;
-
-    public HostGAgent(ILogger<HostGAgent> logger) : base(logger)
-    {
-        _logger = logger;
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(HostSummaryGEvent @event)
     {
@@ -46,7 +37,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
+            Logger.LogError(ex, "[Creative] TrafficInformCreativeGEvent error");
             summaryReply = NamingConstants.DefaultCreativeNaming;
         }
         finally
@@ -118,13 +109,14 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
     {
         return Task.FromResult(State.AgentName);
     }
-
-    public async override Task InitializeAsync(InitHostDto initializeDto)
+    
+    
+    protected override async Task PerformConfigAsync(InitHostDto initializeDto)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent
             { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
         await base.ConfirmEvents();
-
+    
         await GrainFactory.GetGrain<IChatAgentGrain>(initializeDto.AgentName)
             .SetAgentAsync(initializeDto.AgentResponsibility);
     }

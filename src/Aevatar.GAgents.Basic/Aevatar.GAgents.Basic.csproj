@@ -9,6 +9,9 @@
     <ItemGroup>
         <PackageReference Include="Volo.Abp.AutoMapper"/>
         <PackageReference Include="Aevatar.Core"/>
-        <PackageReference Include="Aevatar.Core.Abstractions"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Aevatar.GAgents.Basic.Abstractions\Aevatar.GAgents.Basic.Abstractions.csproj" />
     </ItemGroup>
 </Project>

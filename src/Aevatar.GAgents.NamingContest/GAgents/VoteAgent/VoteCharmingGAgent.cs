@@ -1,9 +1,7 @@
 
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
-using Aevatar.GAgents.Basic.GroupGAgent;
-using Aevatar.GAgents.Basic.PublishGAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using AiSmart.GAgent.NamingContest.VoteAgent.Dto;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -13,10 +11,6 @@ namespace AiSmart.GAgent.NamingContest.VoteAgent;
 [GAgent(nameof(VoteCharmingGAgent))]
 public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent>, IVoteCharmingGAgent
 {
-    public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger) : base(logger)
-    {
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(InitVoteAgent @event)
     {

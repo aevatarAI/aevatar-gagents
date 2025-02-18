@@ -15,13 +15,6 @@ namespace Aevatar.GAgents.MicroAI.GAgent;
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 public abstract class MicroAIGAgent : GAgentBase<MicroAIGAgentState, AIMessageStateLogEvent>, IMicroAIGAgent
 {
-    protected readonly ILogger<MicroAIGAgent> _logger;
-
-    public MicroAIGAgent(ILogger<MicroAIGAgent> logger) : base(logger)
-    {
-        _logger = logger;
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult(

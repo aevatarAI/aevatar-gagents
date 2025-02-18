@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Aevatar.Core.Abstractions"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0"/>
+    </ItemGroup>
+
+</Project>

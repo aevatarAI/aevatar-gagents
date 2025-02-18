@@ -16,14 +16,10 @@ namespace Aevatar.GAgents.TestAgent;
 [GAgent(nameof(SocialGAgent))]
 public class SocialGAgent : MicroAIGAgent, ISocialGAgent
 {
-    public SocialGAgent(ILogger<MicroAIGAgent> logger) : base(logger)
-    {
-    }
-
     [EventHandler]
     public  async Task<SocialResponseGEvent> HandleEventAsync(SocialGEvent @event)
     {
-        _logger.LogInformation("handle SocialEvent, content: {content}", @event.Content);
+        Logger.LogInformation("handle SocialEvent, content: {content}", @event.Content);
         List<AIMessageStateLogEvent> list = new List<AIMessageStateLogEvent>();
         list.Add(new AiReceiveStateLogEvent
         {
@@ -39,7 +35,7 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
                 .SendAsync(@event.Content, State.RecentMessages.ToList());
             if (message != null && !message.Content.IsNullOrEmpty())
             {
-                _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message.Content);
+                Logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message.Content);
                 list.Add(new AiReplyStateLogEvent()
                 {
                     Message = message
@@ -52,7 +48,7 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "handle SocialEvent, Get AIReplyMessage Error: {err}", e.Message);
+            Logger.LogError(e, "handle SocialEvent, Get AIReplyMessage Error: {err}", e.Message);
         }
         
         base.RaiseEvents(list);

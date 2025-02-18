@@ -2,7 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.GAgents.NamingContest.GAgents.LogEventAgent.Dto;
 
-public class InitLogEvent:InitializationEventBase
+public class InitLogEvent:ConfigurationBase
 {
     public string CallBackUrl { get; set; }
     public string Round { get; set; }

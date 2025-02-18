@@ -5,7 +5,7 @@ using AElf.Client.MultiToken;
 using Aevatar.GAgents.AElf.Agent.Event;
 using Aevatar.GAgents.AElf.Dto;
 using Aevatar.GAgents.AElf.Provider;
-using Aevatar.GAgents.Basic.PublishGAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Providers;

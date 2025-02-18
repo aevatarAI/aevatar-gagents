@@ -18,10 +18,6 @@ namespace AISmart.GAgent.Telegram.Agent;
 [GAgent(nameof(TelegramGAgent))]
 public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, ITelegramGAgent
 {
-    public TelegramGAgent(ILogger<TelegramGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult(

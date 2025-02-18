@@ -4,9 +4,7 @@ using Aevatar.GAgent.NamingContest.Common;
 using Aevatar.GAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgent.NamingContest.TrafficGAgent;
 using Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
-using Aevatar.GAgents.Basic.GroupGAgent;
-using Aevatar.GAgents.Basic.PublishGAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using Aevatar.GAgents.MicroAI.GAgent;
 using Aevatar.GAgents.MicroAI.Model;
 using Aevatar.GAgents.NamingContest.Common;
@@ -21,10 +19,6 @@ public class SecondRoundTrafficGAgent :
     GAgentBase<SecondTrafficState, TrafficEventStateLogEvent, EventBase, InitSecondRoundTrafficDto>,
     ISecondTrafficGAgent
 {
-    public SecondRoundTrafficGAgent(ILogger<SecondRoundTrafficGAgent> logger) : base(logger)
-    {
-    }
-
     [EventHandler]
     public async Task HandleEventAsync(GroupStartGEvent @event)
     {
@@ -421,7 +415,7 @@ public class SecondRoundTrafficGAgent :
         return Task.FromResult((int)State.NamingStep);
     }
 
-    public override async Task InitializeAsync(InitSecondRoundTrafficDto initializeDto)
+    protected override async Task PerformConfigAsync(InitSecondRoundTrafficDto initializeDto)
     {
         RaiseEvent(new SecondTrafficSetAgentSEvent()
         {

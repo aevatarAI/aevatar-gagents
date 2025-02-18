@@ -18,10 +18,6 @@ namespace Aevatar.GAgents.AElf.Agent;
 [GAgent(nameof(AElfGAgent))]
 public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>, IAElfAgent
 {
-    public AElfGAgent(ILogger<AElfGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a aelf thread is published.");

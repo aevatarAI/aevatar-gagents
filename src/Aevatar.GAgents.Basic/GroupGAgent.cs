@@ -1,17 +1,13 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
+using Aevatar.GAgents.Basic.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace Aevatar.GAgents.Basic.GroupGAgent;
+namespace Aevatar.GAgents.Basic;
 
-[GAgent(nameof(GroupGAgent))]
+[GAgent, Obsolete("This agent is obsolete. Use RelayGAgent instead.")]
 public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>, IGroupGAgent
 {
-    public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a social event is published.");
@@ -27,13 +23,13 @@ public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>, IGr
         await PublishAsync(@event);
     }
 
-    protected override Task OnRegisterAgentAsync(Guid agentGuid)
+    protected override Task OnRegisterAgentAsync(GrainId grainId)
     {
         ++State.RegisteredGAgents;
         return Task.CompletedTask;
     }
 
-    protected override Task OnUnregisterAgentAsync(Guid agentGuid)
+    protected override Task OnUnregisterAgentAsync(GrainId grainId)
     {
         --State.RegisteredGAgents;
         return Task.CompletedTask;
