@@ -32,20 +32,26 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
         return Task.CompletedTask;
     }
 
-    public async Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event)
+    public Task<bool> CheckChatIsAvailable(ChatResponseEvent @event)
+    {
+        return Task.FromResult(@event.BlackboardId == this.GetPrimaryKey() && @event.Term == State.ChatTerm &&
+                               @event.MemberId == State.CoordinatorSpeaker);
+    }
+
+    public async Task HandleChatResponseEventAsync(ChatResponseEvent @event)
     {
         if (@event.BlackboardId != this.GetPrimaryKey())
         {
             return;
         }
 
-        RaiseEvent(new AddChatTermLogEvent() { IfComplete = @event.TalkResponse.IfContinue });
+        RaiseEvent(new AddChatTermLogEvent() { IfComplete = @event.ChatResponse.Continue });
         await ConfirmEvents();
 
         _interestInfoList.Clear();
 
         // group chat finished
-        if (@event.TalkResponse.IfContinue == false)
+        if (@event.ChatResponse.Continue == false)
         {
             await PublishAsync(new GroupChatFinishEventForCoordinator() { BlackboardId = this.GetPrimaryKey() });
             if (_timer != null)
@@ -69,7 +75,7 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
         }
     }
 
-    public async Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResponseEvent @event)
+    public async Task HandleGetInterestResultEventAsync(EvaluationInterestResponseEvent @event)
     {
         if (@event.BlackboardId != this.GetPrimaryKey() || @event.ChatTerm < State.ChatTerm)
         {
@@ -169,7 +175,7 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
     private async Task BackgroundWork(CancellationToken token)
     {
         await TryDriveProgress();
-        await TryConnectMember();
+        await TryPingMember();
     }
 
     private async Task TryDriveProgress()
@@ -199,10 +205,18 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
                     { BlackboardId = this.GetPrimaryKey(), ChatTerm = State.ChatTerm });
                 _latestSendInterestTime = DateTime.Now;
             }
+            
+            return;
+        }
+
+        // member not send message, should reschedule
+        if ((DateTime.Now - State.CoordinatorTime).TotalSeconds > 10)
+        {
+            await Coordinator();
         }
     }
 
-    private async Task TryConnectMember()
+    private async Task TryPingMember()
     {
         var ifSendPingMsg = await CheckSendCoordinatorPingEventAsync(DateTime.Now);
         if (ifSendPingMsg)
@@ -233,9 +247,10 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
             return false;
         }
 
-        await PublishAsync(new SpeechEventForCoordinator() { BlackboardId = this.GetPrimaryKey(), Speaker = speaker });
+        await PublishAsync(new ChatEventForCoordinator()
+            { BlackboardId = this.GetPrimaryKey(), Speaker = speaker, Term = State.ChatTerm });
 
-        RaiseEvent(new TriggerCoordinator());
+        RaiseEvent(new TriggerCoordinator() { MemberId = speaker, CreateTime = DateTime.Now });
         await ConfirmEvents();
 
         return true;
@@ -245,7 +260,8 @@ public abstract class CoordinatorGAgentBase : GAgentBase<CoordinatorStateBase, C
 public interface ICoordinatorGAgent : IGAgent
 {
     Task StartAsync();
-    Task HandleSpeechResponseEventAsync(SpeechResponseEvent @event);
-    Task HandleEvaluationInterestResultEventAsync(EvaluationInterestResponseEvent @event);
+    Task<bool> CheckChatIsAvailable(ChatResponseEvent @event);
+    Task HandleChatResponseEventAsync(ChatResponseEvent @event);
+    Task HandleGetInterestResultEventAsync(EvaluationInterestResponseEvent @event);
     Task HandleCoordinatorPongEventAsync(CoordinatorPongEvent @event);
 }

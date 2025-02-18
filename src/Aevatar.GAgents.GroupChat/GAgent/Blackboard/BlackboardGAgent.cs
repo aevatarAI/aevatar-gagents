@@ -44,32 +44,32 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(SpeechResponseEvent @event)
+    public async Task HandleEventAsync(ChatResponseEvent @event)
     {
-        if (@event.BlackboardId != this.GetPrimaryKey())
+        var coordinatorAgent = GetICoordinatorGAgent();
+        if (await coordinatorAgent.CheckChatIsAvailable(@event) == false)
         {
             return;
         }
 
-        if (@event.TalkResponse.SkipSpeak == false)
+        if (@event.ChatResponse.Skip == false)
         {
             RaiseEvent(new AddChatHistoryLogEvent()
             {
                 AgentName = @event.MemberName, MemberId = @event.MemberId, MessageType = MessageType.User,
-                Content = @event.TalkResponse.SpeakContent
+                Content = @event.ChatResponse.Content
             });
             await ConfirmEvents();
         }
 
-        var coordinatorAgent = GetICoordinatorGAgent();
-        await coordinatorAgent.HandleSpeechResponseEventAsync(@event);
+        await coordinatorAgent.HandleChatResponseEventAsync(@event);
     }
 
     [EventHandler]
     public async Task HandleEventAsync(EvaluationInterestResponseEvent @event)
     {
         var coordinatorAgent = GetICoordinatorGAgent();
-        await coordinatorAgent.HandleEvaluationInterestResultEventAsync(@event);
+        await coordinatorAgent.HandleGetInterestResultEventAsync(@event);
     }
 
     [EventHandler]
@@ -109,10 +109,10 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(SpeechEventForCoordinator @event)
+    public async Task HandleEventAsync(ChatEventForCoordinator @event)
     {
         // proxy coordinator event to group
-        await PublishAsync(new SpeechEvent()
+        await PublishAsync(new ChatEvent()
         {
             BlackboardId = @event.BlackboardId,
             Speaker = @event.Speaker

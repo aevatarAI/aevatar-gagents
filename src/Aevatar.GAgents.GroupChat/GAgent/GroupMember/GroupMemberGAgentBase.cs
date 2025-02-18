@@ -9,9 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace GroupChat.GAgent;
 
-public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemberLogEvent>, IGroupMember
+public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, GroupMemberLogEvent>, IGroupMember
 {
-    protected GroupMemberGAgent(ILogger<GroupMemberGAgent> logger) : base(logger)
+    protected GroupMemberGAgentBase(ILogger<GroupMemberGAgentBase> logger) : base(logger)
     {
     }
 
@@ -19,7 +19,7 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
     public async Task HandleEventAsync(EvaluationInterestEvent @event)
     {
         var history = await GetMessageFromBlackboard(@event.BlackboardId);
-        var score = await EvaluationInterestValueAsync(@event.BlackboardId, history);
+        var score = await GetInterestValueAsync(@event.BlackboardId, history);
 
         await PublishAsync(new EvaluationInterestResponseEvent()
         {
@@ -29,7 +29,7 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
     }
 
     [EventHandler]
-    public async Task HandleEventAsync(SpeechEvent @event)
+    public async Task HandleEventAsync(ChatEvent @event)
     {
         if (@event.Speaker != this.GetPrimaryKey())
         {
@@ -37,11 +37,11 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
         }
 
         var history = await GetMessageFromBlackboard(@event.BlackboardId);
-        var talkResponse = await SpeechAsync(@event.BlackboardId, history);
-        await PublishAsync(new SpeechResponseEvent()
+        var talkResponse = await ChatAsync(@event.BlackboardId, history);
+        await PublishAsync(new ChatResponseEvent()
         {
             BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName,
-            TalkResponse = talkResponse
+            ChatResponse = talkResponse, Term = @event.Term
         });
     }
 
@@ -56,13 +56,14 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
     {
         if (await IgnoreBlackboardPingEvent(@event.BlackboardId) == false)
         {
-            await PublishAsync(new CoordinatorPongEvent() { BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName});
+            await PublishAsync(new CoordinatorPongEvent()
+                { BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName });
         }
     }
 
-    protected abstract Task<int> EvaluationInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
 
-    protected abstract Task<TalkResponse> SpeechAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages);
 
     protected virtual Task GroupChatFinishAsync(Guid blackboardId)
     {
@@ -73,7 +74,7 @@ public abstract class GroupMemberGAgent : GAgentBase<GroupMemberState, GroupMemb
     {
         return Task.FromResult(false);
     }
-    
+
     public async Task SetMemberName(string agentName)
     {
         RaiseEvent(new SetMemberNameLogEvent() { MemberName = agentName });

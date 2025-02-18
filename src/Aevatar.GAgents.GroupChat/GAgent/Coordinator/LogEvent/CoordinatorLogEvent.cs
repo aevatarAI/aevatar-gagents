@@ -17,4 +17,6 @@ public class AddChatTermLogEvent : CoordinatorLogEventBase
 [GenerateSerializer]
 public class TriggerCoordinator : CoordinatorLogEventBase
 {
+    [Id(0)] public Guid MemberId { get; set; }
+    [Id(1)] public DateTime CreateTime { get; set; }
 }

@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace GroupChat.Grain;
 
-public class Worker : GroupMemberGAgent, IWorker
+public class Worker : GroupMemberGAgentBase, IWorker
 {
-    public Worker(ILogger<GroupMemberGAgent> logger) : base(logger)
+    public Worker(ILogger<GroupMemberGAgentBase> logger) : base(logger)
     {
     }
 
@@ -15,17 +15,17 @@ public class Worker : GroupMemberGAgent, IWorker
         return Task.FromResult("you are worker");
     }
 
-    protected override Task<int> EvaluationInterestValueAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages)
     {
         var random = new Random();
 
         return Task.FromResult(random.Next(1, 90));
     }
 
-    protected override Task<TalkResponse> SpeechAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages)
     {
-        var response = new TalkResponse();
-        response.SpeakContent = $"this is the {messages.Count} message";
+        var response = new ChatResponse();
+        response.Content = $"this is the {messages.Count} message";
         
         Console.WriteLine($"{State.MemberName} Can Speak");
         return Task.FromResult(response);

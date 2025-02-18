@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GroupChat.Grain;
 
-public class Leader : GroupMemberGAgent, ILeader
+public class Leader : GroupMemberGAgentBase, ILeader
 {
     public Leader(ILogger<Leader> logger) : base(logger)
     {
@@ -15,7 +15,7 @@ public class Leader : GroupMemberGAgent, ILeader
         return Task.FromResult("Leader");
     }
 
-    protected override Task<int> EvaluationInterestValueAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages)
     {
         if (messages.Count > 10)
         {
@@ -25,11 +25,11 @@ public class Leader : GroupMemberGAgent, ILeader
         return Task.FromResult(0);
     }
 
-    protected override Task<TalkResponse> SpeechAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages)
     {
-        var response = new TalkResponse();
-        response.IfContinue = false;
-        response.SpeakContent = "Discussion ended";
+        var response = new ChatResponse();
+        response.Continue = false;
+        response.Content = "Discussion ended";
         Console.WriteLine($"{State.MemberName} Can Speak");
         return Task.FromResult(response);
     }

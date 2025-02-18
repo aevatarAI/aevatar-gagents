@@ -6,8 +6,10 @@ namespace GroupChat.GAgent.Feature.Coordinator.LogEvent;
 public class CoordinatorStateBase : StateBase
 {
     [Id(1)] public int ChatTerm { get; set; } = 0;
-    [Id(2)] public bool IfTriggerCoordinate = false;
-    [Id(3)] public bool IfComplete = false;
+    [Id(2)] public bool IfTriggerCoordinate { get; set; } = false;
+    [Id(3)] public bool IfComplete { get; set; } = false;
+    [Id(4)] public Guid CoordinatorSpeaker { get; set; }
+    [Id(5)] public DateTime CoordinatorTime { get; set; }
 
     public void Apply(AddChatTermLogEvent @event)
     {
@@ -19,6 +21,8 @@ public class CoordinatorStateBase : StateBase
     public void Apply(TriggerCoordinator @event)
     {
         IfTriggerCoordinate = true;
+        CoordinatorSpeaker = @event.MemberId;
+        CoordinatorTime = @event.CreateTime;
     }
 }
 
