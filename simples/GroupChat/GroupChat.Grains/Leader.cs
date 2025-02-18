@@ -28,6 +28,12 @@ public class Leader : GroupMemberGAgentBase, ILeader
     protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages)
     {
         var response = new ChatResponse();
+        if (messages.Count() < 10)
+        {
+            response.Skip = true;
+            return Task.FromResult(response);
+        }
+
         response.Continue = false;
         response.Content = "Discussion ended";
         Console.WriteLine($"{State.MemberName} Can Speak");

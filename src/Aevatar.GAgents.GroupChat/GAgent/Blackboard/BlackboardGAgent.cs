@@ -115,7 +115,8 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
         await PublishAsync(new ChatEvent()
         {
             BlackboardId = @event.BlackboardId,
-            Speaker = @event.Speaker
+            Speaker = @event.Speaker,
+            Term = @event.Term
         });
     }
 
