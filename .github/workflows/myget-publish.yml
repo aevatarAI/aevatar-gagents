@@ -22,8 +22,9 @@ jobs:
         servicename: [
           Aevatar.GAgents.Twitter,
           Aevatar.GAgents.Telegram,
-#          Aevatar.GAgents.Pumpfun,
-#          Aevatar.GAgents.SocialAgent
+          Aevatar.GAgents.Pumpfun,
+          Aevatar.GAgents.SocialGAgent,
+          Aevatar.GAgents.Basic
         ]
     steps:
       - name: Checkout code

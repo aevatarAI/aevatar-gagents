@@ -7,6 +7,7 @@ using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using AISmart.GAgent.Telegram.Agent.GEvents;
 using AISmart.GAgent.Telegram.GEvents;
 using AISmart.GAgent.Telegram.Grains;
+using AISmart.GAgent.Telegram.Options;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 
@@ -16,7 +17,8 @@ namespace AISmart.GAgent.Telegram.Agent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TelegramGAgent))]
-public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, ITelegramGAgent
+public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, EventBase, TelegramOptionsDto>,
+    ITelegramGAgent
 {
     public TelegramGAgent(ILogger<TelegramGAgent> logger) : base(logger)
     {
@@ -36,7 +38,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
             Token = token
         });
         await ConfirmEvents();
-        await GrainFactory.GetGrain<ITelegramGrain>(botName).RegisterTelegramAsync(
+        await GrainFactory.GetGrain<ITelegramGrain>(botName).RegisterTelegramAsync(State.TelegramOptions.Webhook,
             State.BotName, State.Token);
     }
 
@@ -56,7 +58,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
             Logger.LogDebug("Message reception repeated for Telegram Message ID: " + @event.MessageId);
             return;
         }
-        
+
         var requestId = Guid.NewGuid();
         RaiseEvent(new TelegramRequestSEvent() { RequestId = requestId });
         await ConfirmEvents();
@@ -120,6 +122,14 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent>, IT
 
         await GrainFactory.GetGrain<ITelegramGrain>(State.BotName).SendMessageAsync(
             State.Token, chatId, message, replyMessageId);
+    }
+
+    public override async Task InitializeAsync(TelegramOptionsDto initializationEvent)
+    {
+        RaiseEvent(new TelegramOptionSEvent()
+            { Webhook = initializationEvent.Webhook, EncryptionPassword = initializationEvent.EncryptionPassword });
+
+        await ConfirmEvents();
     }
 }
 
