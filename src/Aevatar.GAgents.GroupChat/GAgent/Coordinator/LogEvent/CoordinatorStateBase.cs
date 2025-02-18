@@ -10,20 +10,7 @@ public class CoordinatorStateBase : StateBase
     [Id(3)] public bool IfComplete { get; set; } = false;
     [Id(4)] public Guid CoordinatorSpeaker { get; set; }
     [Id(5)] public DateTime CoordinatorTime { get; set; }
-
-    public void Apply(AddChatTermLogEvent @event)
-    {
-        ChatTerm += 1;
-        IfTriggerCoordinate = false;
-        IfComplete = @event.IfComplete;
-    }
-
-    public void Apply(TriggerCoordinator @event)
-    {
-        IfTriggerCoordinate = true;
-        CoordinatorSpeaker = @event.MemberId;
-        CoordinatorTime = @event.CreateTime;
-    }
+    [Id(6)] public Guid BlackboardId { get; set; }
 }
 
 [GenerateSerializer]

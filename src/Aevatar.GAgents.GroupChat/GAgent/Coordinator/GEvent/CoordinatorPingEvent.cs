@@ -18,22 +18,10 @@ public class GroupChatFinishEvent:EventFromCoordinatorBase
 
 
 [GenerateSerializer]
-public class GroupChatFinishEventForCoordinator:GroupChatFinishEvent
-{
-    
-}
-
-[GenerateSerializer]
 public class EvaluationInterestEvent:EventFromCoordinatorBase
 {
     [Id(0)] public Guid BlackboardId { get; set; }
     [Id(1)] public int ChatTerm { get; set; }
-}
-
-[GenerateSerializer]
-public class EvaluationInterestEventForCoordinator : EvaluationInterestEvent
-{
-    
 }
 
 [GenerateSerializer]
@@ -49,12 +37,6 @@ public class EvaluationInterestResponseEvent : EventBase
 public class CoordinatorPingEvent : EventFromCoordinatorBase
 {
     [Id(0)] public Guid BlackboardId { get; set; } 
-}
-
-[GenerateSerializer]
-public class CoordinatorPingEventForCoordinator : CoordinatorPingEvent
-{
-    
 }
 
 [GenerateSerializer]
@@ -75,12 +57,6 @@ public class ChatEvent:EventFromCoordinatorBase
 }
 
 [GenerateSerializer]
-public class ChatEventForCoordinator : ChatEvent
-{
-    
-}
-
-[GenerateSerializer]
 public class ChatResponseEvent : EventBase
 {
     [Id(0)] public Guid BlackboardId { get; set; }
@@ -88,4 +64,13 @@ public class ChatResponseEvent : EventBase
     [Id(2)] public string MemberName { get; set; }
     [Id(3)] public ChatResponse ChatResponse { get; set; }
     [Id(4)] public int Term { get; set; }
+}
+
+[GenerateSerializer]
+public class CoordinatorConfirmChatResponse : ChatResponseEvent
+{
+    [Id(0)] public Guid BlackboardId { get; set; }
+    [Id(1)] public Guid MemberId { get; set; }
+    [Id(2)] public string MemberName { get; set; }
+    [Id(3)] public ChatResponse ChatResponse { get; set; }
 }
