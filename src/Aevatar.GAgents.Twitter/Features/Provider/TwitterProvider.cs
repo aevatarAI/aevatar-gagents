@@ -40,18 +40,15 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
 {
     private readonly ILogger<ITwitterProvider> _logger;
     private readonly HttpClient _httpClient;
-    // private readonly AESCipher _aesCipher;
 
     public TwitterProvider(ILogger<ITwitterProvider> logger)
     {
         _logger = logger;
         _httpClient = new HttpClient();
-        // _aesCipher = new AESCipher(password);
     }
 
     public async Task<List<Tweet>> GetMentionsAsync(string userName, string bearerToken)
     {
-        // var bearerToken = _twitterOptions.CurrentValue.BearerToken;
         string query = $"@{userName}";
         string encodedQuery = Uri.EscapeDataString(query);
         string url =
@@ -80,15 +77,6 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
 
     private string GetDecryptedData(string data)
     {
-        // try
-        // {
-        //     return _aesCipher.Decrypt(data);
-        // }
-        // catch (Exception e)
-        // {
-        //     _logger.LogError("GetDecryptedData Error: {err}, data: {data}", e.Message, data);
-        // }
-
         return data;
     }
 
