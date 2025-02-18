@@ -11,16 +11,18 @@ using Orleans.Providers;
 namespace AISmart.GAgent.Telegram.Grains;
 
 [StorageProvider(ProviderName = "PubSubStore")]
-public class TelegramGrain : Grain<TelegramState>, ITelegramGrain
+public class TelegramGrain : Grain, ITelegramGrain
 {
     private readonly ITelegramProvider _telegramProvider;
+
     private ILogger<TelegramGrain> _logger;
-    private readonly IOptionsMonitor<TelegramOptions> _telegramOptions;
-    public TelegramGrain(ITelegramProvider telegramProvider,ILogger<TelegramGrain> logger,IOptionsMonitor<TelegramOptions> telegramOptions) 
+
+    // private readonly IOptionsMonitor<TelegramOptionsDto> _telegramOptions;
+    public TelegramGrain(ITelegramProvider telegramProvider, ILogger<TelegramGrain> logger)
     {
         _telegramProvider = telegramProvider;
         _logger = logger;
-        _telegramOptions = telegramOptions;
+        // _telegramOptions = telegramOptions;
     }
 
 
@@ -34,12 +36,13 @@ public class TelegramGrain : Grain<TelegramState>, ITelegramGrain
                 MessageId = long.Parse(replyMessageId)
             };
         }
+
         await _telegramProvider.SendMessageAsync(sendUser, chatId, message, replyParamDto);
     }
 
-    public async Task RegisterTelegramAsync(string sendUser, string token)
+    public async Task RegisterTelegramAsync(string webhook, string sendUser, string token)
     {
-        await _telegramProvider.SetWebhookAsync(sendUser, _telegramOptions.CurrentValue.Webhook,token);
+        await _telegramProvider.SetWebhookAsync(sendUser, webhook, token);
     }
 
     public async Task UnRegisterTelegramAsync(string token)

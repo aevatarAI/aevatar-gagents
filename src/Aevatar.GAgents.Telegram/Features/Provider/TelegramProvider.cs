@@ -13,28 +13,27 @@ using Volo.Abp.DependencyInjection;
 
 namespace AISmart.GAgent.Telegram.Provider;
 
-public class TelegramProvider : ITelegramProvider,ISingletonDependency
+public class TelegramProvider : ITelegramProvider, ISingletonDependency
 {
     private readonly ILogger<TelegramProvider> _logger;
-    private readonly IOptionsMonitor<TelegramOptions> _telegramOptions;
-    private readonly AESCipher _aesCipher;
-    public TelegramProvider(ILogger<TelegramProvider> logger,IOptionsMonitor<TelegramOptions> telegramOptions)
+
+    // private readonly AESCipher _aesCipher;
+    public TelegramProvider(ILogger<TelegramProvider> logger)
     {
         _logger = logger;
-        _telegramOptions = telegramOptions;
-        string password = _telegramOptions.CurrentValue.EncryptionPassword;
-        _aesCipher = new AESCipher(password);
+        // _aesCipher = new AESCipher(password);
     }
-    
-    public async Task SendMessageAsync(string sendUser,string chatId, string message,ReplyParamDto? replyParam = null)
+
+    public async Task SendMessageAsync(string sendUser, string chatId, string message, ReplyParamDto? replyParam = null)
     {
         String token = GetAccount(sendUser);
         if (token.IsNullOrEmpty())
         {
-            return ;
+            return;
         }
+
         string url = $"https://api.telegram.org/bot{token}/sendMessage";
-        
+
         // Create a request object
         var sendMessageRequest = new MessageParamsRequest()
         {
@@ -43,9 +42,9 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
         };
 
         // Add reply_to_message_id if present
-        if (replyParam!= null)
+        if (replyParam != null)
         {
-          var replyParameters = new ReplyParameters
+            var replyParameters = new ReplyParameters
             {
                 MessageId = replyParam.MessageId.ToString()
             };
@@ -60,8 +59,9 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
 
         try
         {
-            _logger.LogDebug("send message to {chatId} : {message}",chatId, message);
-            var response = await new HttpClient().PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
+            _logger.LogDebug("send message to {chatId} : {message}", chatId, message);
+            var response =
+                await new HttpClient().PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
 
             response.EnsureSuccessStatusCode();
 
@@ -73,7 +73,7 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
             _logger.LogError($"request error: {e.Message}");
         }
     }
-    
+
     public async Task<string> GetUpdatesAsync(string sendUser)
     {
         String token = GetAccount(sendUser);
@@ -87,13 +87,13 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
         {
             // var telUpdate = await GetAsync<TelegramUpdateDto>(url);
             HttpResponseMessage response = await new HttpClient().GetAsync(url);
-                
+
             response.EnsureSuccessStatusCode();
 
             string responseBody = await response.Content.ReadAsStringAsync();
             _logger.LogInformation(responseBody);
             var res = await response.Content.DeserializeSnakeCaseAsync<GetUpdatedDto>();
-            _logger.LogInformation("GetUpdatesAsync:{message}",JsonConvert.SerializeObject(res));
+            _logger.LogInformation("GetUpdatesAsync:{message}", JsonConvert.SerializeObject(res));
             return responseBody;
         }
         catch (HttpRequestException e)
@@ -103,15 +103,16 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
 
         return null;
     }
-    
-    
-    public async Task SetWebhookAsync(string sendUser,string webhook, string token)
+
+
+    public async Task SetWebhookAsync(string sendUser, string webhook, string token)
     {
         String account = GetAccount(token);
         if (account.IsNullOrEmpty())
         {
             return;
         }
+
         string url = $"https://api.telegram.org/bot{account}/setWebhook";
 
         var parameters = new FormUrlEncodedContent(new[]
@@ -123,7 +124,7 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
         try
         {
             HttpResponseMessage response = await new HttpClient().PostAsync(url, parameters);
-                
+
             response.EnsureSuccessStatusCode();
 
             string responseBody = await response.Content.ReadAsStringAsync();
@@ -137,22 +138,22 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
 
     public async Task DelWebhookAsync(string token)
     {
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                _logger.LogWarning("Token is null or empty");
-                return;
-            }
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            _logger.LogWarning("Token is null or empty");
+            return;
+        }
 
-            String account = GetAccount(token);
-            if (string.IsNullOrWhiteSpace(account))
-            {
-                _logger.LogWarning("Account derived from token is null or empty");
-                return;
-            }
+        String account = GetAccount(token);
+        if (string.IsNullOrWhiteSpace(account))
+        {
+            _logger.LogWarning("Account derived from token is null or empty");
+            return;
+        }
 
-            string url = $"https://api.telegram.org/bot{account}/deleteWebhook";
-            try
-            {
+        string url = $"https://api.telegram.org/bot{account}/deleteWebhook";
+        try
+        {
             using (var httpClient = new HttpClient())
             {
                 HttpResponseMessage response = await httpClient.GetAsync(url);
@@ -165,29 +166,29 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
         {
             _logger.LogError($"Request error: {e.Message}");
         }
-       
     }
 
     private string GetAccount(string accountName)
     {
-        try
-        {
-          return  _aesCipher.Decrypt(accountName);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e,$"Decrypt error: {accountName}");
-        }
-        return "";
+        // try
+        // {
+        //   return  _aesCipher.Decrypt(accountName);
+        // }
+        // catch (Exception e)
+        // {
+        //     _logger.LogError(e,$"Decrypt error: {accountName}");
+        // }
+        return accountName;
     }
 
-    public async Task SendPhotoAsync(string sendUser,PhotoParamsRequest photoParamsRequest)
+    public async Task SendPhotoAsync(string sendUser, PhotoParamsRequest photoParamsRequest)
     {
         var token = GetAccount(sendUser);
         if (token.IsNullOrEmpty())
         {
             return;
         }
+
         var url = $"https://api.telegram.org/bot{token}/sendPhoto";
         var paramsJson = JsonConvert.SerializeObject(photoParamsRequest, new JsonSerializerSettings
         {
@@ -197,7 +198,7 @@ public class TelegramProvider : ITelegramProvider,ISingletonDependency
         try
         {
             var response = await new HttpClient().PostAsync(url, content);
-                
+
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync();
