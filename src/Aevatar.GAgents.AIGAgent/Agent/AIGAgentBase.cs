@@ -15,9 +15,25 @@ using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
-public abstract class AIGAgentBase<TState, TStateLogEvent> : GAgentBase<TState, TStateLogEvent>, IAIGAgent
+public abstract partial class
+    AIGAgentBase<TState, TStateLogEvent> : AIGAgentBase<TState, TStateLogEvent, EventBase, ConfigurationBase>
+    where TState : AIGAgentStateBase, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
+
+public abstract partial class
+    AIGAgentBase<TState, TStateLogEvent, TEvent> : AIGAgentBase<TState, TStateLogEvent, TEvent, ConfigurationBase>
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+    where TEvent : EventBase;
+
+
+public abstract partial class
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
+    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent
+    where TState : AIGAgentStateBase, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+    where TEvent : EventBase
+    where TConfiguration : ConfigurationBase
 {
     private readonly IBrainFactory _brainFactory;
     private IBrain? _brain = null;
