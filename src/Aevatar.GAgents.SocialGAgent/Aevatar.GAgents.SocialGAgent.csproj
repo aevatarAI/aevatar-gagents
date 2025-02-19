@@ -8,9 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Aevatar.GAgents.Autogen\Aevatar.GAgents.Autogen.csproj" />
       <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
-      <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
+      <ProjectReference Include="..\Aevatar.GAgents.ChatAgent\Aevatar.GAgents.ChatAgent.csproj" />
     </ItemGroup>
 
     <ItemGroup>

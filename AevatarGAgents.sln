@@ -51,6 +51,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Grains", "si
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Silo", "simples\AIGAgent\SimpleAIGAgent.Silo\SimpleAIGAgent.Silo.csproj", "{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent", "src\Aevatar.GAgents.ChatAgent\Aevatar.GAgents.ChatAgent.csproj", "{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -137,6 +139,10 @@ Global
 		{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -163,6 +169,7 @@ Global
 		{C5E7873B-8683-4AC2-9113-BDA48FDC10DF} = {D5F67508-C302-47D6-9DE9-32C2DC83917B}
 		{5C1D6FFC-DDFC-48A7-8DB0-B02EBD5FF243} = {D5F67508-C302-47D6-9DE9-32C2DC83917B}
 		{F6A070BD-EE04-45E8-B3E7-D68B30503FE1} = {D5F67508-C302-47D6-9DE9-32C2DC83917B}
+		{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
