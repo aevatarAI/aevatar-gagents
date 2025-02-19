@@ -19,7 +19,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
 {
     private readonly ILogger<HostGAgent> _logger;
 
-    public HostGAgent(ILogger<HostGAgent> logger) : base(logger)
+    public HostGAgent(ILogger<HostGAgent> logger)
     {
         _logger = logger;
     }
@@ -119,7 +119,7 @@ public class HostGAgent : GAgentBase<HostState, HostStateLogEvent, EventBase, In
         return Task.FromResult(State.AgentName);
     }
 
-    public async override Task InitializeAsync(InitHostDto initializeDto)
+    protected override async Task PerformConfigAsync(InitHostDto initializeDto)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent
             { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });

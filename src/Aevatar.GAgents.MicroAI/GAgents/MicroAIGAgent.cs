@@ -17,7 +17,7 @@ public abstract class MicroAIGAgent : GAgentBase<MicroAIGAgentState, AIMessageSt
 {
     protected readonly ILogger<MicroAIGAgent> _logger;
 
-    public MicroAIGAgent(ILogger<MicroAIGAgent> logger) : base(logger)
+    public MicroAIGAgent(ILogger<MicroAIGAgent> logger)
     {
         _logger = logger;
     }

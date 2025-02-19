@@ -20,7 +20,7 @@ namespace AISmart.GAgent.Telegram.Agent;
 public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, EventBase, TelegramOptionsDto>,
     ITelegramGAgent
 {
-    public TelegramGAgent(ILogger<TelegramGAgent> logger) : base(logger)
+    public TelegramGAgent(ILogger<TelegramGAgent> logger)
     {
     }
 
@@ -124,7 +124,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
             State.Token, chatId, message, replyMessageId);
     }
 
-    public override async Task InitializeAsync(TelegramOptionsDto initializationEvent)
+    protected override async Task PerformConfigAsync(TelegramOptionsDto initializationEvent)
     {
         RaiseEvent(new TelegramOptionSEvent()
             { Webhook = initializationEvent.Webhook, EncryptionPassword = initializationEvent.EncryptionPassword });

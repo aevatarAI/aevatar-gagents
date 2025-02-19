@@ -2,7 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.GAgent.NamingContest.TrafficGAgent.Dto;
 
-public class InitFirstRoundTrafficDto:InitializationEventBase
+public class InitFirstRoundTrafficDto: ConfigurationBase
 {
     public List<CreativeInfo> CreativeList { get; set; } = new List<CreativeInfo>();
     public List<Guid> JudgeAgentList { get; set; } = new List<Guid>();

@@ -22,7 +22,7 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
 {
     private readonly ILogger<PumpFunGAgent> _logger;
 
-    public PumpFunGAgent(ILogger<PumpFunGAgent> logger) : base(logger)
+    public PumpFunGAgent(ILogger<PumpFunGAgent> logger)
     {
         _logger = logger;
     }

@@ -24,7 +24,10 @@ jobs:
           Aevatar.GAgents.Telegram,
           Aevatar.GAgents.Pumpfun,
           Aevatar.GAgents.SocialGAgent,
-          Aevatar.GAgents.Basic
+          Aevatar.GAgents.Basic,
+          Aevatar.GAgents.AI.Abstractions,
+          Aevatar.GAgents.AIGAgent,
+          Aevatar.GAgents.SemanticKernel
         ]
     steps:
       - name: Checkout code

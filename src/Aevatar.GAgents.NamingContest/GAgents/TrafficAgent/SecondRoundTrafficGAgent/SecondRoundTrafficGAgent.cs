@@ -21,7 +21,7 @@ public class SecondRoundTrafficGAgent :
     GAgentBase<SecondTrafficState, TrafficEventStateLogEvent, EventBase, InitSecondRoundTrafficDto>,
     ISecondTrafficGAgent
 {
-    public SecondRoundTrafficGAgent(ILogger<SecondRoundTrafficGAgent> logger) : base(logger)
+    public SecondRoundTrafficGAgent(ILogger<SecondRoundTrafficGAgent> logger)
     {
     }
 
@@ -421,7 +421,7 @@ public class SecondRoundTrafficGAgent :
         return Task.FromResult((int)State.NamingStep);
     }
 
-    public override async Task InitializeAsync(InitSecondRoundTrafficDto initializeDto)
+    protected override async Task PerformConfigAsync(InitSecondRoundTrafficDto initializeDto)
     {
         RaiseEvent(new SecondTrafficSetAgentSEvent()
         {
