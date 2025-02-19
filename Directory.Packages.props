@@ -3,16 +3,14 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.3.10</AevatarCoreVersion>
-    <AevatarEventSoucingVersion>1.3.10</AevatarEventSoucingVersion>
-    <AevatarAbstractionsVersion>1.3.10</AevatarAbstractionsVersion>
+    <AevatarCoreVersion>1.4.2</AevatarCoreVersion>
+    <AevatarEventSoucingVersion>1.4.2</AevatarEventSoucingVersion>
+    <AevatarAbstractionsVersion>1.4.2</AevatarAbstractionsVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
-    <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarAbstractionsVersion)" />
+    <PackageVersion Include="Aevatar.Core.Abstractions" Version="1.4.2" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />
-    <PackageVersion Include="Aevatar.AI.Abstractions" Version="1.3.10" />
-    <PackageVersion Include="Aevatar.AI.SemanticKernel" Version="1.3.10" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
@@ -45,15 +43,24 @@
     <PackageVersion Include="Microsoft.Orleans.Reminders" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Runtime" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Sdk" Version="$(OrleansVerion)" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Orleans.Server" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Streaming" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.TestingHost" Version="$(OrleansVerion)" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Orleans.Core" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
     <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="8.0.4" />
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.33.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Amazon" Version="1.32.0-alpha" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.32.0-alpha" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Core" Version="1.33.0" />
+    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
     <!-- ABP packages -->
     <PackageVersion Include="Volo.Abp.Account.Application" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Account.Application.Contracts" Version="$(AbpVersion)" />
@@ -121,6 +128,7 @@
     <PackageVersion Include="Castle.Core" Version="4.2.1" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="System.Text.Json" Version="9.0.0" />
+    <PackageVersion Include="PdfPig" Version="0.1.9" />
     <!-- Test packages -->
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="coverlet.msbuild" Version="6.0.2" />
@@ -140,7 +148,9 @@
     <PackageVersion Include="Microsoft.CodeCoverage" Version="17.9.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
-    <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <!-- AI packages -->
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.33.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.33.0-beta" />
   </ItemGroup>
 </Project>

@@ -20,7 +20,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
 {
     private readonly ILogger<TwitterGAgent> _logger;
 
-    public TwitterGAgent(ILogger<TwitterGAgent> logger) : base(logger)
+    public TwitterGAgent(ILogger<TwitterGAgent> logger)
     {
         _logger = logger;
     }

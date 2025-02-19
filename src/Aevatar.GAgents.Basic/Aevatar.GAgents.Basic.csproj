@@ -10,11 +10,5 @@
         <PackageReference Include="Volo.Abp.AutoMapper"/>
         <PackageReference Include="Aevatar.Core"/>
         <PackageReference Include="Aevatar.Core.Abstractions"/>
-        <PackageReference Include="Aevatar.AI.Abstractions"/>
-        <PackageReference Include="Aevatar.AI.SemanticKernel"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="BasicGAgents\AIGAgent\" />
     </ItemGroup>
 </Project>
