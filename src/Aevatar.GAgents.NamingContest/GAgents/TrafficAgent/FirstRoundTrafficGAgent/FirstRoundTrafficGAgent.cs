@@ -21,7 +21,7 @@ namespace Aevatar.GAgent.NamingContest.TrafficGAgent;
 [GAgent(nameof(FirstRoundTrafficGAgent))]
 public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEventStateLogEvent, EventBase, InitFirstRoundTrafficDto>, IFirstTrafficGAgent
 {
-    public FirstRoundTrafficGAgent(ILogger<FirstRoundTrafficGAgent> logger) : base(logger)
+    public FirstRoundTrafficGAgent(ILogger<FirstRoundTrafficGAgent> logger)
     {
     }
 
@@ -415,7 +415,7 @@ public class FirstRoundTrafficGAgent : GAgentBase<FirstTrafficState, TrafficEven
     //
     //     TransitionState(state, @event);
     // }
-    public override async Task InitializeAsync(InitFirstRoundTrafficDto initializeDto)
+    protected override async Task PerformConfigAsync(InitFirstRoundTrafficDto initializeDto)
     {
         RaiseEvent(new FirstTrafficSetAgentSEvent()
         {

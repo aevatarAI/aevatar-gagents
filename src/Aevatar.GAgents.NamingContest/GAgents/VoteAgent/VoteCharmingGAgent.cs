@@ -13,7 +13,7 @@ namespace AiSmart.GAgent.NamingContest.VoteAgent;
 [GAgent(nameof(VoteCharmingGAgent))]
 public class VoteCharmingGAgent : GAgentBase<VoteCharmingState, VoteCharmingStateLogEvent>, IVoteCharmingGAgent
 {
-    public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger) : base(logger)
+    public VoteCharmingGAgent(ILogger<VoteCharmingGAgent> logger)
     {
     }
 

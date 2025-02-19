@@ -16,7 +16,7 @@ namespace Aevatar.GAgents.NamingContest.GAgents.LogEventAgent;
 [GAgent(nameof(LogEventGAgent))]
 public class LogEventGAgent : GAgentBase<LogEventState, LogEventStateEvent, EventBase, InitLogEvent>, ILogEventGAgent
 {
-    public LogEventGAgent(ILogger logger) : base(logger)
+    public LogEventGAgent(ILogger logger)
     {
     }
 
@@ -25,7 +25,7 @@ public class LogEventGAgent : GAgentBase<LogEventState, LogEventStateEvent, Even
         return Task.FromResult("the logEvent agent");
     }
 
-    public override async Task InitializeAsync(InitLogEvent initializeDto)
+    protected override async Task PerformConfigAsync(InitLogEvent initializeDto)
     {
         RaiseEvent(new InitLogEventState()
         {

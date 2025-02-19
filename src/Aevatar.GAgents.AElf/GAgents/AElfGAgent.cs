@@ -18,7 +18,7 @@ namespace Aevatar.GAgents.AElf.Agent;
 [GAgent(nameof(AElfGAgent))]
 public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>, IAElfAgent
 {
-    public AElfGAgent(ILogger<AElfGAgent> logger) : base(logger)
+    public AElfGAgent(ILogger<AElfGAgent> logger)
     {
     }
 

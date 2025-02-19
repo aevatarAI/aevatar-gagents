@@ -8,10 +8,6 @@ namespace Aevatar.GAgents.Basic.GroupGAgent;
 [GAgent(nameof(GroupGAgent))]
 public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>, IGroupGAgent
 {
-    public GroupGAgent(ILogger<GroupGAgent> logger) : base(logger)
-    {
-    }
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("An agent to inform other agents when a social event is published.");

@@ -23,7 +23,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
 {
     private readonly ILogger<CreativeGAgent> _logger;
 
-    public CreativeGAgent(ILogger<CreativeGAgent> logger) : base(logger)
+    public CreativeGAgent(ILogger<CreativeGAgent> logger)
     {
         _logger = logger;
     }
@@ -561,7 +561,7 @@ public class CreativeGAgent : GAgentBase<CreativeState, CreativeStateLogEvent, E
         await ConfirmEvents();
     }
 
-    public async override Task InitializeAsync(InitCreativeDto initializeDto)
+    protected override async Task PerformConfigAsync(InitCreativeDto initializeDto)
     {
         RaiseEvent(new SetAgentInfoStateLogEvent
             { AgentName = initializeDto.AgentName, Description = initializeDto.AgentResponsibility });
