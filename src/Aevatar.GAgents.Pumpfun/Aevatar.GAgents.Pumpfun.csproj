@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
-        <ProjectReference Include="..\Aevatar.GAgents.MicroAI\Aevatar.GAgents.MicroAI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
