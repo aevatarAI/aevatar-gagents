@@ -5,7 +5,7 @@ using Orleans;
 namespace Aevatar.GAgents.Twitter.Options;
 
 [GenerateSerializer]
-public class InitTwitterOptionsDto : InitializationEventBase
+public class InitTwitterOptionsDto : ConfigurationBase
 {
     [Id(0)] public string ConsumerKey { get; set; }
     [Id(1)] public string ConsumerSecret { get; set; }

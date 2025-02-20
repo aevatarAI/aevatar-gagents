@@ -184,7 +184,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         return Task.FromResult(!State.UserName.IsNullOrEmpty());
     }
 
-    public override async Task InitializeAsync(InitTwitterOptionsDto initializationEvent)
+    protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
         RaiseEvent(new TwitterOptionsSEvent()
         {

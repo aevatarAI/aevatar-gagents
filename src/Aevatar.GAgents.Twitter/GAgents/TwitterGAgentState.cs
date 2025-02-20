@@ -75,7 +75,7 @@ public class TwitterGAgentState : StateBase
 
 
 [GenerateSerializer]
-public class InitTwitterOptions : InitializationEventBase
+public class InitTwitterOptions : ConfigurationBase
 {
     [Id(0)] public string ConsumerKey { get; set; }
     [Id(1)] public string ConsumerSecret { get; set; }
