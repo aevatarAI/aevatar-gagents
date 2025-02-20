@@ -1,4 +1,5 @@
 ﻿using Aevatar.GAgents.Twitter.Options;
+using Aevatar.GAgents.Twitter.Provider;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
@@ -16,7 +17,9 @@ public class AevatarGAgentsTwitterModule : AbpModule
         {
             options.AddMaps<AevatarGAgentsTwitterModule>();
         });
-        var configuration = context.Services.GetConfiguration();
-        Configure<TwitterOptions>(configuration.GetSection("Twitter")); 
+
+        context.Services.AddSingleton<ITwitterProvider, TwitterProvider>();
+        // var configuration = context.Services.GetConfiguration();
+        // Configure<TwitterOptions>(configuration.GetSection("Twitter")); 
     }
 }

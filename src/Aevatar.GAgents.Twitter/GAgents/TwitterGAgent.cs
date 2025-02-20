@@ -9,6 +9,7 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Twitter.GEvents;
 using Aevatar.GAgents.Twitter.Grains;
+using Aevatar.GAgents.Twitter.Options;
 
 namespace Aevatar.GAgents.Twitter.Agent;
 
@@ -16,7 +17,8 @@ namespace Aevatar.GAgents.Twitter.Agent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TwitterGAgent))]
-public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitterGAgent
+public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBase, InitTwitterOptionsDto>,
+    ITwitterGAgent
 {
     private readonly ILogger<TwitterGAgent> _logger;
 
@@ -100,7 +102,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
 
         if (@event.ReplyMessageId.IsNullOrEmpty())
         {
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(State.TwitterOptions.ConsumerKey,
+                State.TwitterOptions.ConsumerSecret,
                 @event.ResponseContent, State.Token, State.TokenSecret);
         }
         else
@@ -112,7 +115,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
             });
             await ConfirmEvents();
 
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(State.TwitterOptions.ConsumerKey,
+                State.TwitterOptions.ConsumerSecret,
                 @event.ResponseContent, @event.ReplyMessageId, State.Token, State.TokenSecret);
         }
     }
@@ -128,7 +132,9 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
         }
 
         var mentionTweets =
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).GetRecentMentionAsync(State.UserName);
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
+                .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
+                    State.TwitterOptions.ReplyLimit);
         _logger.LogDebug("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
         foreach (var tweet in mentionTweets)
         {
@@ -176,6 +182,20 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent>, ITwitt
     public Task<bool> UserHasBoundAsync()
     {
         return Task.FromResult(!State.UserName.IsNullOrEmpty());
+    }
+
+    public override async Task InitializeAsync(InitTwitterOptionsDto initializationEvent)
+    {
+        RaiseEvent(new TwitterOptionsSEvent()
+        {
+            ConsumerKey = initializationEvent.ConsumerKey,
+            ConsumerSecret = initializationEvent.ConsumerSecret,
+            EncryptionPassword = initializationEvent.EncryptionPassword,
+            BearerToken = initializationEvent.BearerToken,
+            ReplyLimit = initializationEvent.ReplyLimit,
+        });
+
+        await ConfirmEvents();
     }
 }
 
