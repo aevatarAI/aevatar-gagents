@@ -156,6 +156,18 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         }
     }
 
+    [EventHandler]
+    public async Task HandleEventAsync(BindTwitterAccountGEvent @event)
+    {
+        await BindTwitterAccountAsync(@event.UserName, @event.UserId, @event.Token, @event.TokenSecret);
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(UnbindTwitterAccountGEvent @event)
+    {
+        await UnbindTwitterAccountAsync();
+    }
+
     public async Task BindTwitterAccountAsync(string userName, string userId, string token, string tokenSecret)
     {
         _logger.LogDebug("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
