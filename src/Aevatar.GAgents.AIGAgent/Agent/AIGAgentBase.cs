@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +26,6 @@ public abstract partial class
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase;
-
 
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
@@ -135,7 +135,21 @@ public abstract partial class
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null)
     {
-        return await _brain?.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge)!;
+        if (_brain == null)
+        {
+            return null;
+        }
+
+        var invokeResponse = await _brain.InvokePromptAsync<TStateLogEvent>(prompt, history, State.IfUpsertKnowledge);
+        if (invokeResponse == null)
+        {
+            return null;
+        }
+
+        invokeResponse.TokenUsage.GrainId = this.GetPrimaryKey();
+        RaiseEvent(invokeResponse.TokenUsage);
+        
+        return invokeResponse.ChatReponseList;
     }
 
     protected virtual async Task OnAIGAgentActivateAsync(CancellationToken cancellationToken)

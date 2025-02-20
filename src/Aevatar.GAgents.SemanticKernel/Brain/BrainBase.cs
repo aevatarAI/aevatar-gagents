@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -17,6 +18,9 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Data;
+using OpenAI.Chat;
+using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
+using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
@@ -84,15 +88,16 @@ public abstract class BrainBase : IBrain
         return true;
     }
 
-    public async Task<List<ChatMessage>> InvokePromptAsync(string content, List<ChatMessage>? history, bool ifUseKnowledge = false)
-    {
-        var result = new List<ChatMessage>();
+    public async Task<InvokePromptResponse<T>?> InvokePromptAsync<T>(string content, List<ChatMessage>? history,
+        bool ifUseKnowledge = false) where T : StateLogEventBase<T>
 
+    {
         if (Kernel == null)
         {
-            return result;
+            return null;
         }
 
+        var result = new InvokePromptResponse<T>();
         var requestContent = content;
         var chatHistory = GetChatHistory(history);
         if (ifUseKnowledge)
@@ -106,8 +111,12 @@ public abstract class BrainBase : IBrain
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
         var response = await chatService.GetChatMessageContentsAsync(chatHistory);
 
-        result.AddRange(response.Select(item => new ChatMessage()
+        var chatList = new List<ChatMessage>();
+        chatList.AddRange(response.Select(item => new ChatMessage()
             { ChatRole = ConvertToChatRole(item.Role), Content = item.Content }));
+
+        result.TokenUsage = GetTokenUsage<T>(response);
+        result.ChatReponseList = chatList;
 
         return result;
     }
@@ -211,5 +220,34 @@ public abstract class BrainBase : IBrain
         supplementInfo.AppendLine($"The user's question is:{content} ");
 
         return supplementInfo.ToString();
+    }
+
+    private TokenUsage<T> GetTokenUsage<T>(IReadOnlyCollection<ChatMessageContent> messageList)
+        where T : StateLogEventBase<T>
+    {
+        int inputUsage = 0;
+        int outputUsage = 0;
+        int totalUsage = 0;
+        foreach (var item in messageList)
+        {
+            if (item.Metadata != null && item.Metadata.TryGetValue("Usage", out var value))
+            {
+                var tokenInfo = value as ChatTokenUsage;
+                if (tokenInfo == null)
+                {
+                    continue;
+                }
+
+                inputUsage += tokenInfo.InputTokenCount;
+                outputUsage += tokenInfo.OutputTokenCount;
+                totalUsage += tokenInfo.TotalTokenCount;
+            }
+        }
+
+        return new TokenUsage<T>()
+        {
+            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
     }
 }
