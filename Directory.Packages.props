@@ -3,13 +3,13 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.4.2</AevatarCoreVersion>
-    <AevatarEventSoucingVersion>1.4.2</AevatarEventSoucingVersion>
-    <AevatarAbstractionsVersion>1.4.2</AevatarAbstractionsVersion>
+    <AevatarCoreVersion>1.4.6</AevatarCoreVersion>
+    <AevatarEventSoucingVersion>1.4.6</AevatarEventSoucingVersion>
+    <AevatarAbstractionsVersion>1.4.6</AevatarAbstractionsVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
-    <PackageVersion Include="Aevatar.Core.Abstractions" Version="1.4.2" />
+    <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />

@@ -22,14 +22,15 @@ public class GroupGAgent : GAgentBase<GroupGAgentState, GroupStateLogEvent>, IGr
 
         await PublishAsync(@event);
     }
-
-    protected override Task OnRegisterAgentAsync(Guid agentGuid)
+    
+    
+    protected override Task OnRegisterAgentAsync(GrainId agentGuid)
     {
         ++State.RegisteredGAgents;
         return Task.CompletedTask;
     }
-
-    protected override Task OnUnregisterAgentAsync(Guid agentGuid)
+    
+    protected override Task OnUnregisterAgentAsync(GrainId agentGuid)
     {
         --State.RegisteredGAgents;
         return Task.CompletedTask;
