@@ -134,7 +134,7 @@ public abstract partial class
     }
 
     [GenerateSerializer]
-    public class TokenUsage : StateLogEventBase<TStateLogEvent>
+    public class TokenUsageStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public Guid GrainId { get; set; }
         [Id(1)] public int InputToken { get; set; }
@@ -156,7 +156,7 @@ public abstract partial class
             return null;
         }
 
-        var tokenUsage = new TokenUsage()
+        var tokenUsage = new TokenUsageStateLogEvent()
         {
             GrainId = this.GetPrimaryKey(),
             InputToken = invokeResponse.TokenUsageStatistics.InputToken,
