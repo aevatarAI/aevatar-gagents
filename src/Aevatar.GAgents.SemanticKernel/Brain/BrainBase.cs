@@ -88,8 +88,8 @@ public abstract class BrainBase : IBrain
         return true;
     }
 
-    public async Task<InvokePromptResponse<T>?> InvokePromptAsync<T>(string content, List<ChatMessage>? history,
-        bool ifUseKnowledge = false) where T : StateLogEventBase<T>
+    public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history,
+        bool ifUseKnowledge = false)
 
     {
         if (Kernel == null)
@@ -97,7 +97,7 @@ public abstract class BrainBase : IBrain
             return null;
         }
 
-        var result = new InvokePromptResponse<T>();
+        var result = new InvokePromptResponse();
         var requestContent = content;
         var chatHistory = GetChatHistory(history);
         if (ifUseKnowledge)
@@ -115,7 +115,7 @@ public abstract class BrainBase : IBrain
         chatList.AddRange(response.Select(item => new ChatMessage()
             { ChatRole = ConvertToChatRole(item.Role), Content = item.Content }));
 
-        result.TokenUsage = GetTokenUsage<T>(response);
+        result.TokenUsageStatistics = GetTokenUsage(response);
         result.ChatReponseList = chatList;
 
         return result;
@@ -222,8 +222,7 @@ public abstract class BrainBase : IBrain
         return supplementInfo.ToString();
     }
 
-    private TokenUsage<T> GetTokenUsage<T>(IReadOnlyCollection<ChatMessageContent> messageList)
-        where T : StateLogEventBase<T>
+    private TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList)
     {
         int inputUsage = 0;
         int outputUsage = 0;
@@ -244,7 +243,7 @@ public abstract class BrainBase : IBrain
             }
         }
 
-        return new TokenUsage<T>()
+        return new TokenUsageStatistics()
         {
             InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()

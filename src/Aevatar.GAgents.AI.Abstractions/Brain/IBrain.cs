@@ -12,6 +12,6 @@ public interface IBrain
 
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
 
-    Task<InvokePromptResponse<T>?> InvokePromptAsync<T>(string content, List<ChatMessage>? history = null,
-        bool ifUseKnowledge = false) where T : StateLogEventBase<T>;
+    Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
+        bool ifUseKnowledge = false);
 }

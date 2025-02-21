@@ -133,6 +133,16 @@ public abstract partial class
         [Id(0)] public required string PromptTemplate { get; set; }
     }
 
+    [GenerateSerializer]
+    public class TokenUsage : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public Guid GrainId { get; set; }
+        [Id(1)] public int InputToken { get; set; }
+        [Id(2)] public int OutputToken { get; set; }
+        [Id(3)] public int TotalUsageToken { get; set; }
+        [Id(4)] public long CreateTime { get; set; }
+    }
+
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null)
     {
         if (_brain == null)
@@ -140,15 +150,23 @@ public abstract partial class
             return null;
         }
 
-        var invokeResponse = await _brain.InvokePromptAsync<TStateLogEvent>(prompt, history, State.IfUpsertKnowledge);
+        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
         if (invokeResponse == null)
         {
             return null;
         }
 
-        invokeResponse.TokenUsage.GrainId = this.GetPrimaryKey();
-        RaiseEvent(invokeResponse.TokenUsage);
+        var tokenUsage = new TokenUsage()
+        {
+            GrainId = this.GetPrimaryKey(),
+            InputToken = invokeResponse.TokenUsageStatistics.InputToken,
+            OutputToken = invokeResponse.TokenUsageStatistics.OutputToken,
+            TotalUsageToken = invokeResponse.TokenUsageStatistics.TotalUsageToken,
+            CreateTime = invokeResponse.TokenUsageStatistics.CreateTime
+        };
         
+        RaiseEvent(tokenUsage);
+
         return invokeResponse.ChatReponseList;
     }
 
