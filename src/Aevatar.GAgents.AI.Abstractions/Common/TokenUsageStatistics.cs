@@ -1,8 +1,6 @@
-using System;
-
 namespace Aevatar.GAgents.AI.Common;
 
-public class TokenUsage
+public class TokenUsageStatistics
 {
     public int InputToken { get; set; }
     public int OutputToken { get; set; }

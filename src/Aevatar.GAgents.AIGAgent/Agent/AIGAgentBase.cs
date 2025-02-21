@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -25,7 +26,6 @@ public abstract partial class
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase;
-
 
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
@@ -133,9 +133,41 @@ public abstract partial class
         [Id(0)] public required string PromptTemplate { get; set; }
     }
 
+    [GenerateSerializer]
+    public class TokenUsageStateLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public Guid GrainId { get; set; }
+        [Id(1)] public int InputToken { get; set; }
+        [Id(2)] public int OutputToken { get; set; }
+        [Id(3)] public int TotalUsageToken { get; set; }
+        [Id(4)] public long CreateTime { get; set; }
+    }
+
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null)
     {
-        return await _brain?.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge)!;
+        if (_brain == null)
+        {
+            return null;
+        }
+
+        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
+        if (invokeResponse == null)
+        {
+            return null;
+        }
+
+        var tokenUsage = new TokenUsageStateLogEvent()
+        {
+            GrainId = this.GetPrimaryKey(),
+            InputToken = invokeResponse.TokenUsageStatistics.InputToken,
+            OutputToken = invokeResponse.TokenUsageStatistics.OutputToken,
+            TotalUsageToken = invokeResponse.TokenUsageStatistics.TotalUsageToken,
+            CreateTime = invokeResponse.TokenUsageStatistics.CreateTime
+        };
+        
+        RaiseEvent(tokenUsage);
+
+        return invokeResponse.ChatReponseList;
     }
 
     protected virtual async Task OnAIGAgentActivateAsync(CancellationToken cancellationToken)
