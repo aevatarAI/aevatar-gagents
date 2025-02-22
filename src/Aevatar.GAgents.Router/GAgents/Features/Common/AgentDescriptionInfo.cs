@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Aevatar.GAgents.Router.GAgents.Features.Dto;
+namespace Aevatar.GAgents.Router.GAgents.Features.Common;
 
 [GenerateSerializer]
 public class AgentDescriptionInfo

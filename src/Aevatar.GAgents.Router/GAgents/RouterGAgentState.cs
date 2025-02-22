@@ -1,5 +1,5 @@
-using Aevatar.GAgents.Basic.State;
-using Aevatar.GAgents.Router.GAgents.Features.Dto;
+using Aevatar.GAgents.AIGAgent.State;
+using Aevatar.GAgents.Router.GAgents.Features.Common;
 
 namespace Aevatar.GAgents.Router.GAgents;
 
@@ -7,8 +7,7 @@ namespace Aevatar.GAgents.Router.GAgents;
 public class RouterGAgentState : AIGAgentStateBase
 {
     [Id(0)] public Guid Id { get; set; }
-    [Id(1)] public Dictionary<Type, List<Type>> AgentsInGroup { get; set; } 
-    [Id(2)] public List<RouterOutputSchema> RouterHistory { get; set; }
-    [Id(3)] public Dictionary<string, AgentDescriptionInfo> AgentDescription =
+    [Id(1)] public Dictionary<Guid, TaskInfo> TasksInfo { get; set; } = new Dictionary<Guid, TaskInfo>();
+    [Id(2)] public Dictionary<string, AgentDescriptionInfo> AgentDescriptions =
         new Dictionary<string, AgentDescriptionInfo>();
 }

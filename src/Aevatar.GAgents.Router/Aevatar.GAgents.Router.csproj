@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -11,10 +11,11 @@
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
         <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="Volo.Abp.AutoMapper" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
     </ItemGroup>
 
 </Project>
