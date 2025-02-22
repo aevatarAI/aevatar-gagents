@@ -199,7 +199,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
-        _logger.LogDebug("PerformConfigAsync, data: {data}",
+        _logger.LogInformation("PerformConfigAsync, data: {data}",
             JsonConvert.SerializeObject(initializationEvent));
         RaiseEvent(new TwitterOptionsSEvent()
         {
