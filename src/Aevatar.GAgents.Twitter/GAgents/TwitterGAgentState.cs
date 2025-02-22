@@ -18,58 +18,6 @@ public class TwitterGAgentState : StateBase
     [Id(5)] public string UserName { get; set; }
     [Id(6)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
     [Id(7)] public InitTwitterOptions TwitterOptions { get; set; }
-
-    public void Apply(BindTwitterAccountSEvent bindTwitterAccountSEvent)
-    {
-        UserId = bindTwitterAccountSEvent.UserId;
-        Token = bindTwitterAccountSEvent.Token;
-        TokenSecret = bindTwitterAccountSEvent.TokenSecret;
-        UserName = bindTwitterAccountSEvent.UserName;
-    }
-
-    public void Apply(UnbindTwitterAccountEvent unbindTwitterAccountEvent)
-    {
-        Token = "";
-        TokenSecret = "";
-        UserId = "";
-        UserName = "";
-    }
-
-    public void Apply(ReplyTweetSEvent replyTweetSEvent)
-    {
-        if (!replyTweetSEvent.TweetId.IsNullOrEmpty())
-        {
-            RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
-        }
-    }
-
-    public void Apply(TweetRequestSEvent @event)
-    {
-        if (SocialRequestList.Contains(@event.RequestId) == false)
-        {
-            SocialRequestList.Add(@event.RequestId);
-        }
-    }
-
-    public void Apply(TweetSocialResponseSEvent @event)
-    {
-        if (SocialRequestList.Contains(@event.ResponseId))
-        {
-            SocialRequestList.Remove(@event.ResponseId);
-        }
-    }
-
-    public void Apply(TwitterOptionsSEvent @event)
-    {
-        TwitterOptions = new InitTwitterOptions()
-        {
-            ConsumerKey = @event.ConsumerKey,
-            ConsumerSecret = @event.ConsumerSecret,
-            EncryptionPassword = @event.EncryptionPassword,
-            BearerToken = @event.BearerToken,
-            ReplyLimit = @event.ReplyLimit,
-        };
-    }
 }
 
 
