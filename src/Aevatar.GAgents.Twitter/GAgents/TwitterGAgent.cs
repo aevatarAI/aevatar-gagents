@@ -10,6 +10,7 @@ using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Twitter.GEvents;
 using Aevatar.GAgents.Twitter.Grains;
 using Aevatar.GAgents.Twitter.Options;
+using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.Twitter.Agent;
 
@@ -198,6 +199,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
+        _logger.LogInformation("PerformConfigAsync, data: {data}",
+            JsonConvert.SerializeObject(initializationEvent));
         RaiseEvent(new TwitterOptionsSEvent()
         {
             ConsumerKey = initializationEvent.ConsumerKey,
@@ -208,6 +211,55 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         });
 
         await ConfirmEvents();
+    }
+    
+    protected override void GAgentTransitionState(TwitterGAgentState state,
+        StateLogEventBase<TweetSEvent> @event)
+    {
+    
+        switch (@event)
+        {
+            case TwitterOptionsSEvent twitterOptionsSEvent:
+                State.TwitterOptions = new InitTwitterOptions
+                {
+                    ConsumerKey = twitterOptionsSEvent.ConsumerKey,
+                    ConsumerSecret = twitterOptionsSEvent.ConsumerSecret,
+                    EncryptionPassword = twitterOptionsSEvent.EncryptionPassword,
+                    BearerToken = twitterOptionsSEvent.BearerToken,
+                    ReplyLimit = twitterOptionsSEvent.ReplyLimit
+                };
+                break;
+            case BindTwitterAccountSEvent bindTwitterAccountSEvent:
+                State.UserId = bindTwitterAccountSEvent.UserId;
+                State.Token = bindTwitterAccountSEvent.Token;
+                State.TokenSecret = bindTwitterAccountSEvent.TokenSecret;
+                State.UserName = bindTwitterAccountSEvent.UserName;
+                break;
+            case UnbindTwitterAccountEvent unbindTwitterAccountEvent:
+                State.Token = "";
+                State.TokenSecret = "";
+                State.UserId = "";
+                State.UserName = "";
+                break;
+            case ReplyTweetSEvent replyTweetSEvent:
+                if (!replyTweetSEvent.TweetId.IsNullOrEmpty())
+                {
+                    State.RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
+                }
+                break;
+            case TweetRequestSEvent tweetRequestSEvent:
+                if (State.SocialRequestList.Contains(tweetRequestSEvent.RequestId) == false)
+                {
+                    State.SocialRequestList.Add(tweetRequestSEvent.RequestId);
+                }
+                break;
+            case TweetSocialResponseSEvent tweetSocialResponseSEvent:
+                if (State.SocialRequestList.Contains(tweetSocialResponseSEvent.ResponseId))
+                {
+                    State.SocialRequestList.Remove(tweetSocialResponseSEvent.ResponseId);
+                }
+                break;
+        }
     }
 }
 
