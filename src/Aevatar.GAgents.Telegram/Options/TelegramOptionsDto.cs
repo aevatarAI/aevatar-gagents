@@ -1,7 +1,7 @@
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.Options;
+namespace Aevatar.GAgents.Telegram.Options;
 
 [GenerateSerializer]
 public class TelegramOptionsDto : ConfigurationBase

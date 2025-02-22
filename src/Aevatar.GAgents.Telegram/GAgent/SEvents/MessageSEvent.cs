@@ -2,7 +2,7 @@ using System;
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.Agent.GEvents;
+namespace Aevatar.GAgents.Telegram.Agent.GEvents;
 
 [GenerateSerializer]
 public class MessageSEvent :StateLogEventBase<MessageSEvent>

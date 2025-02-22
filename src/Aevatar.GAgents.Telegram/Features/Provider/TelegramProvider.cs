@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using AISmart.GAgent.Telegram.Dtos;
-using AISmart.GAgent.Telegram.Helper;
-using AISmart.GAgent.Telegram.Options;
+using Aevatar.GAgents.Telegram.Features.Dtos;
+using Aevatar.GAgents.Telegram.Helper;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Volo.Abp.DependencyInjection;
 
-namespace AISmart.GAgent.Telegram.Provider;
+namespace Aevatar.GAgents.Telegram.Provider;
 
 public class TelegramProvider : ITelegramProvider, ISingletonDependency
 {

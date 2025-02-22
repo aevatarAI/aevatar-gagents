@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace AISmart.GAgent.Telegram.Dtos;
+namespace Aevatar.GAgents.Telegram.Features.Dtos;
 
 public class ReplyParamDto
 {

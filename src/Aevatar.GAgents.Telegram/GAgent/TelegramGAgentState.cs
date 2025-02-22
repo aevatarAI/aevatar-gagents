@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
-using AISmart.GAgent.Telegram.Agent.GEvents;
+using Aevatar.GAgents.Telegram.Agent.GEvents;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.Agent;
+namespace Aevatar.GAgents.Telegram.Agent;
 
 public class TelegramGAgentState : StateBase
 {

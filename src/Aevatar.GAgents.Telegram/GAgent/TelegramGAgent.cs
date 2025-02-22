@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
-using AISmart.GAgent.Telegram.Agent.GEvents;
-using AISmart.GAgent.Telegram.GEvents;
-using AISmart.GAgent.Telegram.Grains;
-using AISmart.GAgent.Telegram.Options;
+using Aevatar.GAgents.Telegram.Agent.GEvents;
+using Aevatar.GAgents.Telegram.GEvents;
+using Aevatar.GAgents.Telegram.Grains;
+using Aevatar.GAgents.Telegram.Options;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 
-namespace AISmart.GAgent.Telegram.Agent;
+namespace Aevatar.GAgents.Telegram.Agent;
 
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]

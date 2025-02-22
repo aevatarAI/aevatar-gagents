@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
     <Nullable>enable</Nullable>
-    <RootNamespace>AISmart.GAgent.Telegram</RootNamespace>
+    <RootNamespace>Aevatar.GAgents.Telegram</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

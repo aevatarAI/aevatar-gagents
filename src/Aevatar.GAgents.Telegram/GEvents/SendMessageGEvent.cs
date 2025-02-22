@@ -3,7 +3,7 @@ using System.ComponentModel;
 using Aevatar.Core.Abstractions;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.GEvents;
+namespace Aevatar.GAgents.Telegram.GEvents;
 
 [Description("Send a message to telegram.")]
 [GenerateSerializer]

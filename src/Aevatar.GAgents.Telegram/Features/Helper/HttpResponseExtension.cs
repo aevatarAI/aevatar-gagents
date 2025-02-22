@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace AISmart.GAgent.Telegram.Helper;
+namespace Aevatar.GAgents.Telegram.Helper;
 
 public static class HttpResponseExtension
 {
