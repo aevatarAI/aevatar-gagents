@@ -1,8 +1,8 @@
-using Aevatar.GAgents.MicroAI.GAgent;
+using Aevatar.GAgents.ChatAgent.GAgent;
 
 namespace Aevatar.GAgents.SocialChat.GAgent;
 
-public interface ISocialGAgent:IMicroAIGAgent
+public interface ISocialGAgent:IChatAgent
 {
     
 }

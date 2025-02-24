@@ -1,12 +1,12 @@
-
 using Aevatar.GAgents.SocialChat.GAgent;
-using Json.Schema.Generation;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.ChatAgent.Dtos;
+using Aevatar.GAgents.ChatAgent.GAgent;
+using Aevatar.GAgents.ChatAgent.GAgent.State;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
-using Aevatar.GAgents.MicroAI.GAgent;
-using Aevatar.GAgents.MicroAI.Model;
+using Aevatar.GAgents.SocialAgent.GAgent.SEvent;
 
 namespace Aevatar.GAgents.TestAgent;
 
@@ -14,38 +14,31 @@ namespace Aevatar.GAgents.TestAgent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(SocialGAgent))]
-public class SocialGAgent : MicroAIGAgent, ISocialGAgent
+public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent, EventBase, ChatConfigDto>,
+    ISocialGAgent
 {
-    public SocialGAgent(ILogger<MicroAIGAgent> logger) : base(logger)
+    private readonly ILogger<SocialGAgent> _logger;
+    public SocialGAgent(ILogger<SocialGAgent> logger)
     {
+        _logger = logger;
     }
 
     [EventHandler]
-    public  async Task<SocialResponseGEvent> HandleEventAsync(SocialGEvent @event)
+    public async Task<SocialResponseGEvent> HandleEventAsync(SocialGEvent @event)
     {
         _logger.LogInformation("handle SocialEvent, content: {content}", @event.Content);
-        List<AIMessageStateLogEvent> list = new List<AIMessageStateLogEvent>();
-        list.Add(new AiReceiveStateLogEvent
-        {
-            Message = new MicroAIMessage("user", @event.Content)
-        });
-        
+       
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
         aiResponseEvent.RequestId = @event.RequestId;
-        
+
         try
         {
-            var message = await GrainFactory.GetGrain<IChatAgentGrain>(State.AgentName)
-                .SendAsync(@event.Content, State.RecentMessages.ToList());
-            if (message != null && !message.Content.IsNullOrEmpty())
+            var message = await ChatAsync(@event.Content);
+            if (message != null && message.Any())
             {
-                _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message.Content);
-                list.Add(new AiReplyStateLogEvent()
-                {
-                    Message = message
-                });
-
-                aiResponseEvent.ResponseContent = message.Content;
+                _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message[0].Content);
+                
+                aiResponseEvent.ResponseContent = message[0].Content!;
                 aiResponseEvent.ChatId = @event.ChatId;
                 aiResponseEvent.ReplyMessageId = @event.MessageId;
             }
@@ -54,8 +47,7 @@ public class SocialGAgent : MicroAIGAgent, ISocialGAgent
         {
             _logger.LogError(e, "handle SocialEvent, Get AIReplyMessage Error: {err}", e.Message);
         }
-        
-        base.RaiseEvents(list);
+
         return aiResponseEvent;
     }
 }

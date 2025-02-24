@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
-using AISmart.GAgent.Telegram.Agent.GEvents;
-using AISmart.GAgent.Telegram.GEvents;
-using AISmart.GAgent.Telegram.Grains;
-using AISmart.GAgent.Telegram.Options;
+using Aevatar.GAgents.Telegram.Agent.GEvents;
+using Aevatar.GAgents.Telegram.GEvents;
+using Aevatar.GAgents.Telegram.Grains;
+using Aevatar.GAgents.Telegram.Options;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 
-namespace AISmart.GAgent.Telegram.Agent;
+namespace Aevatar.GAgents.Telegram.Agent;
 
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
@@ -130,6 +130,42 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
             { Webhook = initializationEvent.Webhook, EncryptionPassword = initializationEvent.EncryptionPassword });
 
         await ConfirmEvents();
+    }
+
+    protected override void GAgentTransitionState(TelegramGAgentState state, StateLogEventBase<MessageSEvent> @event)
+    {
+        switch (@event)
+        {
+            case ReceiveMessageSEvent @receiveMessageSEvent:
+                State.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
+                break;
+            case SendMessageSEvent sendMessageSEvent:
+                if (!sendMessageSEvent.ReplyMessageId.IsNullOrEmpty())
+                {
+                    State.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
+                }
+                break;
+            case SetTelegramConfigEvent setTelegramConfigEvent:
+                State.BotName = setTelegramConfigEvent.BotName;
+                State.Token = setTelegramConfigEvent.Token;
+                break;
+            case TelegramRequestSEvent @requestSEvent:
+                if (State.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
+                {
+                    State.SocialRequestList.Add(@requestSEvent.RequestId);
+                }
+                break;
+            case TelegramOptionSEvent @telegramOptionSEvent:
+                State.TelegramOptions = new TelegramOptions()
+                    { Webhook = @telegramOptionSEvent.Webhook, EncryptionPassword = @telegramOptionSEvent.EncryptionPassword };
+                break;
+            case TelegramSocialResponseSEvent @telegramSocialResponseSEvent:
+                if (State.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
+                {
+                    State.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
+                }
+                break;
+        }
     }
 }
 

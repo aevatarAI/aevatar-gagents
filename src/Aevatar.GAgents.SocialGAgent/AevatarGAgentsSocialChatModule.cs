@@ -1,6 +1,4 @@
-﻿using Aevatar.GAgents.MicroAI.GAgent;
-using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+﻿using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 
 namespace Aevatar.GAgents.SocialChat;
@@ -16,7 +14,5 @@ public class AISmartGAgentSocialGAgentModule : AbpModule
         {
             options.AddMaps<AISmartGAgentSocialGAgentModule>();
         });
-        var configuration = context.Services.GetConfiguration();
-        context.Services.Configure<MicroAIOptions>(configuration.GetSection("AutogenConfig"));
     }
 }

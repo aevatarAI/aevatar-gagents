@@ -6,11 +6,8 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using Aevatar.GAgents.Twitter.Common;
 using Aevatar.GAgents.Twitter.Dto;
-using Aevatar.GAgents.Twitter.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Volo.Abp.DependencyInjection;
 
@@ -18,39 +15,45 @@ namespace Aevatar.GAgents.Twitter.Provider;
 
 public interface ITwitterProvider
 {
-    public Task PostTwitterAsync(string message, string accessToken, string accessTokenSecret);
-    public Task ReplyAsync(string message, string tweetId, string accessToken, string accessTokenSecret);
-    public Task<List<Tweet>> GetMentionsAsync(string userName);
-    public Task<string> GetUserName(string accessToken, string accessTokenSecret);
-    public Task LikeAsync(string tweetId, string userId, string accessToken, string accessTokenSecret);
-    public Task QuoteTweetAsync(string tweetId, string message, string accessToken, string accessTokenSecret);
-    public Task RetweetAsync(string tweetId, string message, string accessToken, string accessTokenSecret);
-}
+    public Task PostTwitterAsync(string consumerKey, string consumerSecret, string message, string accessToken,
+        string accessTokenSecret);
 
+    public Task ReplyAsync(string consumerKey, string consumerSecret, string message, string tweetId,
+        string accessToken, string accessTokenSecret);
+
+    public Task<List<Tweet>> GetMentionsAsync(string userName, string bearerToken);
+
+    public Task<string> GetUserName(string consumerKey, string consumerSecret, string accessToken,
+        string accessTokenSecret);
+
+    public Task LikeAsync(string consumerKey, string consumerSecret, string tweetId, string userId, string accessToken,
+        string accessTokenSecret);
+
+    public Task QuoteTweetAsync(string consumerKey, string consumerSecret, string tweetId, string message,
+        string accessToken, string accessTokenSecret);
+
+    public Task RetweetAsync(string consumerKey, string consumerSecret, string tweetId, string message,
+        string accessToken, string accessTokenSecret);
+}
 
 public class TwitterProvider : ITwitterProvider, ISingletonDependency
 {
     private readonly ILogger<ITwitterProvider> _logger;
-    private readonly IOptionsMonitor<TwitterOptions> _twitterOptions;
     private readonly HttpClient _httpClient;
-    private readonly AESCipher _aesCipher;
-    
-    public TwitterProvider(ILogger<ITwitterProvider> logger, IOptionsMonitor<TwitterOptions> twitterOptions)
+
+    public TwitterProvider(ILogger<ITwitterProvider> logger)
     {
         _logger = logger;
-        _twitterOptions = twitterOptions;
         _httpClient = new HttpClient();
-        string password = twitterOptions.CurrentValue.EncryptionPassword;
-        _aesCipher = new AESCipher(password);
     }
-    
-    public async Task<List<Tweet>> GetMentionsAsync(string userName)
+
+    public async Task<List<Tweet>> GetMentionsAsync(string userName, string bearerToken)
     {
-        var bearerToken = _twitterOptions.CurrentValue.BearerToken;
         string query = $"@{userName}";
         string encodedQuery = Uri.EscapeDataString(query);
-        string url = $"https://api.twitter.com/2/tweets/search/recent?query={encodedQuery}&tweet.fields=author_id,conversation_id&max_results=100";
-        
+        string url =
+            $"https://api.twitter.com/2/tweets/search/recent?query={encodedQuery}&tweet.fields=author_id,conversation_id&max_results=100";
+
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         try
         {
@@ -68,31 +71,25 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
         {
             _logger.LogError("GetMentionsAsync Error: {err}, code: {code}", e.Message, e.StatusCode);
         }
-        
+
         return new List<Tweet>();
     }
-    
+
     private string GetDecryptedData(string data)
     {
-        try
-        {
-            return  _aesCipher.Decrypt(data);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("GetDecryptedData Error: {err}, data: {data}", e.Message, data);
-        }
-        return "";
+        return data;
     }
-    
-    public async Task PostTwitterAsync(string message, string accessToken, string accessTokenSecret)
+
+    public async Task PostTwitterAsync(string consumerKey, string consumerSecret, string message, string accessToken,
+        string accessTokenSecret)
     {
         var url = "https://api.twitter.com/2/tweets";
         _logger.LogInformation("PostTwitterAsync message: {msg}", message);
 
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("POST", url, accessToken, accessTokenSecret);
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "POST", url, accessToken, accessTokenSecret);
 
         var jsonBody = JsonConvert.SerializeObject(new { text = message });
 
@@ -116,14 +113,16 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
             _logger.LogError("PostTwitterAsync Error: {err}, code: {code}", e.Message, e.StatusCode);
         }
     }
-    
-    public async Task<string> GetUserName(string accessToken, string accessTokenSecret)
+
+    public async Task<string> GetUserName(string consumerKey, string consumerSecret, string accessToken,
+        string accessTokenSecret)
     {
         var url = "https://api.x.com/2/users/me";
 
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("GET", url, accessToken, accessTokenSecret);
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "GET", url, accessToken, accessTokenSecret);
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -149,15 +148,17 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
 
         return "";
     }
-    
-    public async Task ReplyAsync(string message, string tweetId, string accessToken, string accessTokenSecret)
+
+    public async Task ReplyAsync(string consumerKey, string consumerSecret, string message, string tweetId,
+        string accessToken, string accessTokenSecret)
     {
         var url = "https://api.twitter.com/2/tweets";
-        
+
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("POST", url, accessToken, accessTokenSecret);
-        
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "POST", url, accessToken, accessTokenSecret);
+
         var jsonBody = JsonConvert.SerializeObject(new
         {
             text = message,
@@ -166,12 +167,12 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
                 in_reply_to_tweet_id = tweetId
             }
         });
-        
+
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(jsonBody, Encoding.UTF8, "application/json")
         };
-        
+
         requestMessage.Headers.TryAddWithoutValidation("Authorization", authHeader);
         requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -187,12 +188,10 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
             _logger.LogError("ReplyAsync Error: {err}, code: {code}", e.Message, e.StatusCode);
         }
     }
-    
-    private string GenerateOAuthHeader(string httpMethod, string url, string accessToken, string accessTokenSecret, Dictionary<string, string>? additionalParams = null)
+
+    private string GenerateOAuthHeader(string consumerKey, string consumerSecret, string httpMethod, string url,
+        string accessToken, string accessTokenSecret, Dictionary<string, string>? additionalParams = null)
     {
-        var consumerKey = _twitterOptions.CurrentValue.ConsumerKey;
-        var consumerSecret = _twitterOptions.CurrentValue.ConsumerSecret;
-      
         var oauthParameters = new Dictionary<string, string>
         {
             { "oauth_consumer_key", consumerKey },
@@ -202,7 +201,7 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
             { "oauth_token", accessToken },
             { "oauth_version", "1.0" }
         };
-        
+
         var allParams = new Dictionary<string, string>(oauthParameters);
         if (additionalParams != null)
         {
@@ -211,39 +210,43 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
                 allParams.Add(param.Key, param.Value);
             }
         }
-        
-        var sortedParams = allParams.OrderBy(kvp => kvp.Key).ThenBy(kvp => kvp.Value);
-        var parameterString = string.Join("&", sortedParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
 
-        var signatureBaseString = $"{httpMethod.ToUpper()}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(parameterString)}";
-        
+        var sortedParams = allParams.OrderBy(kvp => kvp.Key).ThenBy(kvp => kvp.Value);
+        var parameterString = string.Join("&",
+            sortedParams.Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+
+        var signatureBaseString =
+            $"{httpMethod.ToUpper()}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(parameterString)}";
+
         var signingKey = $"{Uri.EscapeDataString(consumerSecret)}&{Uri.EscapeDataString(accessTokenSecret)}";
-        
+
         string oauthSignature;
         using (var hasher = new HMACSHA1(Encoding.ASCII.GetBytes(signingKey)))
         {
             var hash = hasher.ComputeHash(Encoding.ASCII.GetBytes(signatureBaseString));
             oauthSignature = Convert.ToBase64String(hash);
         }
-        
+
         allParams.Add("oauth_signature", oauthSignature);
 
         var authHeader = "OAuth " + string.Join(", ",
             allParams.OrderBy(kvp => kvp.Key)
-                    .Where(kvp => kvp.Key.StartsWith("oauth_"))
-                    .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}=\"{Uri.EscapeDataString(kvp.Value)}\""));
+                .Where(kvp => kvp.Key.StartsWith("oauth_"))
+                .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}=\"{Uri.EscapeDataString(kvp.Value)}\""));
 
         return authHeader;
     }
-    
-    public async Task LikeAsync(string tweetId, string userId, string accessToken, string accessTokenSecret)
+
+    public async Task LikeAsync(string consumerKey, string consumerSecret, string tweetId, string userId,
+        string accessToken, string accessTokenSecret)
     {
         var url = $"https://api.twitter.com/2/users/{userId}/likes";
         _logger.LogInformation("LikeAsync tweetId: {tweetId}, userId: {userId}", tweetId, userId);
 
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("POST", url, accessToken, accessTokenSecret);
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "POST", url, accessToken, accessTokenSecret);
 
         var jsonBody = JsonConvert.SerializeObject(new { tweet_id = tweetId });
 
@@ -267,18 +270,20 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
             _logger.LogError("LikeAsync Error: {err}, code: {code}", e.Message, e.StatusCode);
         }
     }
-    
-    public async Task QuoteTweetAsync(string tweetId, string message, string accessToken, string accessTokenSecret)
+
+    public async Task QuoteTweetAsync(string consumerKey, string consumerSecret, string tweetId, string message,
+        string accessToken, string accessTokenSecret)
     {
         var url = "https://api.twitter.com/2/tweets";
         _logger.LogInformation("QuoteTweetAsync message: {msg}, quote_tweet: {tweetId}", message, tweetId);
 
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("POST", url, accessToken, accessTokenSecret);
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "POST", url, accessToken, accessTokenSecret);
 
         var jsonBody = JsonConvert.SerializeObject(
-            new { text = message, quote_tweet_id = tweetId});
+            new { text = message, quote_tweet_id = tweetId });
 
         var requestMessage = new HttpRequestMessage(HttpMethod.Post, url)
         {
@@ -300,15 +305,17 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
             _logger.LogError("QuoteTweetAsync Error: {err}, code: {code}", e.Message, e.StatusCode);
         }
     }
-    
-    public async Task RetweetAsync(string tweetId, string userId, string accessToken, string accessTokenSecret)
+
+    public async Task RetweetAsync(string consumerKey, string consumerSecret, string tweetId, string userId,
+        string accessToken, string accessTokenSecret)
     {
         var url = $"https://api.twitter.com/2/users/{userId}/retweets";
         _logger.LogInformation("RetweetAsync tweetId: {tweetId}, userId: {userId}", tweetId, userId);
 
         accessToken = GetDecryptedData(accessToken);
         accessTokenSecret = GetDecryptedData(accessTokenSecret);
-        string authHeader = GenerateOAuthHeader("POST", url, accessToken, accessTokenSecret);
+        string authHeader =
+            GenerateOAuthHeader(consumerKey, consumerSecret, "POST", url, accessToken, accessTokenSecret);
 
         var jsonBody = JsonConvert.SerializeObject(new { tweet_id = tweetId });
 
@@ -333,4 +340,3 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
         }
     }
 }
-

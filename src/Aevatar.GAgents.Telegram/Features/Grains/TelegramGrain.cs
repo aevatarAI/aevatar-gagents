@@ -1,14 +1,12 @@
 using System;
 using System.Threading.Tasks;
-using AISmart.GAgent.Telegram.Dtos;
-using AISmart.GAgent.Telegram.Options;
-using AISmart.GAgent.Telegram.Provider;
+using Aevatar.GAgents.Telegram.Features.Dtos;
+using Aevatar.GAgents.Telegram.Provider;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.Providers;
 
-namespace AISmart.GAgent.Telegram.Grains;
+namespace Aevatar.GAgents.Telegram.Grains;
 
 [StorageProvider(ProviderName = "PubSubStore")]
 public class TelegramGrain : Grain, ITelegramGrain

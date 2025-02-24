@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.GEvents;
+namespace Aevatar.GAgents.Telegram.GEvents;
 
 [Description("Receive a message from telegram.")]
 [GenerateSerializer]

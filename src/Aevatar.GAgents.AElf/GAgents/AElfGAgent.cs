@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.GAgents.AElf.Agent.Event;
@@ -107,10 +108,34 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
         return aelfAgentDto;
     }
 
-
     protected Task ExecuteAsync(TransactionStateLogEvent eventData)
     {
         return Task.CompletedTask;
+    }
+
+    protected override void GAgentTransitionState(AElfAgentGState state, StateLogEventBase<TransactionStateLogEvent> @event)
+    {
+        switch (@event)
+        {
+            case TransactionFailedStateLogEvent transactionFailedStateLogEvent:
+                State.PendingTransactions.Remove(transactionFailedStateLogEvent.CreateTransactionGEventId);
+                break;
+            
+            case CreateTransactionStateLogEvent createTransactionStateLogEvent:
+                if (State.Id == Guid.Empty)
+                {
+                    State.Id = Guid.NewGuid();
+                }
+                State.PendingTransactions[createTransactionStateLogEvent.Id] = createTransactionStateLogEvent;
+                break;
+            case SendTransactionStateLogEvent sendTransactionStateLogEvent:
+                State.PendingTransactions[sendTransactionStateLogEvent.CreateTransactionGEventId].TransactionId =
+                    sendTransactionStateLogEvent.TransactionId;
+                break;
+            case TransactionSuccessStateLogEvent transactionSuccessStateLogEvent:
+                State.PendingTransactions.Remove(transactionSuccessStateLogEvent.CreateTransactionGEventId);
+                break;
+        }
     }
 }
 

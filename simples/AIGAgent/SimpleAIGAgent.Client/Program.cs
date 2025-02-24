@@ -1,5 +1,7 @@
 ﻿using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.ChatAgent.Dtos;
+using Aevatar.GAgents.SocialChat.GAgent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,17 @@ await host.StartAsync();
 
 var knowledgeConfig = host.Services.GetRequiredService<IOptions<KnowledgeConfig>>().Value;
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
+
+var socialGAgent = client.GetGrain<ISocialGAgent>(Guid.NewGuid());
+await socialGAgent.ConfigAsync(new ChatConfigDto()
+    { Instructions = "I'm a robot", LLM = "AzureOpenAI", MaxHistoryCount = 10 });
+
+var chatContent = await socialGAgent.ChatAsync("How's the weather today?");
+if (chatContent != null && chatContent.Count > 0)
+{
+    Console.WriteLine($"Soical Agent Response > {chatContent[0].Content}");
+}
+
 
 List<BrainContentDto> fileDtoList = [];
 // load a pdf files into byte arrays

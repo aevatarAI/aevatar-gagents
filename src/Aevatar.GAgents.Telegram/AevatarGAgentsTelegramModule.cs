@@ -1,5 +1,4 @@
-﻿using AISmart.GAgent.Telegram.Options;
-using AISmart.GAgent.Telegram.Provider;
+﻿using Aevatar.GAgents.Telegram.Provider;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-namespace AISmart.GAgent.Telegram.Dtos;
+namespace Aevatar.GAgents.Telegram.Features.Dtos;
 
 public class PhotoParamsRequest
 {

@@ -21,14 +21,12 @@
         <PackageReference Include="Microsoft.SemanticKernel" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" />
         <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
         <PackageReference Include="PdfPig" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Aevatar.AI.Abstractions\Aevatar.AI.Abstractions.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
     </ItemGroup>
 

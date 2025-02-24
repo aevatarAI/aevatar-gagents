@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Orleans;
 
-namespace AISmart.GAgent.Telegram.Grains;
+namespace Aevatar.GAgents.Telegram.Grains;
 
 public interface ITelegramGrain : IGrainWithStringKey
 {

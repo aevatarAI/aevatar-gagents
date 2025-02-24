@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace AISmart.GAgent.Telegram.Helper;
+namespace Aevatar.GAgents.Telegram.Helper;
 
 public class AESCipher
 {
