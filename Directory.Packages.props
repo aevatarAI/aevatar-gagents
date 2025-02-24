@@ -3,9 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.4.6</AevatarCoreVersion>
-    <AevatarEventSoucingVersion>1.4.6</AevatarEventSoucingVersion>
-    <AevatarAbstractionsVersion>1.4.6</AevatarAbstractionsVersion>
+    <AevatarCoreVersion>1.4.8</AevatarCoreVersion>
+    <AevatarEventSoucingVersion>1.4.8</AevatarEventSoucingVersion>
+    <AevatarAbstractionsVersion>1.4.8</AevatarAbstractionsVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
