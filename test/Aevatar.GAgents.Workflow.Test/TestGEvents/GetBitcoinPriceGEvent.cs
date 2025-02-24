@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Aevatar.Core.Abstractions;
 
-namespace Aevatar.GAgents.Router.Demo.GEvents;
+namespace Aevatar.GAgents.Workflow.Test.TestGEvents;
 
 [Description("Get Latest price of bitcoin")]
 [GenerateSerializer]

@@ -1,13 +1,13 @@
 using System.ComponentModel;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Router.Demo.GEvents;
 using Aevatar.GAgents.Router.GEvents;
+using Aevatar.GAgents.Workflow.Test.TestGEvents;
 using Microsoft.Extensions.Logging;
 
-namespace Aevatar.GAgents.Router.Demo.GAgents;
+namespace Aevatar.GAgents.Workflow.Test.TestGAgents;
 
-[Description("xxxxxxxxx")]
+[Description("blockchain agent")]
 public class BlockChainGAgent : GAgentBase<BlockChainState, BlockChainStateLogEvent>, IBlockChainGAgent
 {
     private readonly ILogger<BlockChainGAgent> _logger;

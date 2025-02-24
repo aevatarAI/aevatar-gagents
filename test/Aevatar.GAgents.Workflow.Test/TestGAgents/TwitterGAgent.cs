@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Router.Demo.GEvents;
 using Aevatar.GAgents.Router.GEvents;
+using Aevatar.GAgents.Workflow.Test.TestGEvents;
 using Microsoft.Extensions.Logging;
 
-namespace Aevatar.GAgents.Router.Demo.GAgents;
+namespace Aevatar.GAgents.Workflow.Test.TestGAgents;
 
 [Description("An intelligent Twitter Agent capable of posting tweets, fetching information, and managing replies.")]
 public class TwitterGAgent : GAgentBase<TwitterState, TwitterStateLogEvent>, ITwitterGAgent

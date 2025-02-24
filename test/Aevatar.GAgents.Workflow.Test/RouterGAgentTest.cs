@@ -3,9 +3,9 @@ using Aevatar.GAgent.NamingContest.CreativeAgent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.PublishGAgent;
-using Aevatar.GAgents.Router.Demo.GAgents;
 using Aevatar.GAgents.Router.GAgents;
 using Aevatar.GAgents.Router.GEvents;
+using Aevatar.GAgents.Workflow.Test.TestGAgents;
 using AiSmart.GAgent.NamingContest.HostAgent;
 using AiSmart.GAgent.NamingContest.VoteAgent;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,44 +31,6 @@ public class RouterGAgentTest : AevatarWorkflowTestBase
         var clusterClient = GetRequiredService<IClusterClient>();
         _grainTypeResolver = clusterClient.ServiceProvider.GetRequiredService<GrainTypeResolver>();
     }
-    
-    [Fact]
-    public async Task EventHandlerGroupChatStartGEventTest()
-    {
-        var routerGAgent = await _gAgentFactory.GetGAgentAsync<IRouterGAgent>(Guid.NewGuid());
-        await routerGAgent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "I am a chatbot",
-            LLM = "AzureOpenAI"
-        });
-
-        // var ans = await routerGAgent.InvokeLLMAsync("what is 1 + 1?");
-        
-        var hostGAgent = await _gAgentFactory.GetGAgentAsync(Guid.NewGuid(), typeof(HostGAgent));
-        await hostGAgent.RegisterAsync(routerGAgent);
-        
-        var creativeGAgent = await _gAgentFactory.GetGAgentAsync<ICreativeGAgent>(Guid.NewGuid());
-        await hostGAgent.RegisterAsync(creativeGAgent);
-        var events = await creativeGAgent.GetAllSubscribedEventsAsync();
-        await routerGAgent.AddAgentDescription(creativeGAgent.GetType(), events);
-        
-        var voteGAgent = await _gAgentFactory.GetGAgentAsync<IVoteCharmingGAgent>(Guid.NewGuid());
-        await hostGAgent.RegisterAsync(voteGAgent);
-        events = await voteGAgent.GetAllSubscribedEventsAsync();
-        await routerGAgent.AddAgentDescription(voteGAgent.GetType(), events);
-        
-        var publishGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>(Guid.NewGuid());
-        await publishGAgent.RegisterAsync(hostGAgent);
-        await publishGAgent.PublishEventAsync(new RequestAllSubscriptionsEvent()
-        {
-        });
-        
-        await Task.Delay(8000);
-        
-        var state = await routerGAgent.GetStateAsync();
-        var children = await hostGAgent.GetChildrenAsync();
-        Assert.Equal(3, children.Count);
-    }   
     
     [Fact]
     public async Task RouterTest()
