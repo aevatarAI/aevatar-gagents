@@ -131,6 +131,42 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
 
         await ConfirmEvents();
     }
+
+    protected override void GAgentTransitionState(TelegramGAgentState state, StateLogEventBase<MessageSEvent> @event)
+    {
+        switch (@event)
+        {
+            case ReceiveMessageSEvent @receiveMessageSEvent:
+                State.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
+                break;
+            case SendMessageSEvent sendMessageSEvent:
+                if (!sendMessageSEvent.ReplyMessageId.IsNullOrEmpty())
+                {
+                    State.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
+                }
+                break;
+            case SetTelegramConfigEvent setTelegramConfigEvent:
+                State.BotName = setTelegramConfigEvent.BotName;
+                State.Token = setTelegramConfigEvent.Token;
+                break;
+            case TelegramRequestSEvent @requestSEvent:
+                if (State.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
+                {
+                    State.SocialRequestList.Add(@requestSEvent.RequestId);
+                }
+                break;
+            case TelegramOptionSEvent @telegramOptionSEvent:
+                State.TelegramOptions = new TelegramOptions()
+                    { Webhook = @telegramOptionSEvent.Webhook, EncryptionPassword = @telegramOptionSEvent.EncryptionPassword };
+                break;
+            case TelegramSocialResponseSEvent @telegramSocialResponseSEvent:
+                if (State.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
+                {
+                    State.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
+                }
+                break;
+        }
+    }
 }
 
 public interface ITelegramGAgent : IStateGAgent<TelegramGAgentState>

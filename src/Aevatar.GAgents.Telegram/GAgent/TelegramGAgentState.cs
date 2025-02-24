@@ -19,47 +19,6 @@ public class TelegramGAgentState : StateBase
     [Id(4)] public string Token { get; set; }
     [Id(5)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
     [Id(6)] public TelegramOptions TelegramOptions { get; set; } = new TelegramOptions();
-
-    public void Apply(ReceiveMessageSEvent receiveMessageSEvent)
-    {
-        PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
-    }
-
-    public void Apply(SendMessageSEvent sendMessageSEvent)
-    {
-        if (!sendMessageSEvent.ReplyMessageId.IsNullOrEmpty())
-        {
-            PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
-        }
-    }
-
-    public void Apply(SetTelegramConfigEvent setTelegramConfigEvent)
-    {
-        BotName = setTelegramConfigEvent.BotName;
-        Token = setTelegramConfigEvent.Token;
-    }
-
-    public void Apply(TelegramRequestSEvent @event)
-    {
-        if (SocialRequestList.Contains(@event.RequestId) == false)
-        {
-            SocialRequestList.Add(@event.RequestId);
-        }
-    }
-
-    public void Apply(TelegramOptionSEvent @event)
-    {
-        TelegramOptions = new TelegramOptions()
-            { Webhook = @event.Webhook, EncryptionPassword = @event.EncryptionPassword };
-    }
-
-    public void Apply(TelegramSocialResponseSEvent @event)
-    {
-        if (SocialRequestList.Contains(@event.ResponseId))
-        {
-            SocialRequestList.Remove(@event.ResponseId);
-        }
-    }
 }
 
 [GenerateSerializer]
