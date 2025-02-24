@@ -24,6 +24,7 @@
         <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.TestBase\Aevatar.GAgents.TestBase.csproj" />
     </ItemGroup>
     
