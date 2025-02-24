@@ -157,6 +157,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             _logger.LogInformation("task has been completed, taskId: {taskId}, task description: {description}, " +
                              "history: {history}, reason: {reason}", 
                 taskId, taskDescription, JsonConvert.SerializeObject(history), llmOutput.Reason);
+            await RemoveTask(taskId);
             return;
         }
         
@@ -201,53 +202,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
             return agentInfo + eventsInfo;
         }));
-
-        // Build the prompt
-//         var prompt = $@"
-// You are a task routing assistant for a multi-agent system. Your goal is to determine the next agent and event needed to achieve the user's task.
-//
-// ### User Task Description:
-// {taskDescription}
-//
-// ### Processed Event History:
-// Here is the list of events that have already been triggered and processed:
-// [{eventHistoryList}]
-//
-// ### Available Agents and Their Events:
-// Below is a description of all available agents and the events they can handle, along with their input parameters.
-// {agentsDescriptionList}
-//
-// ### Output Requirements:
-// 1. Select ONE event from available agents that logically follows the event history
-// 2. Parameters MUST match the exact structure for the selected event type
-// 3. If you could select one reasonable event, please output the Json format:
-// {{
-//     ""agentName"": ""<AgentName>"",
-//     ""eventName"": ""<EventName>"",
-//     ""parameters"": ""<Parameters JSON String>"",
-//     ""reason"": ""<Reason for selecting this event>"",
-// }}
-// 4. If the user's request is completed, please output the Json format:
-//    {{
-//         ""completed"": ""true"",
-//         ""reason"": ""<Reason you think it is completed>"",
-//    }}
-// 5. If the user's request is not completed and there is not a reasonable event to follow, please output the Json format:
-//    {{
-//         ""terminated"": ""true"",
-//         ""reason"": ""<Reason for terminate>"",
-//    }}
-// 6. Your output should be a pure json format, without any other text, which can be deserialize by c# JsonConvert.DeserializeObject directly.
-//
-// ### Examples
-// Valid response example for creating a tweet:
-// {{
-//   ""AgentName"": ""TwitterGAgent"",
-//   ""EventName"": ""PostTweetEvent"",
-//   ""Parameters"": ""{{\""TweetContent\"":\""Today's weather is sunny with 25°C. Perfect day!\""}}"",
-//   ""Reason"": ""TwitterGAgent could post tweets""
-// }}";
-
+        
         var prompt = PromptTemplate.RouterPrompt
             .Replace("{TASK_DESCRIPTION}", taskDescription)
             .Replace("{EVENT_HISTORY_LIST}", eventHistoryList)
