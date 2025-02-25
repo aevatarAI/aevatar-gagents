@@ -127,10 +127,10 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     {
         try
         {
-            _logger.LogInformation("HandleEventAsync ReplyMentionEvent");
+            _logger.LogError("HandleEventAsync ReplyMentionEvent");
             if (State.UserId.IsNullOrEmpty())
             {
-                _logger.LogInformation("HandleEventAsync ReplyMentionEvent null userId");
+                _logger.LogError("HandleEventAsync ReplyMentionEvent null userId");
                 return;
             }
 
@@ -138,10 +138,10 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                 await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
                     .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
                         State.TwitterOptions.ReplyLimit);
-            _logger.LogInformation("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
+            _logger.LogError("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
             foreach (var tweet in mentionTweets)
             {
-                _logger.LogInformation("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
+                _logger.LogError("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
                                  "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
                 if (!State.RepliedTweets.Keys.Contains(tweet.Id))
                 {
@@ -160,7 +160,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "[TwitterGAgent][ReplyMentionGEvent] handle error");
+            _logger.LogError(e, $"[TwitterGAgent][ReplyMentionGEvent] handle error:{e}");
         }
     }
 
@@ -178,7 +178,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     public async Task BindTwitterAccountAsync(string userName, string userId, string token, string tokenSecret)
     {
-        _logger.LogInformation("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
+        _logger.LogError("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
             userId, userName);
         RaiseEvent(new BindTwitterAccountSEvent()
         {
@@ -192,7 +192,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     public async Task UnbindTwitterAccountAsync()
     {
-        _logger.LogInformation("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
+        _logger.LogError("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
         RaiseEvent(new UnbindTwitterAccountEvent()
         {
         });
@@ -206,7 +206,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
-        _logger.LogInformation("PerformConfigAsync, data: {data}",
+        _logger.LogError("PerformConfigAsync, data: {data}",
             JsonConvert.SerializeObject(initializationEvent));
         RaiseEvent(new TwitterOptionsSEvent()
         {
