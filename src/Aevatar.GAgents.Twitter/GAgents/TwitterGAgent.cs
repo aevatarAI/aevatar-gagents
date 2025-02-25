@@ -125,35 +125,42 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     [EventHandler]
     public async Task HandleEventAsync(ReplyMentionGEvent @event)
     {
-        _logger.LogDebug("HandleEventAsync ReplyMentionEvent");
-        if (State.UserId.IsNullOrEmpty())
+        try
         {
-            _logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
-            return;
-        }
-
-        var mentionTweets =
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
-                .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
-                    State.TwitterOptions.ReplyLimit);
-        _logger.LogDebug("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
-        foreach (var tweet in mentionTweets)
-        {
-            _logger.LogDebug("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
-                             "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
-            if (!State.RepliedTweets.Keys.Contains(tweet.Id))
+            _logger.LogDebug("HandleEventAsync ReplyMentionEvent");
+            if (State.UserId.IsNullOrEmpty())
             {
-                var requestId = Guid.NewGuid();
-                RaiseEvent(new TweetRequestSEvent() { RequestId = requestId });
-                await ConfirmEvents();
-
-                await PublishAsync(new SocialGEvent()
-                {
-                    RequestId = requestId,
-                    Content = tweet.Text,
-                    MessageId = tweet.Id
-                });
+                _logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
+                return;
             }
+
+            var mentionTweets =
+                await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
+                    .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
+                        State.TwitterOptions.ReplyLimit);
+            _logger.LogDebug("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
+            foreach (var tweet in mentionTweets)
+            {
+                _logger.LogDebug("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
+                                 "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
+                if (!State.RepliedTweets.Keys.Contains(tweet.Id))
+                {
+                    var requestId = Guid.NewGuid();
+                    RaiseEvent(new TweetRequestSEvent() { RequestId = requestId });
+                    await ConfirmEvents();
+
+                    await PublishAsync(new SocialGEvent()
+                    {
+                        RequestId = requestId,
+                        Content = tweet.Text,
+                        MessageId = tweet.Id
+                    });
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "[TwitterGAgent][ReplyMentionGEvent] handle error");
         }
     }
 
@@ -212,11 +219,10 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
         await ConfirmEvents();
     }
-    
+
     protected override void GAgentTransitionState(TwitterGAgentState state,
         StateLogEventBase<TweetSEvent> @event)
     {
-    
         switch (@event)
         {
             case TwitterOptionsSEvent twitterOptionsSEvent:
@@ -246,18 +252,21 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                 {
                     State.RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
                 }
+
                 break;
             case TweetRequestSEvent tweetRequestSEvent:
                 if (State.SocialRequestList.Contains(tweetRequestSEvent.RequestId) == false)
                 {
                     State.SocialRequestList.Add(tweetRequestSEvent.RequestId);
                 }
+
                 break;
             case TweetSocialResponseSEvent tweetSocialResponseSEvent:
                 if (State.SocialRequestList.Contains(tweetSocialResponseSEvent.ResponseId))
                 {
                     State.SocialRequestList.Remove(tweetSocialResponseSEvent.ResponseId);
                 }
+
                 break;
         }
     }
