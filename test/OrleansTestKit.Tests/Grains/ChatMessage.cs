@@ -1,5 +1,6 @@
 ﻿namespace TestGrains;
 
+[GenerateSerializer]
 public class ChatMessage
 {
     public ChatMessage(string msg)
@@ -7,5 +8,5 @@ public class ChatMessage
         Msg = msg;
     }
 
-    public string Msg { get; }
+    [Id(0)] public string Msg { get; }
 }
