@@ -107,6 +107,18 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         await SendMessageAsync(@event.ResponseContent, @event.ChatId, @event.ReplyMessageId);
     }
 
+    [EventHandler]
+    public async Task HandleEventAsync(RegisterTelegramGEvent @event)
+    {
+        await RegisterTelegramAsync(@event.BotName, @event.Token);
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(UnRegisterTelegramGEvent @event)
+    {
+        await UnRegisterTelegramAsync(@event.BotName);
+    }
+
     private async Task SendMessageAsync(string message, string chatId, string? replyMessageId)
     {
         if (replyMessageId != null)
