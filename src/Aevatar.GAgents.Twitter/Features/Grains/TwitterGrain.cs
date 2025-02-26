@@ -41,6 +41,7 @@ public class TwitterGrain : Grain, ITwitterGrain
     {
         try
         {
+            _logger.LogError($"username-->{userName}, bearToken--->{bearToken}, replyLimit--{replyLimit}");
             var mentionList = await _twitterProvider.GetMentionsAsync(userName, bearToken);
             return mentionList.Take(replyLimit).ToList();
         }
