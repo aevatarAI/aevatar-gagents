@@ -103,8 +103,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
         if (@event.ReplyMessageId.IsNullOrEmpty())
         {
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(State.TwitterOptions.ConsumerKey,
-                State.TwitterOptions.ConsumerSecret,
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(State.ConsumerKey,
+                State.ConsumerSecret,
                 @event.ResponseContent, State.Token, State.TokenSecret);
         }
         else
@@ -116,8 +116,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
             });
             await ConfirmEvents();
 
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(State.TwitterOptions.ConsumerKey,
-                State.TwitterOptions.ConsumerSecret,
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(State.ConsumerKey,
+                State.ConsumerSecret,
                 @event.ResponseContent, @event.ReplyMessageId, State.Token, State.TokenSecret);
         }
     }
@@ -136,8 +136,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
             var mentionTweets =
                 await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
-                    .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
-                        State.TwitterOptions.ReplyLimit);
+                    .GetRecentMentionAsync(State.UserName, State.BearerToken,
+                        State.ReplyLimit);
             foreach (var tweet in mentionTweets)
             {
                 if (!State.RepliedTweets.Keys.Contains(tweet.Id))
@@ -225,14 +225,11 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         switch (@event)
         {
             case TwitterOptionsSEvent twitterOptionsSEvent:
-                State.TwitterOptions = new InitTwitterOptions
-                {
-                    ConsumerKey = twitterOptionsSEvent.ConsumerKey,
-                    ConsumerSecret = twitterOptionsSEvent.ConsumerSecret,
-                    EncryptionPassword = twitterOptionsSEvent.EncryptionPassword,
-                    BearerToken = twitterOptionsSEvent.BearerToken,
-                    ReplyLimit = twitterOptionsSEvent.ReplyLimit
-                };
+                State.ConsumerKey = twitterOptionsSEvent.ConsumerKey;
+                State.ConsumerSecret = twitterOptionsSEvent.ConsumerSecret;
+                State.EncryptionPassword = twitterOptionsSEvent.EncryptionPassword;
+                State.BearerToken = twitterOptionsSEvent.BearerToken;
+                State.ReplyLimit = twitterOptionsSEvent.ReplyLimit;
                 break;
             case BindTwitterAccountSEvent bindTwitterAccountSEvent:
                 State.UserId = bindTwitterAccountSEvent.UserId;
