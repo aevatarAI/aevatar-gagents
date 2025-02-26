@@ -134,6 +134,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                 return;
             }
 
+            _logger.LogError($"State.TwitterOptions == {JsonConvert.SerializeObject(State.TwitterOptions)}");
             var mentionTweets =
                 await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
                     .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
@@ -206,7 +207,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
-        _logger.LogError("PerformConfigAsync, data: {data}",
+        _logger.LogError("PerformConfigAsync , data: {data}",
             JsonConvert.SerializeObject(initializationEvent));
         RaiseEvent(new TwitterOptionsSEvent()
         {
@@ -223,6 +224,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     protected override void GAgentTransitionState(TwitterGAgentState state,
         StateLogEventBase<TweetSEvent> @event)
     {
+        _logger.LogError("PerformConfigAsync, GAgentTransitionState: {data}, type:{type}",
+            JsonConvert.SerializeObject(@event), @event.GetType().FullName);
         switch (@event)
         {
             case TwitterOptionsSEvent twitterOptionsSEvent:
