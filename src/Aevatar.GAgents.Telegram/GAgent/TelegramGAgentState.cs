@@ -22,7 +22,7 @@ public class TelegramGAgentState : StateBase
 }
 
 [GenerateSerializer]
-public class TelegramOptions : ConfigurationBase
+public class TelegramOptions
 {
     [Id(0)] public string Webhook { get; set; }
     [Id(1)] public string EncryptionPassword { get; set; }
