@@ -53,7 +53,8 @@ public class TwitterProvider : ITwitterProvider, ISingletonDependency
         string encodedQuery = Uri.EscapeDataString(query);
         string url =
             $"https://api.twitter.com/2/tweets/search/recent?query={encodedQuery}&tweet.fields=author_id,conversation_id&max_results=100";
-
+        _logger.LogError($"GetMentionsAsync url--->{url}");
+        _logger.LogError($"GetMentionsAsync bearerToken--->{bearerToken}");
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
         try
         {
