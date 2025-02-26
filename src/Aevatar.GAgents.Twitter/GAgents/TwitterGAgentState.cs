@@ -20,10 +20,8 @@ public class TwitterGAgentState : StateBase
     [Id(7)] public InitTwitterOptions TwitterOptions { get; set; }
 }
 
-
-
 [GenerateSerializer]
-public class InitTwitterOptions : ConfigurationBase
+public class InitTwitterOptions
 {
     [Id(0)] public string ConsumerKey { get; set; }
     [Id(1)] public string ConsumerSecret { get; set; }
