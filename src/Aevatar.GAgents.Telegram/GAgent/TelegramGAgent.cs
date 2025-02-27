@@ -38,7 +38,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
             Token = token
         });
         await ConfirmEvents();
-        await GrainFactory.GetGrain<ITelegramGrain>(botName).RegisterTelegramAsync(State.TelegramOptions.Webhook,
+        await GrainFactory.GetGrain<ITelegramGrain>(botName).RegisterTelegramAsync(State.Webhook,
             State.BotName, State.Token);
     }
 
@@ -107,6 +107,18 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         await SendMessageAsync(@event.ResponseContent, @event.ChatId, @event.ReplyMessageId);
     }
 
+    [EventHandler]
+    public async Task HandleEventAsync(RegisterTelegramGEvent @event)
+    {
+        await RegisterTelegramAsync(@event.BotName, @event.Token);
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(UnRegisterTelegramGEvent @event)
+    {
+        await UnRegisterTelegramAsync(@event.BotName);
+    }
+
     private async Task SendMessageAsync(string message, string chatId, string? replyMessageId)
     {
         if (replyMessageId != null)
@@ -144,6 +156,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
                 {
                     State.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
                 }
+
                 break;
             case SetTelegramConfigEvent setTelegramConfigEvent:
                 State.BotName = setTelegramConfigEvent.BotName;
@@ -154,16 +167,18 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
                 {
                     State.SocialRequestList.Add(@requestSEvent.RequestId);
                 }
+
                 break;
             case TelegramOptionSEvent @telegramOptionSEvent:
-                State.TelegramOptions = new TelegramOptions()
-                    { Webhook = @telegramOptionSEvent.Webhook, EncryptionPassword = @telegramOptionSEvent.EncryptionPassword };
+                State.Webhook = @telegramOptionSEvent.Webhook;
+                State.EncryptionPassword = @telegramOptionSEvent.EncryptionPassword;
                 break;
             case TelegramSocialResponseSEvent @telegramSocialResponseSEvent:
                 if (State.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
                 {
                     State.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
                 }
+
                 break;
         }
     }

@@ -18,12 +18,7 @@ public class TelegramGAgentState : StateBase
 
     [Id(4)] public string Token { get; set; }
     [Id(5)] public List<Guid> SocialRequestList { get; set; } = new List<Guid>();
-    [Id(6)] public TelegramOptions TelegramOptions { get; set; } = new TelegramOptions();
-}
-
-[GenerateSerializer]
-public class TelegramOptions : ConfigurationBase
-{
-    [Id(0)] public string Webhook { get; set; }
-    [Id(1)] public string EncryptionPassword { get; set; }
+   
+    [Id(6)] public string Webhook { get; set; }
+    [Id(7)] public string EncryptionPassword { get; set; }
 }

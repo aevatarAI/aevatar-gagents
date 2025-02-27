@@ -8,7 +8,7 @@ namespace Aevatar.GAgents.Telegram;
 [DependsOn(
     typeof(AbpAutoMapperModule)
 )]
-public class AISmartGAgentTelegramModule : AbpModule
+public class AevatarGAgentsTelegramModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

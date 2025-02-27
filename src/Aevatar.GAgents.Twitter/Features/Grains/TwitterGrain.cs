@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,7 +39,17 @@ public class TwitterGrain : Grain, ITwitterGrain
 
     public async Task<List<Tweet>> GetRecentMentionAsync(string userName, string bearToken, int replyLimit)
     {
-        var mentionList = await _twitterProvider.GetMentionsAsync(userName, bearToken);
-        return mentionList.Take(replyLimit).ToList();
+        try
+        {
+            _logger.LogError($"username-->{userName}, bearToken--->{bearToken}, replyLimit--{replyLimit}");
+            var mentionList = await _twitterProvider.GetMentionsAsync(userName, bearToken);
+            return mentionList.Take(replyLimit).ToList();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError($"[TwitterGrain] [GetRecentMentionAsync] handler error,ex:{e}");
+        }
+
+        return new List<Tweet>();
     }
 }
