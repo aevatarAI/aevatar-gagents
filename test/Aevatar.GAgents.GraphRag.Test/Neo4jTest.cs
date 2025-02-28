@@ -1,19 +1,19 @@
-using Neo4j.Driver;
+using Aevatar.GAgents.GraphRag.Abstractions;
 using Xunit;
 
 namespace Aevatar.GAgents.GraphRag.Test;
 
-public class Neo4jTest : AevatarGAgentGraphRagTestBase
+public class Neo4jStoreTest : AevatarGAgentGraphRagTestBase
 {
-    private IDriver _driver;
+    private IGraphRagStore _neo4jStore;
     
-    public Neo4jTest()
+    public Neo4jStoreTest()
     {
-        _driver = GetRequiredService<IDriver>();;
+        _neo4jStore = GetRequiredService<IGraphRagStore>();;
     }
 
     [Fact]
-    public async Task RetrieveTest()
+    public async Task CypherQueryTest()
     {
         var cypherQuery =
             @"
@@ -27,15 +27,8 @@ LIMIT 10
 RETURN 
   h.name, Hashtags
       ";
-
-        var session = _driver.AsyncSession(o => o.WithDatabase("neo4j"));
-        var result = await session.ReadTransactionAsync(async tx =>
-        {
-            var r = await tx.RunAsync(cypherQuery,
-                new { screenName = "NASA" });
-            return await r.ToListAsync();
-        });
-
-        await session.CloseAsync();
+        
+        var result = await _neo4jStore.QueryAsync(cypherQuery);
+        Assert.True(result.Any());
     }
 }

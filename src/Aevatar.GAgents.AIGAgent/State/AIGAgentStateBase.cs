@@ -10,4 +10,6 @@ public abstract class AIGAgentStateBase : StateBase
 
     [Id(1)] public string PromptTemplate { get; set; } = string.Empty;
     [Id(2)] public bool IfUpsertKnowledge { get; set; } = false;
+    [Id(3)] public string RetrieveSchema { get; set; } = string.Empty;
+    [Id(4)] public string RetrieveExample { get; set; } = string.Empty;
 }

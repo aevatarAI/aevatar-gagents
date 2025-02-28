@@ -1,3 +1,7 @@
+using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.Neo4j.Options;
+using Aevatar.GAgents.Neo4jStore.Extensions;
+using Aevatar.GAgents.SemanticKernel.Extensions;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,6 +75,19 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     {
                         Mapper = sp.GetRequiredService<IMapper>()
                     });
+                    
+                    services.Configure<AzureOpenAIConfig>(configuration.GetSection("AIServices:AzureOpenAI"));
+                    services.Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
+                    services.Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
+                    services.Configure<RagConfig>(configuration.GetSection("Rag"));
+                    services.Configure<Neo4jDriverConfig>(configuration.GetSection("Neo4j"));
+                    
+                    
+                    services.AddSemanticKernel()
+                        .AddAzureOpenAI()
+                        .AddQdrantVectorStore()
+                        .AddAzureOpenAITextEmbedding()
+                        .AddNeo4JStore();
                 })
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
