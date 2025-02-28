@@ -27,7 +27,8 @@ jobs:
           Aevatar.GAgents.AI.Abstractions,
           Aevatar.GAgents.AIGAgent,
           Aevatar.GAgents.SemanticKernel,
-          Aevatar.GAgents.ChatAgent
+          Aevatar.GAgents.ChatAgent,
+          Aevatar.GAgents.Router
         ]
     steps:
       - name: Checkout code
