@@ -49,6 +49,13 @@ public static class AevatarAISemanticKernelExtension
 
         return services;
     }
+    
+    public static IServiceCollection AddAzureDeepSeek(this IServiceCollection services)
+    {
+        services.AddKeyedTransient<IBrain, DeepSeekBrain>("DeepSeek");
+
+        return services;
+    }
 
     public static IServiceCollection AddGemini(this IServiceCollection services)
     {
