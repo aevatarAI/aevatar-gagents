@@ -1,7 +1,7 @@
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.Neo4jStore.Extensions;
 using Aevatar.GAgents.Neo4jStore.Options;
-using Aevatar.GAgents.SemanticKernel.Extensions;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

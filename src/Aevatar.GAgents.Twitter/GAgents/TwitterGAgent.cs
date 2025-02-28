@@ -103,8 +103,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
         if (@event.ReplyMessageId.IsNullOrEmpty())
         {
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(State.TwitterOptions.ConsumerKey,
-                State.TwitterOptions.ConsumerSecret,
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).CreateTweetAsync(State.ConsumerKey,
+                State.ConsumerSecret,
                 @event.ResponseContent, State.Token, State.TokenSecret);
         }
         else
@@ -116,8 +116,8 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
             });
             await ConfirmEvents();
 
-            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(State.TwitterOptions.ConsumerKey,
-                State.TwitterOptions.ConsumerSecret,
+            await GrainFactory.GetGrain<ITwitterGrain>(State.UserId).ReplyTweetAsync(State.ConsumerKey,
+                State.ConsumerSecret,
                 @event.ResponseContent, @event.ReplyMessageId, State.Token, State.TokenSecret);
         }
     }
@@ -127,22 +127,19 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     {
         try
         {
-            _logger.LogError("HandleEventAsync ReplyMentionEvent");
+            _logger.LogDebug("HandleEventAsync ReplyMentionEvent");
             if (State.UserId.IsNullOrEmpty())
             {
-                _logger.LogError("HandleEventAsync ReplyMentionEvent null userId");
+                _logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
                 return;
             }
 
             var mentionTweets =
                 await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
-                    .GetRecentMentionAsync(State.UserName, State.TwitterOptions.BearerToken,
-                        State.TwitterOptions.ReplyLimit);
-            _logger.LogError("HandleEventAsync GetRecentMentionAsync, count: {cnt}", mentionTweets.Count);
+                    .GetRecentMentionAsync(State.UserName, State.BearerToken,
+                        State.ReplyLimit);
             foreach (var tweet in mentionTweets)
             {
-                _logger.LogError("HandleEventAsync GetRecentMentionAsync Publish SocialEvent, " +
-                                 "tweetId: {tweetId}, text: {text}", tweet.Id, tweet.Text);
                 if (!State.RepliedTweets.Keys.Contains(tweet.Id))
                 {
                     var requestId = Guid.NewGuid();
@@ -178,7 +175,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     public async Task BindTwitterAccountAsync(string userName, string userId, string token, string tokenSecret)
     {
-        _logger.LogError("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
+        _logger.LogDebug("HandleEventAsync BindTwitterAccount，userId: {userId}, userName: {userName}",
             userId, userName);
         RaiseEvent(new BindTwitterAccountSEvent()
         {
@@ -192,7 +189,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     public async Task UnbindTwitterAccountAsync()
     {
-        _logger.LogError("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
+        _logger.LogDebug("HandleEventAsync UnbindTwitterAccount，userId: {userId}", State.UserId);
         RaiseEvent(new UnbindTwitterAccountEvent()
         {
         });
@@ -206,7 +203,7 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
     {
-        _logger.LogError("PerformConfigAsync, data: {data}",
+        _logger.LogDebug("PerformConfigAsync , data: {data}",
             JsonConvert.SerializeObject(initializationEvent));
         RaiseEvent(new TwitterOptionsSEvent()
         {
@@ -223,17 +220,16 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     protected override void GAgentTransitionState(TwitterGAgentState state,
         StateLogEventBase<TweetSEvent> @event)
     {
+        _logger.LogDebug("PerformConfigAsync, GAgentTransitionState: {data}, type:{type}",
+            JsonConvert.SerializeObject(@event), @event.GetType().FullName);
         switch (@event)
         {
             case TwitterOptionsSEvent twitterOptionsSEvent:
-                State.TwitterOptions = new InitTwitterOptions
-                {
-                    ConsumerKey = twitterOptionsSEvent.ConsumerKey,
-                    ConsumerSecret = twitterOptionsSEvent.ConsumerSecret,
-                    EncryptionPassword = twitterOptionsSEvent.EncryptionPassword,
-                    BearerToken = twitterOptionsSEvent.BearerToken,
-                    ReplyLimit = twitterOptionsSEvent.ReplyLimit
-                };
+                State.ConsumerKey = twitterOptionsSEvent.ConsumerKey;
+                State.ConsumerSecret = twitterOptionsSEvent.ConsumerSecret;
+                State.EncryptionPassword = twitterOptionsSEvent.EncryptionPassword;
+                State.BearerToken = twitterOptionsSEvent.BearerToken;
+                State.ReplyLimit = twitterOptionsSEvent.ReplyLimit;
                 break;
             case BindTwitterAccountSEvent bindTwitterAccountSEvent:
                 State.UserId = bindTwitterAccountSEvent.UserId;
