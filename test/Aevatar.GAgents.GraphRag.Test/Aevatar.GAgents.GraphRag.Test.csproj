@@ -16,8 +16,13 @@
     </ItemGroup>
     
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Aevatar.GAgents.Neo4j\Aevatar.GAgents.Neo4j.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.Neo4jStore\Aevatar.GAgents.Neo4jStore.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.TestBase\Aevatar.GAgents.TestBase.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.ChatAgent\Aevatar.GAgents.ChatAgent.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.SocialGAgent\Aevatar.GAgents.SocialGAgent.csproj" />
     </ItemGroup>
 
     <ItemGroup>

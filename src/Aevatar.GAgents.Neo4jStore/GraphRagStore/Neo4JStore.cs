@@ -67,7 +67,7 @@ public class Neo4JStore : INeo4JStore
                     new { id = nodeId });
 
                 var record = await result.SingleAsync();
-                var node = record["n"].As<INode>();
+                var node = ValueExtensions.As<INode>(record["n"]);
 
                 return new Node
                 {

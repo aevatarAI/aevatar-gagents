@@ -1,4 +1,4 @@
-namespace Aevatar.GAgents.Neo4j.Common;
+namespace Aevatar.GAgents.Neo4jStore.Common;
 
 public class Prompts
 {

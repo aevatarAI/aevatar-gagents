@@ -1,6 +1,6 @@
-using Aevatar.GAgents.Neo4j;
-using Aevatar.GAgents.Neo4j.Extensions;
-using Aevatar.GAgents.Neo4j.Options;
+using Aevatar.GAgents.Neo4jStore;
+using Aevatar.GAgents.Neo4jStore.Extensions;
+using Aevatar.GAgents.Neo4jStore.Options;
 using Aevatar.GAgents.TestBase;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +10,7 @@ using Volo.Abp.Modularity;
 namespace Aevatar.GAgents.GraphRag.Test;
 
 [DependsOn(
-    typeof(AevatarGAgentsNeo4jModule),
+    typeof(AevatarGAgentsNeo4JStoreModule),
     typeof(AevatarGAgentTestBaseModule)
 )]
 public class AevatarGAgentGraphRagTestModule : AbpModule
@@ -20,5 +20,10 @@ public class AevatarGAgentGraphRagTestModule : AbpModule
         base.ConfigureServices(context);
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentGraphRagTestModule>(); });
         context.Services.AddSingleton(new ApplicationPartManager());
+        
+        var configuration = context.Services.GetConfiguration();
+        context.Services.Configure<Neo4jDriverConfig>(configuration.GetSection("Neo4j"));
+        
+        context.Services.AddNeo4JStore();
     }
 }

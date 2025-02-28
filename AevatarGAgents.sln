@@ -43,7 +43,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GraphRag.Abstractions", "src\Aevatar.GAgents.GraphRag.Abstractions\Aevatar.GAgents.GraphRag.Abstractions.csproj", "{8A008218-716D-4733-9FC3-88A0E3E26F3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Neo4j", "src\Aevatar.GAgents.Neo4j\Aevatar.GAgents.Neo4j.csproj", "{D5196569-A165-4274-B4BD-C39B3F3AB27B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Neo4jStore", "src\Aevatar.GAgents.Neo4jStore\Aevatar.GAgents.Neo4jStore.csproj", "{D5196569-A165-4274-B4BD-C39B3F3AB27B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GraphRag.Test", "test\Aevatar.GAgents.GraphRag.Test\Aevatar.GAgents.GraphRag.Test.csproj", "{B1BD7B70-0098-455B-84DB-3B67596729D7}"
 EndProject

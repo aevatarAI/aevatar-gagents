@@ -12,7 +12,7 @@ using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.GraphRag.Abstractions;
 using Aevatar.GAgents.GraphRag.Abstractions.Extensions;
-using Aevatar.GAgents.Neo4j.Common;
+using Aevatar.GAgents.Neo4jStore.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans;

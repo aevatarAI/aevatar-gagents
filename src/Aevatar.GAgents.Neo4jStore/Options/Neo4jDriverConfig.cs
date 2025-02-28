@@ -1,4 +1,4 @@
-namespace Aevatar.GAgents.Neo4j.Options;
+namespace Aevatar.GAgents.Neo4jStore.Options;
 
 public sealed class Neo4jDriverConfig
 {
