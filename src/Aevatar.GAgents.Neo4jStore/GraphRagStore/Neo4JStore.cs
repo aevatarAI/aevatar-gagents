@@ -89,7 +89,7 @@ public class Neo4JStore : INeo4JStore
         }
     }
 
-    public async Task<IEnumerable<QueryResult>> QueryAsync(string cypherQuery)
+    public async Task<List<QueryResult>> QueryAsync(string cypherQuery)
     {
         try
         {
@@ -108,12 +108,12 @@ public class Neo4JStore : INeo4JStore
         catch (ClientException e)
         {
             _logger.LogError("Error executing Cypher query, msg: {msg}, code: {code}", e.Message, e.Code);
-            return Enumerable.Empty<QueryResult>();
+            return new List<QueryResult>();
         }
         catch (AuthenticationException e)
         {
             _logger.LogError("Error authentication, msg: {msg}, code: {code}", e.Message, e.Code);
-            return Enumerable.Empty<QueryResult>();
+            return new List<QueryResult>();
         }
     }
 

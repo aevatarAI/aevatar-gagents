@@ -6,6 +6,6 @@ public interface IGraphRagStore
 {
     Task StoreAsync(Node node, Relationship relationship);
     Task<Node?> RetrieveAsync(string nodeId);
-    Task<IEnumerable<QueryResult>> QueryAsync(string cypherQuery);
+    Task<List<QueryResult>> QueryAsync(string cypherQuery);
     Task DeleteAsync(string nodeId);
 }
