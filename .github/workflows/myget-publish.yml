@@ -28,7 +28,8 @@ jobs:
           Aevatar.GAgents.AIGAgent,
           Aevatar.GAgents.SemanticKernel,
           Aevatar.GAgents.ChatAgent,
-          Aevatar.GAgents.Router
+          Aevatar.GAgents.Router,
+          Aevatar.GAgents.Neo4jStore
         ]
     steps:
       - name: Checkout code
