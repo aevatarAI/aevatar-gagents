@@ -29,6 +29,7 @@ jobs:
           Aevatar.GAgents.SemanticKernel,
           Aevatar.GAgents.ChatAgent,
           Aevatar.GAgents.Router,
+          Aevatar.GAgents.GraphRag.Abstractions,
           Aevatar.GAgents.Neo4jStore
         ]
     steps:
