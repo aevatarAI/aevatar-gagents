@@ -164,7 +164,7 @@ public abstract partial class
             TotalUsageToken = invokeResponse.TokenUsageStatistics.TotalUsageToken,
             CreateTime = invokeResponse.TokenUsageStatistics.CreateTime
         };
-        
+
         RaiseEvent(tokenUsage);
 
         return invokeResponse.ChatReponseList;
@@ -200,6 +200,11 @@ public abstract partial class
                 break;
             case SetUpsertKnowledgeFlag setUpsertKnowledgeFlag:
                 State.IfUpsertKnowledge = true;
+                break;
+            case TokenUsageStateLogEvent tokenUsageStateLogEvent:
+                State.InputTokenUsage = tokenUsageStateLogEvent.InputToken;
+                State.OutTokenUsage = tokenUsageStateLogEvent.OutputToken;
+                State.TotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
                 break;
         }
 
