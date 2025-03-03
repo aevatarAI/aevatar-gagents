@@ -202,9 +202,9 @@ public abstract partial class
                 State.IfUpsertKnowledge = true;
                 break;
             case TokenUsageStateLogEvent tokenUsageStateLogEvent:
-                State.InputTokenUsage = tokenUsageStateLogEvent.InputToken;
-                State.OutTokenUsage = tokenUsageStateLogEvent.OutputToken;
-                State.TotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
+                State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
+                State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
+                State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
                 break;
         }
 

@@ -10,7 +10,7 @@ public abstract class AIGAgentStateBase : StateBase
 
     [Id(1)] public string PromptTemplate { get; set; } = string.Empty;
     [Id(2)] public bool IfUpsertKnowledge { get; set; } = false;
-    [Id(3)] public int InputTokenUsage { get; set; }
-    [Id(4)] public int OutTokenUsage { get; set; }
-    [Id(5)] public int TotalTokenUsage { get; set; }
+    [Id(3)] public int InputTokenUsage { get; set; } = 0;
+    [Id(4)] public int OutTokenUsage { get; set; } = 0;
+    [Id(5)] public int TotalTokenUsage { get; set; } = 0;
 }
