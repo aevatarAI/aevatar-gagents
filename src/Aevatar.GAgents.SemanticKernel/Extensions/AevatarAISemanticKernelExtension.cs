@@ -43,13 +43,6 @@ public static class AevatarAISemanticKernelExtension
         return services;
     }
 
-    public static IServiceCollection AddAzureAIInference(this IServiceCollection services)
-    {
-        services.AddKeyedTransient<IBrain, AzureAIInferenceBrain>(AzureAIInferenceConfig.ConfigSectionName);
-
-        return services;
-    }
-    
     public static IServiceCollection AddAzureDeepSeek(this IServiceCollection services)
     {
         services.AddKeyedTransient<IBrain, DeepSeekBrain>("DeepSeek");

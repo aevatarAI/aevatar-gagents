@@ -9,9 +9,9 @@ namespace Aevatar.GAgents.SemanticKernel.Brain;
 
 public class DeepSeekBrain: AzureAIInferenceBrain
 {
-    private readonly IOptions<AzureAIInferenceConfig> _config;
+    private readonly IOptions<AzureDeepSeekConfig> _config;
     
-    public DeepSeekBrain(IOptions<AzureAIInferenceConfig> config, IKernelBuilderFactory kernelBuilderFactory, ILogger<AzureAIInferenceBrain> logger, IOptions<RagConfig> ragConfig) : base(config, kernelBuilderFactory, logger, ragConfig)
+    public DeepSeekBrain(IOptions<AzureDeepSeekConfig> config, IKernelBuilderFactory kernelBuilderFactory, ILogger<AzureAIInferenceBrain> logger, IOptions<RagConfig> ragConfig) : base(config, kernelBuilderFactory, logger, ragConfig)
     {
         
     }
