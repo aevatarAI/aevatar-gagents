@@ -14,14 +14,15 @@ namespace Aevatar.GAgents.Router.GAgents;
 public interface IRouterGAgent : IAIGAgent, IGAgent
 {
     public Task<RouterGAgentState> GetStateAsync();
-    public Task AddAgentDescription(Type agentType,  List<Type> eventList);
+    public Task AddAgentDescription(Type agentType, List<Type> eventList);
 }
 
 public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>, IRouterGAgent
 {
     private readonly ILogger<RouterGAgent> _logger;
-    
-    public RouterGAgent(ILogger<RouterGAgent> logger)
+
+
+    public RouterGAgent(ILogger<RouterGAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _logger = logger;
     }
@@ -31,24 +32,24 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         return Task.FromResult(
             "This agent is responsible for generating and managing workflow.");
     }
-    
+
     public async Task<RouterGAgentState> GetStateAsync()
     {
         return State;
     }
-    
+
     private async Task<string?>? InvokeLLMAsync(string prompt)
     {
         var result = await ChatWithHistory(prompt);
         return result?[0].Content;
     }
-    
+
     public new async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
         await base.InitializeAsync(initializeDto);
         return true;
     }
-    
+
     [EventHandler]
     public async Task RouteNextAsync(RouteNextGEvent eventData)
     {
@@ -58,15 +59,15 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             _logger.LogError("correlationId is empty, event data: {data}", JsonConvert.SerializeObject(eventData));
             return;
         }
-        
+
         var taskId = eventData.CorrelationId.Value;
-        
+
         if (State.TasksInfo.TryGetValue(taskId, out var taskInfo) == false)
         {
             _logger.LogError("task {taskId} info not found", taskId);
             return;
         }
-        
+
         var lastRouterRecord = taskInfo.History.LastOrDefault();
         if (lastRouterRecord == null)
         {
@@ -75,17 +76,17 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         }
 
         lastRouterRecord.ProcessResult = eventData.ProcessResult;
-                
+
         RaiseEvent(new UpdateHistorySEvent
         {
             TaskId = taskId,
             RouterRecord = lastRouterRecord
         });
         await ConfirmEvents();
-        
+
         await RouteNext(taskId);
     }
-    
+
     [EventHandler]
     public async Task BeginTaskAsync(BeginTaskGEvent eventData)
     {
@@ -95,24 +96,24 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             _logger.LogError("correlationId is empty");
             return;
         }
-        
+
         var taskId = eventData.CorrelationId.Value;
         if (State.TasksInfo.ContainsKey(taskId))
         {
             _logger.LogError("taskId {taskId} already exists", taskId);
             return;
         }
-        
+
         RaiseEvent(new SetTaskInfoSEvent()
         {
             TaskId = taskId,
             TaskDescription = eventData.TaskDescription
         });
         await ConfirmEvents();
-        
+
         await RouteNext(taskId);
     }
-    
+
     private async Task RouteNext(Guid taskId)
     {
         if (State.TasksInfo.TryGetValue(taskId, out var taskInfo) == false)
@@ -120,7 +121,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             _logger.LogError("taskId {taskId} not found", taskId);
             return;
         }
-        
+
         var taskDescription = taskInfo.TaskDescription;
         var history = taskInfo.History;
 
@@ -129,24 +130,24 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         if (result == null)
         {
             _logger.LogError("Generate next step failed, taskId: {taskId}, task description: {description}, " +
-                             "history: {history}", 
+                             "history: {history}",
                 taskId, taskDescription, JsonConvert.SerializeObject(history));
             return;
         }
-        
+
         var llmOutput = JsonConvert.DeserializeObject<RouterOutputSchema>(result);
         if (llmOutput == null)
         {
             _logger.LogError("incorrect format of result, taskId: {taskId}, task description: {description}, " +
-                             "history: {history}, output: {output}", 
+                             "history: {history}, output: {output}",
                 taskId, taskDescription, JsonConvert.SerializeObject(history), result);
             return;
         }
-        
+
         if (llmOutput.Terminated)
         {
             _logger.LogError("task has been terminated, taskId: {taskId}, task description: {description}, " +
-                             "history: {history}, reason: {reason}", 
+                             "history: {history}, reason: {reason}",
                 taskId, taskDescription, JsonConvert.SerializeObject(history), llmOutput.Reason);
             await RemoveTask(taskId);
             return;
@@ -155,18 +156,18 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         if (llmOutput.Completed)
         {
             _logger.LogInformation("task has been completed, taskId: {taskId}, task description: {description}, " +
-                             "history: {history}, reason: {reason}", 
+                                   "history: {history}, reason: {reason}",
                 taskId, taskDescription, JsonConvert.SerializeObject(history), llmOutput.Reason);
             await RemoveTask(taskId);
             return;
         }
-        
+
         _logger.LogInformation("route next, taskId: {taskId}, task description: {description}, " +
-                               "history: {history}, output: {output}",  
+                               "history: {history}, output: {output}",
             taskId, taskDescription, JsonConvert.SerializeObject(history), result);
         await PublishNextEvent(llmOutput, taskId);
     }
-    
+
     private async Task RemoveTask(Guid taskId)
     {
         RaiseEvent(new RemoveTaskSEvent()
@@ -175,9 +176,9 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         });
         await ConfirmEvents();
     }
-    
+
     private string GeneratePrompt(
-        string taskDescription, 
+        string taskDescription,
         List<RouterRecord> eventHistory)
     {
         // Generate Event History List as JSON formatted string
@@ -197,12 +198,13 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 var parameterDetails = string.Join("; ", eventItem.EventParameters.Select(param =>
                     $"Name: {param.FieldName}, Description: {param.FieldDescription}, Type: {param.FieldType}"));
 
-                return $"- Event: {eventItem.EventName}\n  Description: {eventItem.EventDescription}\n  Parameters: [{parameterDetails}]";
+                return
+                    $"- Event: {eventItem.EventName}\n  Description: {eventItem.EventDescription}\n  Parameters: [{parameterDetails}]";
             }));
 
             return agentInfo + eventsInfo;
         }));
-        
+
         var prompt = PromptTemplate.RouterPrompt
             .Replace("{TASK_DESCRIPTION}", taskDescription)
             .Replace("{EVENT_HISTORY_LIST}", eventHistoryList)
@@ -214,7 +216,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
     {
         if (State.AgentDescriptions.TryGetValue(routerOutput.AgentName, out var agentDescription) == false)
         {
-            _logger.LogError("agent {agentName} not found, task: {taskId}, router output: {output}", 
+            _logger.LogError("agent {agentName} not found, task: {taskId}, router output: {output}",
                 routerOutput.AgentName, taskId, JsonConvert.SerializeObject(routerOutput));
             return;
         }
@@ -222,23 +224,23 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         var eventInfo = agentDescription.EventList.FirstOrDefault(f => f.EventName == routerOutput.EventName);
         if (eventInfo == null)
         {
-            _logger.LogError("event {eventName} not found, task: {taskId}, router output: {output}", 
-                routerOutput.EventName, taskId,  JsonConvert.SerializeObject(routerOutput));
-            return;
-        }
-        
-        var eventData = JsonConvert.DeserializeObject(routerOutput.Parameters, eventInfo.EventType) as EventBase;
-        if (eventData == null)
-        {
-            _logger.LogError("event {eventName} deserialize failed, task: {taskId}, router output: {output}", 
+            _logger.LogError("event {eventName} not found, task: {taskId}, router output: {output}",
                 routerOutput.EventName, taskId, JsonConvert.SerializeObject(routerOutput));
             return;
         }
-        
-        _logger.LogInformation("publish event {eventName}, task: {taskId}, content: {content}", 
+
+        var eventData = JsonConvert.DeserializeObject(routerOutput.Parameters, eventInfo.EventType) as EventBase;
+        if (eventData == null)
+        {
+            _logger.LogError("event {eventName} deserialize failed, task: {taskId}, router output: {output}",
+                routerOutput.EventName, taskId, JsonConvert.SerializeObject(routerOutput));
+            return;
+        }
+
+        _logger.LogInformation("publish event {eventName}, task: {taskId}, content: {content}",
             routerOutput.EventName, taskId, JsonConvert.SerializeObject(eventData));
         await PublishAsync(eventData);
-        
+
         RaiseEvent(new AddHistorySEvent
         {
             TaskId = taskId,
@@ -251,8 +253,8 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         });
         await ConfirmEvents();
     }
-    
-    public async Task AddAgentDescription(Type agentType,  List<Type> eventList)
+
+    public async Task AddAgentDescription(Type agentType, List<Type> eventList)
     {
         var agentDescriptionInfo = GetAgentDescriptionAsync(agentType, eventList);
         RaiseEvent(new AddAgentDescriptionSEvent
@@ -262,7 +264,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         });
         await ConfirmEvents();
     }
-    
+
     [EventHandler]
     public async Task HandleEventAsync(SubscribedEventListEvent eventData)
     {
@@ -271,7 +273,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         {
             return;
         }
-        
+
         var agentDescriptionDict = new Dictionary<string, AgentDescriptionInfo>();
         foreach (var item in eventData.Value)
         {
@@ -281,14 +283,14 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 agentDescriptionDict.Add(item.Key.Name, agentDescription);
             }
         }
-        
+
         RaiseEvent(new SetAgentDescriptionSEvent()
         {
             AgentDescriptions = agentDescriptionDict
         });
         await ConfirmEvents();
     }
-    
+
     private AgentDescriptionInfo GetAgentDescriptionAsync(Type agentType, List<Type> eventTypes)
     {
         var agentDescription = new AgentDescriptionInfo();
@@ -317,18 +319,18 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
         return agentDescription;
     }
-    
+
     private AgentEventDescription? GetEventDescription(string agentName, Type eventType)
     {
         var result = new AgentEventDescription
         {
             EventName = eventType.Name
         };
-        
+
         var description = eventType.GetCustomAttribute<DescriptionAttribute>();
         if (description == null)
         {
-            _logger.LogError("agentName:{agentName} event:{eventName} does not contain DescriptionAttribute", 
+            _logger.LogError("agentName:{agentName} event:{eventName} does not contain DescriptionAttribute",
                 agentName, eventType.Name);
             return null;
         }
@@ -347,11 +349,11 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             result.EventParameters.Add(eventDescription);
         }
 
-        _logger.LogInformation("agentName:{agentName} event:{eventName} description:{description}", 
+        _logger.LogInformation("agentName:{agentName} event:{eventName} description:{description}",
             agentName, eventType.Name, result.EventDescription);
         return result;
     }
-    
+
     private AgentEventTypeFieldDescription? GetEventTypeDescription(string agentName, string eventName,
         PropertyInfo fieldType)
     {
@@ -359,7 +361,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         if (descriptionAttributes.Length == 0)
         {
             _logger.LogError(
-                "agentName:{agentName} eventName:{eventName} field:{field} description not exist", 
+                "agentName:{agentName} eventName:{eventName} field:{field} description not exist",
                 agentName, eventName, fieldType.Name);
             return null;
         }
@@ -383,11 +385,10 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
         return null;
     }
-    
+
     protected override void AIGAgentTransitionState(RouterGAgentState state,
         StateLogEventBase<RouterGAgentSEvent> @event)
     {
-
         switch (@event)
         {
             case SetAgentDescriptionSEvent setAgentDescriptionsEvent:
@@ -404,6 +405,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 {
                     break;
                 }
+
                 taskToBeAdded.History.Add(addHistorySEvent.RouterRecord);
                 State.TasksInfo[addHistorySEvent.TaskId] = taskToBeAdded;
                 break;
@@ -416,11 +418,13 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 {
                     break;
                 }
+
                 var cnt = taskToBeUpdated.History.Count;
                 if (cnt == 0)
                 {
                     break;
                 }
+
                 taskToBeUpdated.History[cnt - 1] = updateHistorySEvent.RouterRecord;
                 State.TasksInfo[updateHistorySEvent.TaskId] = taskToBeUpdated;
                 break;
@@ -429,5 +433,4 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 break;
         }
     }
-    
 }

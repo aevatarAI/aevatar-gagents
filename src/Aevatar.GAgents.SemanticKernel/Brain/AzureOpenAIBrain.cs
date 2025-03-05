@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
+using Azure;
 using Azure.AI.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,29 +11,30 @@ using Microsoft.SemanticKernel;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
-public class AzureOpenAIBrain : BrainBase
+public sealed class AzureOpenAIBrain : BrainBase
 {
-    private readonly IOptions<AzureOpenAIConfig> _azureOpenAIConfig;
-    private readonly AzureOpenAIClient _azureOpenAIClient;
+    public override LLMProviderEnum ProviderEnum => LLMProviderEnum.Azure;
+    public override ModelIdEnum ModelIdEnum => ModelIdEnum.OpenAI;
 
     public AzureOpenAIBrain(
-        IOptions<AzureOpenAIConfig> azureOpenAIConfig,
         IKernelBuilderFactory kernelBuilderFactory,
-        IServiceProvider serviceProvider,
         ILogger<AzureOpenAIBrain> logger,
         IOptions<RagConfig> ragConfig)
         : base(kernelBuilderFactory, logger, ragConfig)
     {
-        _azureOpenAIConfig = azureOpenAIConfig;
-        _azureOpenAIClient = serviceProvider.GetRequiredKeyedService<AzureOpenAIClient>(AzureOpenAIConfig.ConfigSectionName);
     }
 
-    protected override Task ConfigureKernelBuilder(IKernelBuilder kernelBuilder)
+    protected override Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder)
     {
+        var azureOpenAi = new AzureOpenAIClient(
+            new Uri(llmConfig.Endpoint),
+            new AzureKeyCredential(llmConfig.ApiKey)
+        );
+
         kernelBuilder.AddAzureOpenAIChatCompletion(
-            _azureOpenAIConfig.Value.ChatDeploymentName,
-            _azureOpenAIClient);
-            
+            llmConfig.ModelName,
+            azureOpenAi);
+
         return Task.CompletedTask;
     }
 }

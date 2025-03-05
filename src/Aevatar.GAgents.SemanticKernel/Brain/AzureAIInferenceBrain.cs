@@ -8,27 +8,23 @@ using Microsoft.SemanticKernel;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
-public class AzureAIInferenceBrain : BrainBase
+public abstract class AzureAIInferenceBrain : BrainBase
 {
-    private readonly IOptions<AzureAIInferenceConfig> _config;
-
     public AzureAIInferenceBrain(
-        IOptions<AzureAIInferenceConfig> config, 
-        IKernelBuilderFactory kernelBuilderFactory, 
-        ILogger<AzureAIInferenceBrain> logger, 
+        IKernelBuilderFactory kernelBuilderFactory,
+        ILogger<AzureAIInferenceBrain> logger,
         IOptions<RagConfig> ragConfig)
         : base(kernelBuilderFactory, logger, ragConfig)
     {
-        _config = config;
     }
 
-    protected override Task ConfigureKernelBuilder(IKernelBuilder kernelBuilder)
+    protected override Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder)
     {
         kernelBuilder.AddAzureAIInferenceChatCompletion(
-            _config.Value.ChatDeploymentName,
-            _config.Value.ApiKey,
-            new Uri(_config.Value.Endpoint));
-            
+            llmConfig.ModelName,
+            llmConfig.ApiKey,
+            new Uri(llmConfig.Endpoint));
+
         return Task.CompletedTask;
     }
 }

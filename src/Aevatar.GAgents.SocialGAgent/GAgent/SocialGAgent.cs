@@ -18,7 +18,8 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
     ISocialGAgent
 {
     private readonly ILogger<SocialGAgent> _logger;
-    public SocialGAgent(ILogger<SocialGAgent> logger)
+
+    public SocialGAgent(ILogger<SocialGAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
     {
         _logger = logger;
     }
@@ -27,7 +28,7 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
     public async Task<SocialResponseGEvent> HandleEventAsync(SocialGEvent @event)
     {
         _logger.LogInformation("handle SocialEvent, content: {content}", @event.Content);
-       
+
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
         aiResponseEvent.RequestId = @event.RequestId;
 
@@ -37,7 +38,7 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
             if (message != null && message.Any())
             {
                 _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message[0].Content);
-                
+
                 aiResponseEvent.ResponseContent = message[0].Content!;
                 aiResponseEvent.ChatId = @event.ChatId;
                 aiResponseEvent.ReplyMessageId = @event.MessageId;

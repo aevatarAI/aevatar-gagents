@@ -10,9 +10,9 @@ public interface IChatAIGAgent : IAIGAgent, IGAgent
     Task<string?> ChatAsync(string message);
 }
 
-public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
+public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
 {
-    public ChatAIGAgent(ILogger<ChatAIGAgent> logger)
+    public ChatAigAgent(ILogger<ChatAigAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
     {
     }
 

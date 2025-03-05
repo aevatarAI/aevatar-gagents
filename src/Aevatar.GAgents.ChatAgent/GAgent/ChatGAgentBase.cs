@@ -37,7 +37,7 @@ public abstract class
     protected sealed override async Task PerformConfigAsync(TConfiguration configuration)
     {
         await InitializeAsync(
-            new InitializeDto() { Instructions = configuration.Instructions, LLM = configuration.LLM });
+            new InitializeDto() { Instructions = configuration.Instructions, LLMConfig = configuration.LLMConfig });
         var maxHistoryCount = configuration.MaxHistoryCount;
         if (maxHistoryCount > 100)
         {
@@ -93,6 +93,10 @@ public abstract class
                 state.MaxHistoryCount = setMaxHistoryCount.MaxHistoryCount;
                 break;
         }
+    }
+
+    protected ChatGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
     }
 }
 

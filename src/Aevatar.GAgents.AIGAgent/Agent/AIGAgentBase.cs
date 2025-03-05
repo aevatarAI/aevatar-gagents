@@ -8,10 +8,12 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
@@ -19,13 +21,23 @@ namespace Aevatar.GAgents.AIGAgent.Agent;
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent> : AIGAgentBase<TState, TStateLogEvent, EventBase, ConfigurationBase>
     where TState : AIGAgentStateBase, new()
-    where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+{
+    protected AIGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
+    }
+}
 
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent> : AIGAgentBase<TState, TStateLogEvent, TEvent, ConfigurationBase>
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
-    where TEvent : EventBase;
+    where TEvent : EventBase
+{
+    protected AIGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
+    }
+}
 
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
@@ -36,20 +48,27 @@ public abstract partial class
     where TConfiguration : ConfigurationBase
 {
     private readonly IBrainFactory _brainFactory;
+    private readonly IServiceProvider _serviceProvider;
     private IBrain? _brain = null;
 
-    public AIGAgentBase()
+    protected AIGAgentBase(IServiceProvider serviceProvider)
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
+        _serviceProvider = serviceProvider;
     }
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        //save state
-        await AddLLMAsync(initializeDto.LLM);
+        var (success, llmConfig) = GetLLMConfig(initializeDto);
+        if (success == false)
+        {
+            return false;
+        }
+
+        await AddLLMAsync(llmConfig!);
         await AddPromptTemplateAsync(initializeDto.Instructions);
 
-        return await InitializeBrainAsync(initializeDto.LLM, initializeDto.Instructions, State.IfUpsertKnowledge);
+        return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
     }
 
     public async Task<bool> UploadKnowledge(List<BrainContentDto>? knowledgeList)
@@ -74,27 +93,28 @@ public abstract partial class
         return await _brain.UpsertKnowledgeAsync(fileList);
     }
 
-    private async Task<bool> InitializeBrainAsync(string LLM, string systemMessage, bool ifSupportKnowledge = false)
+    private async Task<bool> InitializeBrainAsync(LLMConfig llmConfig, string systemMessage)
     {
-        _brain = _brainFactory.GetBrain(LLM);
+        _brain = _brainFactory.GetBrain(llmConfig);
 
         if (_brain == null)
         {
-            Logger.LogError("Failed to initialize brain. {@LLM}", LLM);
+            Logger.LogError("Failed to initialize brain. llmprovider:{@provider}, llmModel:{@model}",
+                llmConfig.ProviderEnum.ToString(), llmConfig.ModelIdEnum.ToString());
             return false;
         }
 
         // remove slash from this.GetGrainId().ToString() so that it can be used as the collection name pertaining to the grain
         var grainId = this.GetGrainId().ToString().Replace("/", "");
 
-        await _brain.InitializeAsync(grainId, systemMessage);
+        await _brain.InitializeAsync(llmConfig, grainId, systemMessage);
 
         return true;
     }
 
-    private async Task AddLLMAsync(string LLM)
+    private async Task AddLLMAsync(LLMConfig LLM)
     {
-        if (State.LLM == LLM)
+        if (State.LLM != null && State.LLM.Equal(LLM))
         {
             Logger.LogError("Cannot add duplicate LLM: {LLM}.", LLM);
             return;
@@ -110,7 +130,7 @@ public abstract partial class
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        [Id(0)] public required string LLM { get; set; }
+        [Id(0)] public required LLMConfig LLM { get; set; }
     }
 
     [GenerateSerializer]
@@ -180,7 +200,7 @@ public abstract partial class
         await base.OnGAgentActivateAsync(cancellationToken);
 
         // setup brain
-        if (State.LLM != string.Empty)
+        if (State.LLM != null)
         {
             await InitializeBrainAsync(State.LLM, State.PromptTemplate);
         }
@@ -214,5 +234,28 @@ public abstract partial class
     protected virtual void AIGAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
         // Derived classes can override this method.
+    }
+
+    private Tuple<bool, LLMConfig?> GetLLMConfig(InitializeDto initializeDto)
+    {
+        if (initializeDto.LLMConfig.SystemLLM.IsNullOrWhiteSpace() &&
+            initializeDto.LLMConfig.SelfLLMConfig == null)
+        {
+            return new Tuple<bool, LLMConfig?>(false, null);
+        }
+
+        if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
+        {
+            var systemConfigs = _serviceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
+            
+            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
+            {
+                return new Tuple<bool, LLMConfig?>(false, null);
+            }
+
+            return new Tuple<bool, LLMConfig?>(true, config);
+        }
+
+        return new Tuple<bool, LLMConfig?>(true, initializeDto.LLMConfig.SelfLLMConfig!.ConvertToLLMConfig());
     }
 }
