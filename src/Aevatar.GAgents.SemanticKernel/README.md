@@ -58,6 +58,7 @@ var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.Configure<AzureOpenAIConfig>(context.Configuration.GetSection("AIServices:AzureOpenAI"));
+        services.Configure<AzureAIInferenceConfig>(context.Configuration.GetSection("AIServices:AzureAIInference"));
         services.Configure<AzureOpenAIEmbeddingsConfig>(context.Configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
         services.Configure<GeminiConfig>(context.Configuration.GetSection("AIServices:Gemini"));
         services.Configure<QdrantConfig>(context.Configuration.GetSection("VectorStores:Qdrant"));
@@ -80,6 +81,11 @@ Configure the relevant parameters for AI services in appsettings.json:
 {
   "AIServices": {
     "AzureOpenAI": {
+      "Endpoint": "",
+      "ChatDeploymentName": "",
+      "ApiKey": ""
+    },
+    "AzureAIInference": {
       "Endpoint": "",
       "ChatDeploymentName": "",
       "ApiKey": ""
