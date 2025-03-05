@@ -40,6 +40,17 @@ public class MyState : AIGAgentStateBase
 }
 ```
 
+### Creating StateLogEvent
+Create your StateLogEvent by inheriting from StateLogEventBase.
+
+```csharp
+[GenerateSerializer]
+public class MyStateLogEvent: StateLogEventBase<MyStateLogEvent>
+{
+    // Add custom properties
+}
+```
+
 ### Creating IGAgent
 Create your IGAgent by inheriting from IAIGAgent and IGAgent.
 
@@ -47,6 +58,16 @@ Create your IGAgent by inheriting from IAIGAgent and IGAgent.
 public interface IMyGAgent : IAIGAgent, IGAgent
 {
    // Define custom methods here
+}
+```
+
+### Creating Event
+Create your Event by inheriting from EventBase.
+```csharp
+[GenerateSerializer]
+public class MyEvent : EventBase
+{
+    // Add custom properties
 }
 ```
 
@@ -65,16 +86,34 @@ public class MyGAgent : AIGAgentBase<MyState, MyStateLogEvent>, IMyGAgent
     }
 }
 ```
-### Initialize GAgent
+### Initialize and call GAgent
 Before using your GAgent, you need to initialize it by calling the InitializeAsync method to set up 
 Instructions and the LLM. The example below uses AzureOpenAI. For more support, please refer to 
 the Aevatar.GAgents.SemanticKernel module.
 
 ```csharp
+var client = host.Services.GetRequiredService<IClusterClient>();
+var groupGAgent = client.GetGrain<IGroupGAgent>(Guid.NewGuid());
+var myGAgent = client.GetGrain<IMyGAgent>(Guid.NewGuid());
+await groupGAgent.RegisterAsync(myGAgent);
+
 await myGAgent.InitializeAsync(new InitializeDto
 {
     Instructions = "You are a AI Agent",
     LLM = "AzureOpenAI"
+});
+
+await groupGAgent.PublishEventAsync(new MyEvent());
+```
+
+You can also upload knowledge using the UploadKnowledge method. 
+
+Two types are currently supported: string and pdf.
+```csharp
+await myGAgent.UploadKnowledge(new List<BrainContentDto>
+{
+    new BrainContentDto("pdf knowledge", BrainContentType.Pdf, pdfBytes),
+    new BrainContentDto("string knowledge","content")
 });
 ```
 
