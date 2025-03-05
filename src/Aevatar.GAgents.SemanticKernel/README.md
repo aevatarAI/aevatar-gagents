@@ -67,7 +67,9 @@ var builder = Host.CreateDefaultBuilder(args)
         services.AddSemanticKernel()
             .AddAzureOpenAI()
             .AddQdrantVectorStore()
-            .AddAzureOpenAITextEmbedding();
+            .AddAzureOpenAITextEmbedding()
+            .AddAzureAIInference()
+            .AddGemini();
     });
 
 using var host = builder.Build();
