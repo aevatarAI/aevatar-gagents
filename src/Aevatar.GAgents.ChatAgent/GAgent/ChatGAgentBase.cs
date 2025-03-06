@@ -94,10 +94,6 @@ public abstract class
                 break;
         }
     }
-
-    protected ChatGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
 }
 
 public interface IChatAgent : IGAgent, IAIGAgent

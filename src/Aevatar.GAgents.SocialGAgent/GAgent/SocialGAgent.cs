@@ -19,7 +19,7 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
 {
     private readonly ILogger<SocialGAgent> _logger;
 
-    public SocialGAgent(ILogger<SocialGAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+    public SocialGAgent(ILogger<SocialGAgent> logger)
     {
         _logger = logger;
     }

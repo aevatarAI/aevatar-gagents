@@ -22,7 +22,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
     private readonly ILogger<RouterGAgent> _logger;
 
 
-    public RouterGAgent(ILogger<RouterGAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+    public RouterGAgent(ILogger<RouterGAgent> logger)
     {
         _logger = logger;
     }

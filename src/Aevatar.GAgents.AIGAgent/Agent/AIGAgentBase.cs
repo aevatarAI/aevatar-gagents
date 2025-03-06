@@ -23,9 +23,6 @@ public abstract partial class
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
 {
-    protected AIGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
 }
 
 public abstract partial class
@@ -34,9 +31,6 @@ public abstract partial class
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
 {
-    protected AIGAgentBase(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
 }
 
 public abstract partial class
@@ -51,10 +45,9 @@ public abstract partial class
     private readonly IServiceProvider _serviceProvider;
     private IBrain? _brain = null;
 
-    protected AIGAgentBase(IServiceProvider serviceProvider)
+    protected AIGAgentBase()
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
-        _serviceProvider = serviceProvider;
     }
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
@@ -247,10 +240,9 @@ public abstract partial class
 
         if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
         {
-            var systemConfigs = _serviceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
-
-            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) ==
-                false)
+            var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
+            
+            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
             {
                 return new Tuple<bool, LLMConfig?>(false, null);
             }
