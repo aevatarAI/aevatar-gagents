@@ -11,7 +11,7 @@ public sealed class GeminiBrain : BrainBase
 {
     public GeminiBrain(
         IKernelBuilderFactory kernelBuilderFactory,
-        ILogger<AzureOpenAIBrain> logger,
+        ILogger<GeminiBrain> logger,
         IOptions<RagConfig> ragConfig)
         : base(kernelBuilderFactory, logger, ragConfig)
     {
