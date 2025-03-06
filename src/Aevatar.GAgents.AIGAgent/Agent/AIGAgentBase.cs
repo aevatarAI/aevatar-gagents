@@ -163,14 +163,15 @@ public abstract partial class
         [Id(4)] public long CreateTime { get; set; }
     }
 
-    protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null)
+    protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
+        ExecutionPromptSettings? promptSettings = null)
     {
         if (_brain == null)
         {
             return null;
         }
 
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
+        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings);
         if (invokeResponse == null)
         {
             return null;
@@ -247,8 +248,9 @@ public abstract partial class
         if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
         {
             var systemConfigs = _serviceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
-            
-            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
+
+            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) ==
+                false)
             {
                 return new Tuple<bool, LLMConfig?>(false, null);
             }
