@@ -52,8 +52,8 @@ public abstract partial class
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        var (success, llmConfig) = GetLLMConfig(initializeDto);
-        if (success == false)
+        var llmConfig = GetLLMConfig(initializeDto);
+        if (llmConfig == null)
         {
             return false;
         }
@@ -230,26 +230,26 @@ public abstract partial class
         // Derived classes can override this method.
     }
 
-    private Tuple<bool, LLMConfig?> GetLLMConfig(InitializeDto initializeDto)
+    private LLMConfig? GetLLMConfig(InitializeDto initializeDto)
     {
         if (initializeDto.LLMConfig.SystemLLM.IsNullOrWhiteSpace() &&
             initializeDto.LLMConfig.SelfLLMConfig == null)
         {
-            return new Tuple<bool, LLMConfig?>(false, null);
+            return null;
         }
 
         if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
             
-            if (systemConfigs.Value.SystemLLMConfigs.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
+            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
             {
-                return new Tuple<bool, LLMConfig?>(false, null);
+                return null;
             }
 
-            return new Tuple<bool, LLMConfig?>(true, config);
+            return config;
         }
 
-        return new Tuple<bool, LLMConfig?>(true, initializeDto.LLMConfig.SelfLLMConfig!.ConvertToLLMConfig());
+        return initializeDto.LLMConfig.SelfLLMConfig!.ConvertToLLMConfig();
     }
 }

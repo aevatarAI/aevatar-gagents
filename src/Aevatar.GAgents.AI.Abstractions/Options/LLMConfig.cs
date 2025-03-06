@@ -7,11 +7,11 @@ namespace Aevatar.GAgents.AI.Options;
 [GenerateSerializer]
 public class LLMConfig : LLMProviderConfig
 {
-    [Id(0)] [Required] public string ModelName { get; set; } = string.Empty;
+    [Id(0)] public string ModelName { get; set; } = string.Empty;
 
-    [Id(1)] [Required] public string Endpoint { get; set; } = string.Empty;
+    [Id(1)] public string Endpoint { get; set; } = string.Empty;
 
-    [Id(2)] [Required] public string ApiKey { get; set; } = string.Empty;
+    [Id(2)] public string ApiKey { get; set; } = string.Empty;
 
     [Id(3)] public Dictionary<string, object>? Memo { get; set; } = null;
 
