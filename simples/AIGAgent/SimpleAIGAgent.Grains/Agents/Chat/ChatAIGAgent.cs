@@ -12,7 +12,7 @@ public interface IChatAIGAgent : IAIGAgent, IGAgent
 
 public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
 {
-    public ChatAigAgent(ILogger<ChatAigAgent> logger, IServiceProvider serviceProvider) : base(serviceProvider)
+    public ChatAigAgent(ILogger<ChatAigAgent> logger) 
     {
     }
 
