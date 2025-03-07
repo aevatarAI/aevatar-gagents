@@ -1,7 +1,11 @@
 using System.Text;
-using Aevatar.GAgents.GraphRag.Abstractions.Models;
 
-namespace Aevatar.GAgents.GraphRag.Abstractions.Extensions;
+namespace Aevatar.GAgents.GraphRetrievalAgent.Model;
+
+public class QueryResult
+{
+    public Dictionary<string, object> Data { get; set; } = new();
+}
 
 public static class QueryResultExtensions
 {

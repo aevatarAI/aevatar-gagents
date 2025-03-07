@@ -11,9 +11,6 @@ using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
-using Aevatar.GAgents.GraphRag.Abstractions;
-using Aevatar.GAgents.GraphRag.Abstractions.Extensions;
-using Aevatar.GAgents.Neo4jStore.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -47,12 +44,10 @@ public abstract partial class
     private readonly IBrainFactory _brainFactory;
     private readonly IServiceProvider _serviceProvider;
     private IBrain? _brain = null;
-    private readonly IGraphRagStore _graphRagStore;
 
     protected AIGAgentBase()
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
-        _graphRagStore = ServiceProvider.GetRequiredService<IGraphRagStore>();
     }
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
@@ -91,21 +86,6 @@ public abstract partial class
         return await _brain.UpsertKnowledgeAsync(fileList);
     }
     
-    public async Task SetGraphRagRetrieveInfo(string schema, string? example)
-    {
-        if (schema.IsNullOrEmpty())
-        {
-            return;
-        }
-        
-        RaiseEvent(new SetGraphRagSchemaLogEvent
-        {
-            Schema = schema,
-            Example = example??""
-        });
-        await ConfirmEvents(); 
-    }
-    
     private async Task<bool> InitializeBrainAsync(LLMConfig llmConfig, string systemMessage)
     {
         _brain = _brainFactory.GetBrain(llmConfig);
@@ -140,20 +120,6 @@ public abstract partial class
         await ConfirmEvents();
     }
     
-    private async Task<string> GraphRagDataAsync(string text)
-    {
-        var prompt = Prompts.Text2CypherTemplate
-            .Replace("{schema}", State.RetrieveSchema)
-            .Replace("{examples}", State.RetrieveExample)
-            .Replace("{query_text}", text);
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, null, false);
-        
-        if (invokeResponse == null)
-        {
-            return string.Empty;
-        }
-        
-        var cypher = invokeResponse.ChatReponseList?[0].Content;
 
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
@@ -203,24 +169,6 @@ public abstract partial class
         if (_brain == null)
         {
             return null;
-        }
-
-        if (!State.RetrieveSchema.IsNullOrEmpty())
-        {
-            var graphRagData = await GraphRagDataAsync(prompt);
-            if (!graphRagData.IsNullOrEmpty())
-            {
-                if (history == null)
-                {
-                    history = new List<ChatMessage>();
-                }
-                
-                history.Add(new ChatMessage
-                {
-                    ChatRole = ChatRole.User,
-                    Content = graphRagData
-                });
-            }
         }
         
         var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);

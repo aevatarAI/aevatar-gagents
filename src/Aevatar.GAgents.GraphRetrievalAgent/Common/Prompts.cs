@@ -1,4 +1,4 @@
-namespace Aevatar.GAgents.Neo4jStore.Common;
+namespace Aevatar.GAgents.GraphRetrievalAgent.Common;
 
 public class Prompts
 {
@@ -17,6 +17,7 @@ Input:
 
 Do not use any properties or relationships not included in the schema.
 Do not include triple backticks ``` or any additional text except the generated Cypher statement in your response.
+Do not output your thinking procedure. Give the final Cypher statement only.
 
 Cypher query:
 ";
