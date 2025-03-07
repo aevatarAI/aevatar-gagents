@@ -1,9 +1,9 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.Dtos;
-using Aevatar.GAgents.ChatAgent.GAgent.SEvent;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
 
 namespace Aevatar.GAgents.ChatAgent.GAgent;
@@ -21,9 +21,9 @@ public abstract class
         return Task.FromResult("Chat Agent");
     }
 
-    public async Task<List<ChatMessage>?> ChatAsync(string message)
+    public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null)
     {
-        var result = await ChatWithHistory(message, State.ChatHistory);
+        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings);
 
         if (result is not { Count: > 0 }) return result;
 
@@ -58,7 +58,7 @@ public abstract class
     protected virtual Task ChatPerformConfigAsync(TConfiguration configuration)
     {
         return Task.CompletedTask;
-    }  
+    }
 
     [GenerateSerializer]
     public class AddChatHistoryLogEvent : StateLogEventBase<TStateLogEvent>
@@ -98,5 +98,6 @@ public abstract class
 
 public interface IChatAgent : IGAgent, IAIGAgent
 {
-    Task<List<ChatMessage>?> ChatAsync(string message);
+    Task<List<ChatMessage>?> ChatAsync(string message,
+        ExecutionPromptSettings? promptSettings = null);
 }

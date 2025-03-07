@@ -18,7 +18,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Data;
-using OpenAI.Chat;
 using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
@@ -46,6 +45,10 @@ public abstract class BrainBase : IBrain
 
     protected abstract Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder);
 
+    protected abstract PromptExecutionSettings GetPromptExecutionSettings(ExecutionPromptSettings promptSettings);
+
+    protected abstract TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList);
+    
     public async Task InitializeAsync(LLMConfig llmConfig, string id, string description)
     {
         Description = description;
@@ -92,7 +95,7 @@ public abstract class BrainBase : IBrain
     }
 
     public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history,
-        bool ifUseKnowledge = false)
+        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null)
     {
         if (Kernel == null)
         {
@@ -111,7 +114,14 @@ public abstract class BrainBase : IBrain
         chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
 
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
-        var response = await chatService.GetChatMessageContentsAsync(chatHistory);
+
+        PromptExecutionSettings? promptExecutionSettings = null;
+        if (promptSettings != null)
+        {
+            promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
+        }
+
+        var response = await chatService.GetChatMessageContentsAsync(chatHistory, promptExecutionSettings);
 
         var chatList = new List<ChatMessage>();
         chatList.AddRange(response.Select(item => new ChatMessage()
@@ -122,7 +132,7 @@ public abstract class BrainBase : IBrain
 
         return result;
     }
-
+    
     private ChatHistory GetChatHistory(List<ChatMessage>? historyList)
     {
         var result = new ChatHistory(Description);
@@ -224,31 +234,4 @@ public abstract class BrainBase : IBrain
         return supplementInfo.ToString();
     }
 
-    private TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList)
-    {
-        int inputUsage = 0;
-        int outputUsage = 0;
-        int totalUsage = 0;
-        foreach (var item in messageList)
-        {
-            if (item.Metadata != null && item.Metadata.TryGetValue("Usage", out var value))
-            {
-                var tokenInfo = value as ChatTokenUsage;
-                if (tokenInfo == null)
-                {
-                    continue;
-                }
-
-                inputUsage += tokenInfo.InputTokenCount;
-                outputUsage += tokenInfo.OutputTokenCount;
-                totalUsage += tokenInfo.TotalTokenCount;
-            }
-        }
-
-        return new TokenUsageStatistics()
-        {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
-            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-    }
 }
