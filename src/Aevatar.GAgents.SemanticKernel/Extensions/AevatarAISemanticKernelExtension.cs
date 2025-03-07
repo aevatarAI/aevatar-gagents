@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Options;
@@ -23,36 +26,6 @@ public static class AevatarAISemanticKernelExtension
     {
         services.AddSingleton<IBrainFactory, BrainFactory.BrainFactory>();
         services.AddSingleton<IKernelBuilderFactory, KernelBuilderFactory.KernelBuilderFactory>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddAzureOpenAI(this IServiceCollection services)
-    {
-        services.AddKeyedSingleton<AzureOpenAIClient>(AzureOpenAIConfig.ConfigSectionName, (sp, key) =>
-        {
-            var options = sp.GetRequiredService<IOptions<AzureOpenAIConfig>>().Value;
-            return new AzureOpenAIClient(
-                new Uri(options.Endpoint),
-                new AzureKeyCredential(options.ApiKey)
-            );
-        });
-
-        services.AddKeyedTransient<IBrain, AzureOpenAIBrain>(AzureOpenAIConfig.ConfigSectionName);
-
-        return services;
-    }
-
-    public static IServiceCollection AddAzureAIInference(this IServiceCollection services)
-    {
-        services.AddKeyedTransient<IBrain, AzureAIInferenceBrain>(AzureAIInferenceConfig.ConfigSectionName);
-
-        return services;
-    }
-
-    public static IServiceCollection AddGemini(this IServiceCollection services)
-    {
-        services.AddKeyedTransient<IBrain, GeminiBrain>(GeminiConfig.ConfigSectionName);
 
         return services;
     }
@@ -110,4 +83,16 @@ public static class AevatarAISemanticKernelExtension
 
         return services;
     }
+
+    private static List<Type> GetAllLLM()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        var types = assembly.GetTypes()
+            .Where(t => typeof(IBrain).IsAssignableFrom(t)
+                        && t is { IsClass: true, IsAbstract: false })
+            .ToList();
+
+        return types;
+    }
+
 }

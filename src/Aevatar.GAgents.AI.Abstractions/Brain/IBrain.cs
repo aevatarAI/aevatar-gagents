@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
+using Volo.Abp.DependencyInjection;
 
 namespace Aevatar.GAgents.AI.Brain;
 
-public interface IBrain
+public interface IBrain : ITransientDependency
 {
-    Task InitializeAsync(string id, string description);
+    LLMProviderEnum ProviderEnum { get; }
+    ModelIdEnum ModelIdEnum { get; }
+
+    Task InitializeAsync(LLMConfig llmConfig, string id, string description);
 
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
 

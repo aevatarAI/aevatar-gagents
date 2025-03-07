@@ -5,10 +5,8 @@ namespace Aevatar.GAgents.AI.Options;
 /// <summary>
 /// AzureAI Inference service settings.
 /// </summary>
-public sealed class AzureAIInferenceConfig
+public class AzureAIInferenceConfig
 {
-    public const string ConfigSectionName = "AzureAIInference";
-
     [Required]
     public string ChatDeploymentName { get; set; } = string.Empty;
 

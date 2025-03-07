@@ -19,7 +19,7 @@ public class RouterGAgentTest : AevatarWorkflowTestBase
     {
         _gAgentFactory = GetRequiredService<IGAgentFactory>();
     }
-    
+
     [Fact]
     public async Task RouterTest()
     {
@@ -27,30 +27,30 @@ public class RouterGAgentTest : AevatarWorkflowTestBase
         await routerGAgent.InitializeAsync(new InitializeDto
         {
             Instructions = "You are a router agent",
-            LLM = "AzureOpenAI"
+            LLMConfig = new LLMConfigDto() { SystemLLM = "OpenAI" }
         });
-        
-        
+
+
         var blockChainGAgent = await _gAgentFactory.GetGAgentAsync<IBlockChainGAgent>(Guid.NewGuid());
         var blockChainGAgentEvents = await blockChainGAgent.GetAllSubscribedEventsAsync();
         await routerGAgent.AddAgentDescription(blockChainGAgent.GetType(), blockChainGAgentEvents);
-        
+
         var twitterGAgent = await _gAgentFactory.GetGAgentAsync<ITwitterGAgent>(Guid.NewGuid());
         var twitterGAgentEvents = await twitterGAgent.GetAllSubscribedEventsAsync();
         await routerGAgent.AddAgentDescription(twitterGAgent.GetType(), twitterGAgentEvents);
-        
+
         var groupGAgent = await _gAgentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
         await groupGAgent.RegisterAsync(blockChainGAgent);
         await groupGAgent.RegisterAsync(routerGAgent);
         await groupGAgent.RegisterAsync(twitterGAgent);
-        
+
         var state = await routerGAgent.GetStateAsync();
         await groupGAgent.PublishEventAsync(new BeginTaskGEvent()
         {
-           TaskDescription = "I want to post a tweet about the current price of bitcoin"
+            TaskDescription = "I want to post a tweet about the current price of bitcoin"
         });
-        
-   
+
+
         await Task.Delay(100000);
     }
 }
