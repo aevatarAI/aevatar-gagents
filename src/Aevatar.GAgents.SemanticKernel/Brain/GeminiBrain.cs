@@ -7,26 +7,25 @@ using Microsoft.SemanticKernel;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
-public class GeminiBrain : BrainBase
+public sealed class GeminiBrain : BrainBase
 {
-    private readonly IOptions<GeminiConfig> _geminiConfig;
-
     public GeminiBrain(
-        IOptions<GeminiConfig> geminiConfig,
         IKernelBuilderFactory kernelBuilderFactory,
-        ILogger<AzureOpenAIBrain> logger,
+        ILogger<GeminiBrain> logger,
         IOptions<RagConfig> ragConfig)
         : base(kernelBuilderFactory, logger, ragConfig)
     {
-        _geminiConfig = geminiConfig;
     }
 
-    protected override Task ConfigureKernelBuilder(IKernelBuilder kernelBuilder)
+    public override LLMProviderEnum ProviderEnum => LLMProviderEnum.Google;
+    public override ModelIdEnum ModelIdEnum => ModelIdEnum.Gemini;
+
+    protected override Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder)
     {
         kernelBuilder.AddGoogleAIGeminiChatCompletion(
-            modelId: _geminiConfig.Value.ModelId,
-            apiKey: _geminiConfig.Value.ApiKey);
-            
+            modelId: llmConfig.ModelName,
+            apiKey: llmConfig.ApiKey);
+
         return Task.CompletedTask;
     }
 }

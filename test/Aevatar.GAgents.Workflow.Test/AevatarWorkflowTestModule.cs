@@ -27,7 +27,6 @@ public class AevatarWorkflowTestModule : AbpModule
         Configure<RagConfig>(configuration.GetSection("Rag"));
         
         context.Services.AddSemanticKernel()
-            .AddAzureOpenAI()
             .AddQdrantVectorStore()
             .AddAzureOpenAITextEmbedding();
     }

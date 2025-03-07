@@ -82,7 +82,6 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     
                     
                     services.AddSemanticKernel()
-                        .AddAzureOpenAI()
                         .AddQdrantVectorStore()
                         .AddAzureOpenAITextEmbedding();
                 })

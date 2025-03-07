@@ -26,6 +26,9 @@ namespace Aevatar.GAgents.SemanticKernel.Brain;
 
 public abstract class BrainBase : IBrain
 {
+    public abstract LLMProviderEnum ProviderEnum { get; }
+    public abstract ModelIdEnum ModelIdEnum { get; }
+
     protected Kernel? Kernel;
     protected string? PromptTemplate;
 
@@ -41,14 +44,14 @@ public abstract class BrainBase : IBrain
         RagConfig = ragConfig;
     }
 
-    protected abstract Task ConfigureKernelBuilder(IKernelBuilder kernelBuilder);
+    protected abstract Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder);
 
-    public async Task InitializeAsync(string id, string description)
+    public async Task InitializeAsync(LLMConfig llmConfig, string id, string description)
     {
         Description = description;
         var kernelBuilder = KernelBuilderFactory.GetKernelBuilder(id);
 
-        await ConfigureKernelBuilder(kernelBuilder);
+        await ConfigureKernelBuilder(llmConfig, kernelBuilder);
         Kernel = kernelBuilder.Build();
     }
 
@@ -90,7 +93,6 @@ public abstract class BrainBase : IBrain
 
     public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history,
         bool ifUseKnowledge = false)
-
     {
         if (Kernel == null)
         {
