@@ -39,11 +39,4 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
-    <ProjectReference Include="..\..\src\Aevatar.GAgents.Neo4jStore\Aevatar.GAgents.Neo4jStore.csproj" />
-  </ItemGroup>
-  
 </Project>

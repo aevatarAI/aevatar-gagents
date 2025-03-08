@@ -74,12 +74,12 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                         Mapper = sp.GetRequiredService<IMapper>()
                     });
                     
+                    // var configuration = services.GetConfiguration();
                     services.Configure<AzureOpenAIConfig>(configuration.GetSection("AIServices:AzureOpenAI"));
                     services.Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
                     services.Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
-                    services.Configure<RagConfig>(configuration.GetSection("Rag"));
-
-
+                    
+                    
                     services.AddSemanticKernel()
                         .AddQdrantVectorStore()
                         .AddAzureOpenAITextEmbedding();
