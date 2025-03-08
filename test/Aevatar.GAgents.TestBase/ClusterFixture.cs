@@ -78,7 +78,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.Configure<AzureOpenAIConfig>(configuration.GetSection("AIServices:AzureOpenAI"));
                     services.Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
                     services.Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
-                    
+                    services.Configure<RagConfig>(configuration.GetSection("Rag"));
                     
                     services.AddSemanticKernel()
                         .AddQdrantVectorStore()
