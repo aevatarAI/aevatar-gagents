@@ -36,9 +36,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Using Include="Xunit" />
   </ItemGroup>
 
