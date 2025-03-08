@@ -14,4 +14,6 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(3)] public int InputTokenUsage { get; set; } = 0;
     [Id(4)] public int OutTokenUsage { get; set; } = 0;
     [Id(5)] public int TotalTokenUsage { get; set; } = 0;
+    [Id(7)] public string RetrieveSchema { get; set; } = string.Empty;
+    [Id(8)] public string RetrieveExample { get; set; } = string.Empty;
 }

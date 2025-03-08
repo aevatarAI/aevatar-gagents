@@ -85,7 +85,7 @@ public abstract partial class
         List<BrainContent> fileList = knowledgeList.Select(f => f.ConvertToBrainContent()).ToList();
         return await _brain.UpsertKnowledgeAsync(fileList);
     }
-
+    
     private async Task<bool> InitializeBrainAsync(LLMConfig llmConfig, string systemMessage)
     {
         _brain = _brainFactory.GetBrain(llmConfig);
@@ -119,6 +119,7 @@ public abstract partial class
         });
         await ConfirmEvents();
     }
+    
 
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
@@ -129,6 +130,13 @@ public abstract partial class
     [GenerateSerializer]
     public class SetUpsertKnowledgeFlag : StateLogEventBase<TStateLogEvent>
     {
+    }
+    
+    [GenerateSerializer]
+    public class SetGraphRagSchemaLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public required string Schema { get; set; }
+        [Id(1)] public string Example { get; set; } 
     }
 
     private async Task AddPromptTemplateAsync(string promptTemplate)
@@ -162,7 +170,7 @@ public abstract partial class
         {
             return null;
         }
-
+        
         var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
         if (invokeResponse == null)
         {
@@ -218,6 +226,10 @@ public abstract partial class
                 State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
                 State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
                 State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                break;
+            case SetGraphRagSchemaLogEvent setGraphRagSchemaLogEvent:
+                State.RetrieveSchema = setGraphRagSchemaLogEvent.Schema;
+                State.RetrieveExample = setGraphRagSchemaLogEvent.Example;
                 break;
         }
 
