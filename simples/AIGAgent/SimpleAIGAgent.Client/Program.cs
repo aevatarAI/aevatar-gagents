@@ -1,7 +1,5 @@
 ﻿using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.ChatAgent.Dtos;
-using Aevatar.GAgents.SocialChat.GAgent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;

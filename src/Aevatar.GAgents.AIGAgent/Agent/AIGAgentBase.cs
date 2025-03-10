@@ -156,14 +156,15 @@ public abstract partial class
         [Id(4)] public long CreateTime { get; set; }
     }
 
-    protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null)
+    protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
+        ExecutionPromptSettings? promptSettings = null)
     {
         if (_brain == null)
         {
             return null;
         }
 
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
+        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings);
         if (invokeResponse == null)
         {
             return null;

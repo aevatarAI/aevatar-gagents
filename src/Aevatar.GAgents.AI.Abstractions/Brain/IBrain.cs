@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Volo.Abp.DependencyInjection;
@@ -18,5 +16,5 @@ public interface IBrain : ITransientDependency
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
 
     Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
-        bool ifUseKnowledge = false);
+        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null);
 }
