@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -16,5 +17,6 @@ public interface IBrain : ITransientDependency
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
 
     Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
-        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null);
+        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
+        CancellationToken cancellationToken = default);
 }

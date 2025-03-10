@@ -157,14 +157,15 @@ public abstract partial class
     }
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null)
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default)
     {
         if (_brain == null)
         {
             return null;
         }
 
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings);
+        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+            cancellationToken);
         if (invokeResponse == null)
         {
             return null;
@@ -241,8 +242,9 @@ public abstract partial class
         if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
-            
-            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) == false)
+
+            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) ==
+                false)
             {
                 return null;
             }

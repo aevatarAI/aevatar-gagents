@@ -48,7 +48,7 @@ public abstract class BrainBase : IBrain
     protected abstract PromptExecutionSettings GetPromptExecutionSettings(ExecutionPromptSettings promptSettings);
 
     protected abstract TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList);
-    
+
     public async Task InitializeAsync(LLMConfig llmConfig, string id, string description)
     {
         Description = description;
@@ -95,7 +95,8 @@ public abstract class BrainBase : IBrain
     }
 
     public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history,
-        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null)
+        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
+        CancellationToken cancellationToken = default)
     {
         if (Kernel == null)
         {
@@ -121,7 +122,8 @@ public abstract class BrainBase : IBrain
             promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
         }
 
-        var response = await chatService.GetChatMessageContentsAsync(chatHistory, promptExecutionSettings);
+        var response = await chatService.GetChatMessageContentsAsync(chatHistory, promptExecutionSettings,
+            cancellationToken: cancellationToken);
 
         var chatList = new List<ChatMessage>();
         chatList.AddRange(response.Select(item => new ChatMessage()
@@ -132,7 +134,7 @@ public abstract class BrainBase : IBrain
 
         return result;
     }
-    
+
     private ChatHistory GetChatHistory(List<ChatMessage>? historyList)
     {
         var result = new ChatHistory(Description);
@@ -233,5 +235,4 @@ public abstract class BrainBase : IBrain
 
         return supplementInfo.ToString();
     }
-
 }
