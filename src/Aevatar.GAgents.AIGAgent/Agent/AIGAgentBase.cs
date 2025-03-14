@@ -132,13 +132,6 @@ public abstract partial class
     {
     }
     
-    [GenerateSerializer]
-    public class SetGraphRagSchemaLogEvent : StateLogEventBase<TStateLogEvent>
-    {
-        [Id(0)] public required string Schema { get; set; }
-        [Id(1)] public string Example { get; set; } 
-    }
-
     private async Task AddPromptTemplateAsync(string promptTemplate)
     {
         RaiseEvent(new SetPromptTemplateStateLogEvent
@@ -226,10 +219,6 @@ public abstract partial class
                 State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
                 State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
                 State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
-                break;
-            case SetGraphRagSchemaLogEvent setGraphRagSchemaLogEvent:
-                State.RetrieveSchema = setGraphRagSchemaLogEvent.Schema;
-                State.RetrieveExample = setGraphRagSchemaLogEvent.Example;
                 break;
         }
 

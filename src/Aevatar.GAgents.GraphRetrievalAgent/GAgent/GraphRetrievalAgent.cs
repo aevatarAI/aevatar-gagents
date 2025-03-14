@@ -108,8 +108,8 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
     {
         _logger.LogDebug("GraphRagDataAsync, text {text}", text);
         var prompt = Prompts.Text2CypherTemplate
-            .Replace("{schema}", State.RetrieveSchema)
-            .Replace("{examples}", State.RetrieveExample)
+            .Replace("{schema}", State.RetrievalSchema)
+            .Replace("{examples}", State.RetrievalExample)
             .Replace("{query_text}", text);
         
         var response = await ChatWithHistory(prompt);
@@ -150,8 +150,8 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
         switch (@event)
         {
             case SetGraphSchemaSEvent setGraphSchemaSEvent:
-                State.RetrieveSchema = setGraphSchemaSEvent.Schema;
-                State.RetrieveExample = setGraphSchemaSEvent.Example;
+                State.RetrievalSchema = setGraphSchemaSEvent.Schema;
+                State.RetrievalExample = setGraphSchemaSEvent.Example;
                 break;
         }
     }
