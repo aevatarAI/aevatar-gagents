@@ -1,5 +1,7 @@
 ﻿using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.ChatAgent.Dtos;
+using Aevatar.GAgents.SocialChat.GAgent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +28,18 @@ await host.StartAsync();
 var knowledgeConfig = host.Services.GetRequiredService<IOptions<KnowledgeConfig>>().Value;
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
 
+
+var socialGAgent = client.GetGrain<ISocialGAgent>(Guid.Parse("da63293b-fdde-4730-b10a-e95c37379703"));
+await socialGAgent.ConfigAsync(new ChatConfigDto()
+    { Instructions = "I'm a robot", LLMConfig = new LLMConfigDto(){SystemLLM = "OpenAI"}, MaxHistoryCount = 10 });
+
+var chatContent = await socialGAgent.ChatAsync("How's the weather today?");
+if (chatContent != null && chatContent.Count > 0)
+{
+    Console.WriteLine($"Soical Agent Response > {chatContent[0].Content}");
+}
+
+
 List<BrainContentDto> fileDtoList = [];
 // load a pdf files into byte arrays
 if (knowledgeConfig.PdfFilePaths != null)
@@ -41,8 +55,8 @@ fileDtoList.Add(new BrainContentDto("Lebron James",
     "LeBron James is an American professional basketball player, widely regarded as one of the greatest players in NBA history. Born on December 30, 1984, he currently plays for the Los Angeles Lakers as a forward. James is known for his all-around skills, exceptional basketball IQ, and leadership on and off the court. He has won multiple NBA championships and MVP awards. Additionally, he is actively involved in philanthropy, founding the \"I PROMISE\" School, which focuses on education and community development to support underprivileged children and families."));
 
 //var chatAgentId = Guid.NewGuid();
-var chatAgentId = GrainId.Parse("chataigagent/792b1cb87bad4f759fcde3fe51ff55bc");
-var chatAgent = client.GetGrain<IChatAIGAgent>(chatAgentId);
+// var chatAgentId = GrainId.Parse("chataigagent/792b1cb87bad4f759fcde3fe51ff55bc");
+var chatAgent = client.GetGrain<IChatAIGAgent>(new Guid());
 await chatAgent.InitializeAsync(new InitializeDto()
 {
 //     Instructions = @"
