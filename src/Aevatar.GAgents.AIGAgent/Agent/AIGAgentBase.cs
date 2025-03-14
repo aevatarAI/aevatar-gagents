@@ -85,7 +85,7 @@ public abstract partial class
         List<BrainContent> fileList = knowledgeList.Select(f => f.ConvertToBrainContent()).ToList();
         return await _brain.UpsertKnowledgeAsync(fileList);
     }
-    
+
     private async Task<bool> InitializeBrainAsync(LLMConfig llmConfig, string systemMessage)
     {
         _brain = _brainFactory.GetBrain(llmConfig);
@@ -119,7 +119,6 @@ public abstract partial class
         });
         await ConfirmEvents();
     }
-    
 
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
@@ -131,7 +130,7 @@ public abstract partial class
     public class SetUpsertKnowledgeFlag : StateLogEventBase<TStateLogEvent>
     {
     }
-    
+
     private async Task AddPromptTemplateAsync(string promptTemplate)
     {
         RaiseEvent(new SetPromptTemplateStateLogEvent
@@ -163,7 +162,7 @@ public abstract partial class
         {
             return null;
         }
-        
+
         var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge);
         if (invokeResponse == null)
         {
