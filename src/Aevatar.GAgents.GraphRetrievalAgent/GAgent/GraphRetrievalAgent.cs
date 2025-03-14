@@ -8,7 +8,6 @@ using Aevatar.GAgents.GraphRetrievalAgent.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver;
-using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.GraphRetrievalAgent.GAgent;
 
@@ -38,8 +37,8 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
     
     protected override async Task PerformConfigAsync(GraphRetrievalConfig initializationConfig)
     {
-        _logger.LogDebug("PerformConfigAsync , data: {data}",
-            JsonConvert.SerializeObject(initializationConfig));
+        _logger.LogDebug("PerformConfigAsync , schema {schema} example {example}",
+            initializationConfig.Schema, initializationConfig.Example);
         RaiseEvent(new SetGraphSchemaSEvent
         {
             Schema = initializationConfig.Schema,
@@ -55,8 +54,7 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
         var graphRagData = await GraphRagDataAsync(prompt);
         if (!graphRagData.IsNullOrEmpty())
         {
-            _logger.LogDebug("add graph rag data: {data}",
-                JsonConvert.SerializeObject(graphRagData));
+            _logger.LogDebug("add graph rag data {data}", graphRagData);
             history = new List<ChatMessage>
             {
                 new ChatMessage
@@ -89,18 +87,26 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
         }
         catch (ClientException e)
         {
-            _logger.LogError("Error executing Cypher query, msg: {msg}, code: {code}", e.Message, e.Code);
+            _logger.LogError("Client error executing Cypher {query}, msg: {msg}, code: {code}", 
+                cypherQuery, e.Message, e.Code);
             return new List<QueryResult>();
         }
         catch (AuthenticationException e)
         {
-            _logger.LogError("Error authentication, msg: {msg}, code: {code}", e.Message, e.Code);
+            _logger.LogError("Authentication error executing Cypher {query}, msg: {msg}, code: {code}", 
+                cypherQuery, e.Message, e.Code);
+            return new List<QueryResult>();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("Error executing Cypher {query}, msg: {msg} ", cypherQuery, e.Message);
             return new List<QueryResult>();
         }
     }
     
     private async Task<string> GraphRagDataAsync(string text)
     {
+        _logger.LogDebug("GraphRagDataAsync, text {text}", text);
         var prompt = Prompts.Text2CypherTemplate
             .Replace("{schema}", State.RetrieveSchema)
             .Replace("{examples}", State.RetrieveExample)
@@ -117,7 +123,7 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
 
         if (cypher.IsNullOrEmpty())
         {
-            Logger.LogError("Cannot generate cypher from text: {text}.", text);
+            Logger.LogError("Cannot generate cypher from text {text}.", text);
             return string.Empty;
         }
         
@@ -125,6 +131,7 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
             .TrimStart('\r', '\n')
             .TrimEnd('\r', '\n'); ;
         
+        _logger.LogDebug("GraphRagDataAsync, get cypher {cypher} from text {text}", cypher, text);
         var result = await QueryAsync(cypher);
         if (!result.Any())
         {
@@ -132,7 +139,9 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
             return string.Empty;
         }
         
-        return result.ToNaturalLanguage();
+        var resp = result.ToNaturalLanguage();
+        Logger.LogDebug("GraphRagDataAsync, get result {result} from cypher {cypher} .", resp, cypher);
+        return resp;
     }
     
     protected override void AIGAgentTransitionState(GraphRetrievalAgentState state,
