@@ -52,13 +52,13 @@ public abstract partial class
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        var llmConfig = GetLLMConfig(initializeDto.LLMConfig);
+        var llmConfig = GetLLMConfig(initializeDto);
         if (llmConfig == null)
         {
             return false;
         }
 
-        await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
+        await AddLLMAsync(llmConfig!);
         await AddPromptTemplateAsync(initializeDto.Instructions);
 
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
@@ -105,9 +105,9 @@ public abstract partial class
         return true;
     }
 
-    private async Task AddLLMAsync(LLMConfig LLM, string systemLLM)
+    private async Task AddLLMAsync(LLMConfig LLM)
     {
-        if (State.LLMEqual(LLM))
+        if (State.LLM != null && State.LLM.Equal(LLM))
         {
             Logger.LogError("Cannot add duplicate LLM: {LLM}.", LLM);
             return;
@@ -115,13 +115,7 @@ public abstract partial class
 
         RaiseEvent(new SetLLMStateLogEvent
         {
-            SystemLLM = systemLLM,
-            ProviderEnum = LLM.ProviderEnum,
-            ModelIdEnum = LLM.ModelIdEnum,
-            ModelName = LLM.ModelName,
-            Endpoint = LLM.Endpoint,
-            ApiKey = LLM.ApiKey,
-            Memo = LLM.Memo
+            LLM = LLM
         });
         await ConfirmEvents();
     }
@@ -129,13 +123,7 @@ public abstract partial class
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        [Id(0)] public string SystemLLM { get; set; }
-        [Id(1)] public LLMProviderEnum ProviderEnum { get; set; }
-        [Id(2)] public ModelIdEnum ModelIdEnum { get; set; }
-        [Id(3)] public string ModelName { get; set; } = string.Empty;
-        [Id(4)] public string Endpoint { get; set; } = string.Empty;
-        [Id(5)] public string ApiKey { get; set; } = string.Empty;
-        [Id(6)] public Dictionary<string, object>? Memo { get; set; } = null;
+        [Id(0)] public required LLMConfig LLM { get; set; }
     }
 
     [GenerateSerializer]
@@ -207,16 +195,9 @@ public abstract partial class
         await base.OnGAgentActivateAsync(cancellationToken);
 
         // setup brain
-        if (State.HasLLM() == true)
+        if (State.LLM != null)
         {
-            var llmConfigDto = State.ConvertToLLMConfigDto();
-            var config = GetLLMConfig(llmConfigDto);
-            if (config == null)
-            {
-                return;
-            }
-            
-            await InitializeBrainAsync(config, State.PromptTemplate);
+            await InitializeBrainAsync(State.LLM, State.PromptTemplate);
         }
 
         await OnAIGAgentActivateAsync(cancellationToken);
@@ -227,13 +208,7 @@ public abstract partial class
         switch (@event)
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
-                State.SystemLLM = setLlmStateLogEvent.SystemLLM;
-                State.ProviderEnum = setLlmStateLogEvent.ProviderEnum;
-                State.ModelIdEnum = setLlmStateLogEvent.ModelIdEnum;
-                State.ModelName = setLlmStateLogEvent.ModelName;
-                State.Endpoint = setLlmStateLogEvent.Endpoint;
-                State.ApiKey = setLlmStateLogEvent.ApiKey;
-                State.Memo = setLlmStateLogEvent.Memo;
+                State.LLM = setLlmStateLogEvent.LLM;
                 break;
             case SetPromptTemplateStateLogEvent setPromptTemplateStateLogEvent:
                 State.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
@@ -256,19 +231,19 @@ public abstract partial class
         // Derived classes can override this method.
     }
 
-    private LLMConfig? GetLLMConfig(LLMConfigDto llmConfigDto)
+    private LLMConfig? GetLLMConfig(InitializeDto initializeDto)
     {
-        if (llmConfigDto.SystemLLM.IsNullOrWhiteSpace() &&
-            llmConfigDto.SelfLLMConfig == null)
+        if (initializeDto.LLMConfig.SystemLLM.IsNullOrWhiteSpace() &&
+            initializeDto.LLMConfig.SelfLLMConfig == null)
         {
             return null;
         }
 
-        if (llmConfigDto.SystemLLM.IsNullOrEmpty() == false)
+        if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
 
-            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(llmConfigDto.SystemLLM, out var config) ==
+            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) ==
                 false)
             {
                 return null;
@@ -277,6 +252,6 @@ public abstract partial class
             return config;
         }
 
-        return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+        return initializeDto.LLMConfig.SelfLLMConfig!.ConvertToLLMConfig();
     }
 }
