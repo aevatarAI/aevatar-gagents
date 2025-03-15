@@ -52,13 +52,13 @@ public abstract partial class
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        var llmConfig = GetLLMConfig(initializeDto);
+        var llmConfig = GetLLMConfig(initializeDto.LLMConfig);
         if (llmConfig == null)
         {
             return false;
         }
 
-        await AddLLMAsync(llmConfig!);
+        await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
         await AddPromptTemplateAsync(initializeDto.Instructions);
 
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
@@ -105,7 +105,7 @@ public abstract partial class
         return true;
     }
 
-    private async Task AddLLMAsync(LLMConfig LLM)
+    private async Task AddLLMAsync(LLMConfig LLM, string? systemLLM)
     {
         if (State.LLM != null && State.LLM.Equal(LLM))
         {
@@ -115,8 +115,10 @@ public abstract partial class
 
         RaiseEvent(new SetLLMStateLogEvent
         {
-            LLM = LLM
+            LLM = LLM,
+            SystemLLM = systemLLM,
         });
+        
         await ConfirmEvents();
     }
 
@@ -124,6 +126,7 @@ public abstract partial class
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public required LLMConfig LLM { get; set; }
+        [Id(1)] public string? SystemLLM { get; set; }
     }
 
     [GenerateSerializer]
@@ -195,9 +198,33 @@ public abstract partial class
         await base.OnGAgentActivateAsync(cancellationToken);
 
         // setup brain
-        if (State.LLM != null)
+        if (State.LLM != null || State.SystemLLM != null)
         {
-            await InitializeBrainAsync(State.LLM, State.PromptTemplate);
+            LLMConfigDto llmConfig = new LLMConfigDto();
+            if (State.SystemLLM.IsNullOrWhiteSpace() == false)
+            {
+                llmConfig.SystemLLM = State.SystemLLM;
+            }
+            else if (State.LLM != null)
+            {
+                llmConfig.SelfLLMConfig = new SelfLLMConfig()
+                {
+                    ProviderEnum = State.LLM.ProviderEnum,
+                    ModelId = State.LLM.ModelIdEnum,
+                    ModelName = State.LLM.ModelName,
+                    Endpoint = State.LLM.Endpoint,
+                    ApiKey = State.LLM.ApiKey,
+                    Memo = State.LLM.Memo
+                };
+            }
+
+            var config = GetLLMConfig(llmConfig);
+            if (config == null)
+            {
+                return;
+            }
+
+            await InitializeBrainAsync(config, State.PromptTemplate);
         }
 
         await OnAIGAgentActivateAsync(cancellationToken);
@@ -209,6 +236,7 @@ public abstract partial class
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
                 State.LLM = setLlmStateLogEvent.LLM;
+                State.SystemLLM = setLlmStateLogEvent.SystemLLM;
                 break;
             case SetPromptTemplateStateLogEvent setPromptTemplateStateLogEvent:
                 State.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
@@ -231,19 +259,19 @@ public abstract partial class
         // Derived classes can override this method.
     }
 
-    private LLMConfig? GetLLMConfig(InitializeDto initializeDto)
+    private LLMConfig? GetLLMConfig(LLMConfigDto llmConfigDto)
     {
-        if (initializeDto.LLMConfig.SystemLLM.IsNullOrWhiteSpace() &&
-            initializeDto.LLMConfig.SelfLLMConfig == null)
+        if (llmConfigDto.SystemLLM.IsNullOrWhiteSpace() &&
+            llmConfigDto.SelfLLMConfig == null)
         {
             return null;
         }
 
-        if (initializeDto.LLMConfig.SystemLLM.IsNullOrEmpty() == false)
+        if (llmConfigDto.SystemLLM.IsNullOrEmpty() == false)
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
 
-            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(initializeDto.LLMConfig.SystemLLM, out var config) ==
+            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(llmConfigDto.SystemLLM, out var config) ==
                 false)
             {
                 return null;
@@ -252,6 +280,6 @@ public abstract partial class
             return config;
         }
 
-        return initializeDto.LLMConfig.SelfLLMConfig!.ConvertToLLMConfig();
+        return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
     }
 }
