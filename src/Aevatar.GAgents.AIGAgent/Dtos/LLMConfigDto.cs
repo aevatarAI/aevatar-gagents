@@ -9,10 +9,8 @@ namespace Aevatar.GAgents.AIGAgent.Dtos;
 [GenerateSerializer]
 public class LLMConfigDto
 {
-    [JsonIgnore]
-    [Id(0)] public string SystemLLM { get; set; }
+    [Id(0)] public string? SystemLLM { get; set; }
     
-    [JsonIgnore]
     [Id(1)] public SelfLLMConfig? SelfLLMConfig { get; set; } = null;
 }
 
