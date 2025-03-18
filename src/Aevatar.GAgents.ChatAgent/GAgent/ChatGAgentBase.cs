@@ -27,7 +27,11 @@ public abstract class
 
         if (result is not { Count: > 0 }) return result;
 
-        RaiseEvent(new AddChatHistoryLogEvent() { ChatList = result });
+        var chatMessages = new List<ChatMessage>();
+        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message });
+        chatMessages.AddRange(result);
+        
+        RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
 
         await ConfirmEvents();
 
