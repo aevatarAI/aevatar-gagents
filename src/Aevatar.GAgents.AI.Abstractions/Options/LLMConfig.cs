@@ -14,10 +14,13 @@ public class LLMConfig : LLMProviderConfig
     [Id(2)] public string ApiKey { get; set; } = string.Empty;
 
     [Id(3)] public Dictionary<string, object>? Memo { get; set; } = null;
+    [Id(4)] public bool StreamingModeEnabled { get; set; }
+    [Id(5)] public StreamingConfig StreamingConfig { get; set; }
 
     public bool Equal(LLMConfig other)
     {
         return ProviderEnum == other.ProviderEnum && ModelIdEnum == other.ModelIdEnum && ModelName == other.ModelName &&
-               Endpoint == other.Endpoint && ApiKey == other.ApiKey;
+               Endpoint == other.Endpoint && ApiKey == other.ApiKey && StreamingModeEnabled == other.StreamingModeEnabled &&
+               StreamingConfig.Equals(other.StreamingConfig);
     }
 }

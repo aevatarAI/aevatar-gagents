@@ -85,4 +85,32 @@ public sealed class AzureOpenAIBrain : BrainBase
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
+
+    protected override TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList)
+    {
+        int inputUsage = 0;
+        int outputUsage = 0;
+        int totalUsage = 0;
+        foreach (var item in messageList)
+        {
+            if (item.Metadata != null && item.Metadata.TryGetValue("Usage", out var value))
+            {
+                var tokenInfo = value as ChatTokenUsage;
+                if (tokenInfo == null)
+                {
+                    continue;
+                }
+
+                inputUsage += tokenInfo.InputTokenCount;
+                outputUsage += tokenInfo.OutputTokenCount;
+                totalUsage += tokenInfo.TotalTokenCount;
+            }
+        }
+
+        return new TokenUsageStatistics()
+        {
+            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+    }
 }

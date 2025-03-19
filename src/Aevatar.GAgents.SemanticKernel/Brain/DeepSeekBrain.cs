@@ -74,4 +74,26 @@ public class DeepSeekBrain : BrainBase
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
+
+    protected override TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList)
+    {
+        int inputUsage = 0;
+        int outputUsage = 0;
+        int totalUsage = 0;
+        foreach (var item in messageList)
+        {
+            if (item.InnerContent is ChatCompletion completions)
+            {
+                inputUsage += completions.Usage.InputTokenCount;
+                outputUsage += completions.Usage.OutputTokenCount;
+                totalUsage += completions.Usage.TotalTokenCount;
+            }
+        }
+
+        return new TokenUsageStatistics()
+        {
+            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+    }
 }

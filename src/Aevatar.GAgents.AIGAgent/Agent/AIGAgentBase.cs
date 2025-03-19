@@ -166,9 +166,9 @@ public abstract partial class
         {
             return null;
         }
-
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-            cancellationToken);
+        var invokeResponse = State.LLM?.StreamingModeEnabled == true ?
+            await _brain.InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, State.LLM.StreamingConfig) :
+            await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
         if (invokeResponse == null)
         {
             return null;
