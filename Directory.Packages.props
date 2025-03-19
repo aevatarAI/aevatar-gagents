@@ -8,6 +8,7 @@
     <AevatarAbstractionsVersion>1.4.9</AevatarAbstractionsVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Abot" Version="2.0.70" />
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarEventSoucingVersion)" />

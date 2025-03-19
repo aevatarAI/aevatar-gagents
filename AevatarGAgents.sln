@@ -47,6 +47,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Workflow.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GraphRetrievalAgent", "src\Aevatar.GAgents.GraphRetrievalAgent\Aevatar.GAgents.GraphRetrievalAgent.csproj", "{E5D64689-226A-4556-A1A4-3F44CC23B88D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avevatar.GAgents.WebCrawler", "src\Avevatar.GAgents.WebCrawler\Avevatar.GAgents.WebCrawler.csproj", "{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.WebCrawler.Test", "test\Aevatar.GAgents.WebCrawler.Test\Aevatar.GAgents.WebCrawler.Test.csproj", "{628C1F6A-A845-44AB-98EF-0D6D4DDDB590}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +129,14 @@ Global
 		{E5D64689-226A-4556-A1A4-3F44CC23B88D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5D64689-226A-4556-A1A4-3F44CC23B88D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5D64689-226A-4556-A1A4-3F44CC23B88D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{628C1F6A-A845-44AB-98EF-0D6D4DDDB590}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{628C1F6A-A845-44AB-98EF-0D6D4DDDB590}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{628C1F6A-A845-44AB-98EF-0D6D4DDDB590}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{628C1F6A-A845-44AB-98EF-0D6D4DDDB590}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,6 +161,8 @@ Global
 		{32EB416A-1337-4951-9D0A-68B41A62A696} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{0B29CF2B-C709-4ACA-B03B-655C5E128793} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{E5D64689-226A-4556-A1A4-3F44CC23B88D} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{CECFA5BB-7FF7-4634-847D-2DF2C9CB8F09} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{628C1F6A-A845-44AB-98EF-0D6D4DDDB590} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
