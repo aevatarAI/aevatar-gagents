@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -10,10 +11,13 @@ using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
@@ -160,14 +164,14 @@ public abstract partial class
     }
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default)
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
     {
         if (_brain == null)
         {
             return null;
         }
         var invokeResponse = State.LLM?.StreamingModeEnabled == true ?
-            await _brain.InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, State.LLM.StreamingConfig) :
+            await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, context) :
             await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
         if (invokeResponse == null)
         {
@@ -187,7 +191,82 @@ public abstract partial class
 
         return invokeResponse.ChatReponseList;
     }
+    
+    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
+    {
+        var streamingConfig = State.LLM?.StreamingConfig;
+        var result = new InvokePromptResponse();
+        if (streamingConfig?.TimeOutInternal > 0)
+        {
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
+            cancellationToken = cts.Token;
+        }
 
+        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
+            cancellationToken: cancellationToken);
+        
+        var chatList = new List<ChatMessage>();
+        var chatMessage = new ChatMessage();
+        var streamingMessageContentList = new List<object>();
+        var bufferingSize = streamingConfig?.BufferingSize ?? 0;
+        var stringBuilder = new StringBuilder();
+        var chunkNumber = 0;
+        
+        await foreach (var messageContent in responseStreaming)
+        {
+            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            {
+                streamingMessageContentList.Add(streamingChatMessageContent);
+                stringBuilder.Append(streamingChatMessageContent.Content);
+                if (stringBuilder.Length > bufferingSize)
+                {
+                    await PublishAsync(new AIStreamingResponseGEvent
+                    {
+                        Context = context,
+                        SerialNumber = chunkNumber++,
+                        ResponseContent = stringBuilder.ToString()
+                    });
+                    stringBuilder.Clear();
+                }
+        
+                if (streamingChatMessageContent.Role.HasValue)
+                {
+                    chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                }
+            }
+        }
+        
+        if (stringBuilder.Length > 0)
+        {
+            // publish event
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = chunkNumber + 1,
+                ResponseContent = stringBuilder.ToString()
+            });
+            stringBuilder.Clear();
+        }
+        
+        chatList.Add(chatMessage);
+        result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
+        result.ChatReponseList = chatList;
+        
+        return result;
+    }
+    
+    private ChatRole ConvertToChatRole(AuthorRole authorRole)
+    {
+        if (authorRole == AuthorRole.System)
+        {
+            return ChatRole.System;
+        }
+
+        return authorRole == AuthorRole.Assistant ? ChatRole.Assistant : ChatRole.User;
+    }
+    
     protected virtual async Task OnAIGAgentActivateAsync(CancellationToken cancellationToken)
     {
         // Derived classes can override this method.

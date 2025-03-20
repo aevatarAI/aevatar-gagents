@@ -31,7 +31,6 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
 
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
         aiResponseEvent.RequestId = @event.RequestId;
-
         try
         {
             var message = await ChatAsync(@event.Content);

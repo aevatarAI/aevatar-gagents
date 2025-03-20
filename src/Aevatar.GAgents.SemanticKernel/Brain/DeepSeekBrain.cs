@@ -75,18 +75,21 @@ public class DeepSeekBrain : BrainBase
         };
     }
 
-    protected override TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList)
+    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
     {
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
         foreach (var item in messageList)
         {
-            if (item.InnerContent is ChatCompletion completions)
+            if (item is StreamingChatMessageContent streamingChatMessageContent)
             {
-                inputUsage += completions.Usage.InputTokenCount;
-                outputUsage += completions.Usage.OutputTokenCount;
-                totalUsage += completions.Usage.TotalTokenCount;
+                if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
+                {
+                    inputUsage += completions.Usage.InputTokenCount;
+                    outputUsage += completions.Usage.OutputTokenCount;
+                    totalUsage += completions.Usage.TotalTokenCount;
+                }
             }
         }
 

@@ -71,24 +71,27 @@ public sealed class GeminiBrain : BrainBase
         };
     }
 
-    protected override TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList)
+    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
     {
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
         foreach (var item in messageList)
         {
-            if (item.Metadata != null)
+            if (item is StreamingChatMessageContent streamingChatMessageContent)
             {
-                var geminiMetadata = item.Metadata as GeminiMetadata;
-                if (geminiMetadata == null)
+                if (streamingChatMessageContent.Metadata != null)
                 {
-                    continue;
-                }
+                    var geminiMetadata = streamingChatMessageContent.Metadata as GeminiMetadata;
+                    if (geminiMetadata == null)
+                    {
+                        continue;
+                    }
 
-                inputUsage += geminiMetadata.PromptTokenCount;
-                outputUsage += geminiMetadata.CurrentCandidateTokenCount;
-                totalUsage += geminiMetadata.TotalTokenCount;
+                    inputUsage += geminiMetadata.PromptTokenCount;
+                    outputUsage += geminiMetadata.CurrentCandidateTokenCount;
+                    totalUsage += geminiMetadata.TotalTokenCount;
+                }
             }
         }
 

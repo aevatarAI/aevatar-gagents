@@ -49,7 +49,7 @@ public abstract class BrainBase : IBrain
 
     protected abstract TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList);
 
-    protected abstract TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList);
+    public abstract TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList);
 
     public async Task InitializeAsync(LLMConfig llmConfig, string id, string description)
     {
@@ -137,16 +137,88 @@ public abstract class BrainBase : IBrain
         return result;
     }
 
-    public async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
-        StreamingConfig? streamingConfig = null)
+    // public async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
+    //     ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
+    //     StreamingConfig? streamingConfig = null)
+    // {
+    //     if (Kernel == null)
+    //     {
+    //         return null;
+    //     }
+    //
+    //     var result = new InvokePromptResponse();
+    //     var requestContent = content;
+    //     var chatHistory = GetChatHistory(history);
+    //     if (ifUseKnowledge)
+    //     {
+    //         var supplementList = await LoadAsync(content);
+    //         requestContent = SupplementPrompt(supplementList, content);
+    //     }
+    //
+    //     chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
+    //
+    //     var chatService = Kernel.GetRequiredService<IChatCompletionService>();
+    //
+    //     PromptExecutionSettings? promptExecutionSettings = null;
+    //     if (promptSettings != null)
+    //     {
+    //         promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
+    //     }
+    //
+    //     if (streamingConfig?.TimeOutInternal > 0)
+    //     {
+    //         using var cts = new CancellationTokenSource();
+    //         cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
+    //         cancellationToken = cts.Token;
+    //     }
+    //
+    //     var responseStreaming = chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
+    //         cancellationToken: cancellationToken);
+    //     
+    //     var chatList = new List<ChatMessage>();
+    //     var chatMessage = new ChatMessage();
+    //     var streamingMessageContentList = new List<StreamingChatMessageContent>();
+    //     var bufferingSize = streamingConfig?.BufferingSize ?? 0;
+    //     var stringBuilder = new StringBuilder();
+    //     await foreach (var messageContent in responseStreaming)
+    //     {
+    //         streamingMessageContentList.Add(messageContent);
+    //         stringBuilder.Append(messageContent.Content);
+    //         if (stringBuilder.Length > bufferingSize)
+    //         {
+    //             // publish event
+    //             stringBuilder.Clear();
+    //         }
+    //     
+    //         if (messageContent.Role.HasValue)
+    //         {
+    //             chatMessage.ChatRole = ConvertToChatRole(messageContent.Role.Value);
+    //         }
+    //     }
+    //     
+    //     if (stringBuilder.Length > 0)
+    //     {
+    //         // publish event
+    //         stringBuilder.Clear();
+    //     }
+    //     
+    //     chatList.Add(chatMessage);
+    //     result.TokenUsageStatistics = GetStreamingTokenUsage(streamingMessageContentList);
+    //     result.ChatReponseList = chatList;
+    //     
+    //     return result;
+    // }
+    
+    
+
+    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history, bool ifUseKnowledge,
+        ExecutionPromptSettings? promptSettings, CancellationToken cancellationToken)
     {
         if (Kernel == null)
         {
             return null;
         }
 
-        var result = new InvokePromptResponse();
         var requestContent = content;
         var chatHistory = GetChatHistory(history);
         if (ifUseKnowledge)
@@ -165,49 +237,10 @@ public abstract class BrainBase : IBrain
             promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
         }
 
-        if (streamingConfig?.TimeOutInternal > 0)
-        {
-            using var cts = new CancellationTokenSource();
-            cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
-            cancellationToken = cts.Token;
-        }
-
-        var responseStreaming = chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
+        return  chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
             cancellationToken: cancellationToken);
-        
-        var chatList = new List<ChatMessage>();
-        var chatMessage = new ChatMessage();
-        var streamingMessageContentList = new List<StreamingChatMessageContent>();
-        var bufferingSize = streamingConfig?.BufferingSize ?? 0;
-        var stringBuilder = new StringBuilder();
-        await foreach (var messageContent in responseStreaming)
-        {
-            streamingMessageContentList.Add(messageContent);
-            stringBuilder.Append(messageContent.Content);
-            if (stringBuilder.Length > bufferingSize)
-            {
-                // publish event
-                stringBuilder.Clear();
-            }
-
-            if (messageContent.Role.HasValue)
-            {
-                chatMessage.ChatRole = ConvertToChatRole(messageContent.Role.Value);
-            }
-        }
-
-        if (stringBuilder.Length > 0)
-        {
-            // publish event
-            stringBuilder.Clear();
-        }
-
-        chatList.Add(chatMessage);
-        result.TokenUsageStatistics = GetStreamingTokenUsage(streamingMessageContentList);
-        result.ChatReponseList = chatList;
-
-        return result;
     }
+
 
     private ChatHistory GetChatHistory(List<ChatMessage>? historyList)
     {

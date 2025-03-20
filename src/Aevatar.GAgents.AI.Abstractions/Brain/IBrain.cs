@@ -20,7 +20,13 @@ public interface IBrain : ITransientDependency
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default);
     
-    Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
+    // Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
+    //     bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
+    //     CancellationToken cancellationToken = default, StreamingConfig? streamingConfig = null);
+    
+    Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
-        CancellationToken cancellationToken = default, StreamingConfig? streamingConfig = null);
+        CancellationToken cancellationToken = default);
+
+    TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList);
 }

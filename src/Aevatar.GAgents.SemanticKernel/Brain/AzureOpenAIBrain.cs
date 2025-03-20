@@ -86,24 +86,27 @@ public sealed class AzureOpenAIBrain : BrainBase
         };
     }
 
-    protected override TokenUsageStatistics GetStreamingTokenUsage(List<StreamingChatMessageContent> messageList)
+    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
     {
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
         foreach (var item in messageList)
         {
-            if (item.Metadata != null && item.Metadata.TryGetValue("Usage", out var value))
+            if (item is StreamingChatMessageContent streamingChatMessageContent)
             {
-                var tokenInfo = value as ChatTokenUsage;
-                if (tokenInfo == null)
+                if (streamingChatMessageContent.Metadata != null && streamingChatMessageContent.Metadata.TryGetValue("Usage", out var value))
                 {
-                    continue;
-                }
+                    var tokenInfo = value as ChatTokenUsage;
+                    if (tokenInfo == null)
+                    {
+                        continue;
+                    }
 
-                inputUsage += tokenInfo.InputTokenCount;
-                outputUsage += tokenInfo.OutputTokenCount;
-                totalUsage += tokenInfo.TotalTokenCount;
+                    inputUsage += tokenInfo.InputTokenCount;
+                    outputUsage += tokenInfo.OutputTokenCount;
+                    totalUsage += tokenInfo.TotalTokenCount;
+                }
             }
         }
 
