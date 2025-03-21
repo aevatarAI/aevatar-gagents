@@ -21,9 +21,9 @@ public abstract class
         return Task.FromResult("Chat Agent");
     }
 
-    public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null)
+    public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null)
     {
-        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings);
+        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context : aiChatContextDto);
 
         if (result is not { Count: > 0 }) return result;
 
@@ -103,5 +103,5 @@ public abstract class
 public interface IChatAgent : IGAgent, IAIGAgent
 {
     Task<List<ChatMessage>?> ChatAsync(string message,
-        ExecutionPromptSettings? promptSettings = null);
+        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null);
 }

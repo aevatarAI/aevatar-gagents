@@ -212,6 +212,7 @@ public abstract partial class
         var streamingMessageContentList = new List<object>();
         var bufferingSize = streamingConfig?.BufferingSize ?? 0;
         var stringBuilder = new StringBuilder();
+        var completeContent = new StringBuilder();
         var chunkNumber = 0;
         
         await foreach (var messageContent in responseStreaming)
@@ -228,6 +229,7 @@ public abstract partial class
                         SerialNumber = chunkNumber++,
                         ResponseContent = stringBuilder.ToString()
                     });
+                    completeContent.Append(stringBuilder.ToString());
                     stringBuilder.Clear();
                 }
         
@@ -247,9 +249,11 @@ public abstract partial class
                 SerialNumber = chunkNumber + 1,
                 ResponseContent = stringBuilder.ToString()
             });
+            completeContent.Append(stringBuilder.ToString());
             stringBuilder.Clear();
         }
-        
+
+        chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
         result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
         result.ChatReponseList = chatList;
