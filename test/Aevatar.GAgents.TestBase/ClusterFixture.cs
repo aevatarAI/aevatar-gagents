@@ -1,8 +1,6 @@
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
-using Aevatar.SignalR;
 using AutoMapper;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -86,9 +84,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSemanticKernel()
                         .AddQdrantVectorStore()
                         .AddAzureOpenAITextEmbedding();
-                    services.AddSingleton(typeof(HubLifetimeManager<>), typeof(OrleansHubLifetimeManager<>));
                 })
-                .RegisterHub<AevatarSignalRHub>()
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()

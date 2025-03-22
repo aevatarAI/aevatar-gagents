@@ -19,7 +19,6 @@
         <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
-        <PackageReference Include="Aevatar.SignalR" />
     </ItemGroup>
     
     <ItemGroup>
