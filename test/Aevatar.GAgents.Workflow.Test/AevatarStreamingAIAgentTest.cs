@@ -29,20 +29,15 @@ public class AevatarStreamingAIAgentTest : AevatarWorkflowTestBase
         {
             Instructions = "You are a social agent",
             MaxHistoryCount = 10,
-            LLMConfig = new LLMConfigDto() { SelfLLMConfig = new SelfLLMConfig()
+            StreamingModeEnabled = true,
+            StreamingConfig = new StreamingConfig()
             {
-                ProviderEnum = LLMProviderEnum.Azure,
-                ModelId = ModelIdEnum.OpenAI,
-                Endpoint = "https://zhife-m54yrqrc-eastus2.cognitiveservices.azure.com/",
-                ApiKey = "3BTQ4dEKlP1xk9pE72jpeaGJvsLsGbuE03ovOGiEit6aN3Nze2sRJQQJ99ALACHYHv6XJ3w3AAAAACOG9fOq",
-                ModelName = "aevatar-gpt-4o",
-                StreamingModeEnabled = true,
-                StreamingConfig = new StreamingConfig()
-                {
-                    BufferingSize = 64,
-                    TimeOutInternal = 300000
-                }
-            }}
+                BufferingSize = 64,
+                TimeOutInternal = 300000
+            },
+            LLMConfig = new LLMConfigDto() {
+                SystemLLM = "OpenAI",
+            }
         });
         
         var groupGAgent = await _gAgentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());

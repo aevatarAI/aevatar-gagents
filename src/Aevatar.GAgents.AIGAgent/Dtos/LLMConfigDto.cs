@@ -23,9 +23,6 @@ public class SelfLLMConfig
     [Id(4)] public string ApiKey { get; set; }
     [Id(3)] public string Endpoint { get; set; }
     [Id(5)] public Dictionary<string, object>? Memo { get; set; } = null;
-    
-    [Id(6)] public bool StreamingModeEnabled { get; set; }
-    [Id(7)] public StreamingConfig StreamingConfig { get; set; }
 
     public LLMConfig ConvertToLLMConfig()
     {
@@ -36,9 +33,7 @@ public class SelfLLMConfig
             ModelName = ModelName,
             ApiKey = ApiKey,
             Endpoint = Endpoint,
-            Memo = Memo,
-            StreamingModeEnabled = StreamingModeEnabled,
-            StreamingConfig = StreamingConfig
+            Memo = Memo
         };
     }
 }

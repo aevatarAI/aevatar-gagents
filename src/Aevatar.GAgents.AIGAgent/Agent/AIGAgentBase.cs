@@ -64,6 +64,7 @@ public abstract partial class
 
         await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
         await AddPromptTemplateAsync(initializeDto.Instructions);
+        await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
     }
@@ -137,6 +138,23 @@ public abstract partial class
     public class SetUpsertKnowledgeFlag : StateLogEventBase<TStateLogEvent>
     {
     }
+    
+    [GenerateSerializer]
+    public class SetStreamingConfigStateLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public bool StreamingModeEnabled { get; set; }
+        [Id(1)] public StreamingConfig StreamingConfig { get; set; }
+    }
+    
+    private async Task SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
+    {
+        RaiseEvent(new SetStreamingConfigStateLogEvent
+        {
+            StreamingModeEnabled = streamingModeEnabled,
+            StreamingConfig = streamingConfig
+        });
+        await ConfirmEvents();
+    }
 
     private async Task AddPromptTemplateAsync(string promptTemplate)
     {
@@ -170,7 +188,7 @@ public abstract partial class
         {
             return null;
         }
-        var invokeResponse = State.LLM?.StreamingModeEnabled == true ?
+        var invokeResponse = State.StreamingModeEnabled?
             await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, context) :
             await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
         if (invokeResponse == null)
@@ -195,7 +213,7 @@ public abstract partial class
     private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
     {
-        var streamingConfig = State.LLM?.StreamingConfig;
+        var streamingConfig = State.StreamingConfig;
         var result = new InvokePromptResponse();
         if (streamingConfig?.TimeOutInternal > 0)
         {
@@ -327,6 +345,10 @@ public abstract partial class
                 State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
                 State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
                 State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                break;
+            case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
+                State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
+                State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
                 break;
         }
 
