@@ -221,16 +221,17 @@ public abstract partial class
             {
                 streamingMessageContentList.Add(streamingChatMessageContent);
                 stringBuilder.Append(streamingChatMessageContent.Content);
-                if (stringBuilder.Length > bufferingSize)
+                if (stringBuilder.Length >= bufferingSize)
                 {
+                    var chunk = stringBuilder.ToString(0, bufferingSize);
                     await PublishAsync(new AIStreamingResponseGEvent
                     {
                         Context = context,
                         SerialNumber = chunkNumber++,
-                        ResponseContent = stringBuilder.ToString()
+                        ResponseContent = chunk
                     });
-                    completeContent.Append(stringBuilder.ToString());
-                    stringBuilder.Clear();
+                    completeContent.Append(chunk);
+                    stringBuilder.Remove(0, bufferingSize);
                 }
         
                 if (streamingChatMessageContent.Role.HasValue)
@@ -239,19 +240,14 @@ public abstract partial class
                 }
             }
         }
-        
-        if (stringBuilder.Length > 0)
+        await PublishAsync(new AIStreamingResponseGEvent
         {
-            // publish event
-            await PublishAsync(new AIStreamingResponseGEvent
-            {
-                Context = context,
-                SerialNumber = chunkNumber + 1,
-                ResponseContent = stringBuilder.ToString()
-            });
-            completeContent.Append(stringBuilder.ToString());
-            stringBuilder.Clear();
-        }
+            Context = context,
+            SerialNumber = chunkNumber + 1,
+            ResponseContent = stringBuilder.ToString(),
+            IsLastChunk = true
+        });
+        completeContent.Append(stringBuilder.ToString());
 
         chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
