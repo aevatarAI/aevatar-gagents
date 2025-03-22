@@ -243,7 +243,7 @@ public abstract partial class
         await PublishAsync(new AIStreamingResponseGEvent
         {
             Context = context,
-            SerialNumber = chunkNumber + 1,
+            SerialNumber = chunkNumber,
             ResponseContent = stringBuilder.ToString(),
             IsLastChunk = true
         });
