@@ -70,4 +70,29 @@ public abstract class AzureAIInferenceBrain : BrainBase
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
+    
+    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
+    {
+        int inputUsage = 0;
+        int outputUsage = 0;
+        int totalUsage = 0;
+        foreach (var item in messageList)
+        {
+            if (item is StreamingChatMessageContent streamingChatMessageContent)
+            {
+                if (streamingChatMessageContent.InnerContent is ChatCompletions completions)
+                {
+                    inputUsage += completions.Usage.PromptTokens;
+                    outputUsage += completions.Usage.CompletionTokens;
+                    totalUsage += completions.Usage.TotalTokens;
+                }
+            }
+        }
+
+        return new TokenUsageStatistics()
+        {
+            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+    }
 }

@@ -49,6 +49,8 @@ public abstract class BrainBase : IBrain
 
     protected abstract TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList);
 
+    public abstract TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList);
+
     public async Task InitializeAsync(LLMConfig llmConfig, string id, string description)
     {
         Description = description;
@@ -134,6 +136,37 @@ public abstract class BrainBase : IBrain
 
         return result;
     }
+
+    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history, bool ifUseKnowledge,
+        ExecutionPromptSettings? promptSettings, CancellationToken cancellationToken)
+    {
+        if (Kernel == null)
+        {
+            return null;
+        }
+
+        var requestContent = content;
+        var chatHistory = GetChatHistory(history);
+        if (ifUseKnowledge)
+        {
+            var supplementList = await LoadAsync(content);
+            requestContent = SupplementPrompt(supplementList, content);
+        }
+
+        chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
+
+        var chatService = Kernel.GetRequiredService<IChatCompletionService>();
+
+        PromptExecutionSettings? promptExecutionSettings = null;
+        if (promptSettings != null)
+        {
+            promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
+        }
+
+        return  chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
+            cancellationToken: cancellationToken);
+    }
+
 
     private ChatHistory GetChatHistory(List<ChatMessage>? historyList)
     {

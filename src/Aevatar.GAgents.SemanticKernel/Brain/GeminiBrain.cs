@@ -70,4 +70,35 @@ public sealed class GeminiBrain : BrainBase
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
+
+    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
+    {
+        int inputUsage = 0;
+        int outputUsage = 0;
+        int totalUsage = 0;
+        foreach (var item in messageList)
+        {
+            if (item is StreamingChatMessageContent streamingChatMessageContent)
+            {
+                if (streamingChatMessageContent.Metadata != null)
+                {
+                    var geminiMetadata = streamingChatMessageContent.Metadata as GeminiMetadata;
+                    if (geminiMetadata == null)
+                    {
+                        continue;
+                    }
+
+                    inputUsage += geminiMetadata.PromptTokenCount;
+                    outputUsage += geminiMetadata.CurrentCandidateTokenCount;
+                    totalUsage += geminiMetadata.TotalTokenCount;
+                }
+            }
+        }
+
+        return new TokenUsageStatistics()
+        {
+            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+    }
 }

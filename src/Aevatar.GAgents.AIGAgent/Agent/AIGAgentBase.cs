@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -10,10 +11,13 @@ using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
@@ -60,6 +64,7 @@ public abstract partial class
 
         await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
         await AddPromptTemplateAsync(initializeDto.Instructions);
+        await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
     }
@@ -133,6 +138,23 @@ public abstract partial class
     public class SetUpsertKnowledgeFlag : StateLogEventBase<TStateLogEvent>
     {
     }
+    
+    [GenerateSerializer]
+    public class SetStreamingConfigStateLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public bool StreamingModeEnabled { get; set; }
+        [Id(1)] public StreamingConfig StreamingConfig { get; set; }
+    }
+    
+    private async Task SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
+    {
+        RaiseEvent(new SetStreamingConfigStateLogEvent
+        {
+            StreamingModeEnabled = streamingModeEnabled,
+            StreamingConfig = streamingConfig
+        });
+        await ConfirmEvents();
+    }
 
     private async Task AddPromptTemplateAsync(string promptTemplate)
     {
@@ -160,15 +182,15 @@ public abstract partial class
     }
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default)
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
     {
         if (_brain == null)
         {
             return null;
         }
-
-        var invokeResponse = await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-            cancellationToken);
+        var invokeResponse = State.StreamingModeEnabled?
+            await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, context) :
+            await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
         if (invokeResponse == null)
         {
             return null;
@@ -187,7 +209,82 @@ public abstract partial class
 
         return invokeResponse.ChatReponseList;
     }
+    
+    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
+    {
+        var streamingConfig = State.StreamingConfig;
+        var result = new InvokePromptResponse();
+        if (streamingConfig?.TimeOutInternal > 0)
+        {
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
+            cancellationToken = cts.Token;
+        }
 
+        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
+            cancellationToken: cancellationToken);
+        
+        var chatList = new List<ChatMessage>();
+        var chatMessage = new ChatMessage();
+        var streamingMessageContentList = new List<object>();
+        var bufferingSize = streamingConfig?.BufferingSize ?? 0;
+        var stringBuilder = new StringBuilder();
+        var completeContent = new StringBuilder();
+        var chunkNumber = 0;
+        
+        await foreach (var messageContent in responseStreaming)
+        {
+            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            {
+                streamingMessageContentList.Add(streamingChatMessageContent);
+                stringBuilder.Append(streamingChatMessageContent.Content);
+                if (stringBuilder.Length >= bufferingSize)
+                {
+                    var chunk = stringBuilder.ToString(0, bufferingSize);
+                    await PublishAsync(new AIStreamingResponseGEvent
+                    {
+                        Context = context,
+                        SerialNumber = chunkNumber++,
+                        ResponseContent = chunk
+                    });
+                    completeContent.Append(chunk);
+                    stringBuilder.Remove(0, bufferingSize);
+                }
+        
+                if (streamingChatMessageContent.Role.HasValue)
+                {
+                    chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                }
+            }
+        }
+        await PublishAsync(new AIStreamingResponseGEvent
+        {
+            Context = context,
+            SerialNumber = chunkNumber,
+            ResponseContent = stringBuilder.ToString(),
+            IsLastChunk = true
+        });
+        completeContent.Append(stringBuilder.ToString());
+
+        chatMessage.Content = completeContent.ToString();
+        chatList.Add(chatMessage);
+        result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
+        result.ChatReponseList = chatList;
+        
+        return result;
+    }
+    
+    private ChatRole ConvertToChatRole(AuthorRole authorRole)
+    {
+        if (authorRole == AuthorRole.System)
+        {
+            return ChatRole.System;
+        }
+
+        return authorRole == AuthorRole.Assistant ? ChatRole.Assistant : ChatRole.User;
+    }
+    
     protected virtual async Task OnAIGAgentActivateAsync(CancellationToken cancellationToken)
     {
         // Derived classes can override this method.
@@ -248,6 +345,10 @@ public abstract partial class
                 State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
                 State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
                 State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                break;
+            case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
+                State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
+                State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
                 break;
         }
 

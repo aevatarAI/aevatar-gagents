@@ -2,6 +2,7 @@ using Aevatar.GAgents.SocialChat.GAgent;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.GAgent;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
@@ -31,10 +32,14 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
 
         SocialResponseGEvent aiResponseEvent = new SocialResponseGEvent();
         aiResponseEvent.RequestId = @event.RequestId;
-
         try
         {
-            var message = await ChatAsync(@event.Content);
+            var message = await ChatAsync(@event.Content, aiChatContextDto: new AIChatContextDto()
+            {
+                RequestId = @event.RequestId,
+                MessageId = @event.MessageId,
+                ChatId = @event.ChatId
+            });
             if (message != null && message.Any())
             {
                 _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message[0].Content);

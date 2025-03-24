@@ -19,13 +19,13 @@ public class AevatarWorkflowTestModule : AbpModule
         base.ConfigureServices(context);
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarWorkflowTestModule>(); });
         context.Services.AddSingleton(new ApplicationPartManager());
-        
+
         var configuration = context.Services.GetConfiguration();
         Configure<AzureOpenAIConfig>(configuration.GetSection("AIServices:AzureOpenAI"));
         Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
         Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
         Configure<RagConfig>(configuration.GetSection("Rag"));
-        
+
         context.Services.AddSemanticKernel()
             .AddQdrantVectorStore()
             .AddAzureOpenAITextEmbedding();

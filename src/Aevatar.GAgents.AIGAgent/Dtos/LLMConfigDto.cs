@@ -33,7 +33,7 @@ public class SelfLLMConfig
             ModelName = ModelName,
             ApiKey = ApiKey,
             Endpoint = Endpoint,
-            Memo = Memo,
+            Memo = Memo
         };
     }
 }
