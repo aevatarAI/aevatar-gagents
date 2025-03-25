@@ -2,19 +2,25 @@ using Aevatar.Core;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Agent;
+using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Blackboard;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
-using GroupChat.GAgent.SEvent;
-using Microsoft.Extensions.Logging;
 
 namespace GroupChat.GAgent;
 
-public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, GroupMemberLogEvent>, IGroupMember
+public abstract partial class
+    GroupMemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
+    where TState : GroupMemberState, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+    where TEvent : EventBase
+    where TConfiguration : GroupMemberConfigDto
 {
     [EventHandler]
     public async Task HandleEventAsync(EvaluationInterestEvent @event)
     {
-        var history = await GetMessageFromBlackboard(@event.BlackboardId);
+        var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
         var score = await GetInterestValueAsync(@event.BlackboardId, history);
 
         await PublishAsync(new EvaluationInterestResponseEvent()
@@ -32,7 +38,7 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
             return;
         }
 
-        var history = await GetMessageFromBlackboard(@event.BlackboardId);
+        var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
         var talkResponse = await ChatAsync(@event.BlackboardId, history);
         await PublishAsync(new ChatResponseEvent()
         {
@@ -57,6 +63,11 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
         }
     }
 
+    protected virtual async Task<List<ChatMessage>> GetCareChatMessagesFromBlackboardAsync(Guid blackboardId)
+    {
+        return await GetMessageFromBlackboard(blackboardId);
+    }
+    
     protected abstract Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
 
     protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages);
@@ -70,12 +81,33 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
     {
         return Task.FromResult(false);
     }
-
-    public async Task SetMemberName(string agentName)
+    
+    [GenerateSerializer]
+    public class SetMemberNameLogEvent:StateLogEventBase<TStateLogEvent>
     {
-        RaiseEvent(new SetMemberNameLogEvent() { MemberName = agentName });
-
+        [Id(0)] public string MemberName { get; set; }
+    }
+    
+    protected override async Task PerformConfigAsync(TConfiguration configuration)
+    {
+        RaiseEvent(new SetMemberNameLogEvent() { MemberName = configuration.MemberName });
         await ConfirmEvents();
+    }
+
+    protected override void AIGAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    {
+        switch (@event)
+        {
+            case SetMemberNameLogEvent @setMemberNameLogEvent:
+                State.MemberName = @setMemberNameLogEvent.MemberName;
+                return;
+        }
+
+        GroupMemberTransitionState(state, @event);
+    }
+
+    protected virtual void GroupMemberTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    {
     }
 
     protected async Task<List<ChatMessage>> GetMessageFromBlackboard(Guid blackboardId)
@@ -85,9 +117,4 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
 
         return history;
     }
-}
-
-public interface IGroupMember : IGAgent
-{
-    Task SetMemberName(string agentName);
 }

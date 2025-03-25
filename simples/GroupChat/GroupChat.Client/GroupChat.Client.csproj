@@ -13,12 +13,19 @@
         <PackageReference Include="Microsoft.Extensions.Hosting"/>
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.Core" />
+        <PackageReference Include="Microsoft.Orleans.Core" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
       <ProjectReference Include="..\..\..\src\Aevatar.GAgents.GroupChat\Aevatar.GAgents.GroupChat.csproj" />
       <ProjectReference Include="..\GroupChat.Grains\GroupChat.Grains.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Hosting.Abstractions">
+        <HintPath>..\..\..\..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\9.0.1\Microsoft.Extensions.Hosting.Abstractions.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

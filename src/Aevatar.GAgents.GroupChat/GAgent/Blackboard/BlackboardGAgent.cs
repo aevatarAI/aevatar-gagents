@@ -52,6 +52,22 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
             await ConfirmEvents();
         }
     }
+
+    protected override void GAgentTransitionState(BlackboardState state, StateLogEventBase<BlackboardLogEvent> @event)
+    {
+        switch (@event)
+        {
+            case AddChatHistoryLogEvent addChatHistoryLogEvent:
+                var message = new ChatMessage()
+                {
+                    AgentName = addChatHistoryLogEvent.AgentName, Content = addChatHistoryLogEvent.Content, MemberId = addChatHistoryLogEvent.MemberId,
+                    MessageType = addChatHistoryLogEvent.MessageType
+                };
+        
+                State.MessageList.Add(message);
+                break;
+        }
+    }
 }
 
 public interface IBlackboardGAgent : IGAgent

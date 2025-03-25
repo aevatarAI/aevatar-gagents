@@ -1,7 +1,5 @@
 using Aevatar.Core.Abstractions;
 using GroupChat.GAgent.Feature.Common;
-using GroupChat.GAgent.SEvent;
-using Orleans.EventSourcing;
 
 namespace GroupChat.GAgent.Feature.Blackboard.LogEvent;
 

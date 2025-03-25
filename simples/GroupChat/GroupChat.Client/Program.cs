@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.GroupChat.Feature.Extension;
+using GroupChat.GAgent.Dto;
 using GroupChat.Grain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,12 +30,12 @@ IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
 var groupAgent = client.GetGrain<IStateGAgent<GroupGAgentState>>(Guid.NewGuid());
 
 var jack = client.GetGrain<IWorker>(Guid.NewGuid());
-await jack.SetMemberName("Jack");
+await jack.ConfigAsync(new GroupMemberConfigDto(){MemberName="Jack"});
 var fred = client.GetGrain<IWorker>(Guid.NewGuid());
-await fred.SetMemberName("Fred");
+await fred.ConfigAsync(new GroupMemberConfigDto(){MemberName="Fred"});
 
 var leader = client.GetGrain<ILeader>(Guid.NewGuid());
-await leader.SetMemberName("Aera");
+await leader.ConfigAsync(new GroupMemberConfigDto(){MemberName="Leader"});
 
 await groupAgent.RegisterAsync(jack);
 await groupAgent.RegisterAsync(fred);

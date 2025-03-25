@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using GroupChat.GAgent;
+using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Common;
+using GroupChat.GAgent.GEvent;
 using Microsoft.Extensions.Logging;
 
 namespace GroupChat.Grain;
 
-public class Leader : GroupMemberGAgentBase, ILeader
+public class Leader : GroupMemberGAgentBase<GroupMemberState, LeaderEventLog, EventBase, GroupMemberConfigDto>, ILeader
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -47,6 +50,13 @@ public class Leader : GroupMemberGAgentBase, ILeader
     }
 }
 
-public interface ILeader : IGroupMember
+public interface ILeader : IGAgent
 {
+}
+
+
+[GenerateSerializer]
+public class LeaderEventLog : StateLogEventBase<LeaderEventLog>
+{
+    
 }
