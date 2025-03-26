@@ -22,7 +22,7 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
         {
             return false;
         }
-        
+
         RaiseEvent(new AddChatHistoryLogEvent()
             { MessageType = MessageType.BlackboardTopic, Content = topic });
         await ConfirmEvents();
@@ -32,6 +32,22 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
     public Task<List<ChatMessage>> GetContent()
     {
         return Task.FromResult(State.MessageList);
+    }
+
+    public Task<List<ChatMessage>> GetLastChatMessageAsync(List<Guid> talkerList)
+    {
+        return Task.FromResult(State.MessageList.Where(w => talkerList.Contains(w.MemberId)).ToList());
+    }
+
+    public async Task SetMessageAsync(CoordinatorConfirmChatResponse confirmChatResponse)
+    {
+        await HandleEventAsync(confirmChatResponse);
+    }
+
+    public async Task ResetAsync()
+    {
+        RaiseEvent(new CleanChatHistoryLogEvent());
+        await ConfirmEvents();
     }
 
     [EventHandler]
@@ -60,11 +76,15 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
             case AddChatHistoryLogEvent addChatHistoryLogEvent:
                 var message = new ChatMessage()
                 {
-                    AgentName = addChatHistoryLogEvent.AgentName, Content = addChatHistoryLogEvent.Content, MemberId = addChatHistoryLogEvent.MemberId,
+                    AgentName = addChatHistoryLogEvent.AgentName, Content = addChatHistoryLogEvent.Content,
+                    MemberId = addChatHistoryLogEvent.MemberId,
                     MessageType = addChatHistoryLogEvent.MessageType
                 };
-        
+
                 State.MessageList.Add(message);
+                break;
+            case CleanChatHistoryLogEvent cleanChatHistoryLogEvent:
+                State.MessageList.Clear();
                 break;
         }
     }
@@ -74,4 +94,10 @@ public interface IBlackboardGAgent : IGAgent
 {
     public Task<bool> SetTopic(string topic);
     public Task<List<ChatMessage>> GetContent();
+
+    public Task<List<ChatMessage>> GetLastChatMessageAsync(List<Guid> talkerList);
+
+    public Task SetMessageAsync(CoordinatorConfirmChatResponse confirmChatResponse);
+
+    public Task ResetAsync();
 }

@@ -20,8 +20,7 @@ public abstract partial class
     [EventHandler]
     public async Task HandleEventAsync(EvaluationInterestEvent @event)
     {
-        var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
-        var score = await GetInterestValueAsync(@event.BlackboardId, history);
+        var score = await GetInterestValueAsync(@event.BlackboardId);
 
         await PublishAsync(new EvaluationInterestResponseEvent()
         {
@@ -38,8 +37,8 @@ public abstract partial class
             return;
         }
 
-        var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
-        var talkResponse = await ChatAsync(@event.BlackboardId, history);
+        // var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
+        var talkResponse = await ChatAsync(@event.BlackboardId, @event.CoordinatorMessages);
         await PublishAsync(new ChatResponseEvent()
         {
             BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName,
@@ -63,14 +62,9 @@ public abstract partial class
         }
     }
 
-    protected virtual async Task<List<ChatMessage>> GetCareChatMessagesFromBlackboardAsync(Guid blackboardId)
-    {
-        return await GetMessageFromBlackboard(blackboardId);
-    }
-    
-    protected abstract Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<int> GetInterestValueAsync(Guid blackboardId);
 
-    protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages);
 
     protected virtual Task GroupChatFinishAsync(Guid blackboardId)
     {
@@ -81,13 +75,13 @@ public abstract partial class
     {
         return Task.FromResult(false);
     }
-    
+
     [GenerateSerializer]
-    public class SetMemberNameLogEvent:StateLogEventBase<TStateLogEvent>
+    public class SetMemberNameLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public string MemberName { get; set; }
     }
-    
+
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
         RaiseEvent(new SetMemberNameLogEvent() { MemberName = configuration.MemberName });
@@ -110,7 +104,7 @@ public abstract partial class
     {
     }
 
-    protected async Task<List<ChatMessage>> GetMessageFromBlackboard(Guid blackboardId)
+    protected async Task<List<ChatMessage>> GetMessageFromBlackboardAsync(Guid blackboardId)
     {
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(blackboardId);
         var history = await blackboard.GetContent();

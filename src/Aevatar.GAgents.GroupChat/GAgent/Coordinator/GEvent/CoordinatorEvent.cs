@@ -45,6 +45,7 @@ public class ChatEvent : EventBase
     [Id(0)] public Guid BlackboardId { get; set; }
     [Id(1)] public Guid Speaker { get; set; }
     [Id(3)] public int Term { get; set; }
+    [Id(4)] public List<ChatMessage>? CoordinatorMessages { get; set; } = null;
 }
 
 [GenerateSerializer]

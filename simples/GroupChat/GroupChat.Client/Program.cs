@@ -3,8 +3,11 @@
 using System;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.GroupChat.Feature.Extension;
+using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
+using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using GroupChat.GAgent.Dto;
 using GroupChat.Grain;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,21 +28,63 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
 using IHost host = builder.Build();
 await host.StartAsync();
 
-
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
-var groupAgent = client.GetGrain<IStateGAgent<GroupGAgentState>>(Guid.NewGuid());
+var groupAgent = client.GetGrain<IGroupGAgent>(Guid.NewGuid());
 
 var jack = client.GetGrain<IWorker>(Guid.NewGuid());
-await jack.ConfigAsync(new GroupMemberConfigDto(){MemberName="Jack"});
+await jack.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Jack" });
 var fred = client.GetGrain<IWorker>(Guid.NewGuid());
-await fred.ConfigAsync(new GroupMemberConfigDto(){MemberName="Fred"});
+await fred.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Fred" });
+var ace = client.GetGrain<IWorker>(Guid.NewGuid());
+await ace.ConfigAsync(new GroupMemberConfigDto() { MemberName = "ace" });
+var sony = client.GetGrain<IWorker>(Guid.NewGuid());
+await sony.ConfigAsync(new GroupMemberConfigDto() { MemberName = "sony" });
+var doni = client.GetGrain<IWorker>(Guid.NewGuid());
+await doni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "doni" });
 
 var leader = client.GetGrain<ILeader>(Guid.NewGuid());
-await leader.ConfigAsync(new GroupMemberConfigDto(){MemberName="Leader"});
+await leader.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Leader" });
 
-await groupAgent.RegisterAsync(jack);
-await groupAgent.RegisterAsync(fred);
-await groupAgent.RegisterAsync(leader);
-await groupAgent.AddBlackboard(client, "Will Artificial Intelligence Replace Human Creativity ?");
+var workerflow = new List<WorkflowUnitDto>()
+{
+    new WorkflowUnitDto()
+    {
+        GrainId = jack.GetGrainId().ToString(),
+        NextGrainId = fred.GetGrainId().ToString(),
+    },
+    new WorkflowUnitDto()
+    {
+        GrainId = ace.GetGrainId().ToString(),
+        NextGrainId = fred.GetGrainId().ToString(),
+    },
+    new WorkflowUnitDto()
+    {
+        GrainId = fred.GetGrainId().ToString(),
+        NextGrainId = doni.GetGrainId().ToString(),
+    },
+    new WorkflowUnitDto()
+    {
+        GrainId = sony.GetGrainId().ToString(),
+        NextGrainId = doni.GetGrainId().ToString(),
+    },
+    new WorkflowUnitDto()
+    {
+        GrainId = doni.GetGrainId().ToString(),
+        NextGrainId = leader.GetGrainId().ToString(),
+    },
+    new WorkflowUnitDto()
+    {
+        GrainId = leader.GetGrainId().ToString(),
+        NextGrainId = "",
+    }
+};
+
+await groupAgent.AddWorkflowGroupChat(client, workerflow);
+await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
+
+// await groupAgent.RegisterAsync(jack);
+// await groupAgent.RegisterAsync(fred);
+// await groupAgent.RegisterAsync(leader);
+// await groupAgent.AddGroupChat(client, "Will Artificial Intelligence Replace Human Creativity ?");
 
 await Task.Delay(TimeSpan.FromSeconds(1000));
