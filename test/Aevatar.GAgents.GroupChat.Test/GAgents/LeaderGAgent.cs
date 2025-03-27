@@ -33,7 +33,6 @@ public class LeaderGAgentGAgent : GroupMemberGAgentBase<LeaderState, LeaderEvent
             PreWorkUnits = messages.Select(s => s.AgentName).ToList()
         });
         await ConfirmEvents();
-
         response.Continue = false;
         response.Content = "Discussion ended";
         return response;
@@ -41,7 +40,6 @@ public class LeaderGAgentGAgent : GroupMemberGAgentBase<LeaderState, LeaderEvent
 
     protected override Task GroupChatFinishAsync(Guid blackboardId)
     {
-        Console.WriteLine($"{State.MemberName} receive finish message");
         return Task.CompletedTask;
     }
 
@@ -74,5 +72,5 @@ public class LeaderHandleMessageLogEvent : LeaderEventLog
 [GenerateSerializer]
 public class LeaderState : GroupMemberState
 {
-    [Id(0)] public List<string> AgentNames { get; set; }
+    [Id(0)] public List<string> AgentNames { get; set; } = new List<string>();
 }
