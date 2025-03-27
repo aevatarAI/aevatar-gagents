@@ -4,6 +4,7 @@ using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.LogEvent;
 using GroupChat.GAgent.Feature.Blackboard;
+using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -83,8 +84,18 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var topStreamGrainIds = State.GetTopUpStreamGrainIds();
         foreach (var item in topStreamGrainIds)
         {
-            await TryActiveWorkUnitAsync(item);
+            await TryActiveWorkUnitAsync(item, @event.InitContent);
         }
+    }
+
+    [EventHandler]
+    public async Task HandleEventAsync(ResetWorkflowEvent @event)
+    {
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent start");
+        RaiseEvent(new ResetWorkflowLogEvent() { WorkflowUnit = @event.WorkflowUnitList });
+        await ConfirmEvents();
+
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent end");
     }
 
     #endregion
@@ -97,7 +108,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             $"[WorkflowCoordinatorGAgent] [PerformConfigAsync] WorkflowCoordinatorConfigDto:{JsonConvert.SerializeObject(configuration)}");
 
         RaiseEvent(new InitWorkflowCoordinatorLogEvent
-            { WorkflowNodes = configuration.WorkflowUnitList, BlackBoardId = configuration.BlackBoardId });
+            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = configuration.BlackBoardId });
 
         await ConfirmEvents();
     }
@@ -108,20 +119,20 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         switch (@event)
         {
             case InitWorkflowCoordinatorLogEvent initWorkflowCoordinatorLogEvent:
-                var nodeList = initWorkflowCoordinatorLogEvent.WorkflowNodes.Select(s => new WorkUnitInfo()
+                var nodeList = initWorkflowCoordinatorLogEvent.WorkflowUnit.Select(s => new WorkUnitInfo()
                 {
                     GrainId = s.GrainId,
                     NextGrainId = s.NextGrainId,
                     UnitStatusEnum = WorkerUnitStatusEnum.Pending,
                 }).ToList();
 
-                State.WorkUnitInfos = nodeList;
+                State.CurrentWorkUnitInfos = nodeList;
                 state.BlackboardId = initWorkflowCoordinatorLogEvent.BlackBoardId;
                 break;
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
                 var workUnitInfo =
-                    State.WorkUnitInfos.First(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
+                    State.CurrentWorkUnitInfos.First(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
                 workUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
                 State.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
                 break;
@@ -129,16 +140,25 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             case WorkflowFinishLogEvent workflowFinishLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 State.TermToWorkUnitGrainId = new Dictionary<int, string>();
-                for (var i = 0; i < State.WorkUnitInfos.Count; i++)
+                if (State.BackupWorkUnitInfos.Count > 0)
                 {
-                    var workUnit = State.WorkUnitInfos[i];
-                    workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Pending;
+                    State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s=>s).ToList();
+                    State.BackupWorkUnitInfos.Clear();
+                }
+                else
+                {
+                    for (var i = 0; i < State.CurrentWorkUnitInfos.Count; i++)
+                    {
+                        var workUnit = State.CurrentWorkUnitInfos[i];
+                        workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Pending;
+                    }
                 }
 
                 break;
 
             case StartWorkUnitLogEvent workUnitLogEvent:
-                var startWorkUnitInfo = State.WorkUnitInfos.First(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
+                var startWorkUnitInfo =
+                    State.CurrentWorkUnitInfos.First(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
                 startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
                 State.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
                 State.Term += 1;
@@ -146,6 +166,24 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             case WorkflowStartLogEvent workflowStartLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
+                break;
+
+            case ResetWorkflowLogEvent resetWorkflowLogEvent:
+                var backupNodeList = resetWorkflowLogEvent.WorkflowUnit.Select(s => new WorkUnitInfo()
+                {
+                    GrainId = s.GrainId,
+                    NextGrainId = s.NextGrainId,
+                    UnitStatusEnum = WorkerUnitStatusEnum.Pending,
+                }).ToList();
+                if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
+                {
+                    State.CurrentWorkUnitInfos = backupNodeList;
+                }
+                else
+                {
+                    State.BackupWorkUnitInfos = backupNodeList;
+                }
+
                 break;
         }
     }
@@ -164,13 +202,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         if (State.CheckAllWorkUnitFinished())
         {
             await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
+            RaiseEvent(new WorkflowFinishLogEvent());
+            await ConfirmEvents();
         }
-
-        RaiseEvent(new WorkflowFinishLogEvent());
-        await ConfirmEvents();
     }
 
-    private async Task TryActiveWorkUnitAsync(string workUnitGrainId)
+    private async Task TryActiveWorkUnitAsync(string workUnitGrainId, string? content = null)
     {
         Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} start");
         if (State.CheckWorkUnitCanProgress(workUnitGrainId) == false)
@@ -182,6 +219,11 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var upstreamGrains = State.GetUpStreamGrainIds(workUnitGrainId).Select(s => GrainId.Parse(s).GetGuidKey());
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         var messages = await blackboard.GetLastChatMessageAsync(upstreamGrains.ToList());
+        if (content != null)
+        {
+            messages.Add(new ChatMessage() { MessageType = MessageType.BlackboardTopic, Content = content });
+        }
+
         await PublishAsync(new ChatEvent()
         {
             BlackboardId = State.BlackboardId, Speaker = GrainId.Parse(workUnitGrainId).GetGuidKey(), Term = State.Term,
