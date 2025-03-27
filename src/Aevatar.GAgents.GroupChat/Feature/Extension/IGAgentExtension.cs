@@ -27,18 +27,18 @@ public static class IGAgentExtension
         return true;
     }
 
-    public static async Task AddWorkflowGroupChat(this IGAgent agent, IClusterClient clusterClient, List<WorkflowUnitDto> workflowUnitList)
+    public static async Task AddWorkflowGroupChat(this IGAgent agent, IGAgentFactory agentFactory, List<WorkflowUnitDto> workflowUnitList)
     {
-        var blackboard = clusterClient.GetGrain<IBlackboardGAgent>(Guid.NewGuid());
+        var blackboard = await agentFactory.GetGAgentAsync<IBlackboardGAgent>(Guid.NewGuid());
         await agent.RegisterAsync(blackboard);
         foreach (var item in workflowUnitList)
         {
             var grainId = GrainId.Parse(item.GrainId);
-            var workUnit = clusterClient.GetGrain<IGAgent>(grainId);
+            var workUnit = await agentFactory.GetGAgentAsync(grainId);
             await agent.RegisterAsync(workUnit);
         }
         
-        var workflowCoordinator = clusterClient.GetGrain<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+        var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
         await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
         {
             WorkflowUnitList = workflowUnitList,

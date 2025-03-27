@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Aevatar.Core;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
@@ -21,6 +22,7 @@ var builder = Host.CreateDefaultBuilder(args)
         services.Configure<AzureOpenAIConfig>(context.Configuration.GetSection("AIServices:AzureOpenAI"));
         services.Configure<QdrantConfig>(context.Configuration.GetSection("VectorStores:Qdrant"));
         services.Configure<SystemLLMConfigOptions>(context.Configuration);
+        services.AddSingleton<IGAgentFactory, GAgentFactory>();
         services.Configure<AzureOpenAIEmbeddingsConfig>(
             context.Configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
         services.Configure<RagConfig>(context.Configuration.GetSection("Rag"));

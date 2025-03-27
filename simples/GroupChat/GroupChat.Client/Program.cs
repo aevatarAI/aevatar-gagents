@@ -2,6 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.Basic.GroupGAgent;
@@ -24,9 +25,15 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
+builder.ConfigureServices((context, service) =>
+{
+    service.AddSingleton<IGAgentFactory, GAgentFactory>();
+});
 
 using IHost host = builder.Build();
 await host.StartAsync();
+
+IGAgentFactory agentFactory = host.Services.GetRequiredService<IGAgentFactory>();
 
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
 var groupAgent = client.GetGrain<IGroupGAgent>(Guid.NewGuid());
@@ -79,7 +86,7 @@ var workerflow = new List<WorkflowUnitDto>()
     }
 };
 
-await groupAgent.AddWorkflowGroupChat(client, workerflow);
+await groupAgent.AddWorkflowGroupChat(agentFactory, workerflow);
 await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
 
 // await groupAgent.RegisterAsync(jack);
