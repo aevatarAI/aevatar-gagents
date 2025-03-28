@@ -42,6 +42,7 @@
     <PackageVersion Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="10.0.0-preview.2.25163.2" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.3" />
     <!-- ABP packages -->
     <PackageVersion Include="Volo.Abp.Account.Application" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Account.Application.Contracts" Version="$(AbpVersion)" />

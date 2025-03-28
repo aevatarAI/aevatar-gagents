@@ -1,11 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System;
-using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
-using Aevatar.GAgents.Basic.GroupGAgent;
 using Aevatar.GAgents.GroupChat.Feature.Extension;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
@@ -14,8 +11,6 @@ using GroupChat.Grain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Orleans;
-using Orleans.Hosting;
 
 IHostBuilder builder = Host.CreateDefaultBuilder(args)
     .UseOrleansClient(client =>
