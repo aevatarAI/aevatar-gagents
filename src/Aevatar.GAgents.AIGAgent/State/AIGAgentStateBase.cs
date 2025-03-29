@@ -16,4 +16,7 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(6)] public int TotalTokenUsage { get; set; } = 0;
     [Id(7)] public bool StreamingModeEnabled { get; set; }
     [Id(8)] public StreamingConfig StreamingConfig { get; set; }
+    [Id(9)] public int LastInputTokenUsage { get; set; } = 0;
+    [Id(10)] public int LastOutTokenUsage { get; set; } = 0;
+    [Id(11)] public int LastTotalTokenUsage { get; set; } = 0;
 }

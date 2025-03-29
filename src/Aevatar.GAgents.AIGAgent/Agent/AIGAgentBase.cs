@@ -329,6 +329,10 @@ public abstract partial class
 
     protected sealed override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
+        State.LastInputTokenUsage = 0;
+        State.LastOutTokenUsage = 0;
+        State.LastTotalTokenUsage = 0;
+        
         switch (@event)
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
@@ -345,6 +349,9 @@ public abstract partial class
                 State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
                 State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
                 State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                State.LastInputTokenUsage = tokenUsageStateLogEvent.InputToken;
+                State.LastOutTokenUsage = tokenUsageStateLogEvent.OutputToken;
+                State.LastTotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
                 break;
             case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
                 State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
