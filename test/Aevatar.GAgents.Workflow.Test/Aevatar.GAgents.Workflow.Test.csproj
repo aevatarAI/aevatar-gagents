@@ -20,7 +20,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aevatar.GAgents.Router\Aevatar.GAgents.Router.csproj" />
-        <ProjectReference Include="..\..\src\Aevatar.GAgents.NamingContest\Aevatar.GAgents.NamingContest.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
         <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
