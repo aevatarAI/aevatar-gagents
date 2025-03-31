@@ -2,20 +2,25 @@ using Aevatar.Core;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Agent;
+using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Blackboard;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
-using GroupChat.GAgent.SEvent;
-using Microsoft.Extensions.Logging;
 
 namespace GroupChat.GAgent;
 
-public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, GroupMemberLogEvent>, IGroupMember
+public abstract partial class
+    GroupMemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
+    where TState : GroupMemberState, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
+    where TEvent : EventBase
+    where TConfiguration : GroupMemberConfigDto
 {
     [EventHandler]
     public async Task HandleEventAsync(EvaluationInterestEvent @event)
     {
-        var history = await GetMessageFromBlackboard(@event.BlackboardId);
-        var score = await GetInterestValueAsync(@event.BlackboardId, history);
+        var score = await GetInterestValueAsync(@event.BlackboardId);
 
         await PublishAsync(new EvaluationInterestResponseEvent()
         {
@@ -32,8 +37,8 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
             return;
         }
 
-        var history = await GetMessageFromBlackboard(@event.BlackboardId);
-        var talkResponse = await ChatAsync(@event.BlackboardId, history);
+        // var history = await GetCareChatMessagesFromBlackboardAsync(@event.BlackboardId);
+        var talkResponse = await ChatAsync(@event.BlackboardId, @event.CoordinatorMessages);
         await PublishAsync(new ChatResponseEvent()
         {
             BlackboardId = @event.BlackboardId, MemberId = this.GetPrimaryKey(), MemberName = State.MemberName,
@@ -57,9 +62,9 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
         }
     }
 
-    protected abstract Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<int> GetInterestValueAsync(Guid blackboardId);
 
-    protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages);
+    protected abstract Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages);
 
     protected virtual Task GroupChatFinishAsync(Guid blackboardId)
     {
@@ -71,23 +76,39 @@ public abstract class GroupMemberGAgentBase : GAgentBase<GroupMemberState, Group
         return Task.FromResult(false);
     }
 
-    public async Task SetMemberName(string agentName)
+    [GenerateSerializer]
+    public class SetMemberNameLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        RaiseEvent(new SetMemberNameLogEvent() { MemberName = agentName });
+        [Id(0)] public string MemberName { get; set; }
+    }
 
+    protected override async Task PerformConfigAsync(TConfiguration configuration)
+    {
+        RaiseEvent(new SetMemberNameLogEvent() { MemberName = configuration.MemberName });
         await ConfirmEvents();
     }
 
-    protected async Task<List<ChatMessage>> GetMessageFromBlackboard(Guid blackboardId)
+    protected override void AIGAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    {
+        switch (@event)
+        {
+            case SetMemberNameLogEvent @setMemberNameLogEvent:
+                State.MemberName = @setMemberNameLogEvent.MemberName;
+                return;
+        }
+
+        GroupMemberTransitionState(state, @event);
+    }
+
+    protected virtual void GroupMemberTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    {
+    }
+
+    protected async Task<List<ChatMessage>> GetMessageFromBlackboardAsync(Guid blackboardId)
     {
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(blackboardId);
         var history = await blackboard.GetContent();
 
         return history;
     }
-}
-
-public interface IGroupMember : IGAgent
-{
-    Task SetMemberName(string agentName);
 }

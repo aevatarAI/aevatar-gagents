@@ -2,32 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Aevatar.Core.Abstractions;
 using GroupChat.GAgent;
+using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Common;
+using GroupChat.GAgent.GEvent;
 using Microsoft.Extensions.Logging;
 
 namespace GroupChat.Grain;
 
-public class Leader : GroupMemberGAgentBase, ILeader
+public class Leader : GroupMemberGAgentBase<GroupMemberState, LeaderEventLog, EventBase, GroupMemberConfigDto>, ILeader
 {
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("Leader");
     }
 
-    protected override Task<int> GetInterestValueAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override async Task<int> GetInterestValueAsync(Guid blackboardId)
     {
+        var messages = await GetMessageFromBlackboardAsync(blackboardId);
         if (messages.Count > 10)
         {
-            return Task.FromResult(100);
+            return 100;
         }
 
-        return Task.FromResult(0);
+        return 0;
     }
 
-    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage> messages)
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? messages)
     {
         var response = new ChatResponse();
+        Console.WriteLine($"{State.MemberName} Can Speak");
         if (messages.Count() < 10)
         {
             response.Skip = true;
@@ -36,7 +41,6 @@ public class Leader : GroupMemberGAgentBase, ILeader
 
         response.Continue = false;
         response.Content = "Discussion ended";
-        Console.WriteLine($"{State.MemberName} Can Speak");
         return Task.FromResult(response);
     }
 
@@ -47,6 +51,11 @@ public class Leader : GroupMemberGAgentBase, ILeader
     }
 }
 
-public interface ILeader : IGroupMember
+public interface ILeader : IGAgent
+{
+}
+
+[GenerateSerializer]
+public class LeaderEventLog : StateLogEventBase<LeaderEventLog>
 {
 }

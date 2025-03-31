@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Aevatar.Core;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
-using Orleans.Hosting;
+using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.SemanticKernel.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 
 var builder = Host.CreateDefaultBuilder(args)
@@ -14,6 +16,20 @@ var builder = Host.CreateDefaultBuilder(args)
             .AddLogStorageBasedLogConsistencyProvider("LogStorage")
             .UseLocalhostClustering()
             .ConfigureLogging(logging => logging.AddConsole());
+    })
+    .ConfigureServices((context, services) =>
+    {
+        services.Configure<AzureOpenAIConfig>(context.Configuration.GetSection("AIServices:AzureOpenAI"));
+        services.Configure<QdrantConfig>(context.Configuration.GetSection("VectorStores:Qdrant"));
+        services.Configure<SystemLLMConfigOptions>(context.Configuration);
+        services.AddSingleton<IGAgentFactory, GAgentFactory>();
+        services.Configure<AzureOpenAIEmbeddingsConfig>(
+            context.Configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
+        services.Configure<RagConfig>(context.Configuration.GetSection("Rag"));
+
+        services.AddSemanticKernel()
+            .AddQdrantVectorStore()
+            .AddAzureOpenAITextEmbedding();
     })
     .UseConsoleLifetime();
 

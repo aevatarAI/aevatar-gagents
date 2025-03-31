@@ -1,15 +1,9 @@
-using Aevatar.Core.Abstractions;
-using GroupChat.GAgent.SEvent;
+using Aevatar.GAgents.AIGAgent.State;
 
 namespace GroupChat.GAgent.GEvent;
 
 [GenerateSerializer]
-public class GroupMemberState:StateBase
+public class GroupMemberState : AIGAgentStateBase
 {
     [Id(0)] public string MemberName { get; set; }
-
-    public void Apply(SetMemberNameLogEvent @event)
-    {
-        MemberName = @event.MemberName;
-    }
 }
