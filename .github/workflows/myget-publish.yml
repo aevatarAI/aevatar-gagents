@@ -29,7 +29,8 @@ jobs:
           Aevatar.GAgents.SemanticKernel,
           Aevatar.GAgents.ChatAgent,
           Aevatar.GAgents.Router,
-          Aevatar.GAgents.GraphRetrievalAgent
+          Aevatar.GAgents.GraphRetrievalAgent,
+          Aevatar.GAgents.GroupChat
         ]
     steps:
       - name: Checkout code
