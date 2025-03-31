@@ -157,7 +157,7 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
         await groupAgent.AddWorkflowGroupChat(_agentFactory, workflows);
         await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
 
-        // wait workflow run complate
+        // wait workflow run complete
         await Task.Delay(TimeSpan.FromSeconds(2));
         
         var jeniState = await jeni.GetStateAsync();
