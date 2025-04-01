@@ -101,7 +101,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
     #endregion
 
     #region override method
+    
+    public async Task PublishEventAsync<T>(T @event) where T : EventBase
+    {
+        if (@event == null)
+        {
+            throw new ArgumentNullException(nameof(@event));
+        }
 
+        await PublishAsync(@event);
+    }
+    
     protected override async Task PerformConfigAsync(WorkflowCoordinatorConfigDto configuration)
     {
         Logger.LogDebug(
@@ -241,4 +251,5 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
 public interface IWorkflowCoordinatorGAgent : IStateGAgent<WorkflowCoordinatorState>
 {
+    Task PublishEventAsync<T>(T @event) where T : EventBase;
 }
