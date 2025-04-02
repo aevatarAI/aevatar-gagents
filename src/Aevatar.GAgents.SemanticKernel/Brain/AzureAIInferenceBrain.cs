@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
+using Aevatar.AI.Extensions;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
@@ -24,8 +26,12 @@ public abstract class AzureAIInferenceBrain : BrainBase
 
     protected override Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder)
     {
+        var options = new AzureAIInferenceClientOptions();
+        options.Retry.NetworkTimeout = TimeSpan.FromSeconds(llmConfig.NetworkTimeoutInSeconds);
+        
         kernelBuilder.AddAzureAIInferenceChatCompletion(
             llmConfig.ModelName,
+            options,
             llmConfig.ApiKey,
             new Uri(llmConfig.Endpoint));
 
