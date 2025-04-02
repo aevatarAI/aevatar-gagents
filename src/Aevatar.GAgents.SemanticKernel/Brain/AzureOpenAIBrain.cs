@@ -30,9 +30,15 @@ public sealed class AzureOpenAIBrain : BrainBase
 
     protected override Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder)
     {
+        var clientOptions = new AzureOpenAIClientOptions()
+        {
+            NetworkTimeout = TimeSpan.FromSeconds(llmConfig.NetworkTimeoutInSeconds)
+        };
+        
         var azureOpenAi = new AzureOpenAIClient(
             new Uri(llmConfig.Endpoint),
-            new AzureKeyCredential(llmConfig.ApiKey)
+            new AzureKeyCredential(llmConfig.ApiKey),
+            clientOptions
         );
 
         kernelBuilder.AddAzureOpenAIChatCompletion(
