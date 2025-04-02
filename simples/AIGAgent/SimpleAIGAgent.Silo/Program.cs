@@ -17,7 +17,6 @@ var builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureServices((context, services) =>
     {
-        services.Configure<AzureOpenAIConfig>(context.Configuration.GetSection("AIServices:AzureOpenAI"));
         services.Configure<QdrantConfig>(context.Configuration.GetSection("VectorStores:Qdrant"));
         services.Configure<SystemLLMConfigOptions>(context.Configuration);
         services.Configure<AzureOpenAIEmbeddingsConfig>(
