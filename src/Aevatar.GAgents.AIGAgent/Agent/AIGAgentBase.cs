@@ -110,12 +110,12 @@ public abstract partial class
         return true;
     }
 
-    private async Task AddLLMAsync(LLMConfig LLM, string? systemLLM)
+    private Task AddLLMAsync(LLMConfig LLM, string? systemLLM)
     {
         if (State.LLM != null && State.LLM.Equal(LLM))
         {
             Logger.LogError("Cannot add duplicate LLM: {LLM}.", LLM);
-            return;
+            return Task.CompletedTask;
         }
 
         RaiseEvent(new SetLLMStateLogEvent
@@ -123,8 +123,7 @@ public abstract partial class
             LLM = LLM,
             SystemLLM = systemLLM,
         });
-        
-        await ConfirmEvents();
+        return Task.CompletedTask;
     }
 
     [GenerateSerializer]
@@ -146,23 +145,23 @@ public abstract partial class
         [Id(1)] public StreamingConfig StreamingConfig { get; set; }
     }
     
-    private async Task SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
+    private Task SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
     {
         RaiseEvent(new SetStreamingConfigStateLogEvent
         {
             StreamingModeEnabled = streamingModeEnabled,
             StreamingConfig = streamingConfig
         });
-        await ConfirmEvents();
+        return Task.CompletedTask;
     }
 
-    private async Task AddPromptTemplateAsync(string promptTemplate)
+    private Task AddPromptTemplateAsync(string promptTemplate)
     {
         RaiseEvent(new SetPromptTemplateStateLogEvent
         {
             PromptTemplate = promptTemplate
         });
-        await ConfirmEvents();
+        return Task.CompletedTask;
     }
 
     [GenerateSerializer]
