@@ -62,10 +62,20 @@ public abstract partial class
             return false;
         }
 
-        await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
-        await AddPromptTemplateAsync(initializeDto.Instructions);
-        await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
+        var addLlmEventLog = await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
+        var addPromptTemplateEventLog = await AddPromptTemplateAsync(initializeDto.Instructions);
+        var streamingConfigEventLog = await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
+        var events = new List<StateLogEventBase<TStateLogEvent>>
+        {
+            addLlmEventLog!,
+            addPromptTemplateEventLog!,
+            streamingConfigEventLog!
+        };
+        
+        RaiseEvents(events);
+        await ConfirmEvents();
+        
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
     }
 
@@ -110,20 +120,19 @@ public abstract partial class
         return true;
     }
 
-    private Task AddLLMAsync(LLMConfig LLM, string? systemLLM)
+    private Task<SetLLMStateLogEvent?> AddLLMAsync(LLMConfig LLM, string? systemLLM)
     {
         if (State.LLM != null && State.LLM.Equal(LLM))
         {
             Logger.LogError("Cannot add duplicate LLM: {LLM}.", LLM);
-            return Task.CompletedTask;
+            return Task.FromResult<SetLLMStateLogEvent?>(null);
         }
 
-        RaiseEvent(new SetLLMStateLogEvent
+        return Task.FromResult(new SetLLMStateLogEvent
         {
             LLM = LLM,
             SystemLLM = systemLLM,
-        });
-        return Task.CompletedTask;
+        })!;
     }
 
     [GenerateSerializer]
@@ -145,23 +154,21 @@ public abstract partial class
         [Id(1)] public StreamingConfig StreamingConfig { get; set; }
     }
     
-    private Task SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
+    private Task<SetStreamingConfigStateLogEvent?> SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
     {
-        RaiseEvent(new SetStreamingConfigStateLogEvent
+        return Task.FromResult(new SetStreamingConfigStateLogEvent
         {
             StreamingModeEnabled = streamingModeEnabled,
             StreamingConfig = streamingConfig
-        });
-        return Task.CompletedTask;
+        })!;
     }
 
-    private Task AddPromptTemplateAsync(string promptTemplate)
+    private Task<SetPromptTemplateStateLogEvent?> AddPromptTemplateAsync(string promptTemplate)
     {
-        RaiseEvent(new SetPromptTemplateStateLogEvent
+        return Task.FromResult(new SetPromptTemplateStateLogEvent
         {
             PromptTemplate = promptTemplate
-        });
-        return Task.CompletedTask;
+        })!;
     }
 
     [GenerateSerializer]
