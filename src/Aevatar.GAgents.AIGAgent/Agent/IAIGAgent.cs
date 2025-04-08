@@ -10,6 +10,4 @@ public interface IAIGAgent
     Task<bool> InitializeAsync(InitializeDto dto);
 
     Task<bool> UploadKnowledgeAsync(List<BrainContentDto>? knowledgeList);
-
-    Task<IBrain?> GetBrainAsync();
 }

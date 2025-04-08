@@ -80,11 +80,6 @@ public abstract partial class
         return Task.CompletedTask;
     }
 
-    public Task<IBrain?> GetBrainAsync()
-    {
-        return Task.FromResult(_brain);
-    }
-
     [GenerateSerializer]
     public class LongTaskRequestLogEvent : StateLogEventBase<TStateLogEvent>
     {
