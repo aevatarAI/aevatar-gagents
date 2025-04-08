@@ -39,12 +39,12 @@ public sealed class KernelBuilderFactory : IKernelBuilderFactory
 
         var kernelBuilder = Kernel.CreateBuilder();
         
-        var vectorStore = _serviceProvider.GetRequiredKeyedService<IVectorStore>(config.VectorStoreType);
+        /*var vectorStore = _serviceProvider.GetRequiredKeyedService<IVectorStore>(config.VectorStoreType);
         vectorStore.ConfigureCollection(kernelBuilder, id);
         vectorStore.RegisterVectorStoreTextSearch(kernelBuilder);
         
         var embedding = _serviceProvider.GetRequiredKeyedService<IEmbedding>(config.AIEmbeddingService);
-        embedding.Configure(kernelBuilder);
+        embedding.Configure(kernelBuilder);*/
         
         return kernelBuilder;
     }
