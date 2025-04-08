@@ -3,14 +3,14 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.4.12-optimize.5</AevatarCoreVersion>
+    <AevatarCoreVersion>1.4.13-alpha.0</AevatarCoreVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarCoreVersion)" />
-    <PackageVersion Include="Aevatar.SignalR" Version="1.5.3" />
+    <!--    <PackageVersion Include="Aevatar.SignalR" Version="1.5.3" />-->
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
@@ -25,6 +25,7 @@
     <PackageVersion Include="Microsoft.Orleans.EventSourcing" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="9.0.1" />
     <PackageVersion Include="Orleans.Streams.Kafka" Version="8.0.2" />
+    <PackageVersion Include="Orleans.SyncWork" Version="9.4.4" />
     <PackageVersion Include="Microsoft.Orleans.Reminders" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Runtime" Version="$(OrleansVerion)" />
     <PackageVersion Include="Microsoft.Orleans.Sdk" Version="$(OrleansVerion)" />
@@ -103,7 +104,6 @@
     <PackageVersion Include="Volo.Abp.Swashbuckle" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.TestBase" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Uow" Version="$(AbpVersion)" />
-    <PackageVersion Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="3.1.4" />
     <PackageVersion Include="AutoGen.Core" Version="0.2.1" />
     <PackageVersion Include="AutoGen.OpenAI" Version="0.2.1" />
     <PackageVersion Include="AutoGen.SemanticKernel" Version="0.2.1" />

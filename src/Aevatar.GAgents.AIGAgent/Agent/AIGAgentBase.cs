@@ -64,7 +64,8 @@ public abstract partial class
 
         var addLlmEventLog = await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
         var addPromptTemplateEventLog = await AddPromptTemplateAsync(initializeDto.Instructions);
-        var streamingConfigEventLog = await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
+        var streamingConfigEventLog =
+            await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
         {
@@ -72,14 +73,14 @@ public abstract partial class
             addPromptTemplateEventLog!,
             streamingConfigEventLog!
         };
-        
+
         RaiseEvents(events);
         await ConfirmEvents();
-        
+
         return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
     }
 
-    public async Task<bool> UploadKnowledge(List<BrainContentDto>? knowledgeList)
+    public async Task<bool> UploadKnowledgeAsync(List<BrainContentDto>? knowledgeList)
     {
         if (_brain == null)
         {
@@ -112,10 +113,7 @@ public abstract partial class
             return false;
         }
 
-        // remove slash from this.GetGrainId().ToString() so that it can be used as the collection name pertaining to the grain
-        var grainId = this.GetGrainId().ToString().Replace("/", "");
-
-        await _brain.InitializeAsync(llmConfig, grainId, systemMessage);
+        await _brain.InitializeAsync(llmConfig, GetLLMUniqueKey(), systemMessage);
 
         return true;
     }
@@ -146,15 +144,16 @@ public abstract partial class
     public class SetUpsertKnowledgeFlag : StateLogEventBase<TStateLogEvent>
     {
     }
-    
+
     [GenerateSerializer]
     public class SetStreamingConfigStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public bool StreamingModeEnabled { get; set; }
         [Id(1)] public StreamingConfig StreamingConfig { get; set; }
     }
-    
-    private Task<SetStreamingConfigStateLogEvent?> SetStreamingConfigAsync(bool streamingModeEnabled, StreamingConfig streamingConfig)
+
+    private Task<SetStreamingConfigStateLogEvent?> SetStreamingConfigAsync(bool streamingModeEnabled,
+        StreamingConfig streamingConfig)
     {
         return Task.FromResult(new SetStreamingConfigStateLogEvent
         {
@@ -188,15 +187,19 @@ public abstract partial class
     }
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
+        AIChatContextDto? context = null)
     {
         if (_brain == null)
         {
             return null;
         }
-        var invokeResponse = State.StreamingModeEnabled?
-            await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken, context) :
-            await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
+
+        var invokeResponse = State.StreamingModeEnabled
+            ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                cancellationToken, context)
+            : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                cancellationToken);
         if (invokeResponse == null)
         {
             return null;
@@ -215,9 +218,11 @@ public abstract partial class
 
         return invokeResponse.ChatReponseList;
     }
-    
-    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null, bool ifUseKnowledge = false,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default, AIChatContextDto? context = null)
+
+    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content,
+        List<ChatMessage>? history = null, bool ifUseKnowledge = false,
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
+        AIChatContextDto? context = null)
     {
         var streamingConfig = State.StreamingConfig;
         var result = new InvokePromptResponse();
@@ -228,9 +233,10 @@ public abstract partial class
             cancellationToken = cts.Token;
         }
 
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
+        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
+            promptSettings,
             cancellationToken: cancellationToken);
-        
+
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
@@ -238,7 +244,7 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-        
+
         await foreach (var messageContent in responseStreaming)
         {
             if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
@@ -257,13 +263,14 @@ public abstract partial class
                     completeContent.Append(chunk);
                     stringBuilder.Remove(0, bufferingSize);
                 }
-        
+
                 if (streamingChatMessageContent.Role.HasValue)
                 {
                     chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
                 }
             }
         }
+
         await PublishAsync(new AIStreamingResponseGEvent
         {
             Context = context,
@@ -277,10 +284,10 @@ public abstract partial class
         chatList.Add(chatMessage);
         result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
         result.ChatReponseList = chatList;
-        
+
         return result;
     }
-    
+
     private ChatRole ConvertToChatRole(AuthorRole authorRole)
     {
         if (authorRole == AuthorRole.System)
@@ -290,7 +297,7 @@ public abstract partial class
 
         return authorRole == AuthorRole.Assistant ? ChatRole.Assistant : ChatRole.User;
     }
-    
+
     protected virtual async Task OnAIGAgentActivateAsync(CancellationToken cancellationToken)
     {
         // Derived classes can override this method.
@@ -301,32 +308,9 @@ public abstract partial class
         await base.OnGAgentActivateAsync(cancellationToken);
 
         // setup brain
-        if (State.LLM != null || State.SystemLLM != null)
+        var config = GetLLMConfigFromState();
+        if (config != null)
         {
-            LLMConfigDto llmConfig = new LLMConfigDto();
-            if (State.SystemLLM.IsNullOrWhiteSpace() == false)
-            {
-                llmConfig.SystemLLM = State.SystemLLM;
-            }
-            else if (State.LLM != null)
-            {
-                llmConfig.SelfLLMConfig = new SelfLLMConfig()
-                {
-                    ProviderEnum = State.LLM.ProviderEnum,
-                    ModelId = State.LLM.ModelIdEnum,
-                    ModelName = State.LLM.ModelName,
-                    Endpoint = State.LLM.Endpoint,
-                    ApiKey = State.LLM.ApiKey,
-                    Memo = State.LLM.Memo
-                };
-            }
-
-            var config = GetLLMConfig(llmConfig);
-            if (config == null)
-            {
-                return;
-            }
-
             await InitializeBrainAsync(config, State.PromptTemplate);
         }
 
@@ -338,7 +322,7 @@ public abstract partial class
         State.LastInputTokenUsage = 0;
         State.LastOutTokenUsage = 0;
         State.LastTotalTokenUsage = 0;
-        
+
         switch (@event)
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
@@ -362,6 +346,12 @@ public abstract partial class
             case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
                 State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
                 State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
+                break;
+            case LongTaskRequestLogEvent longTaskRequestLogEvent:
+                State.CurrentLLMReqeustIds.Add(longTaskRequestLogEvent.RequestId);
+                break;
+            case LongTaskResponseLogEvent longTaskResponseLogEvent:
+                State.CurrentLLMReqeustIds.Remove(longTaskResponseLogEvent.RequestId);
                 break;
         }
 
@@ -395,5 +385,38 @@ public abstract partial class
         }
 
         return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+    }
+
+    private LLMConfig? GetLLMConfigFromState()
+    {
+        if (State.LLM != null || State.SystemLLM != null)
+        {
+            LLMConfigDto llmConfig = new LLMConfigDto();
+            if (State.SystemLLM.IsNullOrWhiteSpace() == false)
+            {
+                llmConfig.SystemLLM = State.SystemLLM;
+            }
+            else if (State.LLM != null)
+            {
+                llmConfig.SelfLLMConfig = new SelfLLMConfig()
+                {
+                    ProviderEnum = State.LLM.ProviderEnum,
+                    ModelId = State.LLM.ModelIdEnum,
+                    ModelName = State.LLM.ModelName,
+                    Endpoint = State.LLM.Endpoint,
+                    ApiKey = State.LLM.ApiKey,
+                    Memo = State.LLM.Memo
+                };
+            }
+
+            return GetLLMConfig(llmConfig);
+        }
+
+        return null;
+    }
+
+    private string GetLLMUniqueKey()
+    {
+        return this.GetGrainId().ToString().Replace("/", "");
     }
 }

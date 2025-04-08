@@ -11,6 +11,8 @@
         <PackageReference Include="Microsoft.Orleans.Server" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="Aevatar" />
+        <PackageReference Include="Aevatar.Core" />
     </ItemGroup>
     <ItemGroup>
         <None Update="appsettings.json">
@@ -24,10 +26,5 @@
       <ProjectReference Include="..\..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
       <ProjectReference Include="..\..\..\src\Aevatar.GAgents.SocialGAgent\Aevatar.GAgents.SocialGAgent.csproj" />
       <ProjectReference Include="..\SimpleAIGAgent.Grains\SimpleAIGAgent.Grains.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-      <Reference Include="Microsoft.Extensions.Hosting">
-        <HintPath>..\..\..\..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.AspNetCore.App\9.0.1\Microsoft.Extensions.Hosting.dll</HintPath>
-      </Reference>
     </ItemGroup>
 </Project>

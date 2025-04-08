@@ -55,7 +55,7 @@ fileDtoList.Add(new BrainContentDto("Lebron James",
 
 //var chatAgentId = Guid.NewGuid();
 var chatAgentId = GrainId.Parse("chataigagent/792b1cb87bad4f759fcde3fe51ff55bc");
-var chatAgent = client.GetGrain<IChatAIGAgent>(chatAgentId);
+var chatAgent = client.GetGrain<IChatAIGAgent>(Guid.NewGuid());
 await chatAgent.InitializeAsync(new InitializeDto()
 {
 //     Instructions = @"
@@ -77,13 +77,15 @@ await chatAgent.InitializeAsync(new InitializeDto()
     LLMConfig = new LLMConfigDto() { SystemLLM = "OpenAI" }
 });
 
-await chatAgent.UploadKnowledge(fileDtoList);
+// await chatAgent.UploadKnowledgeAsync(fileDtoList);
 
 Console.ForegroundColor = ConsoleColor.Green;
 Console.WriteLine("Assistant > Press enter with no prompt to exit.");
 
 var appShutdownCancellationTokenSource = new CancellationTokenSource();
 var cancellationToken = appShutdownCancellationTokenSource.Token;
+
+await chatAgent.SyncChatAsync("who is james");
 
 while (!cancellationToken.IsCancellationRequested)
 {

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
 using Orleans;
@@ -19,4 +21,6 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(9)] public int LastInputTokenUsage { get; set; } = 0;
     [Id(10)] public int LastOutTokenUsage { get; set; } = 0;
     [Id(11)] public int LastTotalTokenUsage { get; set; } = 0;
+    [Id(12)] public List<Guid> CurrentLLMReqeustIds { get; set; } = new List<Guid>();
+
 }

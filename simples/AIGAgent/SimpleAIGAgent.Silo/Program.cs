@@ -4,6 +4,7 @@ using Aevatar.GAgents.SemanticKernel.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Aevatar.Extensions;
 
 var builder = Host.CreateDefaultBuilder(args)
     .UseOrleans(silo =>
@@ -13,6 +14,7 @@ var builder = Host.CreateDefaultBuilder(args)
             .AddMemoryGrainStorage("PubSubStore")
             .AddLogStorageBasedLogConsistencyProvider("LogStorage")
             .UseLocalhostClustering()
+            .UseAevatar()
             .ConfigureLogging(logging => logging.AddConsole());
     })
     .ConfigureServices((context, services) =>
