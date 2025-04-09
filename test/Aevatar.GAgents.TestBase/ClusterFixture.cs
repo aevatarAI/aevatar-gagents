@@ -1,3 +1,4 @@
+using Aevatar.Extensions;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using AutoMapper;
@@ -87,6 +88,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
+                .UseAevatar()
                 .AddLogStorageBasedLogConsistencyProvider("LogStorage");
         }
     }
