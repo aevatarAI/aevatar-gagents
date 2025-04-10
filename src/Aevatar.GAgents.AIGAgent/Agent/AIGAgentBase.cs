@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Orleans;
+using Orleans.Concurrency;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
@@ -36,7 +37,7 @@ public abstract partial class
     where TEvent : EventBase
 {
 }
-
+[Reentrant]
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent
