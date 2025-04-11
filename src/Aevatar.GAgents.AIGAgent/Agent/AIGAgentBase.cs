@@ -230,8 +230,7 @@ public abstract partial class
             cancellationToken = cts.Token;
         }
 
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
-            cancellationToken: cancellationToken);
+        
         
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
@@ -242,6 +241,9 @@ public abstract partial class
         var chunkNumber = 0;
         try
         {
+            var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
+                cancellationToken: cancellationToken);
+            
             await foreach (var messageContent in responseStreaming)
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
