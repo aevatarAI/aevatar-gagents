@@ -284,23 +284,23 @@ public abstract partial class
             if (ex is ClientResultException clientEx)
             {
                 Logger.LogError(ex,"An unexpected ClientResultException occurred. Details:{message}",clientEx.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
+                await PublishAsync(new AIStreamingErrorResponseGEvent
                 {
                     Context = context,
-                    SerialNumber = -2,
-                    ResponseContent = clientEx.Message,
-                    IsLastChunk = true
+                    GrainId = this.GetGrainId(),
+                    HandleEventType = typeof(AIStreamingErrorResponseGEvent),
+                    ExceptionMessage = clientEx.Message
                 });
             }
             else
             {
                 Logger.LogError(ex,"Ai stream response : An unexpected Exception occurred. Details:{message}",ex.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
+                await PublishAsync(new AIStreamingErrorResponseGEvent
                 {
                     Context = context,
-                    SerialNumber = -2,
-                    ResponseContent = ex.Message,
-                    IsLastChunk = true
+                    GrainId = this.GetGrainId(),
+                    HandleEventType = typeof(AIStreamingErrorResponseGEvent),
+                    ExceptionMessage = ex.Message
                 });
             }
         }

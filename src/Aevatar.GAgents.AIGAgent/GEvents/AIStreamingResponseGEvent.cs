@@ -14,3 +14,10 @@ public class AIStreamingResponseGEvent : EventBase
     [Id(2)] public AIChatContextDto Context { get; set; } = new();
     [Id(3)] public bool IsLastChunk { get; set; }
 }
+
+[Description("Return a error reponse")]
+[GenerateSerializer]
+public class AIStreamingErrorResponseGEvent : EventHandlerExceptionEvent
+{
+    [Id(0)] public AIChatContextDto Context { get; set; } = new();
+}
