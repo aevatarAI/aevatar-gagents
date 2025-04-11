@@ -288,7 +288,7 @@ public abstract partial class
                 {
                     Context = context,
                     GrainId = this.GetGrainId(),
-                    HandleEventType = typeof(AIStreamingErrorResponseGEvent),
+                    HandleExceptionType = typeof(ClientResultException),
                     ExceptionMessage = clientEx.Message
                 });
             }
@@ -299,7 +299,7 @@ public abstract partial class
                 {
                     Context = context,
                     GrainId = this.GetGrainId(),
-                    HandleEventType = typeof(AIStreamingErrorResponseGEvent),
+                    HandleExceptionType = ex.GetType(),
                     ExceptionMessage = ex.Message
                 });
             }

@@ -1,7 +1,9 @@
+using System;
 using System.ComponentModel;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Orleans;
+using Orleans.Runtime;
 
 namespace Aevatar.GAgents.AIGAgent.GEvents;
 
@@ -17,7 +19,16 @@ public class AIStreamingResponseGEvent : EventBase
 
 [Description("Return a error reponse")]
 [GenerateSerializer]
-public class AIStreamingErrorResponseGEvent : EventHandlerExceptionEvent
+public class AIStreamingErrorResponseGEvent : EventBase
 {
     [Id(0)] public AIChatContextDto Context { get; set; } = new();
+    
+    [Id(1)]
+    public GrainId GrainId { get; set; }
+
+    [Id(2)]
+    public Type HandleExceptionType { get; set; }
+
+    [Id(3)]
+    public string ExceptionMessage { get; set; }
 }
