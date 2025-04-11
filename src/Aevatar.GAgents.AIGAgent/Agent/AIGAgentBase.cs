@@ -1,4 +1,5 @@
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -239,41 +240,69 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-        
-        await foreach (var messageContent in responseStreaming)
+        try
         {
-            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            await foreach (var messageContent in responseStreaming)
             {
-                streamingMessageContentList.Add(streamingChatMessageContent);
-                stringBuilder.Append(streamingChatMessageContent.Content);
-                if (stringBuilder.Length >= bufferingSize)
+                if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                    var chunk = stringBuilder.ToString(0, bufferingSize);
-                    await PublishAsync(new AIStreamingResponseGEvent
+                    streamingMessageContentList.Add(streamingChatMessageContent);
+                    stringBuilder.Append(streamingChatMessageContent.Content);
+                    if (stringBuilder.Length >= bufferingSize)
                     {
-                        Context = context,
-                        SerialNumber = chunkNumber++,
-                        ResponseContent = chunk
-                    });
-                    completeContent.Append(chunk);
-                    stringBuilder.Remove(0, bufferingSize);
-                }
-        
-                if (streamingChatMessageContent.Role.HasValue)
-                {
-                    chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                        var chunk = stringBuilder.ToString(0, bufferingSize);
+                        await PublishAsync(new AIStreamingResponseGEvent
+                        {
+                            Context = context,
+                            SerialNumber = chunkNumber++,
+                            ResponseContent = chunk
+                        });
+                        completeContent.Append(chunk);
+                        stringBuilder.Remove(0, bufferingSize);
+                    }
+            
+                    if (streamingChatMessageContent.Role.HasValue)
+                    {
+                        chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    }
                 }
             }
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = chunkNumber,
+                ResponseContent = stringBuilder.ToString(),
+                IsLastChunk = true
+            });
+            completeContent.Append(stringBuilder.ToString());
         }
-        await PublishAsync(new AIStreamingResponseGEvent
+        catch (Exception ex)
         {
-            Context = context,
-            SerialNumber = chunkNumber,
-            ResponseContent = stringBuilder.ToString(),
-            IsLastChunk = true
-        });
-        completeContent.Append(stringBuilder.ToString());
-
+            // Check for specific  error and advise user
+            if (ex is ClientResultException clientEx)
+            {
+                Console.WriteLine("An unexpected ClientResultException occurred. Details:{0} ",clientEx.Message);
+                Logger.LogError("An unexpected ClientResultException occurred. Details:{message}",clientEx.Message);
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent = clientEx.Message,
+                    IsLastChunk = true
+                });
+            }
+            else
+            {
+                Logger.LogError("Ai stream response : An unexpected Exception occurred. Details:{message}",ex.Message);
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent = ex.Message,
+                    IsLastChunk = true
+                });
+            }
+        }
         chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
         result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);

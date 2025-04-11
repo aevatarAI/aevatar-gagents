@@ -19,6 +19,7 @@
         <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
+        <PackageReference Include="System.ClientModel" />
     </ItemGroup>
     
     <ItemGroup>
