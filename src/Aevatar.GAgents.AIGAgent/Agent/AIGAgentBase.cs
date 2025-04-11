@@ -281,8 +281,7 @@ public abstract partial class
             // Check for specific  error and advise user
             if (ex is ClientResultException clientEx)
             {
-                Console.WriteLine("An unexpected ClientResultException occurred. Details:{0} ",clientEx.Message);
-                Logger.LogError("An unexpected ClientResultException occurred. Details:{message}",clientEx.Message);
+                Logger.LogError(ex,"An unexpected ClientResultException occurred. Details:{message}",clientEx.ToString());
                 await PublishAsync(new AIStreamingResponseGEvent
                 {
                     Context = context,
@@ -293,7 +292,7 @@ public abstract partial class
             }
             else
             {
-                Logger.LogError("Ai stream response : An unexpected Exception occurred. Details:{message}",ex.Message);
+                Logger.LogError(ex,"Ai stream response : An unexpected Exception occurred. Details:{message}",ex.ToString());
                 await PublishAsync(new AIStreamingResponseGEvent
                 {
                     Context = context,
