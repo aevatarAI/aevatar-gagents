@@ -10,6 +10,8 @@ public class Tweet
     [JsonProperty("text")] [Id(0)] public string Text { get; set; }
 
     [JsonProperty("id")] [Id(1)] public string Id { get; set; }
+    
+    [JsonProperty("author_id")] [Id(2)] public string AuthorId { get; set; }
 }
 
 public class Meta

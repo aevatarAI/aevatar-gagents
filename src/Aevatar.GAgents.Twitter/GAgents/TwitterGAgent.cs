@@ -140,6 +140,12 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                         State.ReplyLimit);
             foreach (var tweet in mentionTweets)
             {
+                if (State.UserId.Equals(tweet.AuthorId))
+                {
+                    _logger.LogDebug("HandleEventAsync ReplyMentionEvent userId is the author, userId is {A} {B}",
+                        State.UserId, JsonConvert.SerializeObject(tweet));
+                    continue;
+                }
                 if (!State.RepliedTweets.Keys.Contains(tweet.Id))
                 {
                     var requestId = Guid.NewGuid();
