@@ -11,7 +11,7 @@ public interface IChatAIGAgent : IAIGAgent, IGAgent
 {
     Task<string?> ChatAsync(string message);
 
-    Task SyncChatAsync(string message);
+    Task SendChatMessageAsync(string message);
 }
 
 [GAgent]
@@ -32,7 +32,7 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return result?[0].Content;
     }
 
-    public async Task SyncChatAsync(string message)
+    public async Task SendChatMessageAsync(string message)
     {
         await SyncChatWithHistoryAsync(message);
     }
@@ -44,7 +44,7 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         Logger.LogInformation("Chat output: {Result}", result);
     }
 
-    protected override async Task SyncLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
+    protected override async Task OnLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
         AIChatContextDto? context = null)
     {
         Console.WriteLine($"chatResponseList:{chatResponseList}");

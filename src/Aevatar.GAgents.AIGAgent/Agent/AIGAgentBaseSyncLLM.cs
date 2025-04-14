@@ -71,10 +71,10 @@ public abstract partial class
         RaiseEvents(eventList);
         await ConfirmEvents();
 
-        await SyncLLMResponseHandlerAsync(eventData.ChatResponseList, eventData.ErrorMessage, eventData.ContextDto);
+        await OnLLMResponseHandlerAsync(eventData.ChatResponseList, eventData.ErrorMessage, eventData.ContextDto);
     }
 
-    protected virtual Task SyncLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
+    protected virtual Task OnLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
         AIChatContextDto? context = null)
     {
         return Task.CompletedTask;

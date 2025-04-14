@@ -44,7 +44,7 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         Logger.LogInformation("Chat output: {Result}", result);
     }
 
-    protected override async Task SyncLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
+    protected override async Task OnLLMResponseHandlerAsync(List<ChatMessage>? chatResponseList, string errorMessage,
         AIChatContextDto? context = null)
     {
         RaiseEvent(new ReceiveMessageLogEvent { ReceiveMessage = true });

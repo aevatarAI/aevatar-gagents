@@ -85,7 +85,7 @@ Console.WriteLine("Assistant > Press enter with no prompt to exit.");
 var appShutdownCancellationTokenSource = new CancellationTokenSource();
 var cancellationToken = appShutdownCancellationTokenSource.Token;
 
-await chatAgent.SyncChatAsync("who is james");
+await chatAgent.SendChatMessageAsync("who is james");
 
 while (!cancellationToken.IsCancellationRequested)
 {

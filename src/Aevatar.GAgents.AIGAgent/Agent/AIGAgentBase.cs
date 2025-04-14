@@ -186,6 +186,7 @@ public abstract partial class
         [Id(4)] public long CreateTime { get; set; }
     }
 
+    [Obsolete("this function is not good for production")]
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
         AIChatContextDto? context = null)
