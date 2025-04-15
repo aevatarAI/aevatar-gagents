@@ -25,13 +25,13 @@ public class WorkflowCoordinatorState : StateBase
 
     public bool CheckWorkUnitCanProgress(string workUnitGrainId)
     {
-        var workUnitInfo = CurrentWorkUnitInfos.FirstOrDefault(f => f.GrainId == workUnitGrainId);
-        if (workUnitInfo == null)
+        var workUnitInfo = CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitGrainId);
+        if (workUnitInfo.Count == 0)
         {
             return false;
         }
 
-        if (workUnitInfo.UnitStatusEnum != WorkerUnitStatusEnum.Pending)
+        if (workUnitInfo.Exists(e => e.UnitStatusEnum != WorkerUnitStatusEnum.Pending))
         {
             return false;
         }
@@ -47,8 +47,18 @@ public class WorkflowCoordinatorState : StateBase
 
     public List<string> GetTopUpStreamGrainIds()
     {
-        var downStreamGrainIds = CurrentWorkUnitInfos.Where(w => !w.NextGrainId.IsNullOrEmpty()).Select(s => s.NextGrainId);
+        var downStreamGrainIds =
+            CurrentWorkUnitInfos.Where(w => !w.NextGrainId.IsNullOrEmpty()).Select(s => s.NextGrainId);
         return CurrentWorkUnitInfos.Where(w => downStreamGrainIds.Contains(w.GrainId) == false).Select(s => s.GrainId)
+            .ToList();
+    }
+
+    public List<string> GetDownStreamGrainIds(string currentGrainId)
+    {
+        var downStream = CurrentWorkUnitInfos.FindAll(f => f.GrainId == currentGrainId);
+
+        return (from item in downStream where item.NextGrainId.IsNullOrEmpty() == false select item.NextGrainId)
+            .Distinct()
             .ToList();
     }
 
