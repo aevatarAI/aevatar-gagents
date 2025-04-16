@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.AI.Exceptions;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
@@ -13,6 +15,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
+using Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -79,7 +82,7 @@ public abstract partial class
         {
             events.Add(addLlmEventLog);
         }
-        
+
         RaiseEvents(events);
         await ConfirmEvents();
 
@@ -204,11 +207,20 @@ public abstract partial class
             return null;
         }
 
-        var invokeResponse = State.StreamingModeEnabled
-            ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-                cancellationToken, context)
-            : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-                cancellationToken);
+        InvokePromptResponse? invokeResponse = null;
+        try
+        {
+            invokeResponse = State.StreamingModeEnabled
+                ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                    cancellationToken, context)
+                : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                    cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            ConvertAndRethrowException(ex);
+        }
+
         if (invokeResponse == null)
         {
             return null;
@@ -411,5 +423,41 @@ public abstract partial class
         }
 
         return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+    }
+
+    private void ConvertAndRethrowException(Exception ex)
+    {
+        switch (ex)
+        {
+            case ArgumentNullException argumentNullException:
+                Logger.LogError(
+                    $"[AIGAgentBase][ConvertAndRethrowException] ArgumentNullException:{argumentNullException.ToString()}");
+                throw new AIArgumentNullException(argumentNullException.Message, ex);
+            case ArgumentException argumentException:
+                Logger.LogError(
+                    $"[AIGAgentBase][ConvertAndRethrowException] ArgumentException:{argumentException.ToString()}");
+                throw new AIArgumentException(argumentException.Message, ex);
+            case HttpOperationException httpOperationException:
+                if (httpOperationException.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    throw new AIRequestLimitException(httpOperationException.Message, ex);
+                }
+
+                throw new AIHttpOperationException(httpOperationException.StatusCode,
+                    httpOperationException.ResponseContent, httpOperationException.Message, ex);
+            case RequestFailedException requestFailedException:
+                if (requestFailedException.Status == (int)HttpStatusCode.TooManyRequests)
+                {
+                    throw new AIRequestLimitException(requestFailedException.Message, ex);
+                }
+
+                throw new AIHttpOperationException(
+                    requestFailedException.Status is HttpStatusCode
+                        ? (HttpStatusCode)requestFailedException.Status
+                        : (HttpStatusCode)0,
+                    null, requestFailedException.Message, ex);
+            default:
+                throw new AIException(ex.Message, ex);
+        }
     }
 }
