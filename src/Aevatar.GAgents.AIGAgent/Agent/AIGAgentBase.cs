@@ -194,6 +194,7 @@ public abstract partial class
     {
         if (_brain == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] _brain==null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
         var invokeResponse = State.StreamingModeEnabled?
@@ -201,6 +202,7 @@ public abstract partial class
             await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,cancellationToken);
         if (invokeResponse == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] invokeResponse == null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
 
@@ -230,8 +232,6 @@ public abstract partial class
             cancellationToken = cts.Token;
         }
 
-        
-        
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
@@ -241,6 +241,7 @@ public abstract partial class
         var chunkNumber = 0;
         try
         {
+            Logger.LogDebug($"[InvokePromptStreamingAsync] start {context!.ChatId}-{context!.RequestId}");
             var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge, promptSettings,
                 cancellationToken: cancellationToken);
             
@@ -248,6 +249,7 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
+                    Logger.LogDebug($"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
@@ -270,6 +272,7 @@ public abstract partial class
                     {
                         chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
                     }
+                    Logger.LogDebug($"[InvokePromptStreamingAsync] pull message end: {context!.ChatId}-{context!.RequestId}");
                 }
             }
             await PublishAsync(new AIStreamingResponseGEvent
@@ -284,6 +287,8 @@ public abstract partial class
 
             });
             completeContent.Append(stringBuilder.ToString());
+            
+            Logger.LogDebug($"[InvokePromptStreamingAsync] end {context!.ChatId}-{context!.RequestId}");
         }
         catch (Exception ex)
         {
@@ -301,6 +306,8 @@ public abstract partial class
                     SessionId = context.RequestId,
                     Response = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
+                
+                Logger.LogDebug($"[InvokePromptStreamingAsync] ClientResultException {context!.ChatId}-{context!.RequestId}");
             }
             else
             {
@@ -315,6 +322,7 @@ public abstract partial class
                     SessionId = context.RequestId,
                     Response = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
+                Logger.LogDebug($"[InvokePromptStreamingAsync] other exception  {context!.ChatId}-{context!.RequestId}");
             }
         }
         chatMessage.Content = completeContent.ToString();
