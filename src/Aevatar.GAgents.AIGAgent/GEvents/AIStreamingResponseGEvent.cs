@@ -16,6 +16,13 @@ public class AIStreamingResponseGEvent : ResponseToPublisherEventBase
     [Id(1)] public int SerialNumber { get; set; }
     [Id(2)] public AIChatContextDto Context { get; set; } = new();
     [Id(3)] public bool IsLastChunk { get; set; }
+    
+    [Id(4)] public string ChatId { get; set; }
+    
+    [Id(5)] public Guid SessionId { get; set; }
+    
+    [Id(6)] public ResponseType ResponseType { get; set; } = ResponseType.ChatResponse;
+
 }
 
 [Description("Return a error reponse")]
@@ -32,4 +39,10 @@ public class AIStreamingErrorResponseGEvent : ResponseToPublisherEventBase
 
     [Id(3)]
     public string ExceptionMessage { get; set; }
+}
+
+[GenerateSerializer]
+public enum ResponseType
+{
+    ChatResponse = 2,
 }

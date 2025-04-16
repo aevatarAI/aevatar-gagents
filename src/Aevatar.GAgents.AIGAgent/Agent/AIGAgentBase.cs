@@ -257,7 +257,9 @@ public abstract partial class
                         {
                             Context = context,
                             SerialNumber = chunkNumber++,
-                            ResponseContent = chunk
+                            ResponseContent = chunk,
+                            ChatId = context.ChatId,
+                            SessionId = context.RequestId,
                         });
                         completeContent.Append(chunk);
                         stringBuilder.Remove(0, bufferingSize);
@@ -274,7 +276,9 @@ public abstract partial class
                 Context = context,
                 SerialNumber = chunkNumber,
                 ResponseContent = stringBuilder.ToString(),
-                IsLastChunk = true
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId
             });
             completeContent.Append(stringBuilder.ToString());
         }
