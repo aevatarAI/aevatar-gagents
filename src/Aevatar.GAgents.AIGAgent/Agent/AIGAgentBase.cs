@@ -298,8 +298,8 @@ public abstract partial class
                         chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
                     }
 
-                    Logger.LogDebug(
-                        $"[InvokePromptStreamingAsync] pull message end: {context!.ChatId}-{context!.RequestId}");
+                    // Logger.LogDebug(
+                    //     $"[InvokePromptStreamingAsync] pull message end: {context!.ChatId}-{context!.RequestId}");
                 }
             }
 
