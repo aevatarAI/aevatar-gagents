@@ -244,14 +244,9 @@ public abstract partial class
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
             cancellationToken = cts.Token;
         }
-
-<<<<<<< HEAD
-=======
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
-            promptSettings,
-            cancellationToken: cancellationToken);
-
->>>>>>> 886afb342117d55720287bd31abcff9c57741ed3
+        
+      
+        
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
@@ -259,13 +254,7 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-<<<<<<< HEAD
-        try
-=======
-
-        await foreach (var messageContent in responseStreaming)
->>>>>>> 886afb342117d55720287bd31abcff9c57741ed3
-        {
+        try {
             Logger.LogDebug($"[InvokePromptStreamingAsync] start {context!.ChatId}-{context!.RequestId}");
             var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
                 promptSettings,
@@ -303,16 +292,6 @@ public abstract partial class
                     Logger.LogDebug(
                         $"[InvokePromptStreamingAsync] pull message end: {context!.ChatId}-{context!.RequestId}");
                 }
-<<<<<<< HEAD
-                else
-=======
-
-                if (streamingChatMessageContent.Role.HasValue)
->>>>>>> 886afb342117d55720287bd31abcff9c57741ed3
-                {
-                    Logger.LogDebug(
-                        $"[InvokePromptStreamingAsync] pull message other type:{messageContent.GetType()}  {context!.ChatId}-{context!.RequestId}");
-                }
             }
 
             await PublishAsync(new AIStreamingResponseGEvent
@@ -329,13 +308,8 @@ public abstract partial class
 
             Logger.LogDebug($"[InvokePromptStreamingAsync] end {context!.ChatId}-{context!.RequestId}");
         }
-<<<<<<< HEAD
-        catch (Exception ex)
-=======
+        catch (Exception ex){
 
-        await PublishAsync(new AIStreamingResponseGEvent
->>>>>>> 886afb342117d55720287bd31abcff9c57741ed3
-        {
             // Check for specific  error and advise user
             if (ex is ClientResultException clientEx)
             {
