@@ -284,7 +284,7 @@ public abstract partial class
                         await PublishAsync(new AIOldStreamingResponseGEvent
                         {
                             Context = context,
-                            SerialNumber = chunkNumber++,
+                            SerialNumber = chunkNumber,
                             ResponseContent = chunk,
                             ChatId = context.ChatId,
                             SessionId = context.RequestId,
