@@ -280,6 +280,15 @@ public abstract partial class
                             SessionId = context.RequestId,
                             Response = chunk,
                         });
+                        await PublishAsync(new AIOldStreamingResponseGEvent
+                        {
+                            Context = context,
+                            SerialNumber = chunkNumber++,
+                            ResponseContent = chunk,
+                            ChatId = context.ChatId,
+                            SessionId = context.RequestId,
+                            Response = chunk,
+                        });
                         completeContent.Append(chunk);
                         stringBuilder.Remove(0, bufferingSize);
                     }
@@ -295,6 +304,16 @@ public abstract partial class
             }
 
             await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = chunkNumber,
+                ResponseContent = stringBuilder.ToString(),
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId,
+                Response = stringBuilder.ToString(),
+            });
+            await PublishAsync(new AIOldStreamingResponseGEvent
             {
                 Context = context,
                 SerialNumber = chunkNumber,
@@ -327,6 +346,14 @@ public abstract partial class
                     Response =
                         "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
+                
+                await PublishAsync(new AIStreamingErrorResponseGEvent
+                {
+                    Context = context,
+                    GrainId = this.GetGrainId(),
+                    HandleExceptionType = typeof(ClientResultException),
+                    ExceptionMessage = clientEx.Message
+                });
 
                 Logger.LogDebug(
                     $"[InvokePromptStreamingAsync] ClientResultException {context!.ChatId}-{context!.RequestId}");
@@ -347,6 +374,15 @@ public abstract partial class
                     Response =
                         "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
+                
+                await PublishAsync(new AIStreamingErrorResponseGEvent
+                {
+                    Context = context,
+                    GrainId = this.GetGrainId(),
+                    HandleExceptionType = typeof(ClientResultException),
+                    ExceptionMessage = ex.Message
+                });
+                
                 Logger.LogDebug(
                     $"[InvokePromptStreamingAsync] other exception  {context!.ChatId}-{context!.RequestId}");
             }
