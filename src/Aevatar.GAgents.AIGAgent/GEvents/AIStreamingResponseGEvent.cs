@@ -22,6 +22,9 @@ public class AIStreamingResponseGEvent : ResponseToPublisherEventBase
     [Id(5)] public Guid SessionId { get; set; }
     
     [Id(6)] public ResponseType ResponseType { get; set; } = ResponseType.ChatResponse;
+    
+    [Id(7)] public string Response { get; set; }
+
 
 }
 

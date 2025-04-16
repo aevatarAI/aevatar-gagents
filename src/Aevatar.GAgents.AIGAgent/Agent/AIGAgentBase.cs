@@ -260,6 +260,7 @@ public abstract partial class
                             ResponseContent = chunk,
                             ChatId = context.ChatId,
                             SessionId = context.RequestId,
+                            Response = chunk,
                         });
                         completeContent.Append(chunk);
                         stringBuilder.Remove(0, bufferingSize);
@@ -278,7 +279,9 @@ public abstract partial class
                 ResponseContent = stringBuilder.ToString(),
                 IsLastChunk = true,
                 ChatId = context.ChatId,
-                SessionId = context.RequestId
+                SessionId = context.RequestId,
+                Response = stringBuilder.ToString(),
+
             });
             completeContent.Append(stringBuilder.ToString());
         }
@@ -295,7 +298,8 @@ public abstract partial class
                     ResponseContent = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
                     IsLastChunk = true,
                     ChatId = context.ChatId,
-                    SessionId = context.RequestId
+                    SessionId = context.RequestId,
+                    Response = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
             }
             else
@@ -304,11 +308,12 @@ public abstract partial class
                 await PublishAsync(new AIStreamingResponseGEvent
                 {
                     Context = context,
-                    SerialNumber = chunkNumber,
+                    SerialNumber = -2,
                     ResponseContent = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
                     IsLastChunk = true,
                     ChatId = context.ChatId,
-                    SessionId = context.RequestId
+                    SessionId = context.RequestId,
+                    Response = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
             }
         }
