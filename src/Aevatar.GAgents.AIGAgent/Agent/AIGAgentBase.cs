@@ -1,4 +1,5 @@
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -75,11 +76,11 @@ public abstract partial class
             addPromptTemplateEventLog!,
             streamingConfigEventLog!
         };
+
         if (addLlmEventLog != null)
         {
             events.Add(addLlmEventLog);
         }
-        
         RaiseEvents(events);
         await ConfirmEvents();
 
@@ -201,6 +202,7 @@ public abstract partial class
     {
         if (_brain == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] _brain==null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
 
@@ -211,6 +213,7 @@ public abstract partial class
                 cancellationToken);
         if (invokeResponse == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] invokeResponse == null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
 
@@ -241,11 +244,9 @@ public abstract partial class
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
             cancellationToken = cts.Token;
         }
-
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
-            promptSettings,
-            cancellationToken: cancellationToken);
-
+        
+      
+        
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
@@ -253,41 +254,103 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
+        try {
+            Logger.LogDebug($"[InvokePromptStreamingAsync] start {context!.ChatId}-{context!.RequestId}");
+            var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
+                promptSettings,
+                cancellationToken: cancellationToken);
 
-        await foreach (var messageContent in responseStreaming)
-        {
-            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            await foreach (var messageContent in responseStreaming)
             {
-                streamingMessageContentList.Add(streamingChatMessageContent);
-                stringBuilder.Append(streamingChatMessageContent.Content);
-                if (stringBuilder.Length >= bufferingSize)
+                if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                    var chunk = stringBuilder.ToString(0, bufferingSize);
-                    await PublishAsync(new AIStreamingResponseGEvent
+                    Logger.LogDebug(
+                        $"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
+                    streamingMessageContentList.Add(streamingChatMessageContent);
+                    stringBuilder.Append(streamingChatMessageContent.Content);
+                    if (stringBuilder.Length >= bufferingSize)
                     {
-                        Context = context,
-                        SerialNumber = chunkNumber++,
-                        ResponseContent = chunk
-                    });
-                    completeContent.Append(chunk);
-                    stringBuilder.Remove(0, bufferingSize);
-                }
+                        var chunk = stringBuilder.ToString(0, bufferingSize);
+                        await PublishAsync(new AIStreamingResponseGEvent
+                        {
+                            Context = context,
+                            SerialNumber = chunkNumber++,
+                            ResponseContent = chunk,
+                            ChatId = context.ChatId,
+                            SessionId = context.RequestId,
+                            Response = chunk,
+                        });
+                        completeContent.Append(chunk);
+                        stringBuilder.Remove(0, bufferingSize);
+                    }
 
-                if (streamingChatMessageContent.Role.HasValue)
-                {
-                    chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    if (streamingChatMessageContent.Role.HasValue)
+                    {
+                        chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    }
+
+                    Logger.LogDebug(
+                        $"[InvokePromptStreamingAsync] pull message end: {context!.ChatId}-{context!.RequestId}");
                 }
             }
-        }
 
-        await PublishAsync(new AIStreamingResponseGEvent
-        {
-            Context = context,
-            SerialNumber = chunkNumber,
-            ResponseContent = stringBuilder.ToString(),
-            IsLastChunk = true
-        });
-        completeContent.Append(stringBuilder.ToString());
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = chunkNumber,
+                ResponseContent = stringBuilder.ToString(),
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId,
+                Response = stringBuilder.ToString(),
+            });
+            completeContent.Append(stringBuilder.ToString());
+
+            Logger.LogDebug($"[InvokePromptStreamingAsync] end {context!.ChatId}-{context!.RequestId}");
+        }
+        catch (Exception ex){
+
+            // Check for specific  error and advise user
+            if (ex is ClientResultException clientEx)
+            {
+                Logger.LogError(ex, "An unexpected ClientResultException occurred. Details:{message}",
+                    clientEx.ToString());
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId,
+                    Response =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+                });
+
+                Logger.LogDebug(
+                    $"[InvokePromptStreamingAsync] ClientResultException {context!.ChatId}-{context!.RequestId}");
+            }
+            else
+            {
+                Logger.LogError(ex, "Ai stream response : An unexpected Exception occurred. Details:{message}",
+                    ex.ToString());
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId,
+                    Response =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+                });
+                Logger.LogDebug(
+                    $"[InvokePromptStreamingAsync] other exception  {context!.ChatId}-{context!.RequestId}");
+            }
+        }
 
         chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
