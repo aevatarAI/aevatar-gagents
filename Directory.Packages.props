@@ -10,7 +10,7 @@
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarCoreVersion)" />
-    <PackageVersion Include="Aevatar.SignalR" Version="1.5.3" />
+    <PackageVersion Include="Aevatar.SignalR" Version="1.5.5-parent.16" />
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
