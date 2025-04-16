@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 
+[GAgent]
 public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, WorkflowCoordinatorLogEvent, EventBase,
     WorkflowCoordinatorConfigDto>, IWorkflowCoordinatorGAgent
 {
@@ -51,14 +52,18 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         RaiseEvent(new FinishedWorkUnitLogEvent() { Term = @event.Term, WorkUnitGrainId = workUnitInfo.GrainId });
         await ConfirmEvents();
 
+        var downStreamList = State.GetDownStreamGrainIds(workUnitInfo.GrainId);
         // indicate: no next work unit
-        if (workUnitInfo.NextGrainId.IsNullOrEmpty())
+        if (downStreamList.Count == 0)
         {
             await TryFinishWorkflowAsync();
             return;
         }
 
-        await TryActiveWorkUnitAsync(workUnitInfo.NextGrainId);
+        foreach (var grainId in downStreamList)
+        {
+            await TryActiveWorkUnitAsync(grainId);
+        }
 
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ChatResponseEvent end");
     }
@@ -131,9 +136,14 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 break;
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
-                var workUnitInfo =
-                    State.CurrentWorkUnitInfos.First(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
-                workUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
+                var workUnitInfoList =
+                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
+                for (int i = 0; i < workUnitInfoList.Count; i++)
+                {
+                    var workUnit = workUnitInfoList[i];
+                    workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
+                }
+
                 State.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
                 break;
 
@@ -142,7 +152,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 State.TermToWorkUnitGrainId = new Dictionary<int, string>();
                 if (State.BackupWorkUnitInfos.Count > 0)
                 {
-                    State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s=>s).ToList();
+                    State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s => s).ToList();
                     State.BackupWorkUnitInfos.Clear();
                 }
                 else
@@ -157,9 +167,14 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 break;
 
             case StartWorkUnitLogEvent workUnitLogEvent:
-                var startWorkUnitInfo =
-                    State.CurrentWorkUnitInfos.First(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
-                startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
+                var startWorkUnitInfoList =
+                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
+                for (var i = 0; i < startWorkUnitInfoList.Count; i++)
+                {
+                    var startWorkUnitInfo = startWorkUnitInfoList[i];
+                    startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;                    
+                }
+
                 State.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
                 State.Term += 1;
                 break;
