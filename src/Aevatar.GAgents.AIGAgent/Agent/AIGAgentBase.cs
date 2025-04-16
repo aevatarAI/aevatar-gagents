@@ -288,23 +288,27 @@ public abstract partial class
             if (ex is ClientResultException clientEx)
             {
                 Logger.LogError(ex,"An unexpected ClientResultException occurred. Details:{message}",clientEx.ToString());
-                await PublishAsync(new AIStreamingErrorResponseGEvent
+                await PublishAsync(new AIStreamingResponseGEvent
                 {
                     Context = context,
-                    GrainId = this.GetGrainId(),
-                    HandleExceptionType = typeof(ClientResultException),
-                    ExceptionMessage = clientEx.Message
+                    SerialNumber = -2,
+                    ResponseContent = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId
                 });
             }
             else
             {
                 Logger.LogError(ex,"Ai stream response : An unexpected Exception occurred. Details:{message}",ex.ToString());
-                await PublishAsync(new AIStreamingErrorResponseGEvent
+                await PublishAsync(new AIStreamingResponseGEvent
                 {
                     Context = context,
-                    GrainId = this.GetGrainId(),
-                    HandleExceptionType = ex.GetType(),
-                    ExceptionMessage = ex.Message
+                    SerialNumber = chunkNumber,
+                    ResponseContent = "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId
                 });
             }
         }
