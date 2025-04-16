@@ -264,13 +264,14 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                    Logger.LogDebug(
-                        $"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
+                   
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
                     {
                         var chunk = stringBuilder.ToString(0, bufferingSize);
+                        Logger.LogDebug(
+                            $"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
                         await PublishAsync(new AIStreamingResponseGEvent
                         {
                             Context = context,
