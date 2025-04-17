@@ -28,9 +28,8 @@ public abstract partial class
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
-    protected async Task ChatWithStreamAsync(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
-        AIChatContextDto? context = null)
+    protected async Task<bool> PromptWithStreamAsync(string prompt, List<ChatMessage>? history = null,
+        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null)
     {
         var request = new AIStreamChatRequest()
         {
@@ -45,20 +44,23 @@ public abstract partial class
             Context = context,
         };
 
-        await CreateStreamLongRunTaskAsync<AIStreamChatRequest, AIStreamChatResponseEvent>(request);
+        return await CreateStreamLongRunTaskAsync<AIStreamChatRequest, AIStreamChatResponseEvent>(request);
     }
 
-    protected async Task CreateStreamLongRunTaskAsync<TRequest, TResponse>(TRequest request)
+    protected async Task<bool> CreateStreamLongRunTaskAsync<TRequest, TResponse>(TRequest request)
     {
         try
         {
             var syncWorker = GrainFactory.GetGrain<IGrainAsyncWorker<TRequest, TResponse>>(Guid.NewGuid());
             await syncWorker.SetLongRunTaskAsync(this.GetGrainId());
-            if (await syncWorker.Start(request) == false)
+            var result = await syncWorker.Start(request); 
+            if (result == false)
             {
                 Logger.LogError(
                     $"CreateStreamLongRunTaskAsync run task fail, request info:{JsonConvert.SerializeObject(request)}");
             }
+
+            return result;
         }
         catch (Exception ex)
         {
