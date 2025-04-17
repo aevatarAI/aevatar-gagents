@@ -11,6 +11,8 @@ builder.Services.AddCors();
 builder.Services.AddTransient<IGAgentFactory, GAgentFactory>();
 builder.Services.AddHttpClient();
 
+builder.Services.AddAntiforgery(options => options.SuppressXFrameOptionsHeader = true);
+
 builder.Services.AddDirectoryBrowser();
 
 builder.Host.UseOrleansClient(client =>
@@ -49,7 +51,7 @@ app.MapPost("/api/speech-to-text", async (IFormFile file) =>
     var text = await speechGAgent.SpeechToTextAsync(audioData);
 
     return Results.Ok(new { text });
-});
+}).DisableAntiforgery();
 
 app.MapPost("/api/text-to-speech", async ([FromBody] string text) =>
 {
@@ -57,7 +59,7 @@ app.MapPost("/api/text-to-speech", async ([FromBody] string text) =>
     var audioData = await speechGAgent.TextToSpeechAsync(text);
 
     return Results.File(audioData, "audio/wav");
-});
+}).DisableAntiforgery();
 
 app.MapFallbackToFile("index.html");
 
