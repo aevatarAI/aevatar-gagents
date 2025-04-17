@@ -4,7 +4,7 @@
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Aevatar.GAgents..SocialAgent</RootNamespace>
+        <RootNamespace>Aevatar.GAgents.SocialAgent</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
