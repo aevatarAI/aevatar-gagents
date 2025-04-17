@@ -11,8 +11,10 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
+using HandlebarsDotNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using Newtonsoft.Json;
 using Orleans;
 using Orleans.SyncWork;
 
@@ -20,47 +22,72 @@ namespace Aevatar.GAgents.AIGAgent.Agent;
 
 public abstract partial class
     AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent, IStreamHandler<AIStreamingResponseGEvent>
+    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent, IGrainAsyncHandler<AIStreamChatResponseEvent>
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
-    protected async Task ChatWithStreamAsync(string prompt,
-        Func<AIStreamingResponseGEvent, Task> streamHandler, List<ChatMessage>? history = null,
+    protected async Task ChatWithStreamAsync(string prompt, List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
         AIChatContextDto? context = null)
     {
-        var request = new StreamRequest();
-        await CreateStreamLongRunTaskAsync<StreamRequest, AIStreamingResponseGEvent>(request);
+        var request = new AIStreamChatRequest()
+        {
+            LlmConfig = State.LLM,
+            Instructions = State.PromptTemplate,
+            VectorId = this.GetGrainId().ToString().Replace("/", ""),
+            StreamingConfig = State.StreamingConfig,
+            Content = prompt,
+            History = history,
+            IfUseKnowledge = State.IfUpsertKnowledge,
+            PromptSettings = promptSettings,
+            Context = context,
+        };
+
+        await CreateStreamLongRunTaskAsync<AIStreamChatRequest, AIStreamChatResponseEvent>(request);
     }
 
     protected async Task CreateStreamLongRunTaskAsync<TRequest, TResponse>(TRequest request)
     {
         try
         {
-            var syncWorker = GrainFactory.GetGrain<IStreamAsyncWorker<TRequest, TResponse>>(Guid.NewGuid());
+            var syncWorker = GrainFactory.GetGrain<IGrainAsyncWorker<TRequest, TResponse>>(Guid.NewGuid());
             await syncWorker.SetLongRunTaskAsync(this.GetGrainId());
-            await syncWorker.StartWorkAndPollUntilResult(request);
+            if (await syncWorker.Start(request) == false)
+            {
+                Logger.LogError(
+                    $"CreateStreamLongRunTaskAsync run task fail, request info:{JsonConvert.SerializeObject(request)}");
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogError($"Error creating long run task: {ex.Message}");
+            Logger.LogError($"CreateStreamLongRunTaskAsync creating long run task error: {ex.Message}");
             throw;
         }
     }
 
-    public async Task HandleStreamAsync(AIStreamingResponseGEvent arg)
+    public async Task HandleStreamAsync(AIStreamChatResponseEvent arg)
     {
-        if (arg.IfAggregationMsg)
+        if (arg.TokenUsageStatistics != null)
         {
-            // todo:
+            var tokenUsage = new TokenUsageStateLogEvent()
+            {
+                GrainId = this.GetPrimaryKey(),
+                InputToken = arg.TokenUsageStatistics.InputToken,
+                OutputToken = arg.TokenUsageStatistics.OutputToken,
+                TotalUsageToken = arg.TokenUsageStatistics.TotalUsageToken,
+                CreateTime = arg.TokenUsageStatistics.CreateTime
+            };
+
+            RaiseEvent(tokenUsage);
         }
 
-        await AIHandlerStreamAsync(arg);
+        await AIChatHandleStreamAsync(arg.Context, arg.ErrorMessage, arg.ChatContent);
     }
 
-    public virtual Task AIHandlerStreamAsync(AIStreamingResponseGEvent arg)
+    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, string? errorMessage,
+        AIStreamChatContent? content)
     {
         return Task.CompletedTask;
     }

@@ -79,7 +79,7 @@ public abstract partial class
         {
             events.Add(addLlmEventLog);
         }
-        
+
         RaiseEvents(events);
         await ConfirmEvents();
 
@@ -262,7 +262,9 @@ public abstract partial class
                 stringBuilder.Append(streamingChatMessageContent.Content);
                 if (stringBuilder.Length >= bufferingSize)
                 {
-                    var chunk = stringBuilder.ToString(0, bufferingSize);
+                    var chunk = bufferingSize == 0
+                        ? stringBuilder.ToString()
+                        : stringBuilder.ToString(0, bufferingSize);
                     await PublishAsync(new AIStreamingResponseGEvent
                     {
                         Context = context,
@@ -270,7 +272,14 @@ public abstract partial class
                         ResponseContent = chunk
                     });
                     completeContent.Append(chunk);
-                    stringBuilder.Remove(0, bufferingSize);
+                    if (bufferingSize == 0)
+                    {
+                        stringBuilder.Clear();
+                    }
+                    else
+                    {
+                        stringBuilder.Remove(0, bufferingSize);
+                    }
                 }
 
                 if (streamingChatMessageContent.Role.HasValue)

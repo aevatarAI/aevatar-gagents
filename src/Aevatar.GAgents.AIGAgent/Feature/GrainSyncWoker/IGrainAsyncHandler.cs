@@ -3,7 +3,7 @@ using Orleans;
 
 namespace Aevatar.AI.Feature.StreamSyncWoker;
 
-public interface IStreamHandler<T> : IGrainWithGuidKey
+public interface IGrainAsyncHandler<T> : IGrainWithGuidKey
 {
     Task HandleStreamAsync(T arg);
 }

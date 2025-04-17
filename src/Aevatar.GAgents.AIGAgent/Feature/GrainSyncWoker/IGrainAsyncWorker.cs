@@ -8,7 +8,7 @@ using Orleans.SyncWork;
 
 namespace Aevatar.AI.Feature.StreamSyncWoker;
 
-public interface IStreamAsyncWorker<TaskRequest, TResponse> : ISyncWorker<TaskRequest, TResponse>, IGrainWithGuidKey
+public interface IGrainAsyncWorker<TRequest, TResponse> : ISyncWorker<TRequest, TResponse>, IGrainWithGuidKey
 {
     Task SetLongRunTaskAsync(GrainId grainId);
 }

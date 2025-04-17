@@ -8,14 +8,13 @@ using Orleans.SyncWork.Enums;
 
 namespace Aevatar.AI.Feature.StreamSyncWoker;
 
-public abstract class StreamAsyncWorker<TRequest, TResponse> : SyncWorker<TRequest, TResponse>,
-    IStreamAsyncWorker<TRequest, TResponse>
+public abstract class GrainAsyncWorker<TRequest, TResponse> : SyncWorker<TRequest, TResponse>,
+    IGrainAsyncWorker<TRequest, TResponse>
 {
-    private IStreamHandler<TResponse> _streamHandler;
-    private GrainId _grainId;
-    private readonly ILogger<StreamAsyncWorker<TRequest, TResponse>> _logger;
+    private IGrainAsyncHandler<TResponse> _grainAsyncHandler;
+    private readonly ILogger<GrainAsyncWorker<TRequest, TResponse>> _logger;
 
-    public StreamAsyncWorker(ILogger<StreamAsyncWorker<TRequest, TResponse>> logger,
+    public GrainAsyncWorker(ILogger<GrainAsyncWorker<TRequest, TResponse>> logger,
         LimitedConcurrencyLevelTaskScheduler limitedConcurrencyScheduler) : base(logger, limitedConcurrencyScheduler)
     {
         _logger = logger;
@@ -27,8 +26,8 @@ public abstract class StreamAsyncWorker<TRequest, TResponse> : SyncWorker<TReque
         _logger.LogDebug($"[StreamAsyncWorker] Performing long run task for request of type {typeof(TRequest).FullName}: {request}");
         try
         {
-            var response = await PerformLongRunTask(_streamHandler, request);
-            await _streamHandler.HandleStreamAsync(response);
+            var response = await PerformLongRunTask(_grainAsyncHandler, request);
+            await _grainAsyncHandler.HandleStreamAsync(response);
             return response;
         }
         catch (Exception ex)
@@ -38,12 +37,11 @@ public abstract class StreamAsyncWorker<TRequest, TResponse> : SyncWorker<TReque
         }
     }
 
-    protected abstract Task<TResponse> PerformLongRunTask(IStreamHandler<TResponse> streamHandler, TRequest request);
+    protected abstract Task<TResponse> PerformLongRunTask(IGrainAsyncHandler<TResponse> grainAsyncHandler, TRequest request);
 
     public Task SetLongRunTaskAsync(GrainId grainId)
     {
-        _grainId = grainId;
-        _streamHandler = GrainFactory.GetGrain<IStreamHandler<TResponse>>(grainId);
+        _grainAsyncHandler = GrainFactory.GetGrain<IGrainAsyncHandler<TResponse>>(grainId);
         return Task.CompletedTask;
     }
 }
