@@ -21,3 +21,5 @@ x86/
 bld/
 [Bb]in/
 .idea/
+
+appsettings.secret.json

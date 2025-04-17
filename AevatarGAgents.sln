@@ -33,11 +33,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{9A5A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AIGAgent", "AIGAgent", "{D5F67508-C302-47D6-9DE9-32C2DC83917B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Client", "simples\AIGAgent\SimpleAIGAgent.Client\SimpleAIGAgent.Client.csproj", "{C5E7873B-8683-4AC2-9113-BDA48FDC10DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Client", "samples\AIGAgent\SimpleAIGAgent.Client\SimpleAIGAgent.Client.csproj", "{C5E7873B-8683-4AC2-9113-BDA48FDC10DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Grains", "simples\AIGAgent\SimpleAIGAgent.Grains\SimpleAIGAgent.Grains.csproj", "{5C1D6FFC-DDFC-48A7-8DB0-B02EBD5FF243}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Grains", "samples\AIGAgent\SimpleAIGAgent.Grains\SimpleAIGAgent.Grains.csproj", "{5C1D6FFC-DDFC-48A7-8DB0-B02EBD5FF243}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Silo", "simples\AIGAgent\SimpleAIGAgent.Silo\SimpleAIGAgent.Silo.csproj", "{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleAIGAgent.Silo", "samples\AIGAgent\SimpleAIGAgent.Silo\SimpleAIGAgent.Silo.csproj", "{F6A070BD-EE04-45E8-B3E7-D68B30503FE1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent", "src\Aevatar.GAgents.ChatAgent\Aevatar.GAgents.ChatAgent.csproj", "{FA1D05BC-DD92-4BA5-BACC-A64DB471C20B}"
 EndProject
@@ -51,13 +51,23 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GroupChat", "GroupChat", "{A637340E-0273-4C0C-A6BF-8B3B5108DFEC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Silo", "simples\GroupChat\GroupChat.Silo\GroupChat.Silo.csproj", "{FCAB55BA-B3D5-4C44-887E-1DD0ABF29100}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Silo", "samples\GroupChat\GroupChat.Silo\GroupChat.Silo.csproj", "{FCAB55BA-B3D5-4C44-887E-1DD0ABF29100}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Client", "simples\GroupChat\GroupChat.Client\GroupChat.Client.csproj", "{FDEF6C2A-CB07-4250-9D4D-9EF9964E2ED9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Client", "samples\GroupChat\GroupChat.Client\GroupChat.Client.csproj", "{FDEF6C2A-CB07-4250-9D4D-9EF9964E2ED9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Grains", "simples\GroupChat\GroupChat.Grains\GroupChat.Grains.csproj", "{678CE8D7-31B8-416D-A527-EF1B8DE535D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroupChat.Grains", "samples\GroupChat\GroupChat.Grains\GroupChat.Grains.csproj", "{678CE8D7-31B8-416D-A527-EF1B8DE535D3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat.Test", "test\Aevatar.GAgents.GroupChat.Test\Aevatar.GAgents.GroupChat.Test.csproj", "{CB7CA80D-3596-49F8-BB98-4F704A688E78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Speech", "src\Aevatar.GAgents.Speech\Aevatar.GAgents.Speech.csproj", "{A402701B-3CF1-4D87-95EA-D6620C8B8FCB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SpeechGAgent", "SpeechGAgent", "{35306734-19DE-4E97-8D2E-DB85FDE6B0C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeechGAgent.Grains", "samples\SpeechGAgent\SpeechGAgent.Grains\SpeechGAgent.Grains.csproj", "{247D06C8-BDBA-48F1-8098-FED5D4ED7187}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeechGAgent.Host", "samples\SpeechGAgent\SpeechGAgent.Host\SpeechGAgent.Host.csproj", "{9951E864-768B-4873-8C43-80D819609031}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeechGAgent.Silo", "samples\SpeechGAgent\SpeechGAgent.Silo\SpeechGAgent.Silo.csproj", "{CD5111C0-4727-4C59-9757-68D098757C2D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -157,6 +167,22 @@ Global
 		{CB7CA80D-3596-49F8-BB98-4F704A688E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB7CA80D-3596-49F8-BB98-4F704A688E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB7CA80D-3596-49F8-BB98-4F704A688E78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A402701B-3CF1-4D87-95EA-D6620C8B8FCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A402701B-3CF1-4D87-95EA-D6620C8B8FCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A402701B-3CF1-4D87-95EA-D6620C8B8FCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A402701B-3CF1-4D87-95EA-D6620C8B8FCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{247D06C8-BDBA-48F1-8098-FED5D4ED7187}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{247D06C8-BDBA-48F1-8098-FED5D4ED7187}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{247D06C8-BDBA-48F1-8098-FED5D4ED7187}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{247D06C8-BDBA-48F1-8098-FED5D4ED7187}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9951E864-768B-4873-8C43-80D819609031}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9951E864-768B-4873-8C43-80D819609031}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9951E864-768B-4873-8C43-80D819609031}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9951E864-768B-4873-8C43-80D819609031}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD5111C0-4727-4C59-9757-68D098757C2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD5111C0-4727-4C59-9757-68D098757C2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD5111C0-4727-4C59-9757-68D098757C2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD5111C0-4727-4C59-9757-68D098757C2D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -187,6 +213,11 @@ Global
 		{678CE8D7-31B8-416D-A527-EF1B8DE535D3} = {A637340E-0273-4C0C-A6BF-8B3B5108DFEC}
 		{CB7CA80D-3596-49F8-BB98-4F704A688E78} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{A637340E-0273-4C0C-A6BF-8B3B5108DFEC} = {9A5AF866-5118-4DA9-867A-4C22060B7347}
+		{A402701B-3CF1-4D87-95EA-D6620C8B8FCB} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{35306734-19DE-4E97-8D2E-DB85FDE6B0C8} = {9A5AF866-5118-4DA9-867A-4C22060B7347}
+		{247D06C8-BDBA-48F1-8098-FED5D4ED7187} = {35306734-19DE-4E97-8D2E-DB85FDE6B0C8}
+		{9951E864-768B-4873-8C43-80D819609031} = {35306734-19DE-4E97-8D2E-DB85FDE6B0C8}
+		{CD5111C0-4727-4C59-9757-68D098757C2D} = {35306734-19DE-4E97-8D2E-DB85FDE6B0C8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
