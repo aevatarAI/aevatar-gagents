@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
@@ -85,10 +86,10 @@ public abstract partial class
             RaiseEvent(tokenUsage);
         }
 
-        await AIChatHandleStreamAsync(arg.Context, arg.IfRequestLimit, arg.ErrorMessage, arg.ChatContent);
+        await AIChatHandleStreamAsync(arg.Context, arg.ErrorEnum, arg.ErrorMessage, arg.ChatContent);
     }
 
-    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
+    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum , string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;

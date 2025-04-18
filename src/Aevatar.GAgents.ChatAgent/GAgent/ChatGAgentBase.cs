@@ -1,3 +1,4 @@
+using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
@@ -56,7 +57,7 @@ public abstract class
         return result;
     }
 
-    protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit,
+    protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
         string? errorMessage,
         AIStreamChatContent? content)
     {
@@ -71,10 +72,10 @@ public abstract class
             await ConfirmEvents();
         }
 
-        await HandleChatStreamAsync(context, ifRequestLimit, errorMessage, content);
+        await HandleChatStreamAsync(context, errorEnum, errorMessage, content);
     }
 
-    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
+    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum, string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;

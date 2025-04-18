@@ -41,7 +41,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         catch (Exception ex)
         {
             var exception = AIException.ConvertAndRethrowException(ex);
-            result.IfRequestLimit = exception is AIRequestLimitException;
+            result.ErrorEnum = exception.ExceptionEnum;
             result.ErrorMessage = ex.Message;
             Logger.LogError($"[BaseLongStreamWorker][PerformLongRunTask] handle error:{exception.ToString()}");
         }
