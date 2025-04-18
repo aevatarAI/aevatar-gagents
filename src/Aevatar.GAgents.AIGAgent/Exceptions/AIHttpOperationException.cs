@@ -14,4 +14,6 @@ public class AIHttpOperationException : AIException
         State = state;
         ResponseContent = responseContent;
     }
+
+    public override AIExceptionEnum ExceptionEnum => AIExceptionEnum.HttpOperationError;
 }

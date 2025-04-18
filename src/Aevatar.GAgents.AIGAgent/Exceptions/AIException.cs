@@ -5,8 +5,10 @@ using Microsoft.SemanticKernel;
 
 namespace Aevatar.AI.Exceptions;
 
-public class AIException : Exception
+public abstract class AIException : Exception
 {
+    public abstract AIExceptionEnum ExceptionEnum { get; }
+    
     public AIException(string message, Exception ex) : base(message, ex)
     {
     }
@@ -39,7 +41,7 @@ public class AIException : Exception
                         : (HttpStatusCode)0,
                     null, requestFailedException.Message, ex);
             default:
-                return new AIException(ex.Message, ex);
+                return new AIOtherException(ex.Message, ex);
         }
     }
 }

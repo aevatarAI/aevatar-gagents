@@ -1,3 +1,4 @@
+using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
@@ -41,7 +42,8 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         Logger.LogInformation("Chat output: {Result}", result);
     }
 
-    protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
+    protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage,
         AIStreamChatContent? content)
     {
         if (content != null)
@@ -55,7 +57,8 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         }
     }
 
-    protected override void AIGAgentTransitionState(ChatAIGStateBase state, StateLogEventBase<ChatAIStateLogEvent> @event)
+    protected override void AIGAgentTransitionState(ChatAIGStateBase state,
+        StateLogEventBase<ChatAIStateLogEvent> @event)
     {
         switch (@event)
         {
