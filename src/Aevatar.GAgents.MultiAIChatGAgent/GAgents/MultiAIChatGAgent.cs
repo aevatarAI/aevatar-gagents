@@ -8,9 +8,11 @@ using Aevatar.GAgents.MultiAIChatGAgent.Featrues.Dtos;
 using Aevatar.GAgents.MultiAIChatGAgent.GAgents.ProxySEvents;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Orleans.Concurrency;
 
 namespace Aevatar.GAgents.MultiAIChatGAgent.GAgents;
 
+[Reentrant]
 public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfiguration> :
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IMultiAIChatGAgent
     where TState : MultiAIChatGAgentState, new()
@@ -46,7 +48,8 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
                 LLMConfig = llmConfigDto,
                 StreamingModeEnabled = configuration.StreamingModeEnabled,
                 StreamingConfig = configuration.StreamingConfig,
-                RequestRecoveryDelay = configuration.RequestRecoveryDelay
+                RequestRecoveryDelay = configuration.RequestRecoveryDelay,
+                ParentId = this.GetPrimaryKey()
             });
 
             Logger.LogDebug(
@@ -84,16 +87,8 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
             Logger.LogError($"There is no available AI Agent. {this.GetPrimaryKey().ToString()}");
             throw new SystemException("There is no available AI Agent.");
         }
-
-        Func<AIGAgentBase<AIAgentStatusProxyState, AIAgentStatusProxyLogEvent, EventBase, AIAgentStatusProxyConfig>,
-            Task<List<ChatMessage>?>> func = async (aiAgent) =>
-        {
-            var result =
-                await aiAgent.ChatAsync(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
-            return result;
-        };
-
-        var result = await aiAgentStatusProxy.ExecuteAsync(func);
+        
+        var result = await aiAgentStatusProxy.ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
         
         if (result is not { Count: > 0 }) return result;
 
@@ -107,28 +102,38 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
 
         return result;
     }
-    
-    
-    
 
-    protected override Task OnGAgentActivateAsync(CancellationToken cancellationToken)
+    public Task<List<ChatMessage>> GetChatMessageAsync()
     {
-        if (!State.AIAgentIds.IsNullOrEmpty())
-        {
-            Logger.LogDebug(
-                $"[MultiAIChatGAgent][OnGAgentActivateAsync] init AIAgentStatusProxies..{JsonConvert.SerializeObject(State.AIAgentIds)}");
-            AIAgentStatusProxies =
-                new List<IAIAgentStatusProxy>();
-            foreach (var agentId in State.AIAgentIds)
-            {
-                AIAgentStatusProxies.Add(GrainFactory
-                    .GetGrain<IAIAgentStatusProxy>(agentId));
-            }
-        }
-
-        return Task.CompletedTask;
+        return Task.FromResult(State.ChatHistory);
     }
 
+    public async Task<List<ChatMessage>?> ChatWithStreamingAsync(string message, ExecutionPromptSettings? promptSettings = null,
+        AIChatContextDto? aiChatContextDto = null)
+    {
+        var aiAgentStatusProxy = await GetAIAgentStatusProxy();
+        if (aiAgentStatusProxy == null)
+        {
+            Logger.LogError($"There is no available AI Agent. {this.GetPrimaryKey().ToString()}");
+            throw new SystemException("There is no available AI Agent.");
+        }
+        
+        var result = await aiAgentStatusProxy.PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
+
+        if (!result)
+        {
+            Logger.LogError($"Failed to initiate streaming response. {this.GetPrimaryKey().ToString()}");
+            throw new SystemException("Failed to initiate streaming response.");
+        }
+        
+        return new List<ChatMessage>();
+    }
+
+    public async Task<List<ChatMessage>?> CallBackAsync(List<ChatMessage>? messages)
+    {
+        return messages;
+    }
+    
     private async Task<IAIAgentStatusProxy?> GetAIAgentStatusProxy()
     {
         if (AIAgentStatusProxies.IsNullOrEmpty())
@@ -146,6 +151,24 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
             return aiAgentStatusProxy;
         }
         return null;
+    }
+    
+    protected override Task OnGAgentActivateAsync(CancellationToken cancellationToken)
+    {
+        if (!State.AIAgentIds.IsNullOrEmpty())
+        {
+            Logger.LogDebug(
+                $"[MultiAIChatGAgent][OnGAgentActivateAsync] init AIAgentStatusProxies..{JsonConvert.SerializeObject(State.AIAgentIds)}");
+            AIAgentStatusProxies =
+                new List<IAIAgentStatusProxy>();
+            foreach (var agentId in State.AIAgentIds)
+            {
+                AIAgentStatusProxies.Add(GrainFactory
+                    .GetGrain<IAIAgentStatusProxy>(agentId));
+            }
+        }
+
+        return Task.CompletedTask;
     }
 
 
@@ -190,4 +213,11 @@ public interface IMultiAIChatGAgent : IGAgent
 {
     Task<List<ChatMessage>?> ChatAsync(string message,
         ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null);
+
+    Task<List<ChatMessage>?> ChatWithStreamingAsync(string message, ExecutionPromptSettings? promptSettings = null,
+        AIChatContextDto? aiChatContextDto = null);
+
+    Task<List<ChatMessage>?> CallBackAsync(List<ChatMessage>? messages);
+    
+    Task<List<ChatMessage>> GetChatMessageAsync();
 }

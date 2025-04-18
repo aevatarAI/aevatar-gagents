@@ -4,6 +4,7 @@ using Aevatar.GAgents.AIGAgent.Dtos;
 
 namespace Aevatar.GAgents.MultiAIChatGAgent.Featrues.Dtos;
 
+[GenerateSerializer]
 public class MultiAIChatConfig : ConfigurationBase
 {
     [Id(0)] public string Instructions { get; set; }

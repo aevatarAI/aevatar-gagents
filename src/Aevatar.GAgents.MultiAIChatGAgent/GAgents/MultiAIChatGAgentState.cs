@@ -3,6 +3,7 @@ using Aevatar.GAgents.AI.Common;
 
 namespace Aevatar.GAgents.MultiAIChatGAgent.GAgents;
 
+[GenerateSerializer]
 public class MultiAIChatGAgentState : StateBase
 {
     [Id(0)] public List<Guid> AIAgentIds { get; set; } = new List<Guid>();

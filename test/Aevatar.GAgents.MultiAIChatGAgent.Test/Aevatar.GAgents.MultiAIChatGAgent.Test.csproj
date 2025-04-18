@@ -23,6 +23,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Aevatar.GAgents.ChatAgent\Aevatar.GAgents.ChatAgent.csproj" />
+        <ProjectReference Include="..\..\src\Aevatar.GAgents.MultiAIChatGAgent\Aevatar.GAgents.MultiAIChatGAgent.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.AIGAgent.Test\Aevatar.GAgents.AIGAgent.Test.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.TestBase\Aevatar.GAgents.TestBase.csproj" />
     </ItemGroup>
 
