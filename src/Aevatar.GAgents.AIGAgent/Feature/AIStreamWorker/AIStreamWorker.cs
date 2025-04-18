@@ -49,6 +49,12 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
     private async Task<AIStreamChatResponseEvent> AIStreamRequestAsync(
         IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, AIStreamChatRequest chatRequest)
     {
+        if (chatRequest.Context != null)
+        {
+            Logger.LogDebug(
+                $"[AIStreamRequestAsync] chat request:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+        }
+
         var streamingConfig = chatRequest.StreamingConfig;
 
         var cancellationToken = new CancellationToken();
@@ -63,7 +69,9 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         if (_brain == null)
         {
             return new AIStreamChatResponseEvent()
-                { ErrorMessage = $"Can not found Brain, llmconfig:{JsonConvert.SerializeObject(chatRequest.LlmConfig)}" };
+            {
+                ErrorMessage = $"Can not found Brain, llmconfig:{JsonConvert.SerializeObject(chatRequest.LlmConfig)}"
+            };
         }
 
         await _brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
@@ -88,6 +96,12 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
                 stringBuilder.Append(streamingChatMessageContent.Content);
                 if (stringBuilder.Length >= bufferingSize)
                 {
+                    if (chatRequest.Context != null && chunkNumber == 0) ;
+                    {
+                        Logger.LogDebug(
+                            $"[AIStreamRequestAsync] chat first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+                    }
+                    
                     var chunk = bufferingSize == 0
                         ? stringBuilder.ToString()
                         : stringBuilder.ToString(0, bufferingSize);
@@ -98,7 +112,6 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
                         SerialNumber = chunkNumber++,
                         ResponseContent = chunk
                     };
-
                     await grainAsyncHandler.HandleStreamAsync(response);
 
                     completeContent.Append(chunk);
@@ -129,9 +142,9 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
             ResponseContent = stringBuilder.ToString(),
             IsLastChunk = true,
             IsAggregationMsg = true,
-            AggregationMsg =  completeContent.ToString()
+            AggregationMsg = completeContent.ToString()
         };
-       
+
         return result;
     }
 
