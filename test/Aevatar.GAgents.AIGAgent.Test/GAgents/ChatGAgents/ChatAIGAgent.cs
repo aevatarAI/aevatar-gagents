@@ -41,7 +41,7 @@ public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         Logger.LogInformation("Chat output: {Result}", result);
     }
 
-    protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, string? errorMessage,
+    protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
         AIStreamChatContent? content)
     {
         if (content != null)

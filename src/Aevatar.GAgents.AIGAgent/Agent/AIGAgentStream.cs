@@ -53,7 +53,7 @@ public abstract partial class
         {
             var syncWorker = GrainFactory.GetGrain<IGrainAsyncWorker<TRequest, TResponse>>(Guid.NewGuid());
             await syncWorker.SetLongRunTaskAsync(this.GetGrainId());
-            var result = await syncWorker.Start(request); 
+            var result = await syncWorker.Start(request);
             if (result == false)
             {
                 Logger.LogError(
@@ -85,10 +85,10 @@ public abstract partial class
             RaiseEvent(tokenUsage);
         }
 
-        await AIChatHandleStreamAsync(arg.Context, arg.ErrorMessage, arg.ChatContent);
+        await AIChatHandleStreamAsync(arg.Context, arg.IfRequestLimit, arg.ErrorMessage, arg.ChatContent);
     }
 
-    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, string? errorMessage,
+    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;

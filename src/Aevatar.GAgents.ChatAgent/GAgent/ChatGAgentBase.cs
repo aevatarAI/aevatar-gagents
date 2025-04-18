@@ -56,7 +56,8 @@ public abstract class
         return result;
     }
 
-    protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, string? errorMessage,
+    protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit,
+        string? errorMessage,
         AIStreamChatContent? content)
     {
         if (content is { IsAggregationMsg: true })
@@ -69,9 +70,11 @@ public abstract class
 
             await ConfirmEvents();
         }
+
+        await HandleChatStreamAsync(context, ifRequestLimit, errorMessage, content);
     }
 
-    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, string? errorMessage,
+    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;
