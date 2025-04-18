@@ -11,7 +11,8 @@ public class AIStreamChatResponseEvent : EventBase
     [Id(0)] public AIChatContextDto Context { get; set; }
     [Id(1)] public TokenUsageStatistics? TokenUsageStatistics { get; set; }
     [Id(2)] public string? ErrorMessage { get; set; }
-    [Id(3)] public AIStreamChatContent? ChatContent { get; set; }
+    [Id(3)] public bool IfRequestLimit { get; set; } = false;
+    [Id(4)] public AIStreamChatContent? ChatContent { get; set; }
 }
 
 [GenerateSerializer]

@@ -221,7 +221,8 @@ public abstract partial class
         }
         catch (Exception ex)
         {
-            ConvertAndRethrowException(ex);
+            Logger.LogError($"[AIGAgentBase][ChatWithHistory] exception error:{ex.ToString()}");
+            throw AIException.ConvertAndRethrowException(ex);
         }
 
         if (invokeResponse == null)
@@ -483,41 +484,5 @@ public abstract partial class
         }
 
         return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
-    }
-
-    private void ConvertAndRethrowException(Exception ex)
-    {
-        switch (ex)
-        {
-            case ArgumentNullException argumentNullException:
-                Logger.LogError(
-                    $"[AIGAgentBase][ConvertAndRethrowException] ArgumentNullException:{argumentNullException.ToString()}");
-                throw new AIArgumentNullException(argumentNullException.Message, ex);
-            case ArgumentException argumentException:
-                Logger.LogError(
-                    $"[AIGAgentBase][ConvertAndRethrowException] ArgumentException:{argumentException.ToString()}");
-                throw new AIArgumentException(argumentException.Message, ex);
-            case HttpOperationException httpOperationException:
-                if (httpOperationException.StatusCode == HttpStatusCode.TooManyRequests)
-                {
-                    throw new AIRequestLimitException(httpOperationException.Message, ex);
-                }
-
-                throw new AIHttpOperationException(httpOperationException.StatusCode,
-                    httpOperationException.ResponseContent, httpOperationException.Message, ex);
-            case RequestFailedException requestFailedException:
-                if (requestFailedException.Status == (int)HttpStatusCode.TooManyRequests)
-                {
-                    throw new AIRequestLimitException(requestFailedException.Message, ex);
-                }
-
-                throw new AIHttpOperationException(
-                    requestFailedException.Status is HttpStatusCode
-                        ? (HttpStatusCode)requestFailedException.Status
-                        : (HttpStatusCode)0,
-                    null, requestFailedException.Message, ex);
-            default:
-                throw new AIException(ex.Message, ex);
-        }
     }
 }

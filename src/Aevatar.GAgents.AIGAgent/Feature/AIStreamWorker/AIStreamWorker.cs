@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.AI.Exceptions;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -39,8 +40,10 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         }
         catch (Exception ex)
         {
-            Logger.LogError($"[BaseLongStreamWorker][PerformLongRunTask] handle error:{ex.ToString()}");
+            var exception = AIException.ConvertAndRethrowException(ex);
+            result.IfRequestLimit = exception is AIRequestLimitException;
             result.ErrorMessage = ex.Message;
+            Logger.LogError($"[BaseLongStreamWorker][PerformLongRunTask] handle error:{exception.ToString()}");
         }
 
         return result;
@@ -52,7 +55,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         if (chatRequest.Context != null)
         {
             Logger.LogDebug(
-                $"[AIStreamRequestAsync] chat request:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+                $"[AIStreamRequestAsync] chatRequest start:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
         }
 
         var streamingConfig = chatRequest.StreamingConfig;
@@ -75,7 +78,12 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         }
 
         await _brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
-
+        if (chatRequest.Context != null)
+        {
+            Logger.LogDebug(
+                $"[AIStreamRequestAsync] chatRequest init brain:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+        }
+        
         var responseStreaming = await _brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.History,
             chatRequest.IfUseKnowledge,
             chatRequest.PromptSettings,
@@ -99,7 +107,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
                     if (chatRequest.Context != null && chunkNumber == 0) ;
                     {
                         Logger.LogDebug(
-                            $"[AIStreamRequestAsync] chat first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+                            $"[AIStreamRequestAsync] chatRequest first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
                     }
                     
                     var chunk = bufferingSize == 0
