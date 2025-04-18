@@ -1,4 +1,5 @@
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -75,6 +76,7 @@ public abstract partial class
             addPromptTemplateEventLog!,
             streamingConfigEventLog!
         };
+
         if (addLlmEventLog != null)
         {
             events.Add(addLlmEventLog);
@@ -201,6 +203,7 @@ public abstract partial class
     {
         if (_brain == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] _brain==null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
 
@@ -211,6 +214,7 @@ public abstract partial class
                 cancellationToken);
         if (invokeResponse == null)
         {
+            Logger.LogDebug($"[ChatWithHistory] invokeResponse == null {context!.ChatId}-{context!.RequestId}");
             return null;
         }
 
@@ -242,9 +246,6 @@ public abstract partial class
             cancellationToken = cts.Token;
         }
 
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
-            promptSettings,
-            cancellationToken: cancellationToken);
 
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
@@ -253,50 +254,100 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-
-        await foreach (var messageContent in responseStreaming)
+        try
         {
-            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
-            {
-                streamingMessageContentList.Add(streamingChatMessageContent);
-                stringBuilder.Append(streamingChatMessageContent.Content);
-                if (stringBuilder.Length >= bufferingSize)
-                {
-                    var chunk = bufferingSize == 0
-                        ? stringBuilder.ToString()
-                        : stringBuilder.ToString(0, bufferingSize);
-                    await PublishAsync(new AIStreamingResponseGEvent
-                    {
-                        Context = context,
-                        SerialNumber = chunkNumber++,
-                        ResponseContent = chunk
-                    });
-                    completeContent.Append(chunk);
-                    if (bufferingSize == 0)
-                    {
-                        stringBuilder.Clear();
-                    }
-                    else
-                    {
-                        stringBuilder.Remove(0, bufferingSize);
-                    }
-                }
+            var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
+                promptSettings,
+                cancellationToken: cancellationToken);
 
-                if (streamingChatMessageContent.Role.HasValue)
+            await foreach (var messageContent in responseStreaming)
+            {
+                if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                    chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    streamingMessageContentList.Add(streamingChatMessageContent);
+                    stringBuilder.Append(streamingChatMessageContent.Content);
+                    if (stringBuilder.Length >= bufferingSize)
+                    {
+                        var chunk = bufferingSize == 0
+                            ? stringBuilder.ToString()
+                            : stringBuilder.ToString(0, bufferingSize);
+                        await PublishAsync(new AIStreamingResponseGEvent
+                        {
+                            Context = context,
+                            SerialNumber = chunkNumber++,
+                            ResponseContent = chunk,
+                            ChatId = context.ChatId,
+                            SessionId = context.RequestId,
+                            Response = chunk,
+                        });
+                        completeContent.Append(chunk);
+                        if (bufferingSize == 0)
+                        {
+                            stringBuilder.Clear();
+                        }
+                        else
+                        {
+                            stringBuilder.Remove(0, bufferingSize);
+                        }
+                    }
+
+                    if (streamingChatMessageContent.Role.HasValue)
+                    {
+                        chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    }
                 }
             }
-        }
 
-        await PublishAsync(new AIStreamingResponseGEvent
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = chunkNumber,
+                ResponseContent = stringBuilder.ToString(),
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId,
+                Response = stringBuilder.ToString(),
+            });
+            completeContent.Append(stringBuilder.ToString());
+        }
+        catch (Exception ex)
         {
-            Context = context,
-            SerialNumber = chunkNumber,
-            ResponseContent = stringBuilder.ToString(),
-            IsLastChunk = true
-        });
-        completeContent.Append(stringBuilder.ToString());
+            // Check for specific  error and advise user
+            if (ex is ClientResultException clientEx)
+            {
+                Logger.LogError(ex, "An unexpected ClientResultException occurred. Details:{message}",
+                    clientEx.ToString());
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId,
+                    Response =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+                });
+            }
+            else
+            {
+                Logger.LogError(ex, "Ai stream response : An unexpected Exception occurred. Details:{message}",
+                    ex.ToString());
+                await PublishAsync(new AIStreamingResponseGEvent
+                {
+                    Context = context,
+                    SerialNumber = -2,
+                    ResponseContent =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                    IsLastChunk = true,
+                    ChatId = context.ChatId,
+                    SessionId = context.RequestId,
+                    Response =
+                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+                });
+            }
+        }
 
         chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
