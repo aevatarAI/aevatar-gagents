@@ -104,7 +104,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
                 stringBuilder.Append(streamingChatMessageContent.Content);
                 if (stringBuilder.Length >= bufferingSize)
                 {
-                    if (chatRequest.Context != null && chunkNumber == 0) ;
+                    if (chatRequest.Context != null && chunkNumber == 0)
                     {
                         Logger.LogDebug(
                             $"[AIStreamRequestAsync] chatRequest first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
