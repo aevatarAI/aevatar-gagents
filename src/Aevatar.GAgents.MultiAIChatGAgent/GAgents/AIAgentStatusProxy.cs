@@ -1,4 +1,6 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.MultiAIChatGAgent.Featrues.Dtos;
@@ -15,6 +17,13 @@ public class AIAgentStatusProxy :
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("AIGAgent supporting state management");
+    }
+
+    public async Task ChatAsync(string prompt, List<ChatMessage>? history = null,
+        ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
+        AIChatContextDto? context = null)
+    {
+        return await ChatWithHistory(prompt, history, promptSettings, cancellationToken, context);
     }
 
     protected sealed override async Task PerformConfigAsync(AIAgentStatusProxyConfig configuration)
@@ -75,15 +84,8 @@ public class AIAgentStatusProxy :
 
     public async Task<T> ExecuteAsync<T>(Func<AIGAgentBase<AIAgentStatusProxyState, AIAgentStatusProxyLogEvent, EventBase, AIAgentStatusProxyConfig>, Task<T>> func)
     {
-        try
-        {
-            var result = await func(this);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        var result = await func(this);
+        return result;
     }
 
     public async Task ExecuteAsync(Func<AIGAgentBase<AIAgentStatusProxyState, AIAgentStatusProxyLogEvent, EventBase, AIAgentStatusProxyConfig>, Task> func)
@@ -96,6 +98,17 @@ public class AIAgentStatusProxy :
         {
             throw;
         }
+    }
+    
+    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, bool ifRequestLimit, string? errorMessage,
+        AIStreamChatContent? content)
+    {
+        if (ifRequestLimit)
+        {
+            //
+        }
+
+        return MultiAIChatGAgent.CallBack();
     }
     
     protected override void AIGAgentTransitionState(AIAgentStatusProxyState state,

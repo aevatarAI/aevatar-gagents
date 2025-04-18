@@ -89,7 +89,7 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
             Task<List<ChatMessage>?>> func = async (aiAgent) =>
         {
             var result =
-                await aiAgent.ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
+                await aiAgent.ChatAsync(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
             return result;
         };
 
@@ -107,6 +107,9 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
 
         return result;
     }
+    
+    
+    
 
     protected override Task OnGAgentActivateAsync(CancellationToken cancellationToken)
     {

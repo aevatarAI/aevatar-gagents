@@ -63,6 +63,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MultiAIChat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AIGAgent.Test", "test\Aevatar.GAgents.AIGAgent.Test\Aevatar.GAgents.AIGAgent.Test.csproj", "{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MultiAIChatGAgent.Test", "test\Aevatar.GAgents.MultiAIChatGAgent.Test\Aevatar.GAgents.MultiAIChatGAgent.Test.csproj", "{164C499B-F6D5-4847-907C-36FE8AC9B022}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -169,6 +171,10 @@ Global
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492}.Release|Any CPU.Build.0 = Release|Any CPU
+		{164C499B-F6D5-4847-907C-36FE8AC9B022}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{164C499B-F6D5-4847-907C-36FE8AC9B022}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{164C499B-F6D5-4847-907C-36FE8AC9B022}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{164C499B-F6D5-4847-907C-36FE8AC9B022}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -201,6 +207,7 @@ Global
 		{A637340E-0273-4C0C-A6BF-8B3B5108DFEC} = {9A5AF866-5118-4DA9-867A-4C22060B7347}
 		{A3E7DC5A-19F3-4BD1-9A7E-760A4A34776C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{164C499B-F6D5-4847-907C-36FE8AC9B022} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
