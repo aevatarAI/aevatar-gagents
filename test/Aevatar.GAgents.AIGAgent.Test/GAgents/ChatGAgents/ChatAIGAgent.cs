@@ -13,9 +13,9 @@ public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
     Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto);
 }
 
-public class ChatAigAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
+public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
 {
-    public ChatAigAgent(ILogger<ChatAigAgent> logger)
+    public ChatAIGAgent(ILogger<ChatAIGAgent> logger)
     {
     }
 

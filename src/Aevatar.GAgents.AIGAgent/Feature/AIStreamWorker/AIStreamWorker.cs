@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.AI.Exceptions;
+using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -68,8 +69,8 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
             cancellationToken = cts.Token;
         }
 
-        var _brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
-        if (_brain == null)
+        var brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
+        if (brain == null)
         {
             return new AIStreamChatResponseEvent()
             {
@@ -77,73 +78,81 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
             };
         }
 
-        await _brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
+        await brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
         if (chatRequest.Context != null)
         {
             Logger.LogDebug(
                 $"[AIStreamRequestAsync] chatRequest init brain:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
         }
-        
-        var responseStreaming = await _brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.History,
+
+        var responseStreaming = await brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.History,
             chatRequest.IfUseKnowledge,
             chatRequest.PromptSettings,
             cancellationToken: cancellationToken);
 
+        var result =
+            await HandleAIResponseAsync(chatRequest, grainAsyncHandler, responseStreaming, streamingConfig, brain);
+        
+        return result;
+    }
+
+    private async Task<AIStreamChatResponseEvent> HandleAIResponseAsync(AIStreamChatRequest chatRequest,
+        IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, IAsyncEnumerable<object> responseStreaming,
+        StreamingConfig? streamingConfig, IBrain brain)
+    {
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
         var bufferingSize = streamingConfig?.BufferingSize ?? 0;
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-
+        
         await foreach (var messageContent in responseStreaming)
         {
-            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            if (messageContent is not StreamingChatMessageContent streamingChatMessageContent) continue;
+
+            streamingMessageContentList.Add(streamingChatMessageContent);
+            stringBuilder.Append(streamingChatMessageContent.Content);
+            if (stringBuilder.Length < bufferingSize) continue;
+
+            if (chatRequest.Context != null && chunkNumber == 0)
             {
-                streamingMessageContentList.Add(streamingChatMessageContent);
-                stringBuilder.Append(streamingChatMessageContent.Content);
-                if (stringBuilder.Length >= bufferingSize)
-                {
-                    if (chatRequest.Context != null && chunkNumber == 0)
-                    {
-                        Logger.LogDebug(
-                            $"[AIStreamRequestAsync] chatRequest first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
-                    }
-                    
-                    var chunk = bufferingSize == 0
-                        ? stringBuilder.ToString()
-                        : stringBuilder.ToString(0, bufferingSize);
-                    var response = new AIStreamChatResponseEvent();
-                    response.Context = chatRequest.Context;
-                    response.ChatContent = new AIStreamChatContent()
-                    {
-                        SerialNumber = chunkNumber++,
-                        ResponseContent = chunk
-                    };
-                    await grainAsyncHandler.HandleStreamAsync(response);
+                Logger.LogDebug(
+                    $"[AIStreamRequestAsync] chatRequest first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+            }
 
-                    completeContent.Append(chunk);
-                    if (bufferingSize == 0)
-                    {
-                        stringBuilder.Clear();
-                    }
-                    else
-                    {
-                        stringBuilder.Remove(0, bufferingSize);
-                    }
+            var chunk = bufferingSize == 0
+                ? stringBuilder.ToString()
+                : stringBuilder.ToString(0, bufferingSize);
+            var response = new AIStreamChatResponseEvent();
+            response.Context = chatRequest.Context;
+            response.ChatContent = new AIStreamChatContent()
+            {
+                SerialNumber = chunkNumber++,
+                ResponseContent = chunk
+            };
+            await grainAsyncHandler.HandleStreamAsync(response);
 
-                    if (streamingChatMessageContent.Role.HasValue)
-                    {
-                        chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
-                    }
-                }
+            completeContent.Append(chunk);
+            if (bufferingSize == 0)
+            {
+                stringBuilder.Clear();
+            }
+            else
+            {
+                stringBuilder.Remove(0, bufferingSize);
+            }
+
+            if (streamingChatMessageContent.Role.HasValue)
+            {
+                chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
             }
         }
-
+        
         completeContent.Append(stringBuilder.ToString());
         var result = new AIStreamChatResponseEvent();
         result.Context = chatRequest.Context;
-        result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
+        result.TokenUsageStatistics = brain.GetStreamingTokenUsage(streamingMessageContentList);
         result.ChatContent = new AIStreamChatContent()
         {
             SerialNumber = chunkNumber,
