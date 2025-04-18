@@ -1,0 +1,168 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Aevatar.AI.Exceptions;
+using Aevatar.GAgents.AI.BrainFactory;
+using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AIGAgent.GEvents;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Newtonsoft.Json;
+using Orleans;
+using Orleans.Concurrency;
+using Orleans.SyncWork;
+
+namespace Aevatar.AI.Feature.StreamSyncWoker;
+
+public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>
+{
+    private readonly IBrainFactory _brainFactory;
+
+    public BaseLongGrainWorker(ILogger<GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>> logger,
+        LimitedConcurrencyLevelTaskScheduler limitedConcurrencyScheduler) : base(logger, limitedConcurrencyScheduler)
+    {
+        _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
+    }
+
+    protected override async Task<AIStreamChatResponseEvent> PerformLongRunTask(
+        IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, AIStreamChatRequest chatRequest)
+    {
+        AIStreamChatResponseEvent result = new AIStreamChatResponseEvent();
+        try
+        {
+            result = await AIStreamRequestAsync(grainAsyncHandler, chatRequest);
+        }
+        catch (Exception ex)
+        {
+            var exception = AIException.ConvertAndRethrowException(ex);
+            result.IfRequestLimit = exception is AIRequestLimitException;
+            result.ErrorMessage = ex.Message;
+            Logger.LogError($"[BaseLongStreamWorker][PerformLongRunTask] handle error:{exception.ToString()}");
+        }
+
+        return result;
+    }
+
+    private async Task<AIStreamChatResponseEvent> AIStreamRequestAsync(
+        IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, AIStreamChatRequest chatRequest)
+    {
+        if (chatRequest.Context != null)
+        {
+            Logger.LogDebug(
+                $"[AIStreamRequestAsync] chatRequest start:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+        }
+
+        var streamingConfig = chatRequest.StreamingConfig;
+
+        var cancellationToken = new CancellationToken();
+        if (streamingConfig?.TimeOutInternal > 0)
+        {
+            using var cts = new CancellationTokenSource();
+            cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
+            cancellationToken = cts.Token;
+        }
+
+        var _brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
+        if (_brain == null)
+        {
+            return new AIStreamChatResponseEvent()
+            {
+                ErrorMessage = $"Can not found Brain, llmconfig:{JsonConvert.SerializeObject(chatRequest.LlmConfig)}"
+            };
+        }
+
+        await _brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
+        if (chatRequest.Context != null)
+        {
+            Logger.LogDebug(
+                $"[AIStreamRequestAsync] chatRequest init brain:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+        }
+        
+        var responseStreaming = await _brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.History,
+            chatRequest.IfUseKnowledge,
+            chatRequest.PromptSettings,
+            cancellationToken: cancellationToken);
+
+        var chatMessage = new ChatMessage();
+        var streamingMessageContentList = new List<object>();
+        var bufferingSize = streamingConfig?.BufferingSize ?? 0;
+        var stringBuilder = new StringBuilder();
+        var completeContent = new StringBuilder();
+        var chunkNumber = 0;
+
+        await foreach (var messageContent in responseStreaming)
+        {
+            if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
+            {
+                streamingMessageContentList.Add(streamingChatMessageContent);
+                stringBuilder.Append(streamingChatMessageContent.Content);
+                if (stringBuilder.Length >= bufferingSize)
+                {
+                    if (chatRequest.Context != null && chunkNumber == 0)
+                    {
+                        Logger.LogDebug(
+                            $"[AIStreamRequestAsync] chatRequest first response:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
+                    }
+                    
+                    var chunk = bufferingSize == 0
+                        ? stringBuilder.ToString()
+                        : stringBuilder.ToString(0, bufferingSize);
+                    var response = new AIStreamChatResponseEvent();
+                    response.Context = chatRequest.Context;
+                    response.ChatContent = new AIStreamChatContent()
+                    {
+                        SerialNumber = chunkNumber++,
+                        ResponseContent = chunk
+                    };
+                    await grainAsyncHandler.HandleStreamAsync(response);
+
+                    completeContent.Append(chunk);
+                    if (bufferingSize == 0)
+                    {
+                        stringBuilder.Clear();
+                    }
+                    else
+                    {
+                        stringBuilder.Remove(0, bufferingSize);
+                    }
+
+                    if (streamingChatMessageContent.Role.HasValue)
+                    {
+                        chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
+                    }
+                }
+            }
+        }
+
+        completeContent.Append(stringBuilder.ToString());
+        var result = new AIStreamChatResponseEvent();
+        result.Context = chatRequest.Context;
+        result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
+        result.ChatContent = new AIStreamChatContent()
+        {
+            SerialNumber = chunkNumber,
+            ResponseContent = stringBuilder.ToString(),
+            IsLastChunk = true,
+            IsAggregationMsg = true,
+            AggregationMsg = completeContent.ToString()
+        };
+
+        return result;
+    }
+
+    private ChatRole ConvertToChatRole(AuthorRole authorRole)
+    {
+        if (authorRole == AuthorRole.System)
+        {
+            return ChatRole.System;
+        }
+
+        return authorRole == AuthorRole.Assistant ? ChatRole.Assistant : ChatRole.User;
+    }
+}
