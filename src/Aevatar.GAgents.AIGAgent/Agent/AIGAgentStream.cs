@@ -30,7 +30,7 @@ public abstract partial class
     where TConfiguration : ConfigurationBase
 {
     protected async Task<bool> PromptWithStreamAsync(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null)
+        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null, bool ifAsync = true)
     {
         var request = new AIStreamChatRequest()
         {
@@ -45,23 +45,29 @@ public abstract partial class
             Context = context,
         };
 
-        return await CreateStreamLongRunTaskAsync<AIStreamChatRequest, AIStreamChatResponseEvent>(request);
+        return await CreateStreamLongRunTaskAsync<AIStreamChatRequest, AIStreamChatResponseEvent>(request, ifAsync);
     }
 
-    protected async Task<bool> CreateStreamLongRunTaskAsync<TRequest, TResponse>(TRequest request)
+    protected async Task<bool> CreateStreamLongRunTaskAsync<TRequest, TResponse>(TRequest request, bool ifAsync = true)
     {
         try
         {
             var syncWorker = GrainFactory.GetGrain<IGrainAsyncWorker<TRequest, TResponse>>(Guid.NewGuid());
             await syncWorker.SetLongRunTaskAsync(this.GetGrainId());
-            var result = await syncWorker.Start(request);
-            if (result == false)
+            if (ifAsync == true)
             {
-                Logger.LogError(
-                    $"CreateStreamLongRunTaskAsync run task fail, request info:{JsonConvert.SerializeObject(request)}");
+                var result = await syncWorker.Start(request);
+                if (result == false)
+                {
+                    Logger.LogError(
+                        $"CreateStreamLongRunTaskAsync run task fail, request info:{JsonConvert.SerializeObject(request)}");
+                }
+
+                return result;
             }
 
-            return result;
+            await syncWorker.StartWorkAndPollUntilResult(request);
+            return true;
         }
         catch (Exception ex)
         {
@@ -89,7 +95,8 @@ public abstract partial class
         await AIChatHandleStreamAsync(arg.Context, arg.ErrorEnum, arg.ErrorMessage, arg.ChatContent);
     }
 
-    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum , string? errorMessage,
+    protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;
