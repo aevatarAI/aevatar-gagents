@@ -1,11 +1,12 @@
 using System.ComponentModel;
+using Aevatar.Core.Abstractions;
 using Orleans;
 
 namespace Aevatar.GAgents.Telegram.GEvents;
 
 [Description("Receive a message from telegram.")]
 [GenerateSerializer]
-public class ReceiveMessageGEvent
+public class ReceiveMessageGEvent:EventBase
 {
     [Description("Unique identifier for the received message.")]
     [Id(0)]  public string MessageId { get; set; }
