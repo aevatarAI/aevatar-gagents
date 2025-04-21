@@ -1,4 +1,5 @@
 using System;
+using System.ClientModel;
 using System.Net;
 using Azure;
 using Microsoft.SemanticKernel;
@@ -8,15 +9,17 @@ namespace Aevatar.AI.Exceptions;
 public abstract class AIException : Exception
 {
     public abstract AIExceptionEnum ExceptionEnum { get; }
-    
+
     public AIException(string message, Exception ex) : base(message, ex)
     {
     }
-    
+
     public static AIException ConvertAndRethrowException(Exception ex)
     {
         switch (ex)
         {
+            case ClientResultException clientResultException:
+                return new AIClientResultException(clientResultException.Message, ex);
             case ArgumentNullException argumentNullException:
                 return new AIArgumentNullException(argumentNullException.Message, ex);
             case ArgumentException argumentException:
