@@ -1,10 +1,14 @@
+using Aevatar.AI.Exceptions;
+using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
+using Microsoft.Extensions.AI;
+using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
+using ChatRole = Aevatar.GAgents.AI.Common.ChatRole;
 
 namespace Aevatar.GAgents.ChatAgent.GAgent;
 
@@ -21,21 +25,60 @@ public abstract class
         return Task.FromResult("Chat Agent");
     }
 
-    public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null)
+    public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null,
+        AIChatContextDto? aiChatContextDto = null)
     {
-        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context : aiChatContextDto);
+        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
 
         if (result is not { Count: > 0 }) return result;
 
         var chatMessages = new List<ChatMessage>();
         chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message });
         chatMessages.AddRange(result);
-        
+
         RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
 
         await ConfirmEvents();
 
         return result;
+    }
+
+    public async Task<bool> ChatWithStreamAsync(string message, AIChatContextDto context,
+        ExecutionPromptSettings? promptSettings = null)
+    {
+        var result = await PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context);
+        if (!result) return result;
+
+        var chatMessages = new List<ChatMessage>();
+        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message });
+        RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
+        await ConfirmEvents();
+
+        return result;
+    }
+
+    protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage,
+        AIStreamChatContent? content)
+    {
+        if (content is { IsAggregationMsg: true })
+        {
+            RaiseEvent(new AddChatHistoryLogEvent()
+            {
+                ChatList = new List<ChatMessage>()
+                    { new ChatMessage() { ChatRole = ChatRole.Assistant, Content = content.ResponseContent } }
+            });
+
+            await ConfirmEvents();
+        }
+
+        await HandleChatStreamAsync(context, errorEnum, errorMessage, content);
+    }
+
+    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum, string? errorMessage,
+        AIStreamChatContent? content)
+    {
+        return Task.CompletedTask;
     }
 
     protected sealed override async Task PerformConfigAsync(TConfiguration configuration)
@@ -44,7 +87,7 @@ public abstract class
             new InitializeDto()
             {
                 Instructions = configuration.Instructions,
-                LLMConfig = configuration.LLMConfig ,
+                LLMConfig = configuration.LLMConfig,
                 StreamingModeEnabled = configuration.StreamingModeEnabled,
                 StreamingConfig = configuration.StreamingConfig
             });
@@ -110,4 +153,7 @@ public interface IChatAgent : IGAgent, IAIGAgent
 {
     Task<List<ChatMessage>?> ChatAsync(string message,
         ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null);
+
+    Task<bool> ChatWithStreamAsync(string message, AIChatContextDto aiChatContextDto,
+        ExecutionPromptSettings? promptSettings = null);
 }

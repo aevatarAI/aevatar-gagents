@@ -2,9 +2,11 @@ using System;
 using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.AI.Exceptions;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
@@ -14,6 +16,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
+using Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -81,6 +84,7 @@ public abstract partial class
         {
             events.Add(addLlmEventLog);
         }
+
         RaiseEvents(events);
         await ConfirmEvents();
 
@@ -206,11 +210,21 @@ public abstract partial class
             return null;
         }
 
-        var invokeResponse = State.StreamingModeEnabled
-            ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-                cancellationToken, context)
-            : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
-                cancellationToken);
+        InvokePromptResponse? invokeResponse = null;
+        try
+        {
+            invokeResponse = State.StreamingModeEnabled
+                ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                    cancellationToken, context)
+                : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                    cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"[AIGAgentBase][ChatWithHistory] exception error:{ex.ToString()}");
+            throw AIException.ConvertAndRethrowException(ex);
+        }
+
         if (invokeResponse == null)
         {
             Logger.LogDebug($"[ChatWithHistory] invokeResponse == null {context!.ChatId}-{context!.RequestId}");
@@ -244,9 +258,8 @@ public abstract partial class
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
             cancellationToken = cts.Token;
         }
-        
-      
-        
+
+
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();
@@ -254,8 +267,13 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-        try {
-            Logger.LogDebug($"[InvokePromptStreamingAsync] start {context!.ChatId}-{context!.RequestId}");
+        try
+        {
+            if (context != null)
+            {
+                Logger.LogDebug($"[InvokePromptStreamingAsync] start {context!.ChatId}-{context!.RequestId}");
+            }
+
             var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
                 promptSettings,
                 cancellationToken: cancellationToken);
@@ -264,14 +282,19 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                   
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
                     {
-                        var chunk = stringBuilder.ToString(0, bufferingSize);
-                        Logger.LogDebug(
-                            $"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
+                        var chunk = bufferingSize == 0
+                            ? stringBuilder.ToString()
+                            : stringBuilder.ToString(0, bufferingSize);
+                        if (context != null)
+                        {
+                            Logger.LogDebug(
+                                $"[InvokePromptStreamingAsync] pull message start: {context!.ChatId}-{context!.RequestId}");
+                        }
+
                         await PublishAsync(new AIStreamingResponseGEvent
                         {
                             Context = context,
@@ -291,7 +314,14 @@ public abstract partial class
                             Response = chunk,
                         });
                         completeContent.Append(chunk);
-                        stringBuilder.Remove(0, bufferingSize);
+                        if (bufferingSize == 0)
+                        {
+                            stringBuilder.Clear();
+                        }
+                        else
+                        {
+                            stringBuilder.Remove(0, bufferingSize);
+                        }
                     }
 
                     if (streamingChatMessageContent.Role.HasValue)
@@ -314,6 +344,7 @@ public abstract partial class
                 SessionId = context.RequestId,
                 Response = stringBuilder.ToString(),
             });
+
             await PublishAsync(new AIOldStreamingResponseGEvent
             {
                 Context = context,
@@ -325,11 +356,13 @@ public abstract partial class
                 Response = stringBuilder.ToString(),
             });
             completeContent.Append(stringBuilder.ToString());
-
-            Logger.LogDebug($"[InvokePromptStreamingAsync] end {context!.ChatId}-{context!.RequestId}");
+            if (context != null)
+            {
+                Logger.LogDebug($"[InvokePromptStreamingAsync] end {context!.ChatId}-{context!.RequestId}");
+            }
         }
-        catch (Exception ex){
-
+        catch (Exception ex)
+        {
             // Check for specific  error and advise user
             if (ex is ClientResultException clientEx)
             {
@@ -347,7 +380,7 @@ public abstract partial class
                     Response =
                         "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
-                
+
                 await PublishAsync(new AIStreamingErrorResponseGEvent
                 {
                     Context = context,
@@ -356,8 +389,11 @@ public abstract partial class
                     ExceptionMessage = clientEx.Message
                 });
 
-                Logger.LogDebug(
-                    $"[InvokePromptStreamingAsync] ClientResultException {context!.ChatId}-{context!.RequestId}");
+                if (context != null)
+                {
+                    Logger.LogDebug(
+                        $"[InvokePromptStreamingAsync] ClientResultException {context!.ChatId}-{context!.RequestId}");
+                }
             }
             else
             {
@@ -375,7 +411,7 @@ public abstract partial class
                     Response =
                         "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
-                
+
                 await PublishAsync(new AIStreamingErrorResponseGEvent
                 {
                     Context = context,
@@ -383,9 +419,12 @@ public abstract partial class
                     HandleExceptionType = typeof(ClientResultException),
                     ExceptionMessage = ex.Message
                 });
-                
-                Logger.LogDebug(
-                    $"[InvokePromptStreamingAsync] other exception  {context!.ChatId}-{context!.RequestId}");
+
+                if (context != null)
+                {
+                    Logger.LogDebug(
+                        $"[InvokePromptStreamingAsync] other exception  {context!.ChatId}-{context!.RequestId}");
+                }
             }
         }
 
