@@ -35,6 +35,8 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, AIStreamChatRequest chatRequest)
     {
         AIStreamChatResponseEvent result = new AIStreamChatResponseEvent();
+        result.Context = chatRequest.Context;
+
         try
         {
             result = await AIStreamRequestAsync(grainAsyncHandler, chatRequest);
@@ -92,7 +94,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
 
         var result =
             await HandleAIResponseAsync(chatRequest, grainAsyncHandler, responseStreaming, streamingConfig, brain);
-        
+
         return result;
     }
 
@@ -106,7 +108,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
-        
+
         await foreach (var messageContent in responseStreaming)
         {
             if (messageContent is not StreamingChatMessageContent streamingChatMessageContent) continue;
@@ -148,7 +150,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
                 chatMessage.ChatRole = ConvertToChatRole(streamingChatMessageContent.Role.Value);
             }
         }
-        
+
         completeContent.Append(stringBuilder.ToString());
         var result = new AIStreamChatResponseEvent();
         result.Context = chatRequest.Context;
