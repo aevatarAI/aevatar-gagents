@@ -19,6 +19,11 @@ public abstract class AIException : Exception
         switch (ex)
         {
             case ClientResultException clientResultException:
+                if (clientResultException.Status == (int)HttpStatusCode.TooManyRequests)
+                {
+                    return new AIRequestLimitException(clientResultException.Message, ex);
+                }
+                
                 return new AIClientResultException(clientResultException.Message, ex);
             case ArgumentNullException argumentNullException:
                 return new AIArgumentNullException(argumentNullException.Message, ex);
