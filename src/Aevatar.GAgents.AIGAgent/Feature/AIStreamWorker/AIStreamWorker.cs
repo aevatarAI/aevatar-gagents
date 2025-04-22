@@ -76,6 +76,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
         {
             return new AIStreamChatResponseEvent()
             {
+                ErrorEnum = AIExceptionEnum.ArgumentNullError,
                 ErrorMessage = $"Can not found Brain, llmconfig:{JsonConvert.SerializeObject(chatRequest.LlmConfig)}"
             };
         }
