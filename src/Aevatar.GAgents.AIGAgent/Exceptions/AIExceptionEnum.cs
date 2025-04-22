@@ -10,5 +10,6 @@ public enum AIExceptionEnum
     ArgumentNullError = 1002,
     HttpOperationError = 1003,
     RequestLimitError = 1004,
+    ClientResultError =1005,
     OtherException = 1999,
 }
