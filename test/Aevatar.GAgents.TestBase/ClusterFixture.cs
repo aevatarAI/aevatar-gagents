@@ -1,3 +1,4 @@
+using Aevatar.Extensions;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using AutoMapper;
@@ -39,7 +40,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
         public void Configure(ISiloBuilder hostBuilder)
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("/opt/evn/appsettings.json")
                 .AddJsonFile("appsettings.secrets.json", true)
                 .Build();
 
@@ -87,6 +88,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
+                .UseAevatar()
                 .AddLogStorageBasedLogConsistencyProvider("LogStorage");
         }
     }
