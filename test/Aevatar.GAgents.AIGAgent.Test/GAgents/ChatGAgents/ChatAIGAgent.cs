@@ -11,6 +11,7 @@ public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
 {
     Task<string?> ChatAsync(string message);
     Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto);
+    Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto);
 }
 
 public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
@@ -35,6 +36,11 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return await PromptWithStreamAsync(message, context: contextDto);
     }
 
+    public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto)
+    {
+        return await PromptHttpAsync(message, context: contextDto);
+    }
+
     [EventHandler]
     public async Task OnChatAIEvent(ChatEvent @event)
     {
@@ -55,6 +61,25 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
 
             await ConfirmEvents();
         }
+    }
+
+    protected override async Task AIChatHttpResponseHandleAsync(AIChatContextDto context, AIExceptionEnum errorEnum, string? errorMessage,
+        string? content)
+    {
+        if (content != null)
+        {
+            RaiseEvent(new AddMessageLogEvent()
+            {
+                Content = new AIStreamChatContent()
+                {
+                    ResponseContent = content
+                }
+            });
+
+            await ConfirmEvents();
+        }
+        
+        Logger.LogInformation("[ChatAIGAgent][AIChatHttpResponseHandleAsync] has done");
     }
 
     protected override void AIGAgentTransitionState(ChatAIGStateBase state,

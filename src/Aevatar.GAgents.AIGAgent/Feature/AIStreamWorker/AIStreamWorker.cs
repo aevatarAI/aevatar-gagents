@@ -21,11 +21,11 @@ using Orleans.SyncWork;
 
 namespace Aevatar.AI.Feature.StreamSyncWoker;
 
-public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>
+public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>
 {
     private readonly IBrainFactory _brainFactory;
 
-    public BaseLongGrainWorker(ILogger<GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>> logger,
+    public AIStreamWorker(ILogger<GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>> logger,
         LimitedConcurrencyLevelTaskScheduler limitedConcurrencyScheduler) : base(logger, limitedConcurrencyScheduler)
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
