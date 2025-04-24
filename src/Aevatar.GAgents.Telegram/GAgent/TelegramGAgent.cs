@@ -9,6 +9,7 @@ using Aevatar.GAgents.Telegram.GEvents;
 using Aevatar.GAgents.Telegram.Grains;
 using Aevatar.GAgents.Telegram.Options;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Orleans.Providers;
 
 namespace Aevatar.GAgents.Telegram.Agent;
@@ -90,6 +91,8 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
     [EventHandler]
     public async Task HandleEventAsync(SocialResponseGEvent @event)
     {
+        Logger.LogDebug("SocialResponseGEvent SocialResponse for Telegram Message: {A}",
+            JsonConvert.SerializeObject(@event));
         if (@event.RequestId != Guid.Empty)
         {
             if (State.SocialRequestList.Contains(@event.RequestId))
