@@ -211,12 +211,13 @@ public abstract partial class
         }
 
         InvokePromptResponse? invokeResponse = null;
+        var chatBrain = ConvertBrain<IChatBrain>();
         try
         {
             invokeResponse = State.StreamingModeEnabled
                 ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
                     cancellationToken, context)
-                : await _brain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                : await chatBrain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
                     cancellationToken);
         }
         catch (Exception ex)
@@ -267,9 +268,10 @@ public abstract partial class
         var stringBuilder = new StringBuilder();
         var completeContent = new StringBuilder();
         var chunkNumber = 0;
+        var chatBrain = ConvertBrain<IChatBrain>();
         try
         {
-            var responseStreaming = await _brain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
+            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
                 promptSettings,
                 cancellationToken: cancellationToken);
 
@@ -364,7 +366,7 @@ public abstract partial class
 
         chatMessage.Content = completeContent.ToString();
         chatList.Add(chatMessage);
-        result.TokenUsageStatistics = _brain.GetStreamingTokenUsage(streamingMessageContentList);
+        result.TokenUsageStatistics = chatBrain.GetStreamingTokenUsage(streamingMessageContentList);
         result.ChatReponseList = chatList;
 
         return result;
@@ -484,5 +486,15 @@ public abstract partial class
         }
 
         return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+    }
+
+    private T ConvertBrain<T>() where T : class, IBrain
+    {
+        if (_brain is not T result)
+        {
+            throw new AIOtherException($"brain can not convert to {typeof(T)}", new Exception("AI Brain not match"));
+        }
+
+        return result;
     }
 }

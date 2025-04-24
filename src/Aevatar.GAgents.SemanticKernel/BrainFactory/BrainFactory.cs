@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -27,19 +28,40 @@ public class BrainFactory : IBrainFactory
 
     public IBrain? GetBrain(LLMProviderConfig llmProviderConfig)
     {
+        return GetBrain<IBrain>(llmProviderConfig);
+    }
+
+    public IChatBrain? GetChatBrain(LLMProviderConfig llmProviderConfig)
+    {
+        return GetBrain<IChatBrain>(llmProviderConfig);
+    }
+
+    public ITextToImageBrain? GetTextToImageBrain(LLMProviderConfig llmProviderConfig)
+    {
+        return GetBrain<ITextToImageBrain>(llmProviderConfig);
+    }
+    
+    private T? GetBrain<T>(LLMProviderConfig llmProviderConfig) where T : class, IBrain
+    {
         try
         {
             if (LLMProvider.TryGetValue(
-                    new Tuple<LLMProviderEnum, ModelIdEnum>(llmProviderConfig.ProviderEnum, llmProviderConfig.ModelIdEnum),
+                    new Tuple<LLMProviderEnum, ModelIdEnum>(llmProviderConfig.ProviderEnum,
+                        llmProviderConfig.ModelIdEnum),
                     out var type))
             {
-                var result = ActivatorUtilities.CreateInstance(_serviceProvider, type);
-                return result as IBrain;
-            }
-            else
-            {
+                var brainInstance = ActivatorUtilities.CreateInstance(_serviceProvider, type);
+                if (brainInstance is T brain) return brain;
+                
+                _logger.LogError(
+                    $"[BrainFactory][GetChatBrain] LLMProviderEnum:{llmProviderConfig.ProviderEnum} ModelIdEnum:{llmProviderConfig.ModelIdEnum} is not {typeof(T)}");
                 return null;
+
             }
+
+            _logger.LogError(
+                $"[BrainFactory][GetChatBrain] LLMProviderEnum:{llmProviderConfig.ProviderEnum} ModelIdEnum:{llmProviderConfig.ModelIdEnum} not found {typeof(T)}");
+            return null;
         }
         catch (Exception ex)
         {
@@ -77,4 +99,5 @@ public class BrainFactory : IBrainFactory
         var actualDto = model as IBrain;
         return new Tuple<LLMProviderEnum, ModelIdEnum>(actualDto!.ProviderEnum, actualDto.ModelIdEnum);
     }
+
 }

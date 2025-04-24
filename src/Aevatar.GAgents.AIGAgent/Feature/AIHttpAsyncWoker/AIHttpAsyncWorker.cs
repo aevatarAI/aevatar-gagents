@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
+using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -60,7 +61,7 @@ public class AIHttpAsyncWorker : GrainAsyncWorker<AIHttpAsyncRequest, AIHttpAsyn
             cancellationToken = cts.Token;
         }
 
-        var brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
+        var brain = _brainFactory.GetChatBrain(chatRequest.LlmConfig);
         if (brain == null)
         {
             return new AIHttpAsyncResponse()

@@ -71,7 +71,7 @@ public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChat
             cancellationToken = cts.Token;
         }
 
-        var brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
+        var brain = _brainFactory.GetChatBrain(chatRequest.LlmConfig);
         if (brain == null)
         {
             return new AIStreamChatResponseEvent()
@@ -101,7 +101,7 @@ public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChat
 
     private async Task<AIStreamChatResponseEvent> HandleAIResponseAsync(AIStreamChatRequest chatRequest,
         IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, IAsyncEnumerable<object> responseStreaming,
-        StreamingConfig? streamingConfig, IBrain brain)
+        StreamingConfig? streamingConfig, IChatBrain brain)
     {
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();

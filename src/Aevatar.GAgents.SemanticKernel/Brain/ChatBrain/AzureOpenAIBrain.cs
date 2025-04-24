@@ -41,6 +41,7 @@ public sealed class AzureOpenAIBrain : BrainBase
             clientOptions
         );
 
+        kernelBuilder.AddOpenAITextToImage(llmConfig.ApiKey, modelId: llmConfig.ModelName);
         kernelBuilder.AddAzureOpenAIChatCompletion(
             llmConfig.ModelName,
             azureOpenAi);

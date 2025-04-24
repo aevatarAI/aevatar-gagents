@@ -7,4 +7,6 @@ namespace Aevatar.GAgents.AI.BrainFactory;
 public interface IBrainFactory
 {
     IBrain? GetBrain(LLMProviderConfig llmProviderConfig);
+    IChatBrain? GetChatBrain(LLMProviderConfig llmProviderConfig);
+    ITextToImageBrain? GetTextToImageBrain(LLMProviderConfig llmProviderConfig);
 }
