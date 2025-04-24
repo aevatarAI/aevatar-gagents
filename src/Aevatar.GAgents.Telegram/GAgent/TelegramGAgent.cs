@@ -74,6 +74,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         await ConfirmEvents();
         await PublishAsync(new SocialGEvent()
         {
+            RequestId = requestId,
             Content = @event.Message,
             MessageId = @event.MessageId,
             ChatId = @event.ChatId
