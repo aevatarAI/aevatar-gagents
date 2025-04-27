@@ -6,9 +6,6 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.Test.GAgents.ChatGAgents;
 using Shouldly;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Png;
 
 namespace Aevatar.GAgents.AIGAgent.Test.GAgents.Tests;
 
