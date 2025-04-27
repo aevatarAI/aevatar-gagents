@@ -119,8 +119,7 @@ public abstract class BrainBase : IChatBrain
         chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
 
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
-        var textToImageService = Kernel.GetRequiredService<ITextToImageService>();
-
+        
         PromptExecutionSettings? promptExecutionSettings = null;
         if (promptSettings != null)
         {

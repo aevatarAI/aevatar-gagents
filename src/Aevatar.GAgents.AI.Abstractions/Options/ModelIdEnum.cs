@@ -4,5 +4,6 @@ public enum ModelIdEnum
 {
     OpenAI ,
     DeepSeek,
-    Gemini
+    Gemini,
+    OpenAITextToImage
 }

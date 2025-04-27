@@ -9,7 +9,6 @@ namespace Aevatar.GAgents.AI.Brain;
 
 public interface IBrain : ITransientDependency
 {
-    BrainTypeEnum BrainTypeEnum { get; }
     LLMProviderEnum ProviderEnum { get; }
     ModelIdEnum ModelIdEnum { get; }
 
