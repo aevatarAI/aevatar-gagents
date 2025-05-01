@@ -110,6 +110,14 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         Logger.LogDebug("SocialResponse for Telegram Message: " + @event.ResponseContent);
         await SendMessageAsync(@event.ResponseContent, @event.ChatId, @event.ReplyMessageId);
     }
+    
+    [EventHandler]
+    public async Task HandleEventAsync(SocialResponseDirectedGEvent @event)
+    {
+        Logger.LogDebug("SocialResponseDirectedGEvent SocialResponse for Telegram Message: {A}",
+            JsonConvert.SerializeObject(@event));
+        await SendMessageAsync(@event.ResponseContent, @event.ChatId, @event.ReplyMessageId);
+    }
 
     [EventHandler]
     public async Task HandleEventAsync(RegisterTelegramGEvent @event)
