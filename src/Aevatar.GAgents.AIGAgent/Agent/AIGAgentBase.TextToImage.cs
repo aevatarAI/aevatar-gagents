@@ -34,13 +34,13 @@ public abstract partial class
             return null;
         }
 
-        var chatBrain = ConvertBrain<ITextToImageBrain>();
+        var text2ImageBrain = ConvertBrain<ITextToImageBrain>();
 
         List<TextToImageResponse>? response = null;
         try
         {
             textToImageOption = textToImageOption ?? new TextToImageOption();
-            response = await chatBrain.GenerateTextToImageAsync(prompt, textToImageOption, cancellationToken);
+            response = await text2ImageBrain.GenerateTextToImageAsync(prompt, textToImageOption, cancellationToken);
         }
         catch (Exception ex)
         {

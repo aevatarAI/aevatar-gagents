@@ -26,7 +26,7 @@ public class BrainFactory : IBrainFactory
         InitLLmProvider();
     }
 
-    public IBrain? GetBrain(LLMProviderConfig llmProviderConfig)
+    public IBrain? CreateBrain(LLMProviderConfig llmProviderConfig)
     {
         return GetBrain<IBrain>(llmProviderConfig);
     }

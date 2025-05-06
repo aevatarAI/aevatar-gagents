@@ -115,7 +115,7 @@ public abstract partial class
 
     private async Task<bool> InitializeBrainAsync(LLMConfig llmConfig, string systemMessage)
     {
-        _brain = _brainFactory.GetBrain(llmConfig);
+        _brain = _brainFactory.CreateBrain(llmConfig);
 
         if (_brain == null)
         {
