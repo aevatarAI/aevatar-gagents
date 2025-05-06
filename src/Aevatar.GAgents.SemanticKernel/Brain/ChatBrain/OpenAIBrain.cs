@@ -30,7 +30,9 @@ public class OpenAIBrain : BrainBase
         OpenAIClientOptions? clientOptions = null;
         if (!llmConfig.Endpoint.IsNullOrWhiteSpace())
         {
-            clientOptions = new OpenAIClientOptions() { Endpoint = new Uri(llmConfig.Endpoint) };
+            clientOptions = new OpenAIClientOptions() { 
+                Endpoint = new Uri(llmConfig.Endpoint), 
+                NetworkTimeout = TimeSpan.FromSeconds(llmConfig.NetworkTimeoutInSeconds) };
         }
 
         var openAiClient = new OpenAIClient(
