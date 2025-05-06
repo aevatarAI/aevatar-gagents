@@ -1,6 +1,8 @@
 using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
@@ -11,6 +13,13 @@ public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
 {
     Task<string?> ChatAsync(string message);
     Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto);
+    Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto);
+
+    Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
+        TextToImageOption? textToImageOption = null);
+
+    Task TextToImageAsync(string prompt,
+        TextToImageOption? textToImageOption = null);
 }
 
 public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
@@ -35,6 +44,23 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return await PromptWithStreamAsync(message, context: contextDto);
     }
 
+    public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto)
+    {
+        return await PromptHttpAsync(message, context: contextDto);
+    }
+
+    public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
+        TextToImageOption? textToImageOption = null)
+    {
+        return await base.GenerateImageAsync(prompt, textToImageOption);
+    }
+
+    public async Task TextToImageAsync(string prompt, TextToImageOption? textToImageOption = null)
+    {
+        await base.TextToImageAsync(prompt, new TextToImageContextDto() { Context = Guid.NewGuid().ToString() },
+            textToImageOption);
+    }
+
     [EventHandler]
     public async Task OnChatAIEvent(ChatEvent @event)
     {
@@ -57,6 +83,36 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         }
     }
 
+    protected override async Task AIChatHttpResponseHandleAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage,
+        string? content)
+    {
+        if (content != null)
+        {
+            RaiseEvent(new AddMessageLogEvent()
+            {
+                Content = new AIStreamChatContent()
+                {
+                    ResponseContent = content
+                }
+            });
+
+            await ConfirmEvents();
+        }
+
+        Logger.LogInformation("[ChatAIGAgent][AIChatHttpResponseHandleAsync] has done");
+    }
+
+    protected override async Task AITextToImageHandleAsync(TextToImageContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage, List<TextToImageResponse>? imageResponses)
+    {
+        if (imageResponses != null && imageResponses.Count > 0)
+        {
+            RaiseEvent(new TextToImageLogEvent() { TextToImageResponses = imageResponses });
+            await ConfirmEvents();
+        }
+    }
+
     protected override void AIGAgentTransitionState(ChatAIGStateBase state,
         StateLogEventBase<ChatAIStateLogEvent> @event)
     {
@@ -64,6 +120,9 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         {
             case AddMessageLogEvent addMessageLogEvent:
                 State.ContentList.Add(addMessageLogEvent.Content);
+                break;
+            case TextToImageLogEvent textToImageLogEvent:
+                State.TextToImageResponses = textToImageLogEvent.TextToImageResponses;
                 break;
         }
     }

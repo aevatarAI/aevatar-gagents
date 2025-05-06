@@ -29,7 +29,6 @@ public sealed class GeminiBrain : BrainBase
         kernelBuilder.AddGoogleAIGeminiChatCompletion(
             modelId: llmConfig.ModelName,
             apiKey: llmConfig.ApiKey);
-
         return Task.CompletedTask;
     }
 

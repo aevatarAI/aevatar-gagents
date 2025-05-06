@@ -21,11 +21,11 @@ using Orleans.SyncWork;
 
 namespace Aevatar.AI.Feature.StreamSyncWoker;
 
-public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>
+public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>
 {
     private readonly IBrainFactory _brainFactory;
 
-    public BaseLongGrainWorker(ILogger<GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>> logger,
+    public AIStreamWorker(ILogger<GrainAsyncWorker<AIStreamChatRequest, AIStreamChatResponseEvent>> logger,
         LimitedConcurrencyLevelTaskScheduler limitedConcurrencyScheduler) : base(logger, limitedConcurrencyScheduler)
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
@@ -71,7 +71,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
             cancellationToken = cts.Token;
         }
 
-        var brain = _brainFactory.GetBrain(chatRequest.LlmConfig);
+        var brain = _brainFactory.GetChatBrain(chatRequest.LlmConfig);
         if (brain == null)
         {
             return new AIStreamChatResponseEvent()
@@ -101,7 +101,7 @@ public class BaseLongGrainWorker : GrainAsyncWorker<AIStreamChatRequest, AIStrea
 
     private async Task<AIStreamChatResponseEvent> HandleAIResponseAsync(AIStreamChatRequest chatRequest,
         IGrainAsyncHandler<AIStreamChatResponseEvent> grainAsyncHandler, IAsyncEnumerable<object> responseStreaming,
-        StreamingConfig? streamingConfig, IBrain brain)
+        StreamingConfig? streamingConfig, IChatBrain brain)
     {
         var chatMessage = new ChatMessage();
         var streamingMessageContentList = new List<object>();

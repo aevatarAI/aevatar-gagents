@@ -18,13 +18,15 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Data;
+using Microsoft.SemanticKernel.TextToImage;
 using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
-public abstract class BrainBase : IBrain
+public abstract class BrainBase : IChatBrain
 {
+    public BrainTypeEnum BrainTypeEnum => BrainTypeEnum.Chat;
     public abstract LLMProviderEnum ProviderEnum { get; }
     public abstract ModelIdEnum ModelIdEnum { get; }
 
@@ -117,7 +119,7 @@ public abstract class BrainBase : IBrain
         chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
 
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
-
+        
         PromptExecutionSettings? promptExecutionSettings = null;
         if (promptSettings != null)
         {
@@ -137,7 +139,8 @@ public abstract class BrainBase : IBrain
         return result;
     }
 
-    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history, bool ifUseKnowledge,
+    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history,
+        bool ifUseKnowledge,
         ExecutionPromptSettings? promptSettings, CancellationToken cancellationToken)
     {
         if (Kernel == null)
@@ -163,7 +166,7 @@ public abstract class BrainBase : IBrain
             promptExecutionSettings = GetPromptExecutionSettings(promptSettings);
         }
 
-        return  chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
+        return chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
             cancellationToken: cancellationToken);
     }
 

@@ -15,14 +15,4 @@ public interface IBrain : ITransientDependency
     Task InitializeAsync(LLMConfig llmConfig, string id, string description);
 
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
-
-    Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
-        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
-        CancellationToken cancellationToken = default);
-
-    Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
-        bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
-        CancellationToken cancellationToken = default);
-
-    TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList);
 }
