@@ -127,13 +127,14 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     {
         try
         {
-            _logger.LogDebug("HandleEventAsync ReplyMentionEvent");
+            _logger.LogDebug("HandleEventAsync ReplyMentionEvent userId is {A} RecentLimit={B} event={C}",
+                State.UserId, State.ReplyLimit, JsonConvert.SerializeObject(@event));
             if (State.UserId.IsNullOrEmpty())
             {
                 _logger.LogDebug("HandleEventAsync ReplyMentionEvent null userId");
                 return;
             }
-
+            
             var mentionTweets =
                 await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
                     .GetRecentMentionAsync(State.UserName, State.BearerToken,
