@@ -156,7 +156,9 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                     await PublishAsync(new SocialGEvent()
                     {
                         RequestId = requestId,
-                        Content = tweet.Text,
+                        Content = State.UserName.IsNullOrEmpty()
+                            ? tweet.Text
+                            : $"My Twitter username is {State.UserName}. I received a message mentioning me, and the content is: {tweet.Text}",
                         MessageId = tweet.Id
                     });
                 }
