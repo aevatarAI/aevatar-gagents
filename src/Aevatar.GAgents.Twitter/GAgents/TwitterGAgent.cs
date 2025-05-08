@@ -149,6 +149,13 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                 }
                 if (!State.RepliedTweets.Keys.Contains(tweet.Id))
                 {
+                    RaiseEvent(new ReplyTweetSEvent()
+                    {
+                        TweetId = tweet.Id,
+                        Text = "[wait for social response]:"+tweet.Text
+                    });
+                    await ConfirmEvents();
+                    
                     var requestId = Guid.NewGuid();
                     RaiseEvent(new TweetRequestSEvent() { RequestId = requestId });
                     await ConfirmEvents();
