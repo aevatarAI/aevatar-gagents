@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -121,6 +122,68 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
                 @event.ResponseContent, @event.ReplyMessageId, State.Token, State.TokenSecret);
         }
     }
+
+    [EventHandler]
+    public async Task HandleEventAsync(ReplyMentionExcludeAuthorIdsGEvent @event)
+    {
+        try
+        {
+            _logger.LogDebug("HandleEventAsync ReplyMentionExcludeAuthorIdsGEvent userId is {A} RecentLimit={B} event={C}",
+                State.UserId, State.ReplyLimit, JsonConvert.SerializeObject(@event));
+            if (State.UserId.IsNullOrEmpty())
+            {
+                _logger.LogDebug("HandleEventAsync ReplyMentionExcludeAuthorIdsGEvent null userId");
+                return;
+            }
+            
+            var mentionTweets =
+                await GrainFactory.GetGrain<ITwitterGrain>(State.UserId)
+                    .GetRecentMentionAsync(State.UserName, State.BearerToken,
+                        State.ReplyLimit);
+            foreach (var tweet in mentionTweets)
+            {
+                if (State.UserId.Equals(tweet.AuthorId))
+                {
+                    _logger.LogDebug("HandleEventAsync ReplyMentionExcludeAuthorIdsGEvent return . UserId is the author, userId is {A} {B}",
+                        State.UserId, JsonConvert.SerializeObject(tweet));
+                    continue;
+                }
+                if ( !@event.ExcludeAuthorIds.IsNullOrEmpty() && @event.ExcludeAuthorIds.Contains(tweet.AuthorId))
+                {
+                    _logger.LogDebug("HandleEventAsync ReplyMentionExcludeAuthorIdsGEvent ExculdAuthorId include authorId, userId is {A} {B}",
+                        State.UserId, JsonConvert.SerializeObject(@event.ExcludeAuthorIds));
+                    continue;
+                }
+                if (!State.RepliedTweets.Keys.Contains(tweet.Id))
+                {
+                    RaiseEvent(new ReplyTweetSEvent()
+                    {
+                        TweetId = tweet.Id,
+                        Text = "[wait for social response]:"+tweet.Text
+                    });
+                    await ConfirmEvents();
+                    
+                    var requestId = Guid.NewGuid();
+                    RaiseEvent(new TweetRequestSEvent() { RequestId = requestId });
+                    await ConfirmEvents();
+
+                    await PublishAsync(new SocialGEvent()
+                    {
+                        RequestId = requestId,
+                        Content = State.UserName.IsNullOrEmpty()
+                            ? tweet.Text
+                            : $"My Twitter username is {State.UserName}. I received a message mentioning me, and the content is: {tweet.Text}",
+                        MessageId = tweet.Id
+                    });
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, $"[TwitterGAgent][ReplyMentionWithAuthorIdsGEvent] handle error:{e}");
+        }
+    }
+    
 
     [EventHandler]
     public async Task HandleEventAsync(ReplyMentionGEvent @event)
