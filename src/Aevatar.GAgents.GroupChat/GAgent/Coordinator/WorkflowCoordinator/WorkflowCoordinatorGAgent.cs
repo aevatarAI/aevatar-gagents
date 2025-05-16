@@ -216,7 +216,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
         if (State.CheckAllWorkUnitFinished())
         {
-            var grainIdList = TentativeState.GetALlWorkerUnitGrainIds();
+            var grainIdList = TentativeState.GetAllWorkerUnitGrainIds();
             foreach (var grainId in grainIdList)
             {
                 var speaker = GrainId.Parse(grainId);

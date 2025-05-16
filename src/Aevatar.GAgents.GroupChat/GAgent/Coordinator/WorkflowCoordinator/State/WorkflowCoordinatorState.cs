@@ -69,7 +69,7 @@ public class WorkflowCoordinatorState : StateBase
             : CurrentWorkUnitInfos.First(f => f.GrainId == result);
     }
 
-    public List<string> GetALlWorkerUnitGrainIds()
+    public List<string> GetAllWorkerUnitGrainIds()
     {
         return CurrentWorkUnitInfos.Select(s => s.GrainId).Distinct().ToList();
     }
