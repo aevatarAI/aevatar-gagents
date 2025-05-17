@@ -56,11 +56,10 @@
 ## 创建代理的步骤
 
 1. **创建 Agent 存储类**:
-   - 必须继承自 `StateBase`
    - 使用 `[GenerateSerializer]` 和 `[Id(n)]` 特性
 
 2. **创建 EventSourcing 事件类**:
-   - 必须继承自 `SEventBase`
+   - 必须继承自 `StateLogEventBase`
    - 用于记录状态变更
 
 3. **创建接收外部消息的事件类**:
