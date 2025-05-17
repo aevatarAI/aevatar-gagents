@@ -2,7 +2,6 @@ using System;
 using System.ComponentModel;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.SignalR;
 using Orleans;
 using Orleans.Runtime;
 
@@ -10,7 +9,7 @@ namespace Aevatar.GAgents.AIGAgent.GEvents;
 
 [Description("Return a streaming chunk")]
 [GenerateSerializer]
-public class AIStreamingResponseGEvent : ResponseToPublisherEventBase
+public class AIStreamingResponseGEvent : EventBase
 {
     [Id(0)] public string ResponseContent { get; set; }
     [Id(1)] public int SerialNumber { get; set; }
@@ -30,7 +29,7 @@ public class AIStreamingResponseGEvent : ResponseToPublisherEventBase
 
 [Description("Return a error reponse")]
 [GenerateSerializer]
-public class AIStreamingErrorResponseGEvent : ResponseToPublisherEventBase
+public class AIStreamingErrorResponseGEvent : EventBase
 {
     [Id(0)] public AIChatContextDto Context { get; set; } = new();
     
