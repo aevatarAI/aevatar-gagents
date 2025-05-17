@@ -172,7 +172,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 for (var i = 0; i < startWorkUnitInfoList.Count; i++)
                 {
                     var startWorkUnitInfo = startWorkUnitInfoList[i];
-                    startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;                    
+                    startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
                 }
 
                 State.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
@@ -216,7 +216,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
         if (State.CheckAllWorkUnitFinished())
         {
-            await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
+            var grainIdList = TentativeState.GetAllWorkerUnitGrainIds();
+            foreach (var grainId in grainIdList)
+            {
+                var speaker = GrainId.Parse(grainId);
+                await PublishP2PAsync(speaker, new GroupChatFinishEvent()
+                {
+                    BlackboardId = State.BlackboardId
+                });
+            }
+
+            // await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
             RaiseEvent(new WorkflowFinishLogEvent());
             await ConfirmEvents();
         }
@@ -239,9 +249,10 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             messages.Add(new ChatMessage() { MessageType = MessageType.BlackboardTopic, Content = content });
         }
 
-        await PublishAsync(new ChatEvent()
+        var speaker = GrainId.Parse(workUnitGrainId);
+        await PublishP2PAsync(speaker, new ChatEvent()
         {
-            BlackboardId = State.BlackboardId, Speaker = GrainId.Parse(workUnitGrainId).GetGuidKey(), Term = State.Term,
+            BlackboardId = State.BlackboardId, Speaker = speaker.GetGuidKey(), Term = State.Term,
             CoordinatorMessages = messages
         });
 
@@ -249,6 +260,20 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         await ConfirmEvents();
 
         Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} end");
+    }
+
+    #endregion
+
+    #region protected method
+
+    protected async Task PublishP2PAsync<T>(GrainId grainId, T @event) where T : EventBase
+    {
+        var grainIdString = grainId.ToString();
+        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace,
+            grainIdString);
+        var stream = StreamProvider.GetStream<EventWrapperBase>(streamId);
+        var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
+        await stream.OnNextAsync(eventWrapper);
     }
 
     #endregion
