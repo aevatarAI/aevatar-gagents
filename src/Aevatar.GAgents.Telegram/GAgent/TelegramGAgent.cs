@@ -49,6 +49,13 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
             State.Token);
     }
 
+    [EventHandler()]
+    public async Task HandlerEventAsync(SetTelegramWebhookGEvent @event)
+    {
+       _logger.LogInformation("SetTelegramWebhookGEvent " + @event.Webhook);
+       RaiseEvent(new SetTelegramWebhookSEvent() { Webhook = @event.Webhook });
+       await ConfirmEvents();
+    }
 
     [EventHandler]
     public async Task HandleEventAsync(ReceiveMessageGEvent @event)
@@ -180,6 +187,9 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
                     State.SocialRequestList.Add(@requestSEvent.RequestId);
                 }
 
+                break;
+            case SetTelegramWebhookSEvent @sevent:
+                State.Webhook = @sevent.Webhook;
                 break;
             case TelegramOptionSEvent @telegramOptionSEvent:
                 State.Webhook = @telegramOptionSEvent.Webhook;

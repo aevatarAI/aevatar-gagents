@@ -23,3 +23,9 @@ public class SendMessageGEvent:EventBase
     [Description("The name of the bot.")]
     [Id(5)]   public string BotName { get; set; }
 }
+
+[GenerateSerializer]
+public class SetTelegramWebhookGEvent : EventBase
+{
+    [Id(0)] public string Webhook { get; set; }
+}
