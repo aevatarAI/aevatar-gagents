@@ -52,7 +52,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
     [EventHandler()]
     public async Task HandlerEventAsync(SetTelegramWebhookGEvent @event)
     {
-       _logger.LogInformation("SetTelegramWebhookGEvent " + @event.Webhook);
+        Logger.LogInformation("SetTelegramWebhookGEvent " + @event.Webhook);
        RaiseEvent(new SetTelegramWebhookSEvent() { Webhook = @event.Webhook });
        await ConfirmEvents();
     }
