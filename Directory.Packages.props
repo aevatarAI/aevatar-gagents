@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.5.0-stream.2</AevatarCoreVersion>
+    <AevatarCoreVersion>1.5.0-alpha.6</AevatarCoreVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar" Version="$(AevatarCoreVersion)" />
