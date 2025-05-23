@@ -41,8 +41,7 @@ public static class IGAgentExtension
         var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
         await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
         {
-            WorkflowUnitList = workflowUnitList,
-            BlackBoardId = blackboard.GetPrimaryKey(),
+            WorkflowUnitList = workflowUnitList
         });
         
         await agent.RegisterAsync(workflowCoordinator);

@@ -79,6 +79,20 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             return;
         }
 
+        if (State.BlackboardId == Guid.Empty)
+        {
+            Logger.LogError(
+                $"[WorkflowCoordinatorGAgent] BlackboardId is not init");
+            return;
+        }
+        
+        if (!State.CurrentWorkUnitInfos.Any())
+        {
+            Logger.LogError(
+                $"[WorkflowCoordinatorGAgent] Work unit is not init");
+            return;
+        }
+
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         await blackboard.ResetAsync();
 
@@ -112,8 +126,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         Logger.LogDebug(
             $"[WorkflowCoordinatorGAgent] [PerformConfigAsync] WorkflowCoordinatorConfigDto:{JsonConvert.SerializeObject(configuration)}");
 
+        var blackBoardId = this.GetPrimaryKey();
+        var blackboardAgent = GrainFactory.GetGrain<IBlackboardGAgent>(blackBoardId);
+        await RegisterAsync(blackboardAgent);
+
         RaiseEvent(new InitWorkflowCoordinatorLogEvent
-            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = configuration.BlackBoardId });
+            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId });
 
         await ConfirmEvents();
     }
@@ -260,6 +278,105 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         await ConfirmEvents();
 
         Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} end");
+    }
+
+    private async Task<bool> TryRegisterWorkUnitsAsync(List<WorkflowUnitDto> workflowUnits)
+    {
+
+        var workflowUnitGrains = new Dictionary<string, IGAgent>();
+        foreach (var unit in workflowUnits)
+        {
+            
+            
+            
+            var grainId = GrainId.Parse(unit.GrainId);
+            var agent = GrainFactory.GetGrain<IGAgent>(grainId);
+            
+            // TODO: check is GroupMemberGAgentBase<,,,>
+            
+            var agentParent = await agent.GetParentAsync();
+            if (agentParent != default && agentParent != this.GetGrainId())
+            {
+                return false;
+            }
+            
+            workflowUnitGrains.Add(unit.GrainId, agent);
+        }
+
+        if (workflowUnitGrains.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var item in workflowUnitGrains.Values)
+        {
+            await RegisterAsync(item);
+        }
+
+        return true;
+    }
+    
+    public bool IsAllPathsCanReachTerminal(List<WorkflowUnitDto> workflowUnits)
+    {
+        Dictionary<string, List<string>> graph = new();
+        HashSet<string> allNodeIds = new();
+
+        foreach (var unit in workflowUnits)
+        {
+            allNodeIds.Add(unit.GrainId);
+            if (!graph.ContainsKey(unit.GrainId))
+                graph[unit.GrainId] = new List<string>();
+        
+            if (!string.IsNullOrWhiteSpace(unit.NextGrainId))
+            {
+                graph[unit.GrainId].Add(unit.NextGrainId);
+                allNodeIds.Add(unit.NextGrainId); 
+            }
+        }
+        
+        var terminalNodes = workflowUnits
+            .Where(n => string.IsNullOrWhiteSpace(n.NextGrainId))
+            .Select(n => n.GrainId)
+            .ToHashSet();
+        
+        var reachable = new HashSet<string>(terminalNodes);
+        var queue = new Queue<string>(terminalNodes);
+        
+        Dictionary<string, List<string>> reverseGraph = new();
+
+        foreach (var unit in workflowUnits)
+        {
+            if (!string.IsNullOrWhiteSpace(unit.NextGrainId))
+            {
+                if (!reverseGraph.ContainsKey(unit.NextGrainId))
+                    reverseGraph[unit.NextGrainId] = new List<string>();
+                reverseGraph[unit.NextGrainId].Add(unit.GrainId);
+            }
+        }
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (reverseGraph.TryGetValue(current, out var preNodes))
+            {
+                foreach (var node in preNodes)
+                {
+                    if (!reachable.Contains(node))
+                    {
+                        reachable.Add(node);
+                        queue.Enqueue(node);
+                    }
+                }
+            }
+        }
+        
+        foreach (var nodeId in allNodeIds)
+        {
+            if (!reachable.Contains(nodeId))
+                return false; 
+        }
+
+        return true;
     }
 
     #endregion
