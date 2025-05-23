@@ -29,15 +29,6 @@ public static class IGAgentExtension
 
     public static async Task AddWorkflowGroupChat(this IGAgent agent, IGAgentFactory agentFactory, List<WorkflowUnitDto> workflowUnitList)
     {
-        var blackboard = await agentFactory.GetGAgentAsync<IBlackboardGAgent>(Guid.NewGuid());
-        await agent.RegisterAsync(blackboard);
-        foreach (var item in workflowUnitList)
-        {
-            var grainId = GrainId.Parse(item.GrainId);
-            var workUnit = await agentFactory.GetGAgentAsync(grainId);
-            await agent.RegisterAsync(workUnit);
-        }
-        
         var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
         await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
         {

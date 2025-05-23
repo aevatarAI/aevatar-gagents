@@ -111,8 +111,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
     public async Task HandleEventAsync(ResetWorkflowEvent @event)
     {
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent start");
-        RaiseEvent(new ResetWorkflowLogEvent() { WorkflowUnit = @event.WorkflowUnitList });
-        await ConfirmEvents();
+
+        if (await TryRegisterWorkUnitsAsync(@event.WorkflowUnitList))
+        {
+            RaiseEvent(new ResetWorkflowLogEvent() { WorkflowUnit = @event.WorkflowUnitList });
+            await ConfirmEvents();
+        }
+        else
+        {
+            Logger.LogError(
+                $"[WorkflowCoordinatorGAgent] Wrong workflow unit list:{JsonConvert.SerializeObject(@event)}");
+        }
 
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent end");
     }
@@ -125,15 +134,23 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
     {
         Logger.LogDebug(
             $"[WorkflowCoordinatorGAgent] [PerformConfigAsync] WorkflowCoordinatorConfigDto:{JsonConvert.SerializeObject(configuration)}");
+        
+        if (await TryRegisterWorkUnitsAsync(configuration.WorkflowUnitList))
+        {
+            var blackBoardId = this.GetPrimaryKey();
+            var blackboardAgent = GrainFactory.GetGrain<IBlackboardGAgent>(blackBoardId);
+            await RegisterAsync(blackboardAgent);
+            
+            RaiseEvent(new InitWorkflowCoordinatorLogEvent
+                { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId });
 
-        var blackBoardId = this.GetPrimaryKey();
-        var blackboardAgent = GrainFactory.GetGrain<IBlackboardGAgent>(blackBoardId);
-        await RegisterAsync(blackboardAgent);
-
-        RaiseEvent(new InitWorkflowCoordinatorLogEvent
-            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId });
-
-        await ConfirmEvents();
+            await ConfirmEvents();
+        }
+        else
+        {
+            Logger.LogError(
+                $"[WorkflowCoordinatorGAgent] [PerformConfigAsync] Wrong workflow unit list:{JsonConvert.SerializeObject(configuration)}");
+        }
     }
 
     protected override void GAgentTransitionState(WorkflowCoordinatorState state,
@@ -282,17 +299,26 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     private async Task<bool> TryRegisterWorkUnitsAsync(List<WorkflowUnitDto> workflowUnits)
     {
+        if (workflowUnits.Count == 0)
+        {
+            return false;
+        }
+
+        if (!IsAllPathsCanReachTerminal(workflowUnits))
+        {
+            return false;
+        }
 
         var workflowUnitGrains = new Dictionary<string, IGAgent>();
         foreach (var unit in workflowUnits)
         {
-            
-            
-            
+            if (workflowUnitGrains.ContainsKey(unit.GrainId))
+            {
+                continue;
+            }
+
             var grainId = GrainId.Parse(unit.GrainId);
             var agent = GrainFactory.GetGrain<IGAgent>(grainId);
-            
-            // TODO: check is GroupMemberGAgentBase<,,,>
             
             var agentParent = await agent.GetParentAsync();
             if (agentParent != default && agentParent != this.GetGrainId())
