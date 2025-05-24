@@ -164,6 +164,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     GrainId = s.GrainId,
                     NextGrainId = s.NextGrainId,
                     UnitStatusEnum = WorkerUnitStatusEnum.Pending,
+                    ExtendedData = s.ExtendedData
                 }).ToList();
 
                 State.CurrentWorkUnitInfos = nodeList;
@@ -224,6 +225,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     GrainId = s.GrainId,
                     NextGrainId = s.NextGrainId,
                     UnitStatusEnum = WorkerUnitStatusEnum.Pending,
+                    ExtendedData = s.ExtendedData
                 }).ToList();
                 if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
                 {
