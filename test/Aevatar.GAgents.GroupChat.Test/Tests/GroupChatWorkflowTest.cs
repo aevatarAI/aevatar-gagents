@@ -250,11 +250,6 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
             },
             new WorkflowUnitDto()
             {
-                GrainId = carber.GetGrainId().ToString(),
-                NextGrainId = fread.GetGrainId().ToString(),
-            },
-            new WorkflowUnitDto()
-            {
                 GrainId = fread.GetGrainId().ToString(),
                 NextGrainId = moni.GetGrainId().ToString(),
             },
@@ -303,7 +298,15 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
         await Task.Delay(TimeSpan.FromSeconds(2));
 
         freadState = await fread.GetStateAsync();
-        freadState.PreWorkUnits.Count.ShouldBe(4);
+        freadState.PreWorkUnits.Count.ShouldBe(3);
+
+        var workflowCoordinatorGraindId = workflowCoordinator.GetGrainId();
+        (await toni.GetParentAsync()).ShouldBe(workflowCoordinatorGraindId);
+        (await tom.GetParentAsync()).ShouldBe(workflowCoordinatorGraindId);
+        (await jeni.GetParentAsync()).ShouldBe(workflowCoordinatorGraindId);
+        (await carber.GetParentAsync()).IsDefault.ShouldBeTrue();
+        (await fread.GetParentAsync()).ShouldBe(workflowCoordinatorGraindId);
+        (await moni.GetParentAsync()).ShouldBe(workflowCoordinatorGraindId);
     }
 
     [Fact]

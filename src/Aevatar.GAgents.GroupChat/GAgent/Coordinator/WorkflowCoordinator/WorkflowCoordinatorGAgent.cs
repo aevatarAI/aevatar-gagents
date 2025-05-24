@@ -108,6 +108,9 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         await blackboard.ResetAsync();
+
+        await UnregisterWorkUnitAsync(State.BackupWorkUnitInfos);
+        await UnregisterWorkUnitAsync(State.CurrentWorkUnitInfos);
         
         RaiseEvent(new ResetWorkflowLogEvent());
         await ConfirmEvents();
@@ -128,11 +131,25 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var blackBoardId = this.GetPrimaryKey();
         var blackboardAgent = GrainFactory.GetGrain<IBlackboardGAgent>(blackBoardId);
         await RegisterAsync(blackboardAgent);
+        
+        var toUnregisterWorkUnit = new List<WorkUnitInfo>();
+        if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
+        {
+            toUnregisterWorkUnit = State.CurrentWorkUnitInfos.Where(backup =>
+                configuration.WorkflowUnitList.All(current => current.GrainId != backup.GrainId)).ToList();
+        }
+        else
+        {
+            toUnregisterWorkUnit = State.BackupWorkUnitInfos.Where(backup =>
+                configuration.WorkflowUnitList.All(current => current.GrainId != backup.GrainId)).ToList();
+        }
 
         RaiseEvent(new SetWorkflowCoordinatorLogEvent
             { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId });
 
         await ConfirmEvents();
+        
+        await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
     }
 
     protected override void GAgentTransitionState(WorkflowCoordinatorState state,
@@ -221,6 +238,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     #region private method
 
+    private IEnumerable<WorkUnitInfo> GetNewWorkUnits()
+    {
+        return State.BackupWorkUnitInfos.Where(backup => 
+            !State.CurrentWorkUnitInfos.Any(current => current.GrainId == backup.GrainId));
+    }
+
     private async Task TryFinishWorkflowAsync()
     {
         if (State.WorkflowStatus != WorkflowCoordinatorStatus.InProgress)
@@ -240,9 +263,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 });
             }
 
-            // await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
+            var toUnregisterWorkUnit = new List<WorkUnitInfo>();
+            if (State.BackupWorkUnitInfos.Count > 0)
+            {
+                toUnregisterWorkUnit = State.CurrentWorkUnitInfos.Where(backup =>
+                    State.BackupWorkUnitInfos.All(current => current.GrainId != backup.GrainId)).ToList();
+            }
+
             RaiseEvent(new WorkflowFinishLogEvent());
             await ConfirmEvents();
+            
+            await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
         }
     }
 
@@ -375,6 +406,16 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         }
 
         return true;
+    }
+
+    private async Task UnregisterWorkUnitAsync(List<WorkUnitInfo> workUnitInfos)
+    {
+        foreach (var workUnit in workUnitInfos)
+        {
+            var grainId = GrainId.Parse(workUnit.GrainId);
+            var agent = GrainFactory.GetGrain<IGAgent>(grainId);
+            await UnregisterAsync(agent);
+        }
     }
 
     #endregion
