@@ -4,6 +4,7 @@ using Aevatar.GAgents.GroupChat.Feature.Extension;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
+using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 using GroupChat.GAgent.Dto;
 using Orleans;
 using Shouldly;
@@ -176,7 +177,7 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
     }
 
     [Fact]
-    public async Task ResetWorkflowTest()
+    public async Task UpdateWorkflowTest()
     {
         var toni = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
         await toni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Toni"});
@@ -264,10 +265,21 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
             }
         };
         
-        await groupAgent.AddWorkflowGroupChat(_agentFactory, workflowsFirst);
+        var workflowCoordinator = await _agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+        await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
+        {
+            WorkflowUnitList = workflowsFirst
+        });
+        
+        await groupAgent.RegisterAsync(workflowCoordinator);
         await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
-        // reset workflow
-        await groupAgent.PublishEventAsync(new ResetWorkflowEvent() { WorkflowUnitList = workflowsSecond });
+        
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        // update workflow
+        await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
+        {
+            WorkflowUnitList = workflowsSecond
+        });
         
         // wait workflow run complate
         await Task.Delay(TimeSpan.FromSeconds(2));
@@ -380,28 +392,28 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
         var moniState = await moni.GetStateAsync();
         moniState.AgentNames.Count.ShouldBe(2);
     }
-    
+
     [Fact]
     public async Task WrongWorkflowUnitTest()
     {
         var toni = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await toni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Toni"});
-        
+        await toni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Toni" });
+
         var tom = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await tom.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Tom"});
-        
+        await tom.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Tom" });
+
         var jeni = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await jeni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Jeni"});
-        
+        await jeni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Jeni" });
+
         var carber = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await carber.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Carber"});
-        
+        await carber.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Carber" });
+
         var fread = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await fread.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Fread"});
-        
+        await fread.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Fread" });
+
         var moni = await _agentFactory.GetGAgentAsync<ILeaderGAgent>(Guid.NewGuid());
-        await moni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Moni"});
-        
+        await moni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Moni" });
+
         var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
         var workflows = new List<WorkflowUnitDto>()
         {
@@ -436,20 +448,79 @@ public sealed class GroupChatWorkflowTest : AevatarGroupChatTestBase
                 NextGrainId = jeni.GetGrainId().ToString(),
             }
         };
-        
-        await groupAgent.AddWorkflowGroupChat(_agentFactory, workflows);
-        await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
 
-        // wait workflow run complate
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await groupAgent.AddWorkflowGroupChat(_agentFactory, workflows));
+        exception.Message.ShouldBe("The workflow has a loop and cannot end normally.");
+
+        await tom.RegisterAsync(toni);
+        workflows = new List<WorkflowUnitDto>()
+        {
+            new WorkflowUnitDto()
+            {
+                GrainId = toni.GetGrainId().ToString(),
+                NextGrainId = "",
+            }
+        };
+        
+        exception = await Assert.ThrowsAsync<ArgumentException>(async () => await groupAgent.AddWorkflowGroupChat(_agentFactory, workflows));
+        exception.Message.ShouldBe($"GAgent {toni.GetGrainId().ToString()} already has a parent GAgent.");
+    }
+
+    [Fact]
+    public async Task WorkflowInitTest()
+    {
+        var toni = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
+        await toni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Toni" });
+
+        var tom = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
+        await tom.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Tom" });
+
+        var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var workflows = new List<WorkflowUnitDto>()
+        {
+            new WorkflowUnitDto()
+            {
+                GrainId = toni.GetGrainId().ToString(),
+                NextGrainId = tom.GetGrainId().ToString(),
+            },
+            new WorkflowUnitDto()
+            {
+                GrainId = tom.GetGrainId().ToString(),
+                NextGrainId = "",
+            }
+        };
+        
+        var workflowCoordinator = await _agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+        await groupAgent.RegisterAsync(workflowCoordinator);
+        await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
+        
         await Task.Delay(TimeSpan.FromSeconds(2));
         
-        var jeniState = await jeni.GetStateAsync();
-        jeniState.PreWorkUnits.Count.ShouldBe(0);
+        var tomState = await tom.GetStateAsync();
+        tomState.PreWorkUnits.Count.ShouldBe(0);
         
-        var freadState = await fread.GetStateAsync();
-        freadState.PreWorkUnits.Count.ShouldBe(0);
+        await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
+        {
+            WorkflowUnitList = new List<WorkflowUnitDto>()
+        });
         
-        var moniState = await moni.GetStateAsync();
-        moniState.AgentNames.Count.ShouldBe(0);
+        await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
+        
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        
+        tomState = await tom.GetStateAsync();
+        tomState.PreWorkUnits.Count.ShouldBe(0);
+        
+        await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
+        {
+            WorkflowUnitList = workflows
+        });
+        
+        await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent() { });
+        
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        
+        tomState = await tom.GetStateAsync();
+        tomState.PreWorkUnits.Count.ShouldBe(1);
     }
 }
