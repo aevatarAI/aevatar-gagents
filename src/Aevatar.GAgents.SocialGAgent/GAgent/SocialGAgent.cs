@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Aevatar.GAgents.SocialChat.GAgent;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
@@ -48,6 +49,8 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
                 if(this.State.PromptTemplate.StartsWith("Do not appear markdown format"))
                 content = content.Replace("-", "");
                 content = content.Replace("*", "");
+                content = content.Replace("#", "");
+                content = Regex.Replace(content, @"\n+", "\n");
                 aiResponseEvent.ResponseContent = content;
                 aiResponseEvent.ChatId = @event.ChatId;
                 aiResponseEvent.ReplyMessageId = @event.MessageId;
