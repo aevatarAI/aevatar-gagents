@@ -50,7 +50,7 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
                 content = content.Replace("-", "");
                 content = content.Replace("*", "");
                 content = content.Replace("#", "");
-                content = Regex.Replace(content, @"\n+", "\n");
+                content = Regex.Replace(content, "\n\n\n", "\n");
                 aiResponseEvent.ResponseContent = content;
                 aiResponseEvent.ChatId = @event.ChatId;
                 aiResponseEvent.ReplyMessageId = @event.MessageId;
