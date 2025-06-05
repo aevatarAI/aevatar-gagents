@@ -53,6 +53,9 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
                     content = content.Replace("#", "");
                     content = Regex.Replace(content, "\n\n\n", "\n");
                 }
+                if(content.Contains("@user ")){
+                    content = content.Replace("@user ","")
+                }
 
                 aiResponseEvent.ResponseContent = content;
                 aiResponseEvent.ChatId = @event.ChatId;
