@@ -46,11 +46,14 @@ public class SocialGAgent : ChatGAgentBase<ChatGAgentState, SocialGAgentLogEvent
                 _logger.LogInformation("handle SocialEvent, AI replyMessage: {msg}", message[0].Content);
 
                 var content = message[0].Content!;
-                if(this.State.PromptTemplate.StartsWith("Do not appear markdown format"))
-                content = content.Replace("-", "");
-                content = content.Replace("*", "");
-                content = content.Replace("#", "");
+                if (this.State.PromptTemplate.StartsWith("Do not appear markdown format"))
+                {
+                    content = content.Replace("-", "");
+                    content = content.Replace("*", "");
+                    content = content.Replace("#", "");
+                }
                 content = Regex.Replace(content, "\n\n\n", "\n");
+                
                 aiResponseEvent.ResponseContent = content;
                 aiResponseEvent.ChatId = @event.ChatId;
                 aiResponseEvent.ReplyMessageId = @event.MessageId;
