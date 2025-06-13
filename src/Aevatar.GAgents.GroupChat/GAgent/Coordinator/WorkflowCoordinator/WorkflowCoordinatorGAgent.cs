@@ -246,13 +246,16 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     private async Task TryFinishWorkflowAsync()
     {
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync start");
         if (State.WorkflowStatus != WorkflowCoordinatorStatus.InProgress)
         {
+            Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync: WorkflowStatus not InProgress");
             return;
         }
 
         if (State.CheckAllWorkUnitFinished())
         {
+            Logger.LogDebug("[WorkflowCoordinatorGAgent] All work units finished, finishing workflow");
             var grainIdList = TentativeState.GetAllWorkerUnitGrainIds();
             foreach (var grainId in grainIdList)
             {
@@ -274,7 +277,9 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             await ConfirmEvents();
             
             await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
+            Logger.LogDebug("[WorkflowCoordinatorGAgent] Workflow finished and work units unregistered");
         }
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync end");
     }
 
     private async Task TryActiveWorkUnitAsync(string workUnitGrainId, string? content = null)
@@ -309,13 +314,16 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     private async Task TryRegisterWorkUnitsAsync(List<WorkflowUnitDto> workflowUnits)
     {
+        Logger.LogDebug($"[WorkflowCoordinatorGAgent] TryRegisterWorkUnitsAsync start, count: {workflowUnits.Count}");
         if (workflowUnits.Count == 0)
         {
+            Logger.LogDebug("[WorkflowCoordinatorGAgent] No workflow units to register");
             return;
         }
 
         if (!IsAllPathsCanReachTerminal(workflowUnits))
         {
+            Logger.LogError("[WorkflowCoordinatorGAgent] The workflow has a loop and cannot end normally.");
             throw new ArgumentException("The workflow has a loop and cannot end normally.");
         }
 
@@ -333,6 +341,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             var agentParent = await agent.GetParentAsync();
             if (agentParent != default && agentParent != this.GetGrainId())
             {
+                Logger.LogError($"[WorkflowCoordinatorGAgent] GAgent {unit.GrainId} already has a parent GAgent.");
                 throw new ArgumentException($"GAgent {unit.GrainId} already has a parent GAgent.");
             }
             
@@ -343,6 +352,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         {
             await RegisterAsync(item);
         }
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] TryRegisterWorkUnitsAsync end");
     }
     
     public bool IsAllPathsCanReachTerminal(List<WorkflowUnitDto> workflowUnits)
@@ -410,12 +420,14 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     private async Task UnregisterWorkUnitAsync(List<WorkUnitInfo> workUnitInfos)
     {
+        Logger.LogDebug($"[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync start, count: {workUnitInfos.Count}");
         foreach (var workUnit in workUnitInfos)
         {
             var grainId = GrainId.Parse(workUnit.GrainId);
             var agent = GrainFactory.GetGrain<IGAgent>(grainId);
             await UnregisterAsync(agent);
         }
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync end");
     }
 
     #endregion
@@ -424,12 +436,14 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     protected async Task PublishP2PAsync<T>(GrainId grainId, T @event) where T : EventBase
     {
+        Logger.LogDebug($"[WorkflowCoordinatorGAgent] PublishP2PAsync to {grainId}");
         var grainIdString = grainId.ToString();
         var streamId = StreamId.Create(AevatarOptions!.StreamNamespace,
             grainIdString);
         var stream = StreamProvider.GetStream<EventWrapperBase>(streamId);
         var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
         await stream.OnNextAsync(eventWrapper);
+        Logger.LogDebug($"[WorkflowCoordinatorGAgent] PublishP2PAsync to {grainId} done");
     }
 
     #endregion
