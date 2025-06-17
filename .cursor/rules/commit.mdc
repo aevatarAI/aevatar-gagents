@@ -1,0 +1,8 @@
+---
+description: gitcommit
+globs: 
+alwaysApply: false
+---
+不要直接向dev分支推送代码,所有开发都在feature分支上面
+
+推送代码前,git commit的内容为英文
