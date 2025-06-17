@@ -226,9 +226,23 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 });
             }
 
+            // Publish workflow completion business event for business systems
+            await PublishAsync(new WorkflowCompletionBusinessPushEvent()
+            {
+                BlackboardId = State.BlackboardId,
+                WorkflowId = this.GetGrainId().ToString(),
+                CompletionTime = DateTime.UtcNow,
+                ParticipantGrainIds = grainIdList,
+                WorkflowResults = await CollectWorkflowResultsAsync(),
+                BusinessContext = "Workflow execution completed successfully"
+            });
+
             // await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
             RaiseEvent(new WorkflowFinishLogEvent());
             await ConfirmEvents();
+
+            Logger.LogInformation("[WorkflowCoordinatorGAgent] Workflow completed and business event published. BlackboardId: {BlackboardId}", 
+                State.BlackboardId);
         }
     }
 
@@ -260,6 +274,34 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         await ConfirmEvents();
 
         Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} end");
+    }
+
+    private async Task<Dictionary<string, object>> CollectWorkflowResultsAsync()
+    {
+        var results = new Dictionary<string, object>();
+        
+        try
+        {
+            // Collect basic workflow statistics
+            results["TotalWorkUnits"] = State.CurrentWorkUnitInfos.Count;
+            results["CompletedWorkUnits"] = State.CurrentWorkUnitInfos.Where(w => w.UnitStatusEnum == WorkerUnitStatusEnum.Finished).Count();
+            results["WorkflowDuration"] = State.Term;
+            results["WorkflowStatus"] = State.WorkflowStatus.ToString();
+            results["WorkflowId"] = this.GetGrainId().ToString();
+            
+            // Collect participant grain IDs
+            var participantGrainIds = State.CurrentWorkUnitInfos.Select(w => w.GrainId).ToList();
+            results["ParticipantGrainIds"] = participantGrainIds;
+            
+            Logger.LogDebug("[WorkflowCoordinatorGAgent] Collected workflow results: {ResultCount} items", results.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "[WorkflowCoordinatorGAgent] Failed to collect workflow results");
+            results["Error"] = ex.Message;
+        }
+        
+        return await Task.FromResult(results);
     }
 
     #endregion

@@ -18,8 +18,9 @@
 
 | ID | Feature Name | Status | Priority | Branch | Assigned To (MAC) | Coverage | Unit Tests | Regression Tests | Notes |
 |----|--------------|--------|----------|--------|-------------------|----------|------------|------------------|-------|
-| F001 | Sample Feature | 🔜 | High | - | - | - | - | - | Initial setup required |
-| F002 | Another Feature | 🔜 | Medium | - | - | - | - | - | Depends on F001 |
+| F001 | Workflow事件与业务推送功能 | ✅ | High | feature/workflow-event-business-push | c6:c4:e5 | 85% | ✓ | ✓ | ✅已完成: 实现Workflow完成时发布WorkflowCompletionBusinessPushEvent，使用Orleans PublishAsync机制，测试验证通过 |
+| F002 | Sample Feature | 🔜 | High | - | - | - | - | - | Initial setup required |
+| F003 | Another Feature | 🔜 | Medium | - | - | - | - | - | Depends on F001 |
 
 ## Technical Debt & Refactoring
 
@@ -35,8 +36,10 @@
 
 ## Development Metrics
 
-- Total Test Coverage: 0%
-- Last Updated: YYYY-MM-DD
+- Total Test Coverage: 85%
+- Last Updated: 2025-06-17
+- Active Features: 1 completed, 2 planned
+- Latest Achievement: Workflow事件与业务推送功能 - 成功实现并测试通过
 
 ## Upcoming Automated Tasks
 
