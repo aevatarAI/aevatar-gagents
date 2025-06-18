@@ -5,7 +5,6 @@ using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
 using GroupChat.GAgent.Dto;
-using Orleans;
 using Shouldly;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;
