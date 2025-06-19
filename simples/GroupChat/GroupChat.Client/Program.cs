@@ -20,10 +20,7 @@ IHostBuilder builder = Host.CreateDefaultBuilder(args)
     })
     .ConfigureLogging(logging => logging.AddConsole())
     .UseConsoleLifetime();
-builder.ConfigureServices((context, service) =>
-{
-    service.AddSingleton<IGAgentFactory, GAgentFactory>();
-});
+builder.ConfigureServices((context, service) => { service.AddSingleton<IGAgentFactory, GAgentFactory>(); });
 
 using IHost host = builder.Build();
 await host.StartAsync();
