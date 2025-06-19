@@ -1,25 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
+  
   <ItemGroup>
-    <ProjectReference Include="../OrderProcessing.Grains/OrderProcessing.Grains.csproj" />
+    <ProjectReference Include="../SimpleAIWorkflow.Grains/SimpleAIWorkflow.Grains.csproj" />
     <ProjectReference Include="../../../src/Aevatar.GAgents.GroupChat/Aevatar.GAgents.GroupChat.csproj" />
     <ProjectReference Include="../../../src/Aevatar.GAgents.Basic/Aevatar.GAgents.Basic.csproj" />
+    <ProjectReference Include="../../../src/Aevatar.GAgents.AIGAgent/Aevatar.GAgents.AIGAgent.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aevatar.Core" />
     <PackageReference Include="Aevatar.Core.Abstractions" />
+    <PackageReference Include="Aevatar.Station.Feature" />
     <PackageReference Include="Microsoft.Orleans.Client" />
+    <PackageReference Include="Microsoft.Orleans.TestingHost" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Microsoft.Orleans.Streaming" />
   </ItemGroup>
-
 </Project> 

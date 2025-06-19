@@ -10,7 +10,9 @@
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarCoreVersion)" />
-<!--    <PackageVersion Include="Aevatar.SignalR" Version="1.5.5-stream.2" />-->
+    <PackageVersion Include="Aevatar.GAgents.AI.Abstractions" Version="1.5.0-workflow-2" />
+    <PackageVersion Include="Aevatar.Station.Feature" Version="1.1.4" />
+    <!--    <PackageVersion Include="Aevatar.SignalR" Version="1.5.5-stream.2" />-->
     <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
@@ -136,5 +138,19 @@
     <PackageVersion Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.33.0-beta" />
     <PackageVersion Include="Neo4j.Driver" Version="5.27.0" />
+    <!-- Orleans 8.x for SimpleAIWorkflow compatibility -->
+    <PackageVersion Include="Microsoft.Orleans.Client" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Core.Abstractions" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.EventSourcing" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Reminders" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Runtime" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Sdk" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Server" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Streaming" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.TestingHost" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.Core" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="8.1.0" />
+    <!-- <PackageVersion Include="Microsoft.Orleans.CodeGenerator.MSBuild" Version="9.0.1" /> -->
   </ItemGroup>
 </Project>

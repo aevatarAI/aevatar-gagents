@@ -26,9 +26,9 @@ using IHost host = builder.Build();
 await host.StartAsync();
 
 IGAgentFactory agentFactory = host.Services.GetRequiredService<IGAgentFactory>();
-
+var groupAgent = await agentFactory.GetGAgentAsync<IGroupGAgent>();
 IClusterClient client = host.Services.GetRequiredService<IClusterClient>();
-var groupAgent = client.GetGrain<IGroupGAgent>(Guid.NewGuid());
+// var groupAgent = client.GetGrain<IGroupGAgent>(Guid.NewGuid());
 
 var jack = client.GetGrain<IWorker>(Guid.NewGuid());
 await jack.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Jack" });

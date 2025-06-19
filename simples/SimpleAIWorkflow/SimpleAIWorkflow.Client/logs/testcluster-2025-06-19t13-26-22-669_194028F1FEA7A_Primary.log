@@ -1,0 +1,10 @@
+﻿[2025-06-19 13:26:22.873 GMT 5	Warning	100405	Orleans.Runtime.Silo]	Note: Silo not running with ServerGC turned on - recommend checking app config : <configuration>-<runtime>-<gcServer enabled="true">	
+[2025-06-19 13:26:22.874 GMT 5	Warning	100405	Orleans.Runtime.Silo]	Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).	
+[2025-06-19 13:26:23.244 GMT 10	Error	Orleans.Messaging.Dispatcher.SelectTargetFailed	Orleans.Messaging]	!!!!!!!!!! Failed to address message Request [S127.0.0.1:29985:109344382 sys.client/947cc5e807574127b98701dd8f42a725]->[ WorkflowAIAgent/26839225bc474957b0b5fdd882d66ae5] Aevatar.Core.Abstractions.IGAgent.ActivateAsync() #16F7921B93EED624	
+Exc level 0: Orleans.Runtime.OrleansException: No active nodes are compatible with grain WorkflowAIAgent and interface Aevatar.Core.Abstractions.IGAgent version 0. Known nodes with grain type: none. All known nodes compatible with interface version: none
+   at Orleans.Runtime.Placement.PlacementService.GetCompatibleSilos(PlacementTarget target) in /_/src/Orleans.Runtime/Placement/PlacementService.cs:line 126
+   at Orleans.Runtime.Placement.RandomPlacementDirector.OnAddActivation(PlacementStrategy strategy, PlacementTarget target, IPlacementContext context) in /_/src/Orleans.Runtime/Placement/RandomPlacementDirector.cs:line 11
+   at Orleans.Runtime.Placement.PlacementService.PlacementWorker.GetOrPlaceActivationAsync(Message firstMessage) in /_/src/Orleans.Runtime/Placement/PlacementService.cs:line 375
+   at Orleans.Runtime.Messaging.MessageCenter.<AddressAndSendMessage>g__SendMessageAsync|40_0(Task addressMessageTask, Message m) in /_/src/Orleans.Runtime/Messaging/MessageCenter.cs:line 486
+[2025-06-19 13:26:35.329 GMT 26	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'Active (20000)' in '00:00:05.0003713'.	
+[2025-06-19 13:26:37.336 GMT 9	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'BecomeActive (19999)' in '00:00:02.0061715'.	

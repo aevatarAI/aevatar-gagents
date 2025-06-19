@@ -1,0 +1,17 @@
+﻿[2025-06-19 10:57:55.083 GMT 5	Warning	100405	Orleans.Runtime.Silo]	Note: Silo not running with ServerGC turned on - recommend checking app config : <configuration>-<runtime>-<gcServer enabled="true">	
+[2025-06-19 10:57:55.084 GMT 5	Warning	100405	Orleans.Runtime.Silo]	Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).	
+[2025-06-19 10:57:55.855 GMT 14	Error	101540	Orleans.Runtime.Messaging.MessageCenter]	!!!!!!!!!! Error creating activation for grain workflowaiagent/1055cf46ee734b6ea81bbea296be068a (interface: SimpleAIWorkflow.Grains.IWorkflowAIAgent). Message Request [S127.0.0.1:27346:109335475 sys.client/727aad173d0347a7805a9f79fe2666db]->[S127.0.0.1:27345:109335474 workflowaiagent/1055cf46ee734b6ea81bbea296be068a] Aevatar.Core.Abstractions.IGAgent.ConfigAsync(Aevatar.Core.Abstractions.ConfigurationBase) #3921308AA08B6125	
+Exc level 0: System.InvalidOperationException: No service for type 'Aevatar.GAgents.AI.BrainFactory.IBrainFactory' has been registered.
+   at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService(IServiceProvider provider, Type serviceType)
+   at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService[T](IServiceProvider provider)
+   at Aevatar.GAgents.AIGAgent.Agent.AIGAgentBase`4..ctor() in /Users/tangchen/Project/github/aevatar-gagents/src/Aevatar.GAgents.AIGAgent/Agent/AIGAgentBase.cs:line 60
+   at GroupChat.GAgent.GroupMemberGAgentBase`4..ctor()
+   at SimpleAIWorkflow.Grains.WorkflowAIAgent..ctor()
+   at lambda_method7(Closure, IServiceProvider, Object[])
+   at Orleans.Runtime.DefaultGrainActivator.CreateInstance(IGrainContext context) in /_/src/Orleans.Runtime/Activation/DefaultGrainActivator.cs:line 30
+   at Orleans.Runtime.ActivationDataActivatorProvider.ActivationDataActivator.CreateContext(GrainAddress activationAddress) in /_/src/Orleans.Runtime/Activation/ActivationDataActivatorProvider.cs:line 124
+   at Orleans.Runtime.GrainContextActivator.CreateInstance(GrainAddress address) in /_/src/Orleans.Runtime/Activation/IGrainContextActivator.cs:line 62
+   at Orleans.Runtime.Catalog.GetOrCreateActivation(GrainId& grainId, Dictionary`2 requestContextData, MigrationContext rehydrationContext) in /_/src/Orleans.Runtime/Catalog/Catalog.cs:line 170
+   at Orleans.Runtime.Messaging.MessageCenter.ReceiveMessage(Message msg) in /_/src/Orleans.Runtime/Messaging/MessageCenter.cs:line 534
+[2025-06-19 10:58:08.038 GMT 5	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'Active (20000)' in '00:00:05.0132392'.	
+[2025-06-19 10:58:10.576 GMT 27	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'BecomeActive (19999)' in '00:00:02.0785339'.	

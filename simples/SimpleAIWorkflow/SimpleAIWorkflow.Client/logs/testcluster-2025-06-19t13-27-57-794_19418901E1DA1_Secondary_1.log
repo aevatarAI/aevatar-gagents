@@ -1,0 +1,4 @@
+﻿[2025-06-19 13:27:57.571 GMT 16	Warning	100405	Orleans.Runtime.Silo]	Note: Silo not running with ServerGC turned on - recommend checking app config : <configuration>-<runtime>-<gcServer enabled="true">	
+[2025-06-19 13:27:57.571 GMT 16	Warning	100405	Orleans.Runtime.Silo]	Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).	
+[2025-06-19 13:28:02.857 GMT 12	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'Active (20000)' in '00:00:05.0038683'.	
+[2025-06-19 13:28:04.870 GMT 14	Warning	100452	Orleans.Runtime.SiloLifecycleSubject]	'Orleans.Runtime.Silo' stopped in stage 'BecomeActive (19999)' in '00:00:02.0081871'.	

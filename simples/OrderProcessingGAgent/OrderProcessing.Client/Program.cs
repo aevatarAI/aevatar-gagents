@@ -35,25 +35,40 @@ await host.StartAsync();
 Console.WriteLine("Orleans客户端已连接");
 
 IGAgentFactory agentFactory = host.Services.GetRequiredService<IGAgentFactory>();
+var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
 
 try
 {
-    // 1. 通过agentFactory创建CreateOrderGAgent实例
-    var createOrderAgent = await agentFactory.GetGAgentAsync<ICreateOrderGAgent>(Guid.NewGuid());
+    Console.WriteLine("\n==== 选择演示模式 ====");
+    Console.WriteLine("1. 传统订单处理演示 (原有实现)");
+    Console.WriteLine("2. AI工作流演示 (新核心架构)");
+    Console.WriteLine("3. 同时运行两个演示");
+    Console.Write("请选择 (1-3): ");
     
-    // 2. 通过agentFactory创建WorkflowCoordinatorGAgent实例
-    var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+    var choice = Console.ReadLine();
     
-    Console.WriteLine("\n==== 订单处理演示开始 ====");
+    switch (choice)
+    {
+        case "1":
+            await RunTraditionalDemoAsync(agentFactory);
+            break;
+        case "2":
+            await RunAIWorkflowDemoAsync(agentFactory, loggerFactory);
+            break;
+        case "3":
+            await RunBothDemosAsync(agentFactory, loggerFactory);
+            break;
+        default:
+            Console.WriteLine("无效选择，运行AI工作流演示...");
+            await RunAIWorkflowDemoAsync(agentFactory, loggerFactory);
+            break;
+    }
     
-    // 3. 演示订单创建和处理流程
-    await DemonstrateOrderProcessing(createOrderAgent, workflowCoordinator);
-    
-    Console.WriteLine("\n==== 订单处理演示完成 ====");
+    Console.WriteLine("\n==== 所有演示完成 ====");
     
     // 等待一段时间让所有事件处理完成
     Console.WriteLine("等待事件处理完成...");
-    await Task.Delay(TimeSpan.FromSeconds(10));
+    await Task.Delay(TimeSpan.FromSeconds(5));
 }
 catch (Exception ex)
 {
@@ -62,6 +77,53 @@ catch (Exception ex)
 }
 
 await host.StopAsync();
+
+// 传统订单处理演示 (原有实现)
+async Task RunTraditionalDemoAsync(IGAgentFactory agentFactory)
+{
+    Console.WriteLine("\n==== 🔄 传统订单处理演示开始 ====");
+    
+    // 1. 通过agentFactory创建CreateOrderGAgent实例
+    var createOrderAgent = await agentFactory.GetGAgentAsync<ICreateOrderGAgent>(Guid.NewGuid());
+    
+    // 2. 通过agentFactory创建WorkflowCoordinatorGAgent实例
+    var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+    
+    // 3. 演示订单创建和处理流程
+    await DemonstrateOrderProcessing(createOrderAgent, workflowCoordinator);
+    
+    Console.WriteLine("\n==== 🔄 传统订单处理演示完成 ====");
+}
+
+// AI工作流演示 (新核心架构)
+async Task RunAIWorkflowDemoAsync(IGAgentFactory agentFactory, ILoggerFactory loggerFactory)
+{
+    Console.WriteLine("\n==== 🤖 AI工作流演示开始 ====");
+    
+    var logger = loggerFactory.CreateLogger<OrderProcessing.Client.AIWorkflowDemo>();
+    var aiWorkflowDemo = new OrderProcessing.Client.AIWorkflowDemo(agentFactory, logger);
+    await aiWorkflowDemo.RunDemoAsync();
+    
+    Console.WriteLine("\n==== 🤖 AI工作流演示完成 ====");
+}
+
+// 同时运行两个演示
+async Task RunBothDemosAsync(IGAgentFactory agentFactory, ILoggerFactory loggerFactory)
+{
+    Console.WriteLine("\n==== 🚀 同时运行两个演示 ====");
+    
+    // 并行运行两个演示
+    var traditionalTask = RunTraditionalDemoAsync(agentFactory);
+    var aiWorkflowTask = RunAIWorkflowDemoAsync(agentFactory, loggerFactory);
+    
+    await Task.WhenAll(traditionalTask, aiWorkflowTask);
+    
+    Console.WriteLine("\n==== 🚀 两个演示同时完成 ====");
+    Console.WriteLine("\n💡 对比总结:");
+    Console.WriteLine("   🔄 传统模式: 基于OrderProcessing的简单工作流");
+    Console.WriteLine("   🤖 AI模式: 基于核心库WorkflowCoordinatorGAgent的高级工作流");
+    Console.WriteLine("   ⚡ AI模式提供更强大的工作单元管理和流程协调能力");
+}
 
 async Task DemonstrateOrderProcessing(ICreateOrderGAgent createAgent, IWorkflowCoordinatorGAgent workflowAgent)
 {

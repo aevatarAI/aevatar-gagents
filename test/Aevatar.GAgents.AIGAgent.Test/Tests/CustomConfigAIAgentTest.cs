@@ -106,22 +106,7 @@ namespace Aevatar.GAgents.AIGAgent.Test.Tests
             return Task.FromResult($"Custom AI Agent for {State.BusinessDomain} business domain");
         }
 
-        public Task<bool> ActivateAsync()
-        {
-            return Task.FromResult(true);
-        }
-
-        public Task<MyCustomAIAgentState> GetStateAsync()
-        {
-            return Task.FromResult(State);
-        }
-
         public Task<bool> InitializeAsync(InitializeDto initializeDto)
-        {
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> RegisterAsync(IGAgent agent)
         {
             return Task.FromResult(true);
         }

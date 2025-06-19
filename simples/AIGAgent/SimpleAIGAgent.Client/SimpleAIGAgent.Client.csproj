@@ -8,6 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Aevatar.GAgents.AI.Abstractions" />
+        <PackageReference Include="Aevatar.Station.Feature" />
         <PackageReference Include="Microsoft.Orleans.Client" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" />
         <PackageReference Include="Microsoft.Extensions.Hosting" />
