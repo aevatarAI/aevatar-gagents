@@ -42,7 +42,7 @@ sequenceDiagram
     participant Client as 客户端应用
     participant Blob as 云存储服务
     participant Agent as AIGAgentBase
-    participant VisionBrain as Vision Brain
+    participant AIStreamWorker as AIStreamWorker
     participant LLM as 多模态LLM
     
     Client->>Blob: 上传图片
@@ -52,17 +52,16 @@ sequenceDiagram
     Agent->>Blob: 根据BlobId获取图片
     Blob-->>Agent: 返回图片数据
     
-    Agent->>Agent: 图片验证与预处理
-    Agent->>VisionBrain: 调用Vision处理
-    VisionBrain->>LLM: 发送多模态请求
+    Agent->>AIStreamWorker: 发送任务
+    AIStreamWorker-->>Agent: 返回响应
+    Agent-->>Client: 返回响应
+    AIStreamWorker->>AIStreamWorker: 下载图片
+    AIStreamWorker->>LLM: 发送多模态请求
     
-    loop 流式响应
-        LLM-->>VisionBrain: 流式返回结果
-        VisionBrain-->>Agent: 传递流式内容
-        Agent-->>Client: 实时响应
-    end
+    LLM-->>AIStreamWorker: 返回响应
+    AIStreamWorker-->>Agent: 返回响应
+    Agent-->>Client: 返回响应
     
-    Agent->>Blob: 清理临时图片(TTL)
 ```
 
 ## 关键技术实现点
