@@ -23,7 +23,7 @@
 graph TB
     A[用户上传图片] --> B[云Blob存储]
     B --> C[返回BlobId]
-    C --> D[用户发送Prompt + BlobId]
+    C --> D[发送Prompt + BlobId]
     D --> E[AIGAgentBase接收请求]
     E --> F[从Blob获取图片]
     F --> G[图片预处理/验证]
