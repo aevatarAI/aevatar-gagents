@@ -42,7 +42,6 @@ sequenceDiagram
     participant Client as 客户端应用
     participant Blob as 云存储服务
     participant Agent as AIGAgentBase
-    participant AIStreamWorker as AIStreamWorker
     participant LLM as 多模态LLM
     
     Client->>Blob: 上传图片
@@ -52,14 +51,9 @@ sequenceDiagram
     Agent->>Blob: 根据BlobId获取图片
     Blob-->>Agent: 返回图片数据
     
-    Agent->>AIStreamWorker: 发送任务
-    AIStreamWorker-->>Agent: 返回响应
-    Agent-->>Client: 返回响应
-    AIStreamWorker->>AIStreamWorker: 下载图片
-    AIStreamWorker->>LLM: 发送多模态请求
+    Blob->>LLM: 发送多模态请求
     
-    LLM-->>AIStreamWorker: 返回响应
-    AIStreamWorker-->>Agent: 返回响应
+    LLM-->>Agent: 返回响应
     Agent-->>Client: 返回响应
     
 ```
