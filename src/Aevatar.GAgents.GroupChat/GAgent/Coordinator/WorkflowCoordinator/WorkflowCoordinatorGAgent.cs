@@ -48,15 +48,40 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             ChatResponse = @event.ChatResponse
         });
 
-        // maker sure this work unit has done
         RaiseEvent(new FinishedWorkUnitLogEvent() { Term = @event.Term, WorkUnitGrainId = workUnitInfo.GrainId });
         await ConfirmEvents();
 
         var downStreamList = State.GetDownStreamGrainIds(workUnitInfo.GrainId);
-        // indicate: no next work unit
+        
         if (downStreamList.Count == 0)
         {
-            await TryFinishWorkflowAsync();
+            if (State.WorkflowStatus == WorkflowCoordinatorStatus.InProgress && 
+                State.CheckAllWorkUnitFinished())
+            {
+                var grainIdList = TentativeState.GetAllWorkerUnitGrainIds();
+                foreach (var grainId in grainIdList)
+                {
+                    var speaker = GrainId.Parse(grainId);
+                    await PublishP2PAsync(speaker, new GroupChatFinishEvent()
+                    {
+                        BlackboardId = State.BlackboardId
+                    });
+                }
+
+                await PublishAsync(new WorkflowCompletionBusinessPushEvent()
+                {
+                    BlackboardId = State.BlackboardId,
+                    WorkflowId = this.GetGrainId().ToString(),
+                    CompletionTime = DateTime.UtcNow,
+                    FinalResult = @event.ChatResponse
+                });
+
+                RaiseEvent(new WorkflowFinishLogEvent());
+                await ConfirmEvents();
+
+                Logger.LogInformation("[WorkflowCoordinatorGAgent] Workflow completed and business event published with final result. BlackboardId: {BlackboardId}, FinalResult: {FinalResult}", 
+                    State.BlackboardId, @event.ChatResponse.Content);
+            }
             return;
         }
 
@@ -217,6 +242,8 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         if (State.CheckAllWorkUnitFinished())
         {
             var grainIdList = TentativeState.GetAllWorkerUnitGrainIds();
+            
+            // Notify all participants about workflow completion
             foreach (var grainId in grainIdList)
             {
                 var speaker = GrainId.Parse(grainId);
@@ -226,22 +253,13 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 });
             }
 
-            // Publish workflow completion business event for business systems
-            await PublishAsync(new WorkflowCompletionBusinessPushEvent()
-            {
-                BlackboardId = State.BlackboardId,
-                WorkflowId = this.GetGrainId().ToString(),
-                CompletionTime = DateTime.UtcNow,
-                ParticipantGrainIds = grainIdList,
-                WorkflowResults = await CollectWorkflowResultsAsync(),
-                BusinessContext = "Workflow execution completed successfully"
-            });
+            // Note: No longer publish WorkflowCompletionBusinessPushEvent here
+            // because final node completion is already published in ChatResponseEvent handler
 
-            // await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
             RaiseEvent(new WorkflowFinishLogEvent());
             await ConfirmEvents();
 
-            Logger.LogInformation("[WorkflowCoordinatorGAgent] Workflow completed and business event published. BlackboardId: {BlackboardId}", 
+            Logger.LogInformation("[WorkflowCoordinatorGAgent] Workflow completed (non-final-node completion). BlackboardId: {BlackboardId}", 
                 State.BlackboardId);
         }
     }
@@ -274,34 +292,6 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         await ConfirmEvents();
 
         Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} end");
-    }
-
-    private async Task<Dictionary<string, object>> CollectWorkflowResultsAsync()
-    {
-        var results = new Dictionary<string, object>();
-        
-        try
-        {
-            // Collect basic workflow statistics
-            results["TotalWorkUnits"] = State.CurrentWorkUnitInfos.Count;
-            results["CompletedWorkUnits"] = State.CurrentWorkUnitInfos.Where(w => w.UnitStatusEnum == WorkerUnitStatusEnum.Finished).Count();
-            results["WorkflowDuration"] = State.Term;
-            results["WorkflowStatus"] = State.WorkflowStatus.ToString();
-            results["WorkflowId"] = this.GetGrainId().ToString();
-            
-            // Collect participant grain IDs
-            var participantGrainIds = State.CurrentWorkUnitInfos.Select(w => w.GrainId).ToList();
-            results["ParticipantGrainIds"] = participantGrainIds;
-            
-            Logger.LogDebug("[WorkflowCoordinatorGAgent] Collected workflow results: {ResultCount} items", results.Count);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "[WorkflowCoordinatorGAgent] Failed to collect workflow results");
-            results["Error"] = ex.Message;
-        }
-        
-        return await Task.FromResult(results);
     }
 
     #endregion

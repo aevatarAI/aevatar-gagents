@@ -19,8 +19,12 @@ public sealed class WorkflowBusinessPushTest : AevatarGroupChatTestBase
     }
 
     [Fact]
-    public async Task WorkflowCompletionWithBusinessEventTest()
+    public async Task WorkflowCompletionWithBusinessEventAndFinalResultsTest()
     {
+        // Setup business event listener to capture WorkflowCompletionBusinessPushEvent
+        var businessListener = await _agentFactory.GetGAgentAsync<IBusinessEventListenerGAgent>(Guid.NewGuid());
+        await businessListener.ConfigAsync(new BusinessEventListenerConfigDto { Name = "TestListener" });
+
         // Reuse basic setup from GroupChatWorkflowTest, focus on verifying business event publishing
         var toni = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
         await toni.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Toni"});
@@ -63,7 +67,7 @@ public sealed class WorkflowBusinessPushTest : AevatarGroupChatTestBase
             new WorkflowUnitDto()
             {
                 GrainId = moni.GetGrainId().ToString(),
-                NextGrainId = "",
+                NextGrainId = "", // Moni is the final node
             }
         };
         
@@ -87,12 +91,24 @@ public sealed class WorkflowBusinessPushTest : AevatarGroupChatTestBase
         moniState.AgentNames.Count.ShouldBe(1);
         moniState.AgentNames.ShouldContain("Fread");
         
-        // Main verification: Workflow completes normally, meaning WorkflowCompletionBusinessPushEvent has been published
-        // Business systems can subscribe to this event to receive workflow completion notifications
-        // In actual usage, business systems can create their own event handlers to process WorkflowCompletionBusinessPushEvent
+        // NEW: Verify business event listener received WorkflowCompletionBusinessPushEvent with final results
+        var listenerState = await businessListener.GetStateAsync();
+        listenerState.ReceivedEvents.ShouldNotBeEmpty("Business event listener should have received events");
         
-        // Verify key point: workflow indeed completed, meaning TryFinishWorkflowAsync was called
-        // Thus WorkflowCompletionBusinessPushEvent was published
-        moniState.AgentNames.ShouldContain("Fread"); // Leader received final result, proving workflow completion
+        var completionEvents = listenerState.ReceivedEvents.OfType<WorkflowCompletionBusinessPushEvent>().ToList();
+        completionEvents.Count.ShouldBe(1, "Should receive exactly one workflow completion event");
+        
+        var completionEvent = completionEvents.First();
+        completionEvent.WorkflowId.ShouldNotBeNullOrEmpty("WorkflowId should be set");
+        completionEvent.BlackboardId.ShouldNotBe(Guid.Empty, "BlackboardId should be set");
+        completionEvent.CompletionTime.ShouldBeInRange(DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow.AddMinutes(1), "CompletionTime should be recent");
+        
+        // KEY IMPROVEMENT: Verify FinalResult is now included (simplified structure)
+        completionEvent.FinalResult.ShouldNotBeNull("FinalResult should contain the actual result from final node");
+        completionEvent.FinalResult.Content.ShouldNotBeNullOrEmpty("Final result should have content");
+        
+        // Main verification: Workflow completes normally with ACTUAL final result
+        // Business systems can now receive the real ChatResponse from the final workflow node
+        // In actual usage, business systems get the meaningful business result, not just statistics
     }
 } 

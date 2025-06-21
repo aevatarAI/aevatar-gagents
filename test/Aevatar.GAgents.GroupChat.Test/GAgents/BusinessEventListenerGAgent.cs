@@ -3,12 +3,14 @@ using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using GroupChat.GAgent.Dto;
 using Microsoft.Extensions.Logging;
 using Aevatar.Core;
+using Orleans.Streams;
 
 namespace Aevatar.GAgents.GroupChat.Test.GAgents;
 
+[GenerateSerializer]
 public class BusinessEventListenerConfigDto : ConfigurationBase
 {
-    public string Name { get; set; } = "BusinessEventListener";
+    [Id(0)] public string Name { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -62,7 +64,6 @@ public class BusinessEventListenerGAgent : GAgentBase<BusinessEventListenerState
     {
         Logger.LogInformation("[BusinessEventListenerGAgent] Configuring with name: {Name}", configuration.Name);
         
-        // Set state
         RaiseEvent(new SetNameLogEvent() { Name = configuration.Name });
         await ConfirmEvents();
         

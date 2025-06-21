@@ -7,6 +7,7 @@ public class ChatMessage
     [Id(1)] public Guid MemberId { get; set; }
     [Id(2)] public string AgentName { get; set; }
     [Id(3)] public string Content { get; set; }
+    [Id(4)] public string Speaker { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]

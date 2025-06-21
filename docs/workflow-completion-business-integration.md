@@ -81,6 +81,10 @@ public class WorkflowCompletionBusinessPushEvent : EventBase
     [Id(3)] public List<string> ParticipantGrainIds { get; set; } = new List<string>();
     [Id(4)] public Dictionary<string, object> WorkflowResults { get; set; } = new Dictionary<string, object>();
     [Id(5)] public string BusinessContext { get; set; } = string.Empty;
+    /// <summary>
+    /// The actual results/messages from the final workflow nodes - this is what business systems need
+    /// </summary>
+    [Id(6)] public List<ChatMessage> FinalResults { get; set; } = new List<ChatMessage>();
 }
 ```
 
@@ -91,6 +95,7 @@ public class WorkflowCompletionBusinessPushEvent : EventBase
 - `ParticipantGrainIds`：参与工作流的所有GAgent ID列表
 - `WorkflowResults`：工作流执行结果和统计信息的键值对
 - `BusinessContext`：供业务解释的人类可读上下文描述
+- `FinalResults`：工作流最终结果的消息列表
 
 #### 3.3.2 事件发布逻辑
 
