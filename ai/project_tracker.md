@@ -18,14 +18,19 @@
 
 | ID | Feature Name | Status | Priority | Branch | Assigned To (MAC) | Coverage | Unit Tests | Regression Tests | Notes |
 |----|--------------|--------|----------|--------|-------------------|----------|------------|------------------|-------|
-| F001 | Sample Feature | 🔜 | High | - | - | - | - | - | Initial setup required |
-| F002 | Another Feature | 🔜 | Medium | - | - | - | - | - | Depends on F001 |
+| F001 | Image Support Phase1 - Blob Storage | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | ⏳ | ⏳ | Blob存储抽象接口和AWS实现 |
+| F002 | Image Support Phase2 - Vision Brain | 🔜 | High | - | - | - | - | - | IVisionBrain接口和OpenAI Vision集成 |
+| F003 | Image Support Phase3 - ChatAgent扩展 | 🔜 | High | - | - | - | - | - | ChatGAgentBase图片功能扩展 |
+| F004 | Image Support Phase4 - 测试优化 | 🔜 | Medium | - | - | - | - | - | 完整测试覆盖和性能优化 |
 
 ## Technical Debt & Refactoring
 
 | ID | Task Description | Status | Priority | Branch | Assigned To (MAC) | Unit Tests | Regression Tests | Notes |
 |----|------------------|--------|----------|--------|-------------------|------------|------------------|-------|
-| T001 | Refactor Component X | 🔜 | Medium | - | - | - | - | Improve performance |
+| T001 | 扩展BrainContentType枚举 | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | - | 添加Image和ImageUrl类型 |
+| T002 | 扩展ChatMessage支持图片 | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | - | 添加ImageBlobIds字段 |
+| T003 | 创建IBlobStorageService接口 | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | - | 云存储抽象接口设计 |
+| T004 | 实现AWSBlobStorageService | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | - | AWS S3存储服务实现 |
 
 ## Bug Fixes
 
@@ -36,19 +41,32 @@
 ## Development Metrics
 
 - Total Test Coverage: 0%
-- Last Updated: YYYY-MM-DD
+- Last Updated: 2024-12-19
+- Current Sprint: Image Support Phase 1
+- Active Branch: feature/chat-image
+- Assigned Developer: ac:de:48:00:11:22
 
 ## Upcoming Automated Tasks
 
 | ID | Task Description | Dependency | Estimated Completion |
 |----|------------------|------------|----------------------|
-| A001 | Generate tests for Feature X | F001 | After F001 completion |
+| A001 | 创建IVisionBrain接口 | F001 | After F001 completion |
+| A002 | 实现Azure OpenAI Vision Brain | A001 | After A001 completion |
+| A003 | 扩展AIGAgentBase图片处理方法 | A002 | After A002 completion |
+| A004 | 扩展ChatGAgentBase图片功能 | A003 | After A003 completion |
+| A005 | 实现图片预处理和验证逻辑 | F001 | After F001 completion |
+| A006 | 添加BlobStorageOptions配置 | F001 | After F001 completion |
+| A007 | 创建图片支持的单元测试 | F004 | After F004 start |
 
 ## Notes & Action Items
 
-- Initial project setup pending
-- CI/CD pipeline configuration needed
-- Documentation should be updated after core features implementation
+- ✅ 技术方案文档已完成 (image-support-solution.md)
+- 🚧 当前进行中：Blob存储抽象接口设计
+- 📋 下一步：实现AWS S3存储服务
+- ⚠️ 注意：需要配置AWS访问凭据
+- 📝 Vision Model API密钥配置待完成
+- 🧪 测试环境搭建需要与Phase 1并行进行
+- 📚 AI图片需求文档参考：ai-image.md
 
 ---
 
