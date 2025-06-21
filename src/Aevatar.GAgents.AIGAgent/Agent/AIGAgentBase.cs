@@ -13,6 +13,7 @@ using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.AI.Storage;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.State;
@@ -53,11 +54,13 @@ public abstract partial class
 {
     private readonly IBrainFactory _brainFactory;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IBlobStorageService? _blobStorageService;
     private IBrain? _brain = null;
 
     protected AIGAgentBase()
     {
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
+        _blobStorageService = ServiceProvider.GetService<IBlobStorageService>();
     }
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
@@ -244,6 +247,123 @@ public abstract partial class
         RaiseEvent(tokenUsage);
 
         return invokeResponse.ChatReponseList;
+    }
+
+    /// <summary>
+    /// 支持图片的聊天方法
+    /// </summary>
+    /// <param name="prompt">文本提示</param>
+    /// <param name="imageBlobIds">图片Blob ID列表</param>
+    /// <param name="history">聊天历史</param>
+    /// <param name="promptSettings">提示设置</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <param name="context">聊天上下文</param>
+    /// <returns>聊天响应消息列表</returns>
+    protected async Task<List<ChatMessage>?> ChatWithHistoryAndImages(
+        string prompt, 
+        List<string>? imageBlobIds = null,
+        List<ChatMessage>? history = null,
+        ExecutionPromptSettings? promptSettings = null, 
+        CancellationToken cancellationToken = default,
+        AIChatContextDto? context = null)
+    {
+        if (_brain == null)
+        {
+            Logger.LogDebug($"[ChatWithHistoryAndImages] _brain==null {context?.ChatId}-{context?.RequestId}");
+            return null;
+        }
+
+        if (_blobStorageService == null)
+        {
+            Logger.LogWarning("[ChatWithHistoryAndImages] BlobStorageService not available, falling back to text-only chat");
+            return await ChatWithHistory(prompt, history, promptSettings, cancellationToken, context);
+        }
+
+        InvokePromptResponse? invokeResponse = null;
+        var chatBrain = ConvertBrain<IChatBrain>();
+
+        try
+        {
+            // 如果有图片，需要构造包含图片描述的增强提示
+            if (imageBlobIds != null && imageBlobIds.Any())
+            {
+                var enhancedPrompt = await BuildEnhancedPromptWithImages(prompt, imageBlobIds, cancellationToken);
+                
+                // 使用增强后的提示进行常规聊天
+                invokeResponse = State.StreamingModeEnabled
+                    ? await InvokePromptStreamingAsync(enhancedPrompt, history, State.IfUpsertKnowledge, promptSettings,
+                        cancellationToken, context)
+                    : await chatBrain.InvokePromptAsync(enhancedPrompt, history, State.IfUpsertKnowledge, promptSettings,
+                        cancellationToken);
+            }
+            else
+            {
+                // 没有图片，使用常规聊天
+                invokeResponse = State.StreamingModeEnabled
+                    ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                        cancellationToken, context)
+                    : await chatBrain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                        cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"[AIGAgentBase][ChatWithHistoryAndImages] exception error:{ex.ToString()}");
+            throw AIException.ConvertAndRethrowException(ex);
+        }
+
+        if (invokeResponse == null)
+        {
+            Logger.LogDebug($"[ChatWithHistoryAndImages] invokeResponse == null {context?.ChatId}-{context?.RequestId}");
+            return null;
+        }
+
+        var tokenUsage = new TokenUsageStateLogEvent()
+        {
+            GrainId = this.GetPrimaryKey(),
+            InputToken = invokeResponse.TokenUsageStatistics.InputToken,
+            OutputToken = invokeResponse.TokenUsageStatistics.OutputToken,
+            TotalUsageToken = invokeResponse.TokenUsageStatistics.TotalUsageToken,
+            CreateTime = invokeResponse.TokenUsageStatistics.CreateTime
+        };
+
+        RaiseEvent(tokenUsage);
+
+        return invokeResponse.ChatReponseList;
+    }
+
+    /// <summary>
+    /// 使用图片构造增强提示的内部方法
+    /// </summary>
+    private async Task<string> BuildEnhancedPromptWithImages(
+        string originalPrompt,
+        List<string> imageBlobIds,
+        CancellationToken cancellationToken = default)
+    {
+        var enhancedPrompt = new StringBuilder();
+        enhancedPrompt.AppendLine(originalPrompt);
+        enhancedPrompt.AppendLine();
+        enhancedPrompt.AppendLine("以下是相关的图片信息：");
+
+        foreach (var blobId in imageBlobIds)
+        {
+            try
+            {
+                var imageData = await _blobStorageService!.GetImageAsync(blobId, cancellationToken);
+                enhancedPrompt.AppendLine($"- 图片ID: {blobId} (大小: {imageData.Length} 字节)");
+                Logger.LogDebug($"[BuildEnhancedPromptWithImages] 成功加载图片: {blobId}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"[BuildEnhancedPromptWithImages] 加载图片失败: {blobId}");
+                enhancedPrompt.AppendLine($"- 图片ID: {blobId} (加载失败: {ex.Message})");
+            }
+        }
+
+        enhancedPrompt.AppendLine();
+        enhancedPrompt.AppendLine("请根据上述图片信息和原始提示进行回答。");
+
+        return enhancedPrompt.ToString();
     }
 
     private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content,

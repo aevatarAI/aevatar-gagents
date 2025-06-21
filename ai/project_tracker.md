@@ -19,7 +19,7 @@
 | ID | Feature Name | Status | Priority | Branch | Assigned To (MAC) | Coverage | Unit Tests | Regression Tests | Notes |
 |----|--------------|--------|----------|--------|-------------------|----------|------------|------------------|-------|
 | F001 | Image Support Phase1 - Blob Storage | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | ⏳ | ⏳ | Blob存储抽象接口和AWS实现 |
-| F002 | Image Support Phase2 - Vision Brain | 🔜 | High | - | - | - | - | - | IVisionBrain接口和OpenAI Vision集成 |
+| F002 | Image Support Phase2 - AIGAgent扩展 | 🚧 | High | feature/chat-image | ac:de:48:00:11:22 | - | ⏳ | ⏳ | 扩展AIGAgent支持图片处理 |
 | F003 | Image Support Phase3 - ChatAgent扩展 | 🔜 | High | - | - | - | - | - | ChatGAgentBase图片功能扩展 |
 | F004 | Image Support Phase4 - 测试优化 | 🔜 | Medium | - | - | - | - | - | 完整测试覆盖和性能优化 |
 
@@ -50,9 +50,9 @@
 
 | ID | Task Description | Dependency | Estimated Completion |
 |----|------------------|------------|----------------------|
-| A001 | 创建IVisionBrain接口 | F001 | After F001 completion |
-| A002 | 实现Azure OpenAI Vision Brain | A001 | After A001 completion |
-| A003 | 扩展AIGAgentBase图片处理方法 | A002 | After A002 completion |
+| A001 | 扩展AIGAgentBase图片处理方法 | F001 | After F001 completion |
+| A002 | 集成IBlobStorageService到AIGAgent | A001 | After A001 completion |
+| A003 | 实现ChatWithImagesAsync方法 | A002 | After A002 completion |
 | A004 | 扩展ChatGAgentBase图片功能 | A003 | After A003 completion |
 | A005 | 实现图片预处理和验证逻辑 | F001 | After F001 completion |
 | A006 | 添加BlobStorageOptions配置 | F001 | After F001 completion |
