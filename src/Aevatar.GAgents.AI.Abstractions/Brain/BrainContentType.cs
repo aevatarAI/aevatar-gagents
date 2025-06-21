@@ -3,5 +3,7 @@ namespace Aevatar.GAgents.AI.Brain;
 public enum BrainContentType
 {
     Pdf,
-    String
+    String,
+    Image,
+    ImageUrl
 }
