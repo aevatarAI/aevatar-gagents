@@ -78,7 +78,7 @@ public class AIHttpAsyncWorker : GrainAsyncWorker<AIHttpAsyncRequest, AIHttpAsyn
                 $"[AIHttpAsyncWorker][AIHttpRequestAsync] chatRequest init brain:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
         }
 
-        var response = await brain.InvokePromptAsync(chatRequest.Content, chatRequest.History,
+        var response = await brain.InvokePromptAsync(chatRequest.Content, chatRequest.ImageKeys, chatRequest.History,
             chatRequest.IfUseKnowledge,
             chatRequest.PromptSettings,
             cancellationToken: cancellationToken);

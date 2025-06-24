@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,11 +39,14 @@ public abstract class BrainBase : IChatBrain
     protected readonly IOptions<RagConfig> RagConfig;
     protected string Description = string.Empty;
 
-    protected BrainBase(IKernelBuilderFactory kernelBuilderFactory, ILogger logger, IOptions<RagConfig> ragConfig)
+    protected readonly IBlobStorageProvider BlobStorageProvider;
+
+    protected BrainBase(IKernelBuilderFactory kernelBuilderFactory, ILogger logger, IOptions<RagConfig> ragConfig, IBlobStorageProvider blobStorageProvider)
     {
         KernelBuilderFactory = kernelBuilderFactory;
         Logger = logger;
         RagConfig = ragConfig;
+        BlobStorageProvider = blobStorageProvider;
     }
 
     protected abstract Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder);
@@ -98,7 +102,7 @@ public abstract class BrainBase : IChatBrain
         return true;
     }
 
-    public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history,
+    public async Task<InvokePromptResponse?> InvokePromptAsync(string content, List<string>? imageKeys = null, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
@@ -109,7 +113,7 @@ public abstract class BrainBase : IChatBrain
 
         var result = new InvokePromptResponse();
         var requestContent = content;
-        var chatHistory = GetChatHistory(history);
+        var chatHistory = await GetChatHistoryAsync(history);
         if (ifUseKnowledge)
         {
             var supplementList = await LoadAsync(content);
@@ -117,6 +121,7 @@ public abstract class BrainBase : IChatBrain
         }
 
         chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
+        await AddImageChatHistoryAsync(chatHistory, imageKeys);
 
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
         
@@ -139,7 +144,7 @@ public abstract class BrainBase : IChatBrain
         return result;
     }
 
-    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history,
+    public async Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<string>? imageKeys, List<ChatMessage>? history,
         bool ifUseKnowledge,
         ExecutionPromptSettings? promptSettings, CancellationToken cancellationToken)
     {
@@ -149,7 +154,7 @@ public abstract class BrainBase : IChatBrain
         }
 
         var requestContent = content;
-        var chatHistory = GetChatHistory(history);
+        var chatHistory = await GetChatHistoryAsync(history);
         if (ifUseKnowledge)
         {
             var supplementList = await LoadAsync(content);
@@ -157,6 +162,7 @@ public abstract class BrainBase : IChatBrain
         }
 
         chatHistory.Add(new ChatMessageContent(AuthorRole.User, requestContent));
+        await AddImageChatHistoryAsync(chatHistory, imageKeys);
 
         var chatService = Kernel.GetRequiredService<IChatCompletionService>();
 
@@ -169,9 +175,8 @@ public abstract class BrainBase : IChatBrain
         return chatService.GetStreamingChatMessageContentsAsync(chatHistory, promptExecutionSettings,
             cancellationToken: cancellationToken);
     }
-
-
-    private ChatHistory GetChatHistory(List<ChatMessage>? historyList)
+    
+    private async Task<ChatHistory> GetChatHistoryAsync(List<ChatMessage>? historyList)
     {
         var result = new ChatHistory(Description);
         if (historyList == null || !historyList.Any())
@@ -182,9 +187,34 @@ public abstract class BrainBase : IChatBrain
         foreach (var history in historyList)
         {
             result.Add(new ChatMessageContent(ConvertToAuthorRole(history.ChatRole), history.Content));
+
+            await AddImageChatHistoryAsync(result, history.ImageKeys);
         }
 
         return result;
+    }
+
+    private async Task AddImageChatHistoryAsync(ChatHistory chatHistory, List<string>? imageKeys)
+    {
+        if (imageKeys != null && imageKeys.Any())
+        {
+            var messageContentCollection = new ChatMessageContentItemCollection(); 
+        
+            var images = new ConcurrentDictionary<string, Blob>();
+            var downloadTasks = imageKeys.Select(async key =>
+            {
+                var blob = await BlobStorageProvider.DownloadAsync(key);
+                images[key] = blob;
+            });
+
+            await Task.WhenAll(downloadTasks);
+            
+            foreach (var image in images)
+            {
+                messageContentCollection.Add(new ImageContent(new ReadOnlyMemory<byte>(image.Value.Bytes), image.Value.MimeType));
+            }
+            chatHistory.AddUserMessage(messageContentCollection);
+        }
     }
 
     private AuthorRole ConvertToAuthorRole(ChatRole chatRole)

@@ -20,6 +20,7 @@
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
         <PackageReference Include="System.ClientModel" />
+        <PackageReference Include="AWSSDK.S3" />
 
     </ItemGroup>
     

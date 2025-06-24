@@ -17,8 +17,9 @@ namespace Aevatar.GAgents.SemanticKernel.Brain;
 
 public class OpenAIBrain : BrainBase
 {
-    public OpenAIBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<OpenAIBrain> logger, IOptions<RagConfig> ragConfig) :
-        base(kernelBuilderFactory, logger, ragConfig)
+    public OpenAIBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<OpenAIBrain> logger, IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 

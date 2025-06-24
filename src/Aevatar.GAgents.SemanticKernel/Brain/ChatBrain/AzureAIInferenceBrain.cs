@@ -19,8 +19,9 @@ public abstract class AzureAIInferenceBrain : BrainBase
     public AzureAIInferenceBrain(
         IKernelBuilderFactory kernelBuilderFactory,
         ILogger<AzureAIInferenceBrain> logger,
-        IOptions<RagConfig> ragConfig)
-        : base(kernelBuilderFactory, logger, ragConfig)
+        IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 
