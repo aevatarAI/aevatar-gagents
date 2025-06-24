@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using Microsoft.Extensions.Logging;
@@ -13,8 +14,9 @@ public sealed class AzureDeepSeekBrain : AzureAIInferenceBrain
     public override ModelIdEnum ModelIdEnum => ModelIdEnum.DeepSeek;
     
     public AzureDeepSeekBrain(IKernelBuilderFactory kernelBuilderFactory,
-        ILogger<AzureAIInferenceBrain> logger, IOptions<RagConfig> ragConfig) : base(kernelBuilderFactory,
-        logger, ragConfig)
+        ILogger<AzureAIInferenceBrain> logger, IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 }

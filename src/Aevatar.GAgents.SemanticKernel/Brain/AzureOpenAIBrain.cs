@@ -23,8 +23,9 @@ public sealed class AzureOpenAIBrain : BrainBase
     public AzureOpenAIBrain(
         IKernelBuilderFactory kernelBuilderFactory,
         ILogger<AzureOpenAIBrain> logger,
-        IOptions<RagConfig> ragConfig)
-        : base(kernelBuilderFactory, logger, ragConfig)
+        IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 

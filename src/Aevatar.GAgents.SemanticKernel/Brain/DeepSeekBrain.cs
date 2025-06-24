@@ -20,8 +20,9 @@ public class DeepSeekBrain : BrainBase
     public override LLMProviderEnum ProviderEnum => LLMProviderEnum.DeepSeek;
     public override ModelIdEnum ModelIdEnum => ModelIdEnum.DeepSeek;
 
-    public DeepSeekBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<DeepSeekBrain> logger, IOptions<RagConfig> ragConfig) :
-        base(kernelBuilderFactory, logger, ragConfig)
+    public DeepSeekBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<DeepSeekBrain> logger, IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 

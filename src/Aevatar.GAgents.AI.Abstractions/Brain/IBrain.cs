@@ -16,11 +16,11 @@ public interface IBrain : ITransientDependency
 
     Task<bool> UpsertKnowledgeAsync(List<BrainContent>? files = null);
 
-    Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
+    Task<InvokePromptResponse?> InvokePromptAsync(string content, List<string>? imageKeys = null, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default);
 
-    Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
+    Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default);
 

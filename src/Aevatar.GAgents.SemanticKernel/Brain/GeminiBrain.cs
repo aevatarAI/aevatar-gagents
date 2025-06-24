@@ -16,8 +16,9 @@ public sealed class GeminiBrain : BrainBase
     public GeminiBrain(
         IKernelBuilderFactory kernelBuilderFactory,
         ILogger<GeminiBrain> logger,
-        IOptions<RagConfig> ragConfig)
-        : base(kernelBuilderFactory, logger, ragConfig)
+        IOptions<RagConfig> ragConfig,
+        IBlobStorageProvider blobStorageProvider)
+        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
     {
     }
 

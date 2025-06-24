@@ -21,6 +21,7 @@
         <PackageReference Include="Aevatar.EventSourcing.Core" />
         <PackageReference Include="System.ClientModel" />
         <PackageReference Include="Aevatar.SignalR" />
+        <PackageReference Include="AWSSDK.S3" />
 
     </ItemGroup>
     

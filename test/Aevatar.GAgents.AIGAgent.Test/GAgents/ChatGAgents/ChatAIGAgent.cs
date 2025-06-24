@@ -9,8 +9,8 @@ namespace Aevatar.GAgents.AIGAgent.Test.GAgents.ChatGAgents;
 
 public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
 {
-    Task<string?> ChatAsync(string message);
-    Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto);
+    Task<string?> ChatAsync(string message, List<string>? images = null);
+    Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null);
 }
 
 public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
@@ -24,15 +24,15 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return Task.FromResult("Agent for chatting with user.");
     }
 
-    public async Task<string?> ChatAsync(string message)
+    public async Task<string?> ChatAsync(string message, List<string>? images = null)
     {
-        var result = await ChatWithHistory(message);
+        var result = await ChatWithHistory(message, imageKeys: images);
         return result?[0].Content;
     }
 
-    public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto)
+    public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)
     {
-        return await PromptWithStreamAsync(message, context: contextDto);
+        return await PromptWithStreamAsync(message, context: contextDto, imageKeys: images);
     }
 
     [EventHandler]
