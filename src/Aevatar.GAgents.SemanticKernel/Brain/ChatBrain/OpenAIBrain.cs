@@ -11,6 +11,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenAI;
 using OpenAI.Chat;
+using Volo.Abp.BlobStoring;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
@@ -18,8 +19,8 @@ namespace Aevatar.GAgents.SemanticKernel.Brain;
 public class OpenAIBrain : BrainBase
 {
     public OpenAIBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<OpenAIBrain> logger, IOptions<RagConfig> ragConfig,
-        IBlobStorageProvider blobStorageProvider)
-        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
+        IBlobContainer blobContainer)
+        : base(kernelBuilderFactory, logger, ragConfig, blobContainer)
     {
     }
 

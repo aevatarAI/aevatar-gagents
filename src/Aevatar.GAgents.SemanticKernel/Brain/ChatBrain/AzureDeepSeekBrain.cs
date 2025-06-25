@@ -5,6 +5,7 @@ using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Volo.Abp.BlobStoring;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
@@ -15,8 +16,8 @@ public sealed class AzureDeepSeekBrain : AzureAIInferenceBrain
     
     public AzureDeepSeekBrain(IKernelBuilderFactory kernelBuilderFactory,
         ILogger<AzureAIInferenceBrain> logger, IOptions<RagConfig> ragConfig,
-        IBlobStorageProvider blobStorageProvider)
-        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
+        IBlobContainer blobContainer)
+        : base(kernelBuilderFactory, logger, ragConfig, blobContainer)
     {
     }
 }

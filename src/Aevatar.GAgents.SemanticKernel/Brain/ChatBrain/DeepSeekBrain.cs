@@ -11,6 +11,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using OpenAI;
 using OpenAI.Chat;
+using Volo.Abp.BlobStoring;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
@@ -21,8 +22,8 @@ public class DeepSeekBrain : BrainBase
     public override ModelIdEnum ModelIdEnum => ModelIdEnum.DeepSeek;
 
     public DeepSeekBrain(IKernelBuilderFactory kernelBuilderFactory, ILogger<DeepSeekBrain> logger, IOptions<RagConfig> ragConfig,
-        IBlobStorageProvider blobStorageProvider)
-        : base(kernelBuilderFactory, logger, ragConfig, blobStorageProvider)
+        IBlobContainer blobContainer)
+        : base(kernelBuilderFactory, logger, ragConfig, blobContainer)
     {
     }
 
