@@ -65,6 +65,8 @@
     <PackageVersion Include="Volo.Abp.BackgroundJobs.Domain" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.BackgroundJobs.Domain.Shared" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.BackgroundJobs.MongoDB" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BlobStoring" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BlobStoring.Aws" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.2.0" />
     <PackageVersion Include="Volo.Abp.Core" Version="9.0.3" />
     <PackageVersion Include="Volo.Abp.Dapr" Version="$(AbpVersion)" />
@@ -136,6 +138,5 @@
     <PackageVersion Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.33.0-beta" />
     <PackageVersion Include="Neo4j.Driver" Version="5.27.0" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.307.28" />
   </ItemGroup>
 </Project>
