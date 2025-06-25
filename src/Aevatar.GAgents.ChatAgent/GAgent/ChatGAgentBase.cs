@@ -9,6 +9,7 @@ using Aevatar.GAgents.ChatAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.Threading;
 using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using ChatRole = Aevatar.GAgents.AI.Common.ChatRole;
@@ -154,10 +155,10 @@ public abstract class
 
                     if (toDeleteImageKeys.Any())
                     {
-                        var blobProvider = ServiceProvider.GetRequiredService<IBlobStorageProvider>();
+                        var blobContainer = ServiceProvider.GetRequiredService<IBlobContainer>();
                         var downloadTasks = toDeleteImageKeys.Select(async key =>
                         {
-                            await blobProvider.DeleteAsync(key);
+                            await blobContainer.DeleteAsync(key);
                         });
 
                         AsyncHelper.RunSync(async () => await Task.WhenAll(downloadTasks));

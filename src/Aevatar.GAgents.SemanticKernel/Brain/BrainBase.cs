@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Data;
+using Volo.Abp.BlobStoring;
 using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
@@ -37,14 +38,14 @@ public abstract class BrainBase : IBrain
     protected readonly IOptions<RagConfig> RagConfig;
     protected string Description = string.Empty;
 
-    protected readonly IBlobStorageProvider BlobStorageProvider;
+    protected readonly IBlobContainer BlobContainer;
 
-    protected BrainBase(IKernelBuilderFactory kernelBuilderFactory, ILogger logger, IOptions<RagConfig> ragConfig, IBlobStorageProvider blobStorageProvider)
+    protected BrainBase(IKernelBuilderFactory kernelBuilderFactory, ILogger logger, IOptions<RagConfig> ragConfig, IBlobContainer blobContainer)
     {
         KernelBuilderFactory = kernelBuilderFactory;
         Logger = logger;
         RagConfig = ragConfig;
-        BlobStorageProvider = blobStorageProvider;
+        BlobContainer = blobContainer;
     }
 
     protected abstract Task ConfigureKernelBuilder(LLMConfig llmConfig, IKernelBuilder kernelBuilder);
@@ -197,10 +198,10 @@ public abstract class BrainBase : IBrain
         {
             var messageContentCollection = new ChatMessageContentItemCollection(); 
         
-            var images = new ConcurrentDictionary<string, Blob>();
+            var images = new ConcurrentDictionary<string, byte[]>();
             var downloadTasks = imageKeys.Select(async key =>
             {
-                var blob = await BlobStorageProvider.DownloadAsync(key);
+                var blob = await BlobContainer.GetAllBytesAsync(key);
                 images[key] = blob;
             });
 
@@ -208,7 +209,7 @@ public abstract class BrainBase : IBrain
             
             foreach (var image in images)
             {
-                messageContentCollection.Add(new ImageContent(new ReadOnlyMemory<byte>(image.Value.Bytes), image.Value.MimeType));
+                messageContentCollection.Add(new ImageContent(new ReadOnlyMemory<byte>(image.Value), ImageHelper.GetMineType(image.Key)));
             }
             chatHistory.AddUserMessage(messageContentCollection);
         }
