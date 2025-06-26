@@ -177,6 +177,7 @@ public class MyAgent : GAgentBase<MyState, MyEvent>, IMyAgent
 4. **Run test to confirm pass** - Verify implementation works
 5. **Refactor while keeping tests green** - Improve code quality
 6. **Repeat cycle** - Continue for each new behavior
+7. **Commit** - git commit when implementation is completed and all test cases passed
 
 **TDD Enforcement Rules:**
 - ❌ **NEVER** write implementation code before writing tests
@@ -238,7 +239,6 @@ Before ANY implementation:
 ### Development Tools
 - **sequentialthinking** - Break down complex tasks using MECE (Mutually Exclusive, Collectively Exhaustive) principles
 - **context7** - Orleans-specific guidance, patterns, and troubleshooting support
-- **openmemory** - Search for related fixes, changes, and implementation patterns
 
 ### Quality Gates
 - **TDD cycle completed** - Tests written BEFORE implementation
