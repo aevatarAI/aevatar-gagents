@@ -13,7 +13,8 @@ public class ImageHelper
             ".png" => "image/png",
             ".gif" => "image/gif",
             ".webp" => "image/webp",
-            _ => "image/jpeg" // Default fallback
+            ".bmp" => "image/bmp",
+             _ => "image/jpeg" // Default fallback
         };
     }
 }
