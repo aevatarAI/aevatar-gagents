@@ -24,6 +24,7 @@
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" />
         <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" />
         <PackageReference Include="PdfPig" />
+        <PackageReference Include="Volo.Abp.BlobStoring" />
     </ItemGroup>
 
     <ItemGroup>

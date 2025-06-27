@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Google;
+using Volo.Abp.BlobStoring;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
@@ -16,8 +17,9 @@ public sealed class GeminiBrain : BrainBase
     public GeminiBrain(
         IKernelBuilderFactory kernelBuilderFactory,
         ILogger<GeminiBrain> logger,
-        IOptions<RagConfig> ragConfig)
-        : base(kernelBuilderFactory, logger, ragConfig)
+        IOptions<RagConfig> ragConfig,
+        IBlobContainer blobContainer)
+        : base(kernelBuilderFactory, logger, ragConfig, blobContainer)
     {
     }
 

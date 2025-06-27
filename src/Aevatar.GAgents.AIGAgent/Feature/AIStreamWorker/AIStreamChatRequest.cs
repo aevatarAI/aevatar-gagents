@@ -19,4 +19,5 @@ public class AIStreamChatRequest
     [Id(6)] public bool IfUseKnowledge { get; set; } = false;
     [Id(7)] public ExecutionPromptSettings? PromptSettings { get; set; } = null;
     [Id(8)] public AIChatContextDto Context { get; set; } = null;
+    [Id(9)] public List<string>? ImageKeys { get; set; }
 }

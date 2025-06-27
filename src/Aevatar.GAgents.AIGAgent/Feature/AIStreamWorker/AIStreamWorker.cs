@@ -88,7 +88,7 @@ public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChat
                 $"[AIStreamRequestAsync] chatRequest init brain:{chatRequest.Context.RequestId}-{chatRequest.Context.ChatId}-{chatRequest.Context.MessageId}");
         }
 
-        var responseStreaming = await brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.History,
+        var responseStreaming = await brain.InvokePromptStreamingAsync(chatRequest.Content, chatRequest.ImageKeys, chatRequest.History,
             chatRequest.IfUseKnowledge,
             chatRequest.PromptSettings,
             cancellationToken: cancellationToken);
