@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Aevatar.Extensions;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
@@ -5,6 +6,7 @@ using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Orleans.TestingHost;
 using Volo.Abp.AutoMapper;
@@ -43,6 +45,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddJsonFile("appsettings.json")
                 .AddJsonFile("appsettings.secrets.json", true)
                 .Build();
+            
 
             hostBuilder.ConfigureServices(services =>
                 {
@@ -79,7 +82,55 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
                     services.Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
                     services.Configure<RagConfig>(configuration.GetSection("Rag"));
-                    services.Configure<SystemLLMConfigOptions>(configuration);
+                    
+                    // Register SystemLLMConfigOptions for Orleans grains
+                    var systemLLMConfigOptions = new SystemLLMConfigOptions
+                    {
+                        SystemLLMConfigs = new Dictionary<string, LLMConfig>
+                        {
+                            ["OpenAI"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelName = "gpt-4o",
+                                Endpoint = "https://test.openai.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["DeepSeek"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.DeepSeek,
+                                ModelName = "DeepSeek-R1",
+                                Endpoint = "https://test.deepseek.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["OpenAITextToImage"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelName = "dall-e-3",
+                                Endpoint = "https://test.openai.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["Azure"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelName = "gpt-4o",
+                                Endpoint = "https://test.azure.openai.com",
+                                ApiKey = "test-key"
+                            },
+                            ["Google"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Google,
+                                ModelIdEnum = ModelIdEnum.Gemini,
+                                ModelName = "gemini-pro",
+                                Endpoint = "https://test.google.ai",
+                                ApiKey = "test-key"
+                            }
+                        }
+                    };
+                    services.AddSingleton<IOptions<SystemLLMConfigOptions>>(new OptionsWrapper<SystemLLMConfigOptions>(systemLLMConfigOptions));
                     
                     services.AddSemanticKernel()
                         .AddQdrantVectorStore()

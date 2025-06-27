@@ -16,7 +16,10 @@
       "Bash(rg:*)",
       "Bash(dotnet test:*)",
       "Bash(cp:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(timeout 30 dotnet test test/Aevatar.GAgents.AIGAgent.Test/ --filter \"FullyQualifiedName~Should_InitializeSuccessfully_When_UsingMockBrain\" --verbosity normal)",
+      "Bash(timeout 30 dotnet test test/Aevatar.GAgents.AIGAgent.Test/ --filter \"FullyQualifiedName~Should_LoadSystemLLMConfigOptions_When_ConfigurationIsProperlyBound\" --verbosity normal)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

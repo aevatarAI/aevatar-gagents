@@ -1,0 +1,657 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="c28bd6c8-e477-4e0c-bec7-64ad4d15d4a7" name="@192 2025-06-26 22:42:16" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-06-26T22:42:16.4213030+08:00" queuing="2025-06-26T22:42:16.4213030+08:00" start="2025-06-26T22:42:00.9664060+08:00" finish="2025-06-26T22:42:16.4240640+08:00" />
+  <TestSettings name="default" id="463aded0-3f7c-4b56-b09a-853509c0a908">
+    <Deployment runDeploymentRoot="_192_2025-06-26_22_42_16" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="8bf5cf5b-638e-41e3-9e7f-86d84cb8f53c" testId="e1b8838d-081e-0289-bc29-fcd300778f40" testName="Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest.Should_InitializeSuccessfully_When_UsingMockBrain" computerName="192" duration="00:00:15.0717684" startTime="2025-06-26T22:42:16.3733810+08:00" endTime="2025-06-26T22:42:16.3733960+08:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8bf5cf5b-638e-41e3-9e7f-86d84cb8f53c">
+      <Output>
+        <ErrorInfo>
+          <Message>Shouldly.ShouldAssertException : initResult&#xD;
+    should be&#xD;
+True&#xD;
+    but was&#xD;
+False</Message>
+          <StackTrace>   at Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest.Should_InitializeSuccessfully_When_UsingMockBrain() in /Users/zhifenglee/Desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/Aevatar.GAgents.AIGAgent.Test/Tests/AIGAgentWithMocksTest.cs:line 52
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+--- End of stack trace from previous location ---
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+   at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+   at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+   at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest.Should_InitializeSuccessfully_When_UsingMockBrain" storage="/users/zhifenglee/desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/aevatar.gagents.aigagent.test/bin/debug/net9.0/aevatar.gagents.aigagent.test.dll" id="e1b8838d-081e-0289-bc29-fcd300778f40">
+      <Execution id="8bf5cf5b-638e-41e3-9e7f-86d84cb8f53c" />
+      <TestMethod codeBase="/Users/zhifenglee/Desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/Aevatar.GAgents.AIGAgent.Test/bin/Debug/net9.0/Aevatar.GAgents.AIGAgent.Test.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest" name="Should_InitializeSuccessfully_When_UsingMockBrain" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="e1b8838d-081e-0289-bc29-fcd300778f40" executionId="8bf5cf5b-638e-41e3-9e7f-86d84cb8f53c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="1" executed="1" passed="0" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.7+8f2703126a (64-bit .NET 9.0.0)
+[xUnit.net 00:00:00.06]   Discovering: Aevatar.GAgents.AIGAgent.Test
+[xUnit.net 00:00:00.09]   Discovered:  Aevatar.GAgents.AIGAgent.Test
+[xUnit.net 00:00:00.09]   Starting:    Aevatar.GAgents.AIGAgent.Test
+info: Orleans.Runtime.Silo[100404]
+      Silo starting with GC settings: ServerGC=False GCLatencyMode=Interactive
+warn: Orleans.Runtime.Silo[100405]
+      Note: Silo not running with ServerGC turned on - recommend checking app config : &lt;configuration&gt;-&lt;runtime&gt;-&lt;gcServer enabled="true"&gt;
+warn: Orleans.Runtime.Silo[100405]
+      Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).
+info: Orleans.Runtime.Silo[100403]
+      -------------- Initializing silo on host 192.168.1.7 MachineName 192 at 127.0.0.1:29655, gen 109953721 --------------
+info: Orleans.Runtime.Silo[100415]
+      Starting silo Primary
+info: Orleans.Runtime.MembershipService.MembershipTableSystemTarget[100637]
+      GrainBasedMembershipTable Activated.
+info: Orleans.Runtime.Silo[100422]
+      -------------- Started silo S127.0.0.1:29655:109953721, ConsistentHashCode 3B800643 --------------
+info: Orleans.Hosting.SiloHostedService[0]
+      Starting Orleans Silo.
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ActivationCountBasedPlacementOptions: 
+      ChooseOutOf: 2
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ClusterMembershipOptions: 
+      NumMissedTableIAmAliveLimit: 2
+      LivenessEnabled: True
+      ProbeTimeout: 00:00:05
+      TableRefreshTimeout: 00:01:00
+      DeathVoteExpirationTimeout: 00:02:00
+      IAmAliveTablePublishTimeout: 00:05:00
+      MaxJoinAttemptTime: 00:05:00
+      UseLivenessGossip: True
+      NumProbedSilos: 3
+      NumMissedProbesLimit: 3
+      NumVotesForDeathDeclaration: 2
+      DefunctSiloExpiration: 7.00:00:00
+      DefunctSiloCleanupPeriod: 01:00:00
+      LocalHealthDegradationMonitoringPeriod: 00:00:10
+      ExtendProbeTimeoutDuringDegradation: True
+      EnableIndirectProbes: True
+      EvictWhenMaxJoinAttemptTimeExceeded: True
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ClusterOptions: 
+      ClusterId: testcluster-2025-06-26t14-42-01-290
+      ServiceId: e384222b3b02464fbae0606ed7aad04a
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ConnectionOptions: 
+      ProtocolVersion: Version1
+      ConnectionsPerEndpoint: 1
+      ConnectionRetryDelay: 00:00:01
+      OpenConnectionTimeout: 00:00:05
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ConsistentRingOptions: 
+      NumVirtualBucketsConsistentRing: 30
+      UseVirtualBucketsConsistentRing: True
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.DevelopmentClusterMembershipOptions: 
+      PrimarySiloEndpoint: 127.0.0.1:29655
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.EndpointOptions: 
+      AdvertisedIPAddress: 127.0.0.1
+      SiloPort: 29655
+      GatewayPort: 46075
+      SiloListeningEndpoint: 
+      GatewayListeningEndpoint: 
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainCollectionOptions: 
+      CollectionQuantum: 00:01:00
+      CollectionAge: 00:15:00
+      ActivationTimeout: 00:00:30
+      DeactivationTimeout: 00:00:30
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainDirectoryOptions: 
+      CachingStrategy: Adaptive
+      CacheSize: 1000000
+      InitialCacheTTL: 00:00:30
+      MaximumCacheTTL: 00:04:00
+      CacheTTLExtensionFactor: 2
+      LazyDeregistrationDelay: 00:01:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainVersioningOptions: 
+      DefaultCompatibilityStrategy: BackwardCompatible
+      DefaultVersionSelectorStrategy: AllCompatibleVersions
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-Aevatar: 
+      TotalQueueCount: 8
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.LoadSheddingOptions: 
+      LoadSheddingEnabled: False
+      CpuThreshold: 95
+      MemoryThreshold: 90
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.MemoryGrainStorageOptions-Default: 
+      NumStorageGrains: 10
+      InitStage: 10000
+      GrainStorageSerializer: Orleans.Storage.JsonGrainStorageSerializer
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.MemoryGrainStorageOptions-PubSubStore: 
+      NumStorageGrains: 10
+      InitStage: 10000
+      GrainStorageSerializer: Orleans.Storage.JsonGrainStorageSerializer
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ResourceOptimizedPlacementOptions: 
+      CpuUsageWeight: 40
+      MemoryUsageWeight: 20
+      AvailableMemoryWeight: 20
+      MaxAvailableMemoryWeight: 5
+      ActivationCountWeight: 15
+      LocalSiloPreferenceMargin: 5
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SchedulingOptions: 
+      DelayWarningThreshold: 00:00:10
+      ActivationSchedulingQuantum: 00:00:00.1000000
+      TurnWarningLengthThreshold: 00:00:01
+      MaxPendingWorkItemsSoftLimit: 0
+      StoppedActivationWarningInterval: 00:01:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SiloMessagingOptions: 
+      SiloSenderQueues: 0
+      GatewaySenderQueues: 0
+      MaxForwardCount: 2
+      ClientDropTimeout: 00:01:00
+      ClientRegistrationRefresh: 00:05:00
+      ClientGatewayShutdownNotificationTimeout: 00:00:05
+      MaxEnqueuedRequestsSoftLimit: 0
+      MaxEnqueuedRequestsHardLimit: 0
+      MaxEnqueuedRequestsSoftLimit_StatelessWorker: 0
+      MaxEnqueuedRequestsHardLimit_StatelessWorker: 0
+      MaxRequestProcessingTime: 02:00:00
+      AssumeHomogenousSilosForTesting: False
+      ShutdownRerouteTimeout: 00:00:10
+      SystemResponseTimeout: 00:00:30
+      GrainWorkloadAnalysisPeriod: 00:00:05
+      RequestProcessingWarningTime: 00:00:05
+      RequestQueueDelayWarningTime: 00:00:10
+      WaitForMessageToBeQueuedForOutboundTime: 00:00:02
+      ResponseTimeout: 00:00:30
+      ResponseTimeoutWithDebugger: 00:30:00
+      DropExpiredMessages: True
+      MaxMessageHeaderSize: 10485760
+      MaxMessageBodySize: 104857600
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SiloOptions: 
+      SiloName: Primary
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.StreamCacheEvictionOptions-Aevatar: 
+      DataMinTimeInCache: 00:05:00
+      DataMaxAgeInCache: 00:30:00
+      MetadataMinTimeInCache: 00:10:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.StreamStatisticOptions-Aevatar: 
+      StatisticMonitorWriteInterval: 00:05:00
+info: Orleans.Runtime.Silo[100401]
+      Silo Start()
+info: Orleans.Runtime.MembershipService.MembershipTableManager[100603]
+      MembershipOracle starting on host 192.168.1.7 with SiloAddress S127.0.0.1:29655:109953721 at 2025-06-26 14:42:01.616 GMT
+info: Orleans.Runtime.MembershipService.SystemTargetBasedMembershipTable[100635]
+      Creating in-memory membership table
+info: Orleans.Runtime.MembershipService.MembershipTableSystemTarget[100637]
+      GrainBasedMembershipTable Activated.
+info: Orleans.Runtime.Silo[100452]
+      Init grain services took 0 milliseconds to finish
+info: Orleans.Runtime.MembershipService.SystemTargetBasedMembershipTable[100631]
+      Connected to membership table provider.
+info: Orleans.Runtime.MembershipService.MembershipAgent[100663]
+      Joining
+info: Orleans.Runtime.MembershipService.MembershipAgent[100604]
+      -BecomeActive
+info: Orleans.Runtime.MembershipService.MembershipAgent[100605]
+      -Finished BecomeActive.
+info: Orleans.Runtime.Providers.SiloProviderRuntime[0]
+      Successfully created queue balancer of type Orleans.Streams.ConsistentRingQueueBalancer for stream provider Aevatar
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103501]
+      Created PersistentStreamPullingManager for Stream Provider Aevatar.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103502]
+      Init.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103503]
+      Initialize: I am now responsible for 8 queues: [aevatar-0, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-6, aevatar-7].
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103517]
+      Starting agents for 8 queues: [aevatar-0, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-6, aevatar-7]
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_1_aevatar-0-0x00000000 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-0-0x00000000.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_2_aevatar-1-0x20000001 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-1-0x20000001.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_3_aevatar-2-0x40000002 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-2-0x40000002.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_4_aevatar-3-0x60000003 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-3-0x60000003.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_5_aevatar-4-0x80000004 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-4-0x80000004.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_6_aevatar-5-0xA0000005 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-5-0xA0000005.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_7_aevatar-6-0xC0000006 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-6-0xC0000006.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_8_aevatar-7-0xE0000007 for Stream Provider Aevatar on silo S127.0.0.1:29655:109953721 for Queue aevatar-7-0xE0000007.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_1_aevatar-0-0x00000000 on silo S127.0.0.1:29655:109953721 for queue aevatar-0-0x00000000.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_2_aevatar-1-0x20000001 on silo S127.0.0.1:29655:109953721 for queue aevatar-1-0x20000001.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_3_aevatar-2-0x40000002 on silo S127.0.0.1:29655:109953721 for queue aevatar-2-0x40000002.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_5_aevatar-4-0x80000004 on silo S127.0.0.1:29655:109953721 for queue aevatar-4-0x80000004.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_4_aevatar-3-0x60000003 on silo S127.0.0.1:29655:109953721 for queue aevatar-3-0x60000003.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_6_aevatar-5-0xA0000005 on silo S127.0.0.1:29655:109953721 for queue aevatar-5-0xA0000005.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_7_aevatar-6-0xC0000006 on silo S127.0.0.1:29655:109953721 for queue aevatar-6-0xC0000006.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_8_aevatar-7-0xE0000007 on silo S127.0.0.1:29655:109953721 for queue aevatar-7-0xE0000007.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-0-0x00000000 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-4-0x80000004 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-6-0xC0000006 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-7-0xE0000007 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-3-0x60000003 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-5-0xA0000005 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-1-0x20000001 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-2-0x40000002 under my responsibility.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103508]
+      Added 8 new queues: [aevatar-0, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-6, aevatar-7]. Now own total of 8 queues: [aevatar-0, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-6, aevatar-7]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103519]
+      Started agents.
+info: Orleans.Hosting.SiloHostedService[0]
+      Orleans Silo started.
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /Users/zhifenglee/Desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/Aevatar.GAgents.AIGAgent.Test/bin/Debug/net9.0/
+info: Orleans.Runtime.Silo[100404]
+      Silo starting with GC settings: ServerGC=False GCLatencyMode=Interactive
+warn: Orleans.Runtime.Silo[100405]
+      Note: Silo not running with ServerGC turned on - recommend checking app config : &lt;configuration&gt;-&lt;runtime&gt;-&lt;gcServer enabled="true"&gt;
+warn: Orleans.Runtime.Silo[100405]
+      Note: ServerGC only kicks in on multi-core systems (settings enabling ServerGC have no effect on single-core machines).
+info: Orleans.Runtime.Silo[100403]
+      -------------- Initializing silo on host 192.168.1.7 MachineName 192 at 127.0.0.1:29656, gen 109953721 --------------
+info: Orleans.Runtime.Silo[100415]
+      Starting silo Secondary_1
+info: Orleans.Runtime.MembershipService.MembershipTableSystemTarget[100637]
+      GrainBasedMembershipTable Activated.
+info: Orleans.Runtime.Silo[100422]
+      -------------- Started silo S127.0.0.1:29656:109953721, ConsistentHashCode 8FBC5D09 --------------
+info: Orleans.Hosting.SiloHostedService[0]
+      Starting Orleans Silo.
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ActivationCountBasedPlacementOptions: 
+      ChooseOutOf: 2
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ClusterMembershipOptions: 
+      NumMissedTableIAmAliveLimit: 2
+      LivenessEnabled: True
+      ProbeTimeout: 00:00:05
+      TableRefreshTimeout: 00:01:00
+      DeathVoteExpirationTimeout: 00:02:00
+      IAmAliveTablePublishTimeout: 00:05:00
+      MaxJoinAttemptTime: 00:05:00
+      UseLivenessGossip: True
+      NumProbedSilos: 3
+      NumMissedProbesLimit: 3
+      NumVotesForDeathDeclaration: 2
+      DefunctSiloExpiration: 7.00:00:00
+      DefunctSiloCleanupPeriod: 01:00:00
+      LocalHealthDegradationMonitoringPeriod: 00:00:10
+      ExtendProbeTimeoutDuringDegradation: True
+      EnableIndirectProbes: True
+      EvictWhenMaxJoinAttemptTimeExceeded: True
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ClusterOptions: 
+      ClusterId: testcluster-2025-06-26t14-42-01-290
+      ServiceId: e384222b3b02464fbae0606ed7aad04a
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ConnectionOptions: 
+      ProtocolVersion: Version1
+      ConnectionsPerEndpoint: 1
+      ConnectionRetryDelay: 00:00:01
+      OpenConnectionTimeout: 00:00:05
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ConsistentRingOptions: 
+      NumVirtualBucketsConsistentRing: 30
+      UseVirtualBucketsConsistentRing: True
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.DevelopmentClusterMembershipOptions: 
+      PrimarySiloEndpoint: 127.0.0.1:29655
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.EndpointOptions: 
+      AdvertisedIPAddress: 127.0.0.1
+      SiloPort: 29656
+      GatewayPort: 46076
+      SiloListeningEndpoint: 
+      GatewayListeningEndpoint: 
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainCollectionOptions: 
+      CollectionQuantum: 00:01:00
+      CollectionAge: 00:15:00
+      ActivationTimeout: 00:00:30
+      DeactivationTimeout: 00:00:30
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainDirectoryOptions: 
+      CachingStrategy: Adaptive
+      CacheSize: 1000000
+      InitialCacheTTL: 00:00:30
+      MaximumCacheTTL: 00:04:00
+      CacheTTLExtensionFactor: 2
+      LazyDeregistrationDelay: 00:01:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.GrainVersioningOptions: 
+      DefaultCompatibilityStrategy: BackwardCompatible
+      DefaultVersionSelectorStrategy: AllCompatibleVersions
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.HashRingStreamQueueMapperOptions-Aevatar: 
+      TotalQueueCount: 8
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.LoadSheddingOptions: 
+      LoadSheddingEnabled: False
+      CpuThreshold: 95
+      MemoryThreshold: 90
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.MemoryGrainStorageOptions-Default: 
+      NumStorageGrains: 10
+      InitStage: 10000
+      GrainStorageSerializer: Orleans.Storage.JsonGrainStorageSerializer
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.MemoryGrainStorageOptions-PubSubStore: 
+      NumStorageGrains: 10
+      InitStage: 10000
+      GrainStorageSerializer: Orleans.Storage.JsonGrainStorageSerializer
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.ResourceOptimizedPlacementOptions: 
+      CpuUsageWeight: 40
+      MemoryUsageWeight: 20
+      AvailableMemoryWeight: 20
+      MaxAvailableMemoryWeight: 5
+      ActivationCountWeight: 15
+      LocalSiloPreferenceMargin: 5
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SchedulingOptions: 
+      DelayWarningThreshold: 00:00:10
+      ActivationSchedulingQuantum: 00:00:00.1000000
+      TurnWarningLengthThreshold: 00:00:01
+      MaxPendingWorkItemsSoftLimit: 0
+      StoppedActivationWarningInterval: 00:01:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SiloMessagingOptions: 
+      SiloSenderQueues: 0
+      GatewaySenderQueues: 0
+      MaxForwardCount: 2
+      ClientDropTimeout: 00:01:00
+      ClientRegistrationRefresh: 00:05:00
+      ClientGatewayShutdownNotificationTimeout: 00:00:05
+      MaxEnqueuedRequestsSoftLimit: 0
+      MaxEnqueuedRequestsHardLimit: 0
+      MaxEnqueuedRequestsSoftLimit_StatelessWorker: 0
+      MaxEnqueuedRequestsHardLimit_StatelessWorker: 0
+      MaxRequestProcessingTime: 02:00:00
+      AssumeHomogenousSilosForTesting: False
+      ShutdownRerouteTimeout: 00:00:10
+      SystemResponseTimeout: 00:00:30
+      GrainWorkloadAnalysisPeriod: 00:00:05
+      RequestProcessingWarningTime: 00:00:05
+      RequestQueueDelayWarningTime: 00:00:10
+      WaitForMessageToBeQueuedForOutboundTime: 00:00:02
+      ResponseTimeout: 00:00:30
+      ResponseTimeoutWithDebugger: 00:30:00
+      DropExpiredMessages: True
+      MaxMessageHeaderSize: 10485760
+      MaxMessageBodySize: 104857600
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.SiloOptions: 
+      SiloName: Secondary_1
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.StreamCacheEvictionOptions-Aevatar: 
+      DataMinTimeInCache: 00:05:00
+      DataMaxAgeInCache: 00:30:00
+      MetadataMinTimeInCache: 00:10:00
+info: Orleans.Runtime.SiloOptionsLogger[0]
+      Configuration Orleans.Configuration.StreamStatisticOptions-Aevatar: 
+      StatisticMonitorWriteInterval: 00:05:00
+info: Orleans.Runtime.Silo[100401]
+      Silo Start()
+info: Orleans.Runtime.MembershipService.MembershipTableManager[100603]
+      MembershipOracle starting on host 192.168.1.7 with SiloAddress S127.0.0.1:29656:109953721 at 2025-06-26 14:42:01.943 GMT
+info: Orleans.Runtime.Silo[100452]
+      Init grain services took 0 milliseconds to finish
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Establishing connection to endpoint S127.0.0.1:29655:0
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connected to endpoint S127.0.0.1:29655:0
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:18069, Remote: 127.0.0.1:29655, ConnectionId: 0HNDKNUEDVJ3H] established with S127.0.0.1:29655:109953721
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:29655, Remote: 127.0.0.1:18069, ConnectionId: 0HNDKNUEDVJ3I] established with S127.0.0.1:29656:109953721
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:18069, Remote: 127.0.0.1:29655, ConnectionId: 0HNDKNUEDVJ3H] established with S127.0.0.1:29655:0
+info: Orleans.Runtime.MembershipService.MembershipAgent[100663]
+      Joining
+info: Orleans.Runtime.MembershipService.MembershipTableManager[0]
+      Received cluster membership snapshot via gossip: [Version: 3, 2 silos, SiloAddress=S127.0.0.1:29656:109953721 SiloName=Secondary_1 Status=Joining, SiloAddress=S127.0.0.1:29655:109953721 SiloName=Primary Status=Active]
+info: Orleans.Runtime.MembershipService.MembershipAgent[100604]
+      -BecomeActive
+info: Orleans.Runtime.MembershipService.MembershipAgent[100614]
+      About to send pings to 1 nodes in order to validate communication in the Joining state. Pinged nodes = [S127.0.0.1:29655:109953721]
+info: Orleans.Runtime.MembershipService.MembershipTableManager[0]
+      Received cluster membership snapshot via gossip: [Version: 4, 2 silos, SiloAddress=S127.0.0.1:29656:109953721 SiloName=Secondary_1 Status=Active, SiloAddress=S127.0.0.1:29655:109953721 SiloName=Primary Status=Active]
+info: Orleans.Runtime.MembershipService.MembershipAgent[100605]
+      -Finished BecomeActive.
+info: Orleans.Runtime.Providers.SiloProviderRuntime[0]
+      Successfully created queue balancer of type Orleans.Streams.ConsistentRingQueueBalancer for stream provider Aevatar
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103504]
+      Got QueueChangeNotification number 1 from the queue balancer. managerState = AgentsStarted
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103501]
+      Created PersistentStreamPullingManager for Stream Provider Aevatar.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103502]
+      Init.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103503]
+      Initialize: I am now responsible for 3 queues: [aevatar-0, aevatar-2, aevatar-6].
+info: Orleans.Runtime.MembershipService.ClusterHealthMonitor[100612]
+      Will watch (actively ping) 1 silos: [S127.0.0.1:29655:109953721]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103517]
+      Starting agents for 3 queues: [aevatar-0, aevatar-2, aevatar-6]
+info: Orleans.Runtime.MembershipService.ClusterHealthMonitor[100612]
+      Will watch (actively ping) 1 silos: [S127.0.0.1:29656:109953721]
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_1_aevatar-0-0x00000000 for Stream Provider Aevatar on silo S127.0.0.1:29656:109953721 for Queue aevatar-0-0x00000000.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_2_aevatar-2-0x40000002 for Stream Provider Aevatar on silo S127.0.0.1:29656:109953721 for Queue aevatar-2-0x40000002.
+info: Orleans.Streams.Aevatar[103301]
+      Created PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_3_aevatar-6-0xC0000006 for Stream Provider Aevatar on silo S127.0.0.1:29656:109953721 for Queue aevatar-6-0xC0000006.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_3_aevatar-6-0xC0000006 on silo S127.0.0.1:29656:109953721 for queue aevatar-6-0xC0000006.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-6-0xC0000006 under my responsibility.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_2_aevatar-2-0x40000002 on silo S127.0.0.1:29656:109953721 for queue aevatar-2-0x40000002.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-2-0x40000002 under my responsibility.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29656@109953721+Aevatar_1_aevatar-0-0x00000000 on silo S127.0.0.1:29656:109953721 for queue aevatar-0-0x00000000.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-0-0x00000000 under my responsibility.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103508]
+      Added 3 new queues: [aevatar-0, aevatar-2, aevatar-6]. Now own total of 3 queues: [aevatar-0, aevatar-2, aevatar-6]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103519]
+      Started agents.
+info: Orleans.Hosting.SiloHostedService[0]
+      Orleans Silo started.
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /Users/zhifenglee/Desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/Aevatar.GAgents.AIGAgent.Test/bin/Debug/net9.0/
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103506]
+      Executing QueueChangeNotification number 1. Queue balancer says I should now own 5 queues: [aevatar-1, aevatar-3, aevatar-4, aevatar-5, aevatar-7]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      About to remove 3 agents from my responsibility: [aevatar-0, aevatar-2, aevatar-6]
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-0-0x00000000
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-2-0x40000002
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-6-0xC0000006
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      Removed 3 queues: [aevatar-0, aevatar-2, aevatar-6]. Now own total of 5 queues: [aevatar-1, aevatar-3, aevatar-4, aevatar-5, aevatar-7]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103516]
+      Done Executing QueueChangeNotification number 1. I now own 5 queues: [aevatar-1, aevatar-3, aevatar-4, aevatar-5, aevatar-7]
+info: Orleans.Runtime.Messaging.Gateway[101301]
+      Recorded opened connection from endpoint 127.0.0.1:44960, client ID sys.client/0a5a4beb76864465929c328bac361573.
+info: Orleans.Runtime.Messaging.Gateway[101301]
+      Recorded opened connection from endpoint 127.0.0.1:44960, client ID sys.client/0a5a4beb76864465929c328bac361573.
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Closing connection [Local: 127.0.0.1:46075, Remote: 127.0.0.1:44960, ConnectionId: 0HNDKNUEDVJ3L]
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Closing connection [Local: 127.0.0.1:46076, Remote: 127.0.0.1:44960, ConnectionId: 0HNDKNUEDVJ3M]
+info: Orleans.Runtime.Messaging.Gateway[101302]
+      Recorded closed socket from endpoint 127.0.0.1:44960, client ID sys.client/0a5a4beb76864465929c328bac361573.
+info: Orleans.Runtime.Messaging.Gateway[101302]
+      Recorded closed socket from endpoint 127.0.0.1:44960, client ID sys.client/0a5a4beb76864465929c328bac361573.
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:46076, Remote: 127.0.0.1:44960, ConnectionId: 0HNDKNUEDVJ3M] terminated
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:46075, Remote: 127.0.0.1:44960, ConnectionId: 0HNDKNUEDVJ3L] terminated
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+info: Orleans.Hosting.SiloHostedService[0]
+      Stopping Orleans Silo
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103518]
+      Stopping agents for 3 queues: [aevatar-0, aevatar-2, aevatar-6]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      About to remove 3 agents from my responsibility: [aevatar-0, aevatar-2, aevatar-6]
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-0-0x00000000
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-2-0x40000002
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-6-0xC0000006
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      Removed 3 queues: [aevatar-0, aevatar-2, aevatar-6]. Now own total of 0 queues: []
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103520]
+      Stopped agents.
+warn: Orleans.Runtime.SiloLifecycleSubject[100452]
+      'Orleans.Runtime.Silo' stopped in stage 'Active (20000)' in '00:00:05.0025481'.
+info: Orleans.Runtime.MembershipService.MembershipTableManager[0]
+      Received cluster membership snapshot via gossip: [Version: 5, 2 silos, SiloAddress=S127.0.0.1:29656:109953721 SiloName=Secondary_1 Status=ShuttingDown, SiloAddress=S127.0.0.1:29655:109953721 SiloName=Primary Status=Active]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103504]
+      Got QueueChangeNotification number 2 from the queue balancer. managerState = AgentsStarted
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103506]
+      Executing QueueChangeNotification number 2. Queue balancer says I should now own 8 queues: [aevatar-0, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-6, aevatar-7]
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_1_aevatar-0-0x00000000 on silo S127.0.0.1:29655:109953721 for queue aevatar-0-0x00000000.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_3_aevatar-2-0x40000002 on silo S127.0.0.1:29655:109953721 for queue aevatar-2-0x40000002.
+info: Orleans.Streams.Aevatar[103302]
+      Init of PersistentStreamPullingAgent sys.svc.stream.agent/127.0.0.1:29655@109953721+Aevatar_7_aevatar-6-0xC0000006 on silo S127.0.0.1:29655:109953721 for queue aevatar-6-0xC0000006.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-0-0x00000000 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-2-0x40000002 under my responsibility.
+info: Orleans.Streams.Aevatar[103304]
+      Taking queue aevatar-6-0xC0000006 under my responsibility.
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103508]
+      Added 3 new queues: [aevatar-0, aevatar-2, aevatar-6]. Now own total of 8 queues: [aevatar-6, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-0, aevatar-7]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103516]
+      Done Executing QueueChangeNotification number 2. I now own 8 queues: [aevatar-6, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-0, aevatar-7]
+warn: Orleans.Runtime.SiloLifecycleSubject[100452]
+      'Orleans.Runtime.Silo' stopped in stage 'BecomeActive (19999)' in '00:00:02.0196902'.
+info: Orleans.Runtime.MembershipService.MembershipTableManager[0]
+      Received cluster membership snapshot via gossip: [Version: 6, 2 silos, SiloAddress=S127.0.0.1:29656:109953721 SiloName=Secondary_1 Status=Dead, SiloAddress=S127.0.0.1:29655:109953721 SiloName=Primary Status=Active]
+info: Orleans.Runtime.MembershipService.ClusterHealthMonitor[100612]
+      Will watch (actively ping) 0 silos: []
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Closing connection [Local: 127.0.0.1:18069, Remote: 127.0.0.1:29655, ConnectionId: 0HNDKNUEDVJ3H]
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Closing connection [Local: 127.0.0.1:29655, Remote: 127.0.0.1:18069, ConnectionId: 0HNDKNUEDVJ3I]
+info: Orleans.Runtime.Messaging.NetworkingTrace[0]
+      Connection [Local: 127.0.0.1:29655, Remote: 127.0.0.1:18069, ConnectionId: 0HNDKNUEDVJ3I] terminated
+info: Orleans.Hosting.SiloHostedService[0]
+      Orleans Silo stopped.
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+info: Orleans.Hosting.SiloHostedService[0]
+      Stopping Orleans Silo
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103518]
+      Stopping agents for 8 queues: [aevatar-6, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-0, aevatar-7]
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      About to remove 8 agents from my responsibility: [aevatar-6, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-0, aevatar-7]
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-6-0xC0000006
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-1-0x20000001
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-2-0x40000002
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-3-0x60000003
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-4-0x80000004
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-5-0xA0000005
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-7-0xE0000007
+info: Orleans.Streams.Aevatar[103305]
+      Shutdown of PersistentStreamPullingAgent responsible for queue: aevatar-0-0x00000000
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103510]
+      Removed 8 queues: [aevatar-6, aevatar-1, aevatar-2, aevatar-3, aevatar-4, aevatar-5, aevatar-0, aevatar-7]. Now own total of 0 queues: []
+info: Orleans.Streams.PersistentStreamPullingManager.Aevatar[103520]
+      Stopped agents.
+warn: Orleans.Runtime.SiloLifecycleSubject[100452]
+      'Orleans.Runtime.Silo' stopped in stage 'Active (20000)' in '00:00:05.0011905'.
+warn: Orleans.Runtime.SiloLifecycleSubject[100452]
+      'Orleans.Runtime.Silo' stopped in stage 'BecomeActive (19999)' in '00:00:02.0107867'.
+info: Orleans.Hosting.SiloHostedService[0]
+      Orleans Silo stopped.
+[xUnit.net 00:00:15.19]       Shouldly.ShouldAssertException : initResult&#xD;
+[xUnit.net 00:00:15.19]           should be&#xD;
+[xUnit.net 00:00:15.19]       True&#xD;
+[xUnit.net 00:00:15.19]           but was&#xD;
+[xUnit.net 00:00:15.19]       False
+[xUnit.net 00:00:15.19]       Stack Trace:
+[xUnit.net 00:00:15.19]         /Users/zhifenglee/Desktop/agent-smith/aevatar-gagents/aevatar-gagents/test/Aevatar.GAgents.AIGAgent.Test/Tests/AIGAgentWithMocksTest.cs(52,0): at Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest.Should_InitializeSuccessfully_When_UsingMockBrain()
+[xUnit.net 00:00:15.19]            at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:15.19]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:15.19]            at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:15.19]            at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+[xUnit.net 00:00:15.19]            at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+[xUnit.net 00:00:15.19]   Finished:    Aevatar.GAgents.AIGAgent.Test
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="192" outcome="Error" timestamp="2025-06-26T22:42:16.3724540+08:00">
+        <Text>[xUnit.net 00:00:15.19]     Aevatar.GAgents.AIGAgent.Test.Tests.AIGAgentWithMocksTest.Should_InitializeSuccessfully_When_UsingMockBrain [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

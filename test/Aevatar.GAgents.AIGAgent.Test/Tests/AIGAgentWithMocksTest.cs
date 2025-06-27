@@ -100,9 +100,10 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         });
 
         // Configure mock response through the factory
+        // Use Azure provider to match the centralized config for "OpenAI" key
         var mockBrain = mockFactory.GetChatBrain(new AI.Options.LLMProviderConfig 
         { 
-            ProviderEnum = AI.Options.LLMProviderEnum.OpenAI, 
+            ProviderEnum = AI.Options.LLMProviderEnum.Azure, 
             ModelIdEnum = AI.Options.ModelIdEnum.OpenAI 
         }) as MockChatBrain;
         
@@ -127,8 +128,8 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         // Assert
         success.ShouldBe(true);
         
-        // Wait briefly for mock processing
-        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        // Wait for Orleans grain processing to complete
+        await Task.Delay(TimeSpan.FromSeconds(5));
         
         var state = await chatAgent.GetStateAsync();
         state.ContentList.Count.ShouldBeGreaterThan(0);
@@ -140,7 +141,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         // Arrange
         var testConfigs = new[]
         {
-            new { SystemLLM = "OpenAI", Expected = AI.Options.LLMProviderEnum.OpenAI },
+            new { SystemLLM = "OpenAI", Expected = AI.Options.LLMProviderEnum.Azure }, // OpenAI key maps to Azure provider in centralized config
             new { SystemLLM = "Azure", Expected = AI.Options.LLMProviderEnum.Azure },
             new { SystemLLM = "Google", Expected = AI.Options.LLMProviderEnum.Google }
         };

@@ -46,7 +46,7 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
 
     public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto)
     {
-        return await PromptHttpAsync(message, context: contextDto);
+        return await PromptHttpAsync(message, context: contextDto, ifAsync: false);
     }
 
     public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,

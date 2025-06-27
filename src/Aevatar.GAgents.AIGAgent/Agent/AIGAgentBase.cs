@@ -664,9 +664,12 @@ public abstract partial class
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
 
-            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(llmConfigDto.SystemLLM, out var config) ==
-                false)
+            if (systemConfigs.Value.SystemLLMConfigs == null || 
+                !systemConfigs.Value.SystemLLMConfigs.TryGetValue(llmConfigDto.SystemLLM, out var config))
             {
+                Logger.LogError("SystemLLMConfigs is null or does not contain key: {SystemLLM}. Available keys: {Keys}", 
+                    llmConfigDto.SystemLLM, 
+                    systemConfigs.Value.SystemLLMConfigs?.Keys.ToArray() ?? Array.Empty<string>());
                 return null;
             }
 

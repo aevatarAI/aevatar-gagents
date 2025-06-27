@@ -61,7 +61,9 @@ public class AIHttpAsyncWorker : GrainAsyncWorker<AIHttpAsyncRequest, AIHttpAsyn
             cancellationToken = cts.Token;
         }
 
+        Console.WriteLine($"[AIHttpAsyncWorker] Getting brain for LLM config: {JsonConvert.SerializeObject(chatRequest.LlmConfig)}");
         var brain = _brainFactory.GetChatBrain(chatRequest.LlmConfig);
+        Console.WriteLine($"[AIHttpAsyncWorker] Brain is null: {brain == null}");
         if (brain == null)
         {
             return new AIHttpAsyncResponse()

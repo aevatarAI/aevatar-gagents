@@ -10,6 +10,7 @@ using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
+using Microsoft.Extensions.Logging;
 using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
@@ -25,9 +26,17 @@ public abstract partial class
     protected async Task<bool> PromptHttpAsync(string prompt, List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null, bool ifAsync = true)
     {
+        // Resolve the LLM configuration from centralized config if needed
+        var llmConfig = await GetLLMConfigAsync();
+        if (llmConfig == null)
+        {
+            Logger.LogError("Failed to resolve LLM configuration for HTTP async request");
+            return false;
+        }
+
         var request = new AIHttpAsyncRequest()
         {
-            LlmConfig = State.LLM,
+            LlmConfig = llmConfig,
             Instructions = State.PromptTemplate,
             VectorId = this.GetGrainId().ToString().Replace("/", ""),
             StreamingConfig = State.StreamingConfig,

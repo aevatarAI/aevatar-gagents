@@ -2,6 +2,7 @@
 // ABOUTME: Provides configurable responses without real AI service calls
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,8 +15,13 @@ namespace Aevatar.GAgents.AIGAgent.Test.Mocks;
 
 public class MockChatBrain : IChatBrain
 {
+    // Shared state across all instances
+    private static readonly ConcurrentDictionary<string, InvokePromptResponse> _sharedResponses = new();
+    private static readonly ConcurrentDictionary<string, Queue<string>> _sharedStreamingResponses = new();
+    
     private InvokePromptResponse? _nextResponse;
     private readonly Queue<string> _streamingResponses = new();
+    private string _brainKey = "default"; // Key to identify this brain configuration
 
     public LLMProviderEnum ProviderEnum { get; private set; }
     public ModelIdEnum ModelIdEnum { get; private set; }
@@ -24,6 +30,10 @@ public class MockChatBrain : IChatBrain
     {
         ProviderEnum = llmConfig.ProviderEnum;
         ModelIdEnum = llmConfig.ModelIdEnum;
+        
+        // Create a unique key for this brain configuration
+        _brainKey = $"{llmConfig.ProviderEnum}_{llmConfig.ModelIdEnum}";
+        
         return Task.CompletedTask;
     }
 
@@ -36,8 +46,34 @@ public class MockChatBrain : IChatBrain
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
-        var response = _nextResponse ?? CreateDefaultResponse();
-        _nextResponse = null; // Reset after use
+        Console.WriteLine($"[MockChatBrain] InvokePromptAsync called with brain key: {_brainKey}");
+        Console.WriteLine($"[MockChatBrain] Shared responses count: {_sharedResponses.Count}");
+        Console.WriteLine($"[MockChatBrain] Next response is null: {_nextResponse == null}");
+        
+        // Check shared state first, then instance state, then default
+        InvokePromptResponse? response = null;
+        
+        // Try to get from shared state
+        if (_sharedResponses.TryRemove(_brainKey, out var sharedResponse))
+        {
+            Console.WriteLine($"[MockChatBrain] Using shared response for key: {_brainKey}");
+            response = sharedResponse;
+        }
+        // Fall back to instance state
+        else if (_nextResponse != null)
+        {
+            Console.WriteLine($"[MockChatBrain] Using instance response");
+            response = _nextResponse;
+            _nextResponse = null; // Reset after use
+        }
+        // Default response
+        else
+        {
+            Console.WriteLine($"[MockChatBrain] Using default response");
+            response = CreateDefaultResponse();
+        }
+        
+        Console.WriteLine($"[MockChatBrain] Response content: {response?.ChatReponseList?.FirstOrDefault()?.Content ?? "null"}");
         return Task.FromResult<InvokePromptResponse?>(response);
     }
 
@@ -45,9 +81,23 @@ public class MockChatBrain : IChatBrain
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
-        var responses = _streamingResponses.Count > 0 
-            ? _streamingResponses.ToArray() 
-            : new[] { "Mock", " streaming", " response" };
+        string[] responses;
+        
+        // Check shared streaming responses first
+        if (_sharedStreamingResponses.TryRemove(_brainKey, out var sharedQueue) && sharedQueue.Count > 0)
+        {
+            responses = sharedQueue.ToArray();
+        }
+        // Fall back to instance responses
+        else if (_streamingResponses.Count > 0)
+        {
+            responses = _streamingResponses.ToArray();
+        }
+        // Default streaming responses
+        else
+        {
+            responses = new[] { "Mock", " streaming", " response" };
+        }
 
         return Task.FromResult(CreateStreamingResponse(responses));
     }
@@ -65,16 +115,43 @@ public class MockChatBrain : IChatBrain
 
     public void SetNextResponse(InvokePromptResponse response)
     {
+        // Store in shared state so it persists across instances
+        _sharedResponses.AddOrUpdate(_brainKey, response, (key, oldValue) => response);
+        
+        // Also set instance state for backward compatibility
         _nextResponse = response;
     }
 
     public void SetStreamingResponses(params string[] responses)
     {
+        // Create a new queue for shared state
+        var sharedQueue = new Queue<string>();
+        foreach (var response in responses)
+        {
+            sharedQueue.Enqueue(response);
+        }
+        _sharedStreamingResponses.AddOrUpdate(_brainKey, sharedQueue, (key, oldValue) => sharedQueue);
+        
+        // Also set instance state for backward compatibility
         _streamingResponses.Clear();
         foreach (var response in responses)
         {
             _streamingResponses.Enqueue(response);
         }
+    }
+    
+    // Public method to set responses by configuration (for tests that can't get the brain instance)
+    public static void SetNextResponseForConfig(LLMProviderEnum providerEnum, ModelIdEnum modelIdEnum, InvokePromptResponse response)
+    {
+        var key = $"{providerEnum}_{modelIdEnum}";
+        _sharedResponses.AddOrUpdate(key, response, (k, oldValue) => response);
+    }
+    
+    // Public method to clear all shared state (for test cleanup)
+    public static void ClearAllSharedState()
+    {
+        _sharedResponses.Clear();
+        _sharedStreamingResponses.Clear();
     }
 
     private InvokePromptResponse CreateDefaultResponse()
