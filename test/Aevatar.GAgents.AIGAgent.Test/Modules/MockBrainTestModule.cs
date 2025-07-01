@@ -49,7 +49,7 @@ public class MockBrainTestModule : AbpModule
                 ["OpenAITextToImage"] = new LLMConfig
                 {
                     ProviderEnum = LLMProviderEnum.Azure,
-                    ModelIdEnum = ModelIdEnum.OpenAI,
+                    ModelIdEnum = ModelIdEnum.OpenAITextToImage,
                     ModelName = "dall-e-3",
                     Endpoint = "https://test.openai.azure.com",
                     ApiKey = "test-key"

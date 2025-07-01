@@ -16,20 +16,33 @@ public class MockBrainFactory : IBrainFactory
 
     public IBrain? CreateBrain(LLMProviderConfig llmProviderConfig)
     {
-        // Create a fresh MockChatBrain instance that implements both interfaces
-        var mockBrain = new MockChatBrain();
-        
-        // Initialize the mock brain with the provider configuration
+        // Initialize the llmConfig for brain initialization
         var llmConfig = new LLMConfig
         {
             ProviderEnum = llmProviderConfig.ProviderEnum,
             ModelIdEnum = llmProviderConfig.ModelIdEnum
         };
         
+        IBrain mockBrain;
+        
+        // Create appropriate brain type based on ModelIdEnum
+        if (llmProviderConfig.ModelIdEnum == ModelIdEnum.OpenAITextToImage)
+        {
+            // Create a MockTextToImageBrain for text-to-image models
+            mockBrain = new MockTextToImageBrain();
+            Console.WriteLine($"[MockBrainFactory] Created MockTextToImageBrain for ModelId: {llmProviderConfig.ModelIdEnum}");
+        }
+        else
+        {
+            // Create a MockChatBrain for chat models (implements both interfaces)
+            mockBrain = new MockChatBrain();
+            Console.WriteLine($"[MockBrainFactory] Created MockChatBrain for ModelId: {llmProviderConfig.ModelIdEnum}");
+        }
+        
         // Synchronously set the configuration (mock doesn't need async initialization)
         mockBrain.InitializeAsync(llmConfig, "mock-brain-id", "Mock brain for testing").Wait();
         
-        // Verify that the brain implements both interfaces
+        // Verify that the brain implements the expected interfaces
         Console.WriteLine($"[MockBrainFactory] Created brain type: {mockBrain?.GetType()?.FullName}");
         Console.WriteLine($"[MockBrainFactory] Implements IChatBrain: {mockBrain is IChatBrain}");
         Console.WriteLine($"[MockBrainFactory] Implements ITextToImageBrain: {mockBrain is ITextToImageBrain}");

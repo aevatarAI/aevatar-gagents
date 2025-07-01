@@ -8,7 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Orleans;
+using Orleans.Hosting;
 using Orleans.TestingHost;
+using Orleans.SyncWork;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
@@ -107,7 +110,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                             ["OpenAITextToImage"] = new LLMConfig
                             {
                                 ProviderEnum = LLMProviderEnum.Azure,
-                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelIdEnum = ModelIdEnum.OpenAITextToImage,
                                 ModelName = "dall-e-3",
                                 Endpoint = "https://test.openai.azure.com",
                                 ApiKey = "test-key"
@@ -139,7 +142,6 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
-                .UseAevatar()
                 .AddLogStorageBasedLogConsistencyProvider("LogStorage");
         }
     }
