@@ -3,9 +3,11 @@ using System.ClientModel;
 using System.Net;
 using Azure;
 using Microsoft.SemanticKernel;
+using Orleans;
 
 namespace Aevatar.AI.Exceptions;
 
+[GenerateSerializer]
 public abstract class AIException : Exception
 {
     public abstract AIExceptionEnum ExceptionEnum { get; }

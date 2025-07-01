@@ -94,7 +94,7 @@ public class MockBrainFactoryTest
         brain2.ShouldNotBeNull();
         brain1.ShouldBeOfType<MockChatBrain>();
         brain2.ShouldBeOfType<MockChatBrain>();
-        brain1.ShouldNotBeSameAs(brain2); // Should be new instances
+        brain1.ShouldBeSameAs(brain2); // Should be cached instances for shared state
     }
 
     [Fact]

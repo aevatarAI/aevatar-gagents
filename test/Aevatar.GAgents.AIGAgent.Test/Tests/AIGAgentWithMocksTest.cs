@@ -128,10 +128,21 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         // Assert
         success.ShouldBe(true);
         
-        // Wait for Orleans grain processing to complete
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        // Poll for state update with timeout
+        var timeout = TimeSpan.FromSeconds(10);
+        var pollingInterval = TimeSpan.FromMilliseconds(100);
+        var start = DateTime.UtcNow;
         
-        var state = await chatAgent.GetStateAsync();
+        ChatAIGStateBase state;
+        do
+        {
+            await Task.Delay(pollingInterval);
+            state = await chatAgent.GetStateAsync();
+            if (state.ContentList.Count > 0)
+                break;
+        }
+        while (DateTime.UtcNow - start < timeout);
+        
         state.ContentList.Count.ShouldBeGreaterThan(0);
     }
 

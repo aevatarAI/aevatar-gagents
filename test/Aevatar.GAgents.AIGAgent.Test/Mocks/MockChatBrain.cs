@@ -10,10 +10,12 @@ using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 
 namespace Aevatar.GAgents.AIGAgent.Test.Mocks;
 
-public class MockChatBrain : IChatBrain
+public class MockChatBrain : IChatBrain, ITextToImageBrain
 {
     // Shared state across all instances
     private static readonly ConcurrentDictionary<string, InvokePromptResponse> _sharedResponses = new();
@@ -46,34 +48,26 @@ public class MockChatBrain : IChatBrain
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"[MockChatBrain] InvokePromptAsync called with brain key: {_brainKey}");
-        Console.WriteLine($"[MockChatBrain] Shared responses count: {_sharedResponses.Count}");
-        Console.WriteLine($"[MockChatBrain] Next response is null: {_nextResponse == null}");
-        
         // Check shared state first, then instance state, then default
         InvokePromptResponse? response = null;
         
         // Try to get from shared state
         if (_sharedResponses.TryRemove(_brainKey, out var sharedResponse))
         {
-            Console.WriteLine($"[MockChatBrain] Using shared response for key: {_brainKey}");
             response = sharedResponse;
         }
         // Fall back to instance state
         else if (_nextResponse != null)
         {
-            Console.WriteLine($"[MockChatBrain] Using instance response");
             response = _nextResponse;
             _nextResponse = null; // Reset after use
         }
         // Default response
         else
         {
-            Console.WriteLine($"[MockChatBrain] Using default response");
             response = CreateDefaultResponse();
         }
         
-        Console.WriteLine($"[MockChatBrain] Response content: {response?.ChatReponseList?.FirstOrDefault()?.Content ?? "null"}");
         return Task.FromResult<InvokePromptResponse?>(response);
     }
 
@@ -93,10 +87,10 @@ public class MockChatBrain : IChatBrain
         {
             responses = _streamingResponses.ToArray();
         }
-        // Default streaming responses
+        // Default streaming responses - single chunk to simplify aggregation
         else
         {
-            responses = new[] { "Mock", " streaming", " response" };
+            responses = new[] { "Mock streaming response" };
         }
 
         return Task.FromResult(CreateStreamingResponse(responses));
@@ -176,8 +170,25 @@ public class MockChatBrain : IChatBrain
     {
         foreach (var response in responses)
         {
-            yield return response;
+            yield return new StreamingChatMessageContent(AuthorRole.Assistant, response);
             await Task.Delay(10); // Simulate streaming delay
         }
+    }
+
+    public Task<List<TextToImageResponse>?> GenerateTextToImageAsync(string prompt, TextToImageOption option, CancellationToken cancellationToken = default)
+    {
+        // Return a mock text-to-image response respecting the requested ResponseType
+        var response = new List<TextToImageResponse>
+        {
+            new TextToImageResponse
+            {
+                ResponseType = option.ResponseType,
+                Url = option.ResponseType == TextToImageResponseType.Url ? "https://mock-image.com/generated-image.jpg" : null,
+                Base64Content = option.ResponseType == TextToImageResponseType.Base64Content ? "mock-base64-data" : null,
+                ImageType = "png"
+            }
+        };
+        
+        return Task.FromResult<List<TextToImageResponse>?>(response);
     }
 }

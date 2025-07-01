@@ -16,19 +16,44 @@ public class MockBrainFactory : IBrainFactory
 
     public IBrain? CreateBrain(LLMProviderConfig llmProviderConfig)
     {
-        // For simplicity, always return a chat brain as the base implementation
-        return GetChatBrain(llmProviderConfig);
+        // Create a fresh MockChatBrain instance that implements both interfaces
+        var mockBrain = new MockChatBrain();
+        
+        // Initialize the mock brain with the provider configuration
+        var llmConfig = new LLMConfig
+        {
+            ProviderEnum = llmProviderConfig.ProviderEnum,
+            ModelIdEnum = llmProviderConfig.ModelIdEnum
+        };
+        
+        // Synchronously set the configuration (mock doesn't need async initialization)
+        mockBrain.InitializeAsync(llmConfig, "mock-brain-id", "Mock brain for testing").Wait();
+        
+        // Verify that the brain implements both interfaces
+        Console.WriteLine($"[MockBrainFactory] Created brain type: {mockBrain?.GetType()?.FullName}");
+        Console.WriteLine($"[MockBrainFactory] Implements IChatBrain: {mockBrain is IChatBrain}");
+        Console.WriteLine($"[MockBrainFactory] Implements ITextToImageBrain: {mockBrain is ITextToImageBrain}");
+        
+        return mockBrain;
+    }
+
+    // Overload to support LLMConfig (converts to LLMProviderConfig)
+    public IBrain? CreateBrain(LLMConfig llmConfig)
+    {
+        var providerConfig = new LLMProviderConfig
+        {
+            ProviderEnum = llmConfig.ProviderEnum,
+            ModelIdEnum = llmConfig.ModelIdEnum
+        };
+        return CreateBrain(providerConfig);
     }
 
     public IChatBrain? GetChatBrain(LLMProviderConfig llmProviderConfig)
     {
         var key = $"{llmProviderConfig.ProviderEnum}_{llmProviderConfig.ModelIdEnum}";
-        Console.WriteLine($"[MockBrainFactory] Getting chat brain for key: {key}");
-        Console.WriteLine($"[MockBrainFactory] Cache contains {_chatBrainCache.Count} entries");
         
         return _chatBrainCache.GetOrAdd(key, _ =>
         {
-            Console.WriteLine($"[MockBrainFactory] Creating new MockChatBrain for key: {key}");
             var mockBrain = new MockChatBrain();
             
             // Initialize the mock brain with the provider configuration
@@ -40,6 +65,9 @@ public class MockBrainFactory : IBrainFactory
             
             // Synchronously set the configuration (mock doesn't need async initialization)
             mockBrain.InitializeAsync(llmConfig, "mock-brain-id", "Mock brain for testing").Wait();
+            
+            Console.WriteLine($"[GetChatBrain] Created brain implements IChatBrain: {mockBrain is IChatBrain}");
+            Console.WriteLine($"[GetChatBrain] Created brain implements ITextToImageBrain: {mockBrain is ITextToImageBrain}");
             
             return mockBrain;
         });
