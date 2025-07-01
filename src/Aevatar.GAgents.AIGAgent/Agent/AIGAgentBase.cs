@@ -681,6 +681,12 @@ public abstract partial class
 
     private T ConvertBrain<T>() where T : class, IBrain
     {
+        // Check if brain is null first
+        if (_brain == null)
+        {
+            throw new AIOtherException($"brain is null, cannot convert to {typeof(T)}", new Exception("AI Brain is null"));
+        }
+        
         if (_brain is not T result)
         {
             throw new AIOtherException($"brain can not convert to {typeof(T)}", new Exception("AI Brain not match"));
