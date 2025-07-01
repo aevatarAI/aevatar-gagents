@@ -124,21 +124,55 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
     public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
         TextToImageOption? textToImageOption = null)
     {
-        return await base.GenerateImageAsync(prompt, textToImageOption);
+        Logger.LogCritical("*** CUSTOM GenerateImageAsync CALLED IN TEST IMPLEMENTATION ***");
+        
+        textToImageOption = textToImageOption ?? new TextToImageOption();
+        
+        // Create mock text-to-image responses
+        var mockResponses = new List<TextToImageResponse>
+        {
+            new TextToImageResponse
+            {
+                ResponseType = textToImageOption.ResponseType,
+                Url = textToImageOption.ResponseType == TextToImageResponseType.Url ? "https://mock-ai-service.com/image.png" : "",
+                Base64Content = textToImageOption.ResponseType == TextToImageResponseType.Base64Content ? "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" : "",
+                ImageType = "png"
+            }
+        };
+        
+        Logger.LogCritical($"*** Generated {mockResponses.Count} mock responses for GenerateImageAsync ***");
+        
+        return mockResponses;
     }
 
     public async Task TextToImageAsync(string prompt, TextToImageOption? textToImageOption = null)
     {
         try
         {
-            // For testing, simulate the async worker behavior synchronously
+            Logger.LogCritical("*** CUSTOM TextToImageAsync CALLED IN TEST IMPLEMENTATION ***");
+            
+            // For testing, simulate the async worker behavior with mock responses
             var context = new TextToImageContextDto() { Context = Guid.NewGuid().ToString() };
-            var result = await base.GenerateImageAsync(prompt, textToImageOption);
-            if (result != null && result.Count > 0)
+            textToImageOption = textToImageOption ?? new TextToImageOption();
+            
+            // Create mock text-to-image responses
+            var mockResponses = new List<TextToImageResponse>
             {
-                // Simulate the async worker response handling
-                await AITextToImageHandleAsync(context, AIExceptionEnum.None, null, result);
-            }
+                new TextToImageResponse
+                {
+                    ResponseType = textToImageOption.ResponseType,
+                    Url = textToImageOption.ResponseType == TextToImageResponseType.Url ? "https://mock-ai-service.com/image.png" : "",
+                    Base64Content = textToImageOption.ResponseType == TextToImageResponseType.Base64Content ? "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" : "",
+                    ImageType = "png"
+                }
+            };
+            
+            Logger.LogCritical($"*** Generated {mockResponses.Count} mock responses for TextToImageAsync ***");
+            
+            // Simulate the async worker response handling
+            await AITextToImageHandleAsync(context, AIExceptionEnum.None, null, mockResponses);
+            
+            Logger.LogCritical("*** TextToImageAsync completed successfully ***");
         }
         catch (Exception ex)
         {
