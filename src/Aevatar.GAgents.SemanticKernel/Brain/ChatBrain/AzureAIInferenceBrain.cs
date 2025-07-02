@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 using Aevatar.AI.Extensions;
+using Volo.Abp.BlobStoring;
 
 namespace Aevatar.GAgents.SemanticKernel.Brain;
 
@@ -19,8 +20,9 @@ public abstract class AzureAIInferenceBrain : BrainBase
     public AzureAIInferenceBrain(
         IKernelBuilderFactory kernelBuilderFactory,
         ILogger<AzureAIInferenceBrain> logger,
-        IOptions<RagConfig> ragConfig)
-        : base(kernelBuilderFactory, logger, ragConfig)
+        IOptions<RagConfig> ragConfig,
+        IBlobContainer blobContainer)
+        : base(kernelBuilderFactory, logger, ragConfig, blobContainer)
     {
     }
 

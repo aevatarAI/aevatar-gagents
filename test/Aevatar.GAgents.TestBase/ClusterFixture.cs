@@ -1,22 +1,34 @@
 using System.Collections.Generic;
 using Aevatar.Extensions;
+using Aevatar.GAgents.AI.BrainFactory;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
+using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Moq;
 using Orleans;
 using Orleans.Hosting;
 using Orleans.TestingHost;
 using Orleans.SyncWork;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.BlobStoring.Aws;
+using Volo.Abp.Caching;
+using Volo.Abp.Caching.Hybrid;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.MultiTenancy.ConfigurationStore;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Reflection;
+using Volo.Abp.Settings;
 
 namespace Aevatar.GAgents.TestBase;
 
@@ -55,7 +67,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     //services.AddAutoMapper(typeof(AIApplicationGrainsModule).Assembly);
                     var mock = new Mock<ILocalEventBus>();
                     services.AddSingleton(typeof(ILocalEventBus), mock.Object);
-
+                    
                     // Configure logging
                     var loggerProvider = new MockLoggerProvider("Aevatar");
                     services.AddSingleton<ILoggerProvider>(loggerProvider);
@@ -134,10 +146,14 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                         }
                     };
                     services.AddSingleton<IOptions<SystemLLMConfigOptions>>(new OptionsWrapper<SystemLLMConfigOptions>(systemLLMConfigOptions));
+                    services.AddSingleton<IBlobContainer, MockBlobContainer>();
                     
                     services.AddSemanticKernel()
                         .AddQdrantVectorStore()
                         .AddAzureOpenAITextEmbedding();
+                    
+                    services.AddSingleton<IKernelBuilderFactory, MockKernelBuilderFactory>();
+                    services.AddSingleton<IBrainFactory, MockBrainFactory>();
                 })
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")

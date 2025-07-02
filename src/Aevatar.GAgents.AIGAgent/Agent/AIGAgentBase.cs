@@ -239,7 +239,7 @@ public abstract partial class
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
-        AIChatContextDto? context = null)
+        AIChatContextDto? context = null, List<string>? imageKeys = null)
     {
         if (_brain == null)
         {
@@ -252,9 +252,9 @@ public abstract partial class
         try
         {
             invokeResponse = State.StreamingModeEnabled
-                ? await InvokePromptStreamingAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                ? await InvokePromptStreamingAsync(prompt, imageKeys, history, State.IfUpsertKnowledge, promptSettings,
                     cancellationToken, context)
-                : await chatBrain.InvokePromptAsync(prompt, history, State.IfUpsertKnowledge, promptSettings,
+                : await chatBrain.InvokePromptAsync(prompt, imageKeys, history, State.IfUpsertKnowledge, promptSettings,
                     cancellationToken);
         }
         catch (Exception ex)
@@ -283,7 +283,7 @@ public abstract partial class
         return invokeResponse.ChatReponseList;
     }
 
-    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content,
+    private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null,
         List<ChatMessage>? history = null, bool ifUseKnowledge = false,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
         AIChatContextDto? context = null)
@@ -308,7 +308,7 @@ public abstract partial class
         var chatBrain = ConvertBrain<IChatBrain>();
         try
         {
-            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, history, ifUseKnowledge,
+            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, imageKeys, history, ifUseKnowledge,
                 promptSettings,
                 cancellationToken: cancellationToken);
 
@@ -408,7 +408,7 @@ public abstract partial class
 
         return result;
     }
-
+    
     private ChatRole ConvertToChatRole(AuthorRole authorRole)
     {
         if (authorRole == AuthorRole.System)

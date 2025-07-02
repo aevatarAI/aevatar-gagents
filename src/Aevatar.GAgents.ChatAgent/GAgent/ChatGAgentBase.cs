@@ -1,12 +1,16 @@
 using Aevatar.AI.Exceptions;
 using Aevatar.AI.Feature.StreamSyncWoker;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.Dtos;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.Threading;
 using ChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using ChatRole = Aevatar.GAgents.AI.Common.ChatRole;
 
@@ -26,14 +30,15 @@ public abstract class
     }
 
     public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null,
-        AIChatContextDto? aiChatContextDto = null)
+        AIChatContextDto? aiChatContextDto = null, List<string>? imageKeys = null)
     {
-        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto);
+        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto,
+            imageKeys: imageKeys);
 
         if (result is not { Count: > 0 }) return result;
 
         var chatMessages = new List<ChatMessage>();
-        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message });
+        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message, ImageKeys = imageKeys});
         chatMessages.AddRange(result);
 
         RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
@@ -42,15 +47,15 @@ public abstract class
 
         return result;
     }
-
+    
     public async Task<bool> ChatWithStreamAsync(string message, AIChatContextDto context,
-        ExecutionPromptSettings? promptSettings = null)
+        ExecutionPromptSettings? promptSettings = null, List<string>? imageKeys = null)
     {
-        var result = await PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context);
+        var result = await PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context, imageKeys: imageKeys);
         if (!result) return result;
 
         var chatMessages = new List<ChatMessage>();
-        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message });
+        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message, ImageKeys = imageKeys });
         RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
         await ConfirmEvents();
 
@@ -138,6 +143,27 @@ public abstract class
 
                 if (state.ChatHistory.Count() > state.MaxHistoryCount)
                 {
+                    var toDeleteImageKeys = new List<string>();
+                    var recordsToDelete = state.ChatHistory.Take(state.ChatHistory.Count() - state.MaxHistoryCount);
+                    foreach (var record in recordsToDelete)
+                    {
+                        if (record.ImageKeys != null && record.ImageKeys.Count > 0)
+                        {
+                            toDeleteImageKeys.AddRange(record.ImageKeys);
+                        }
+                    }
+
+                    if (toDeleteImageKeys.Any())
+                    {
+                        var blobContainer = ServiceProvider.GetRequiredService<IBlobContainer>();
+                        var downloadTasks = toDeleteImageKeys.Select(async key =>
+                        {
+                            await blobContainer.DeleteAsync(key);
+                        });
+
+                        AsyncHelper.RunSync(async () => await Task.WhenAll(downloadTasks));
+                    }
+
                     state.ChatHistory.RemoveRange(0, state.ChatHistory.Count() - state.MaxHistoryCount);
                 }
 
@@ -152,8 +178,9 @@ public abstract class
 public interface IChatAgent : IGAgent, IAIGAgent
 {
     Task<List<ChatMessage>?> ChatAsync(string message,
-        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null);
+        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null, List<string>? imageKeys = null);
+    
 
     Task<bool> ChatWithStreamAsync(string message, AIChatContextDto aiChatContextDto,
-        ExecutionPromptSettings? promptSettings = null);
+        ExecutionPromptSettings? promptSettings = null, List<string>? imageKeys = null);
 }

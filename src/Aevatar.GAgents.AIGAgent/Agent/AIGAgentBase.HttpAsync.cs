@@ -24,7 +24,7 @@ public abstract partial class
     where TConfiguration : ConfigurationBase
 {
     protected async Task<bool> PromptHttpAsync(string prompt, List<ChatMessage>? history = null,
-        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null, bool ifAsync = true)
+        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null, bool ifAsync = true, List<string>? imageKeys = null)
     {
         // Resolve the LLM configuration from centralized config if needed
         var llmConfig = await GetLLMConfigAsync();
@@ -45,6 +45,7 @@ public abstract partial class
             IfUseKnowledge = State.IfUpsertKnowledge,
             PromptSettings = promptSettings,
             Context = context,
+            ImageKeys = imageKeys
         };
 
         return await CreateLongRunTaskAsync<AIHttpAsyncRequest, AIHttpAsyncResponse>(request, ifAsync);

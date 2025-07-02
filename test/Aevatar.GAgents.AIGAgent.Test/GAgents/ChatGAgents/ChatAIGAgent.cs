@@ -13,9 +13,9 @@ namespace Aevatar.GAgents.AIGAgent.Test.GAgents.ChatGAgents;
 
 public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
 {
-    Task<string?> ChatAsync(string message);
-    Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto);
-    Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto);
+    Task<string?> ChatAsync(string message, List<string>? images = null);
+    Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null);
+    Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null);
 
     Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
         TextToImageOption? textToImageOption = null);
@@ -41,13 +41,13 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return Task.FromResult("Agent for chatting with user.");
     }
 
-    public async Task<string?> ChatAsync(string message)
+    public async Task<string?> ChatAsync(string message, List<string>? images = null)
     {
-        var result = await ChatWithHistory(message);
+        var result = await ChatWithHistory(message, imageKeys: images);
         return result?[0].Content;
     }
 
-    public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto)
+    public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)
     {
         Logger.LogCritical("*** CUSTOM STREAMCHATASYNC CALLED IN TEST IMPLEMENTATION ***");
         
@@ -84,9 +84,10 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
             Logger.LogError($"StreamChatAsync failed: {ex}");
             return false;
         }
+        return await PromptWithStreamAsync(message, context: contextDto, imageKeys: images);
     }
 
-    public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto)
+    public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)
     {
         Logger.LogCritical("*** CUSTOM PROMPTCHATASYNC CALLED IN TEST IMPLEMENTATION ***");
         
@@ -119,6 +120,7 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
             Logger.LogError($"PromptChatAsync failed: {ex}");
             return false;
         }
+        return await PromptHttpAsync(message, context: contextDto, imageKeys: images);
     }
 
     public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
