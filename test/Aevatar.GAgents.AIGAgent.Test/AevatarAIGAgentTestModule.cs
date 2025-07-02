@@ -1,3 +1,4 @@
+using Aevatar.GAgents.AIGAgent.Test.Modules;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.TestBase;
@@ -10,7 +11,8 @@ namespace Aevatar.GAgents.AIGAgent.Test;
 
 
 [DependsOn(typeof(AevatarGAgentTestBaseModule),
-    typeof(AbpBlobStoringModule)
+    typeof(AbpBlobStoringModule),
+    typeof(MockBrainTestModule)
     )]
 public class AevatarAIGAgentTestModule: AbpModule
 {
