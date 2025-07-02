@@ -239,6 +239,7 @@ Before ANY implementation:
 ### Development Tools
 - **sequentialthinking** - Break down complex tasks using MECE (Mutually Exclusive, Collectively Exhaustive) principles
 - **context7** - Orleans-specific guidance, patterns, and troubleshooting support
+- **gh** - This is a github CLI. You can use it for git commands to create PR, commit, push etc.
 
 ### Quality Gates
 - **TDD cycle completed** - Tests written BEFORE implementation
