@@ -120,7 +120,7 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
             Logger.LogError($"PromptChatAsync failed: {ex}");
             return false;
         }
-        return await PromptHttpAsync(message, context: contextDto, imageKeys: images);
+        //return await PromptHttpAsync(message, context: contextDto, imageKeys: images);
     }
 
     public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,

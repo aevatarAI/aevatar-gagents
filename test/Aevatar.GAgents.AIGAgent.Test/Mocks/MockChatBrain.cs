@@ -44,7 +44,7 @@ public class MockChatBrain : IChatBrain, ITextToImageBrain
         return Task.FromResult(true);
     }
 
-    public Task<InvokePromptResponse?> InvokePromptAsync(string content, List<ChatMessage>? history = null,
+    public Task<InvokePromptResponse?> InvokePromptAsync(string content, List<string>? imageKeys = null, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
@@ -71,7 +71,7 @@ public class MockChatBrain : IChatBrain, ITextToImageBrain
         return Task.FromResult<InvokePromptResponse?>(response);
     }
 
-    public Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<ChatMessage>? history = null,
+    public Task<IAsyncEnumerable<object>> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null, List<ChatMessage>? history = null,
         bool ifUseKnowledge = false, ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default)
     {
