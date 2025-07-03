@@ -26,6 +26,7 @@
     
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.Executor\Aevatar.GAgents.Executor.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
     </ItemGroup>
 </Project>

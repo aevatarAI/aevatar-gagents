@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
 using Orleans;
@@ -20,4 +21,7 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(10)] public int LastOutTokenUsage { get; set; } = 0;
     [Id(11)] public int LastTotalTokenUsage { get; set; } = 0;
     [Id(12)] public string? LLMConfigKey { get; set; } = null;
+    [Id(13)] public bool EnableGAgentTools { get; set; } = false;
+    [Id(14)] public List<string> RegisteredGAgentFunctions { get; set; } = new();
+    [Id(15)] public List<string>? AllowedGAgentTypes { get; set; }
 }

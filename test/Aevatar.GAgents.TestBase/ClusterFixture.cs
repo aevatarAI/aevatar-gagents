@@ -1,10 +1,15 @@
 using System.Collections.Generic;
+using Aevatar.Core;
+using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.Extensions;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.Executor;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
+using Aevatar.Plugins;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -154,7 +159,12 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     
                     services.AddSingleton<IKernelBuilderFactory, MockKernelBuilderFactory>();
                     services.AddSingleton<IBrainFactory, MockBrainFactory>();
+                    services.AddSingleton<IGAgentService, GAgentService>();
+                    services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
+                    services.AddSingleton<IGAgentManager, GAgentManager>();
+                    services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
                 })
+                .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()

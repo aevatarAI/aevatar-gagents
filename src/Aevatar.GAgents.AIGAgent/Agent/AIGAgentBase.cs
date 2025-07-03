@@ -89,6 +89,17 @@ public abstract partial class
         var streamingConfigEventLog =
             await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
+        // Handle GAgent tools configuration
+        if (initializeDto.EnableGAgentTools)
+        {
+            RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
+        }
+        
+        if (initializeDto.AllowedGAgentTypes != null)
+        {
+            RaiseEvent(new SetAllowedGAgentTypesStateLogEvent { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
+        }
+
         var events = new List<StateLogEventBase<TStateLogEvent>>
         {
             addPromptTemplateEventLog!,
@@ -100,7 +111,15 @@ public abstract partial class
 
         try
         {
-            return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+            var result = await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+            
+            // Register GAgent tools if enabled
+            if (result && State.EnableGAgentTools)
+            {
+                await RegisterGAgentsAsToolsAsync();
+            }
+            
+            return result;
         }
         catch (Exception ex)
         {
@@ -498,6 +517,15 @@ public abstract partial class
             case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
                 State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
                 State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
+                break;
+            case SetEnableGAgentToolsStateLogEvent setEnableGAgentToolsEvent:
+                State.EnableGAgentTools = setEnableGAgentToolsEvent.EnableGAgentTools;
+                break;
+            case SetRegisteredGAgentFunctionsStateLogEvent setRegisteredFunctionsEvent:
+                State.RegisteredGAgentFunctions = setRegisteredFunctionsEvent.RegisteredFunctions;
+                break;
+            case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
+                State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
                 break;
         }
 

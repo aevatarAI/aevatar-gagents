@@ -67,6 +67,20 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MultiAIChat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent.Test", "test\Aevatar.GAgents.ChatAgent.Test\Aevatar.GAgents.ChatAgent.Test.csproj", "{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Executor", "src\Aevatar.GAgents.Executor\Aevatar.GAgents.Executor.csproj", "{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{431973C0-FD6D-4030-ADBC-CE3D549B07F2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "design", "design", "{2DE52441-A9C1-4C43-865B-310ED5E8B4FB}"
+	ProjectSection(SolutionItems) = preProject
+		docs\design\AIGAgentBase_GAgentExecutor_Integration.md = docs\design\AIGAgentBase_GAgentExecutor_Integration.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "memos", "memos", "{6B2228C7-07EF-4FE3-98F9-2B9241DE25E4}"
+	ProjectSection(SolutionItems) = preProject
+		docs\memos\AIGAgentBase_GAgentExecutor_CollapseMemo.md = docs\memos\AIGAgentBase_GAgentExecutor_CollapseMemo.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +195,10 @@ Global
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -215,6 +233,9 @@ Global
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{164C499B-F6D5-4847-907C-36FE8AC9B022} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{2DE52441-A9C1-4C43-865B-310ED5E8B4FB} = {431973C0-FD6D-4030-ADBC-CE3D549B07F2}
+		{6B2228C7-07EF-4FE3-98F9-2B9241DE25E4} = {431973C0-FD6D-4030-ADBC-CE3D549B07F2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
