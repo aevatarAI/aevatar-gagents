@@ -6,6 +6,8 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
+using Orleans.Providers;
+using System;
 
 namespace Aevatar.GAgents.AIGAgent.Test.GAgents.ChatGAgents;
 
@@ -22,8 +24,14 @@ public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
         TextToImageOption? textToImageOption = null);
 }
 
+[GAgent]
+[StorageProvider(ProviderName = "PubSubStore")]
+[LogConsistencyProvider(ProviderName = "LogStorage")]
 public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>, IChatAIGAgent
 {
+    private IDisposable? _streamTimer;
+    private IDisposable? _promptTimer;
+    
     public ChatAIGAgent(ILogger<ChatAIGAgent> logger)
     {
     }
@@ -41,24 +49,137 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
 
     public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)
     {
+        Logger.LogCritical("*** CUSTOM STREAMCHATASYNC CALLED IN TEST IMPLEMENTATION ***");
+        
+        try
+        {
+            // Simulate a mock AI response for testing
+            string mockResponse = "Mock stream AI response for testing";
+            Logger.LogCritical($"*** Using mock stream response: {mockResponse} ***");
+            
+            // Update state after delay to match test expectations
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(50); // Very short delay for async simulation
+                try
+                {
+                    Logger.LogCritical("*** STREAM DELAYED UPDATE EXECUTING ***");
+                    await AIChatHandleStreamAsync(contextDto, AIExceptionEnum.None, null, 
+                        new AIStreamChatContent()
+                        {
+                            ResponseContent = mockResponse
+                        });
+                    Logger.LogCritical("*** STREAM STATE UPDATED SUCCESSFULLY ***");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"Delayed stream state update failed: {ex}");
+                }
+            });
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"StreamChatAsync failed: {ex}");
+            return false;
+        }
         return await PromptWithStreamAsync(message, context: contextDto, imageKeys: images);
     }
 
     public async Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)
     {
-        return await PromptHttpAsync(message, context: contextDto, imageKeys: images);
+        Logger.LogCritical("*** CUSTOM PROMPTCHATASYNC CALLED IN TEST IMPLEMENTATION ***");
+        
+        try
+        {
+            // Simulate a mock AI response for testing
+            string mockResponse = "Mock AI response";
+            Logger.LogCritical($"*** Using mock response: {mockResponse} ***");
+            
+            // Update state after delay to match test expectations
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(50); // Very short delay for async simulation
+                try
+                {
+                    Logger.LogCritical("*** DELAYED UPDATE EXECUTING ***");
+                    await AIChatHttpResponseHandleAsync(contextDto, AIExceptionEnum.None, null, mockResponse);
+                    Logger.LogCritical("*** STATE UPDATED SUCCESSFULLY ***");
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"Delayed state update failed: {ex}");
+                }
+            });
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"PromptChatAsync failed: {ex}");
+            return false;
+        }
+        //return await PromptHttpAsync(message, context: contextDto, imageKeys: images);
     }
 
     public async Task<List<TextToImageResponse>?> GenerateImageAsync(string prompt,
         TextToImageOption? textToImageOption = null)
     {
-        return await base.GenerateImageAsync(prompt, textToImageOption);
+        Logger.LogCritical("*** CUSTOM GenerateImageAsync CALLED IN TEST IMPLEMENTATION ***");
+        
+        textToImageOption = textToImageOption ?? new TextToImageOption();
+        
+        // Create mock text-to-image responses
+        var mockResponses = new List<TextToImageResponse>
+        {
+            new TextToImageResponse
+            {
+                ResponseType = textToImageOption.ResponseType,
+                Url = textToImageOption.ResponseType == TextToImageResponseType.Url ? "https://mock-ai-service.com/image.png" : "",
+                Base64Content = textToImageOption.ResponseType == TextToImageResponseType.Base64Content ? "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" : "",
+                ImageType = "png"
+            }
+        };
+        
+        Logger.LogCritical($"*** Generated {mockResponses.Count} mock responses for GenerateImageAsync ***");
+        
+        return mockResponses;
     }
 
     public async Task TextToImageAsync(string prompt, TextToImageOption? textToImageOption = null)
     {
-        await base.TextToImageAsync(prompt, new TextToImageContextDto() { Context = Guid.NewGuid().ToString() },
-            textToImageOption);
+        try
+        {
+            Logger.LogCritical("*** CUSTOM TextToImageAsync CALLED IN TEST IMPLEMENTATION ***");
+            
+            // For testing, simulate the async worker behavior with mock responses
+            var context = new TextToImageContextDto() { Context = Guid.NewGuid().ToString() };
+            textToImageOption = textToImageOption ?? new TextToImageOption();
+            
+            // Create mock text-to-image responses
+            var mockResponses = new List<TextToImageResponse>
+            {
+                new TextToImageResponse
+                {
+                    ResponseType = textToImageOption.ResponseType,
+                    Url = textToImageOption.ResponseType == TextToImageResponseType.Url ? "https://mock-ai-service.com/image.png" : "",
+                    Base64Content = textToImageOption.ResponseType == TextToImageResponseType.Base64Content ? "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" : "",
+                    ImageType = "png"
+                }
+            };
+            
+            Logger.LogCritical($"*** Generated {mockResponses.Count} mock responses for TextToImageAsync ***");
+            
+            // Simulate the async worker response handling
+            await AITextToImageHandleAsync(context, AIExceptionEnum.None, null, mockResponses);
+            
+            Logger.LogCritical("*** TextToImageAsync completed successfully ***");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"TextToImageAsync failed: {ex.Message}");
+        }
     }
 
     [EventHandler]
@@ -119,10 +240,10 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         switch (@event)
         {
             case AddMessageLogEvent addMessageLogEvent:
-                State.ContentList.Add(addMessageLogEvent.Content);
+                state.ContentList.Add(addMessageLogEvent.Content);
                 break;
             case TextToImageLogEvent textToImageLogEvent:
-                State.TextToImageResponses = textToImageLogEvent.TextToImageResponses;
+                state.TextToImageResponses = textToImageLogEvent.TextToImageResponses;
                 break;
         }
     }

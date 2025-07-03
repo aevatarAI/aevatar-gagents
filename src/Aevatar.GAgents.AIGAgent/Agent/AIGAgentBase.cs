@@ -68,7 +68,22 @@ public abstract partial class
             return false;
         }
 
-        var addLlmEventLog = await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
+        // Use centralized configuration approach for system LLMs
+        if (!initializeDto.LLMConfig.SystemLLM.IsNullOrWhiteSpace())
+        {
+            // Store reference only, don't persist resolved config
+            var centralizedConfigEvent = CreateCentralizedLLMConfigEvent(initializeDto.LLMConfig);
+            RaiseEvent(centralizedConfigEvent);
+        }
+        else
+        {
+            // For self-provided configs, use the existing approach
+            var addLlmEventLog = await AddLLMAsync(llmConfig!, initializeDto.LLMConfig.SystemLLM);
+            if (addLlmEventLog != null)
+            {
+                RaiseEvent(addLlmEventLog);
+            }
+        }
 
         var addPromptTemplateEventLog = await AddPromptTemplateAsync(initializeDto.Instructions);
         var streamingConfigEventLog =
@@ -80,15 +95,18 @@ public abstract partial class
             streamingConfigEventLog!
         };
 
-        if (addLlmEventLog != null)
-        {
-            events.Add(addLlmEventLog);
-        }
-
         RaiseEvents(events);
         await ConfirmEvents();
 
-        return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+        try
+        {
+            return await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize brain during InitializeAsync. This may be due to invalid configuration.");
+            return false; // Return false to indicate initialization failed
+        }
     }
 
     public async Task<bool> UploadKnowledge(List<BrainContentDto>? knowledgeList)
@@ -147,10 +165,29 @@ public abstract partial class
         })!;
     }
 
+    /// <summary>
+    /// Updates LLM configuration using centralized approach
+    /// </summary>
+    private SetLLMConfigKeyStateLogEvent CreateCentralizedLLMConfigEvent(LLMConfigDto llmConfigDto)
+    {
+        return new SetLLMConfigKeyStateLogEvent
+        {
+            LLMConfigKey = llmConfigDto.SystemLLM,
+            SystemLLM = llmConfigDto.SystemLLM
+        };
+    }
+
     [GenerateSerializer]
     public class SetLLMStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public required LLMConfig LLM { get; set; }
+        [Id(1)] public string? SystemLLM { get; set; }
+    }
+
+    [GenerateSerializer]
+    public class SetLLMConfigKeyStateLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public string? LLMConfigKey { get; set; }
         [Id(1)] public string? SystemLLM { get; set; }
     }
 
@@ -391,34 +428,37 @@ public abstract partial class
     {
         await base.OnGAgentActivateAsync(cancellationToken);
 
-        // setup brain
-        if (State.LLM != null || State.SystemLLM != null)
+        // Perform automatic migration from legacy configuration format
+        // Only migrate if we have existing state (check if grain has been previously configured)
+        if (!State.SystemLLM.IsNullOrEmpty() || State.LLM != null || !State.LLMConfigKey.IsNullOrEmpty())
         {
-            LLMConfigDto llmConfig = new LLMConfigDto();
-            if (State.SystemLLM.IsNullOrWhiteSpace() == false)
-            {
-                llmConfig.SystemLLM = State.SystemLLM;
-            }
-            else if (State.LLM != null)
-            {
-                llmConfig.SelfLLMConfig = new SelfLLMConfig()
-                {
-                    ProviderEnum = State.LLM.ProviderEnum,
-                    ModelId = State.LLM.ModelIdEnum,
-                    ModelName = State.LLM.ModelName,
-                    Endpoint = State.LLM.Endpoint,
-                    ApiKey = State.LLM.ApiKey,
-                    Memo = State.LLM.Memo
-                };
-            }
+            await PerformLLMConfigMigrationAsync();
+        }
 
-            var config = GetLLMConfig(llmConfig);
+        // setup brain
+        if (State.LLM != null || State.SystemLLM != null || State.LLMConfigKey != null)
+        {
+            // Use the centralized configuration resolution
+            var config = GetCurrentLLMConfig();
             if (config == null)
             {
+                Logger.LogWarning("Unable to resolve LLM configuration during grain activation for {GrainId}", this.GetPrimaryKey());
                 return;
             }
 
-            await InitializeBrainAsync(config, State.PromptTemplate);
+            // Only initialize brain if we have valid configuration and prompt template
+            if (!State.PromptTemplate.IsNullOrEmpty())
+            {
+                try
+                {
+                    await InitializeBrainAsync(config, State.PromptTemplate);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to initialize brain during grain activation for {GrainId}. This may be due to invalid configuration.", this.GetPrimaryKey());
+                    // Don't throw - allow grain to activate without brain initialization
+                }
+            }
         }
 
         await OnAIGAgentActivateAsync(cancellationToken);
@@ -435,6 +475,11 @@ public abstract partial class
             case SetLLMStateLogEvent setLlmStateLogEvent:
                 State.LLM = setLlmStateLogEvent.LLM;
                 State.SystemLLM = setLlmStateLogEvent.SystemLLM;
+                break;
+            case SetLLMConfigKeyStateLogEvent setLlmConfigKeyStateLogEvent:
+                State.LLMConfigKey = setLlmConfigKeyStateLogEvent.LLMConfigKey;
+                State.SystemLLM = setLlmConfigKeyStateLogEvent.SystemLLM;
+                State.LLM = null; // Clear resolved config for centralized approach
                 break;
             case SetPromptTemplateStateLogEvent setPromptTemplateStateLogEvent:
                 State.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
@@ -464,6 +509,149 @@ public abstract partial class
         // Derived classes can override this method.
     }
 
+    /// <summary>
+    /// Gets the currently resolved LLM configuration with priority order:
+    /// 1. LLMConfigKey (new reference format)
+    /// 2. SystemLLM (existing reference format)
+    /// 3. LLM (old resolved format - backwards compatibility)
+    /// </summary>
+    public Task<LLMConfig?> GetLLMConfigAsync()
+    {
+        return Task.FromResult(GetCurrentLLMConfig());
+    }
+
+    /// <summary>
+    /// Sets the LLM configuration key using the centralized configuration approach
+    /// </summary>
+    public async Task SetLLMConfigKeyAsync(string llmConfigKey)
+    {
+        var setLLMConfigKeyEvent = new SetLLMConfigKeyStateLogEvent
+        {
+            LLMConfigKey = llmConfigKey,
+            SystemLLM = llmConfigKey // For backward compatibility
+        };
+        
+        RaiseEvent(setLLMConfigKeyEvent);
+        await ConfirmEvents();
+    }
+
+    /// <summary>
+    /// Sets the SystemLLM configuration for testing purposes (does not trigger brain initialization)
+    /// </summary>
+    public async Task SetSystemLLMAsync(string systemLLM)
+    {
+        var setSystemLLMEvent = new SetLLMStateLogEvent
+        {
+            LLM = null,
+            SystemLLM = systemLLM
+        };
+        
+        RaiseEvent(setSystemLLMEvent);
+        await ConfirmEvents();
+    }
+
+    /// <summary>
+    /// Sets the LLM configuration for testing purposes (does not trigger brain initialization)
+    /// </summary>
+    public async Task SetLLMAsync(LLMConfig llmConfig, string? systemLLM)
+    {
+        var setLLMEvent = new SetLLMStateLogEvent
+        {
+            LLM = llmConfig,
+            SystemLLM = systemLLM
+        };
+        
+        RaiseEvent(setLLMEvent);
+        await ConfirmEvents();
+    }
+
+    /// <summary>
+    /// Triggers the automatic migration logic for testing purposes
+    /// </summary>
+    public async Task TriggerMigrationAsync()
+    {
+        await PerformLLMConfigMigrationAsync();
+    }
+
+    /// <summary>
+    /// Performs automatic migration from legacy configuration format to centralized format
+    /// </summary>
+    private async Task PerformLLMConfigMigrationAsync()
+    {
+        // Check if migration is needed
+        if (ShouldPerformMigration())
+        {
+            Logger.LogDebug("Performing LLM configuration migration for grain {GrainId}", this.GetPrimaryKey());
+            
+            // Create migration event based on current state
+            var migrationEvent = CreateMigrationEvent();
+            if (migrationEvent != null)
+            {
+                RaiseEvent(migrationEvent);
+                await ConfirmEvents();
+                
+                Logger.LogInformation("Successfully migrated LLM configuration for grain {GrainId} from legacy format", this.GetPrimaryKey());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines if migration is needed based on current state
+    /// </summary>
+    private bool ShouldPerformMigration()
+    {
+        // Migration is needed if:
+        // 1. LLMConfigKey is not set (null or empty)
+        // 2. SystemLLM is set (legacy reference format exists)
+        return State.LLMConfigKey.IsNullOrEmpty() && !State.SystemLLM.IsNullOrEmpty();
+    }
+
+    /// <summary>
+    /// Creates the appropriate migration event based on current state
+    /// </summary>
+    private SetLLMConfigKeyStateLogEvent? CreateMigrationEvent()
+    {
+        if (!State.SystemLLM.IsNullOrEmpty())
+        {
+            // Migrate SystemLLM to LLMConfigKey and clear resolved LLM
+            return new SetLLMConfigKeyStateLogEvent
+            {
+                LLMConfigKey = State.SystemLLM,
+                SystemLLM = State.SystemLLM // Preserve for backward compatibility
+            };
+        }
+
+        return null;
+    }
+
+    private LLMConfig? GetCurrentLLMConfig()
+    {
+        // Priority 1: LLMConfigKey (new format)
+        if (!State.LLMConfigKey.IsNullOrEmpty())
+        {
+            return ResolveSystemConfig(State.LLMConfigKey);
+        }
+        
+        // Priority 2: SystemLLM (existing format)
+        if (!State.SystemLLM.IsNullOrEmpty())
+        {
+            return ResolveSystemConfig(State.SystemLLM);
+        }
+        
+        // Priority 3: Fallback to old resolved config (backwards compatibility)
+        return State.LLM;
+    }
+
+    private LLMConfig? ResolveSystemConfig(string key)
+    {
+        var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
+        if (systemConfigs.Value.SystemLLMConfigs?.TryGetValue(key, out var config) == true)
+        {
+            return config;
+        }
+        return null;
+    }
+
     private LLMConfig? GetLLMConfig(LLMConfigDto llmConfigDto)
     {
         if (llmConfigDto.SystemLLM.IsNullOrWhiteSpace() &&
@@ -476,9 +664,12 @@ public abstract partial class
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
 
-            if (systemConfigs.Value.SystemLLMConfigs!.TryGetValue(llmConfigDto.SystemLLM, out var config) ==
-                false)
+            if (systemConfigs.Value.SystemLLMConfigs == null || 
+                !systemConfigs.Value.SystemLLMConfigs.TryGetValue(llmConfigDto.SystemLLM, out var config))
             {
+                Logger.LogError("SystemLLMConfigs is null or does not contain key: {SystemLLM}. Available keys: {Keys}", 
+                    llmConfigDto.SystemLLM, 
+                    systemConfigs.Value.SystemLLMConfigs?.Keys.ToArray() ?? Array.Empty<string>());
                 return null;
             }
 
@@ -490,6 +681,12 @@ public abstract partial class
 
     private T ConvertBrain<T>() where T : class, IBrain
     {
+        // Check if brain is null first
+        if (_brain == null)
+        {
+            throw new AIOtherException($"brain is null, cannot convert to {typeof(T)}", new Exception("AI Brain is null"));
+        }
+        
         if (_brain is not T result)
         {
             throw new AIOtherException($"brain can not convert to {typeof(T)}", new Exception("AI Brain not match"));

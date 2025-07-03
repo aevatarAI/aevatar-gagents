@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Aevatar.Extensions;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
@@ -8,10 +9,14 @@ using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Moq;
+using Orleans;
+using Orleans.Hosting;
 using Orleans.TestingHost;
+using Orleans.SyncWork;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.Aws;
@@ -55,6 +60,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddJsonFile("appsettings.json")
                 .AddJsonFile("appsettings.secrets.json", true)
                 .Build();
+            
 
             hostBuilder.ConfigureServices(services =>
                 {
@@ -91,7 +97,55 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.Configure<QdrantConfig>(configuration.GetSection("VectorStores:Qdrant"));
                     services.Configure<AzureOpenAIEmbeddingsConfig>(configuration.GetSection("AIServices:AzureOpenAIEmbeddings"));
                     services.Configure<RagConfig>(configuration.GetSection("Rag"));
-                    services.Configure<SystemLLMConfigOptions>(configuration);
+                    
+                    // Register SystemLLMConfigOptions for Orleans grains
+                    var systemLLMConfigOptions = new SystemLLMConfigOptions
+                    {
+                        SystemLLMConfigs = new Dictionary<string, LLMConfig>
+                        {
+                            ["OpenAI"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelName = "gpt-4o",
+                                Endpoint = "https://test.openai.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["DeepSeek"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.DeepSeek,
+                                ModelName = "DeepSeek-R1",
+                                Endpoint = "https://test.deepseek.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["OpenAITextToImage"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAITextToImage,
+                                ModelName = "dall-e-3",
+                                Endpoint = "https://test.openai.azure.com",
+                                ApiKey = "test-key"
+                            },
+                            ["Azure"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Azure,
+                                ModelIdEnum = ModelIdEnum.OpenAI,
+                                ModelName = "gpt-4o",
+                                Endpoint = "https://test.azure.openai.com",
+                                ApiKey = "test-key"
+                            },
+                            ["Google"] = new LLMConfig
+                            {
+                                ProviderEnum = LLMProviderEnum.Google,
+                                ModelIdEnum = ModelIdEnum.Gemini,
+                                ModelName = "gemini-pro",
+                                Endpoint = "https://test.google.ai",
+                                ApiKey = "test-key"
+                            }
+                        }
+                    };
+                    services.AddSingleton<IOptions<SystemLLMConfigOptions>>(new OptionsWrapper<SystemLLMConfigOptions>(systemLLMConfigOptions));
                     services.AddSingleton<IBlobContainer, MockBlobContainer>();
                     
                     services.AddSemanticKernel()
@@ -104,7 +158,6 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
-                .UseAevatar()
                 .AddLogStorageBasedLogConsistencyProvider("LogStorage");
         }
     }

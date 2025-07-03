@@ -29,9 +29,17 @@ public abstract partial class
     protected async Task<bool> PromptWithStreamAsync(string prompt, List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null, AIChatContextDto? context = null, bool ifAsync = true, List<string>? imageKeys = null)
     {
+        // Resolve the LLM configuration from centralized config if needed
+        var llmConfig = await GetLLMConfigAsync();
+        if (llmConfig == null)
+        {
+            Logger.LogError("Failed to resolve LLM configuration for stream async request");
+            return false;
+        }
+
         var request = new AIStreamChatRequest()
         {
-            LlmConfig = State.LLM,
+            LlmConfig = llmConfig,
             Instructions = State.PromptTemplate,
             VectorId = this.GetGrainId().ToString().Replace("/", ""),
             StreamingConfig = State.StreamingConfig,
