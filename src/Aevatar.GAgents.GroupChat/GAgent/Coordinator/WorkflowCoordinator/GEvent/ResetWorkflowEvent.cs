@@ -6,5 +6,4 @@ namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 [GenerateSerializer]
 public class ResetWorkflowEvent: EventBase
 {
-    [Id(0)] public List<WorkflowUnitDto> WorkflowUnitList { get; set; }
 }
