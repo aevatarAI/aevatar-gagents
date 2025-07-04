@@ -74,17 +74,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler StartWorkflowCoordinatorEvent start");
         if (State.WorkflowStatus != WorkflowCoordinatorStatus.Pending)
         {
-            throw new InvalidOperationException("The workflow is running now.");
+            Logger.LogError("[WorkflowCoordinatorGAgent] The workflow is not ready to run.");
+            return;
         }
 
-        if (State.BlackboardId == Guid.Empty)
+        if (State.BlackboardId == Guid.Empty || !State.CurrentWorkUnitInfos.Any())
         {
-            throw new InvalidOperationException("The workflow has not been initialized.");
-        }
-        
-        if (!State.CurrentWorkUnitInfos.Any())
-        {
-            throw new InvalidOperationException("The workflow does not set work units.");
+            Logger.LogError("[WorkflowCoordinatorGAgent] The workflow has not been initialized.");
+            
+            RaiseEvent(new WorkflowStartFailedLogEvent());
+            await ConfirmEvents();
+            return;
         }
 
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
@@ -97,7 +97,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var topStreamGrainIds = State.GetTopUpStreamGrainIds();
         foreach (var item in topStreamGrainIds)
         {
-            await TryActiveWorkUnitAsync(item, @event.InitContent);
+            await TryActiveWorkUnitAsync(item, @event.InitContent ?? State.Content);
         }
     }
 
@@ -145,7 +145,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         }
 
         RaiseEvent(new SetWorkflowCoordinatorLogEvent
-            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId });
+            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId, InitContent = configuration.InitContent});
 
         await ConfirmEvents();
         
@@ -166,16 +166,18 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     ExtendedData = s.ExtendedData
                 }).ToList();
                 
-                if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
+                if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending || State.WorkflowStatus == WorkflowCoordinatorStatus.Failed)
                 {
                     State.CurrentWorkUnitInfos = nodeList;
+                    State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 }
                 else
                 {
                     State.BackupWorkUnitInfos = nodeList;
                 }
                 
-                state.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
+                State.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
+                State.Content = setWorkflowCoordinatorLogEvent.InitContent;
                 break;
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
@@ -192,7 +194,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             case WorkflowFinishLogEvent workflowFinishLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
-                State.TermToWorkUnitGrainId = new Dictionary<int, string>();
+                State.TermToWorkUnitGrainId = new Dictionary<long, string>();
                 if (State.BackupWorkUnitInfos.Count > 0)
                 {
                     State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s => s).ToList();
@@ -222,14 +224,20 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 State.Term += 1;
                 break;
 
-            case WorkflowStartLogEvent workflowStartLogEvent:
+            case WorkflowStartLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
+                State.LastRunningTime = DateTime.UtcNow;
                 break;
 
-            case ResetWorkflowLogEvent resetWorkflowLogEvent:
+            case ResetWorkflowLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 State.CurrentWorkUnitInfos.Clear();
                 State.BackupWorkUnitInfos.Clear();
+                break;
+            
+            case WorkflowStartFailedLogEvent:
+                State.WorkflowStatus = WorkflowCoordinatorStatus.Failed;
+                State.LastRunningTime = DateTime.UtcNow;
                 break;
         }
     }

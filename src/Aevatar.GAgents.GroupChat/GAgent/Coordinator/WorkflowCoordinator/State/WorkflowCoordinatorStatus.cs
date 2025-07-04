@@ -4,5 +4,5 @@ public enum WorkflowCoordinatorStatus
 {
     Pending,
     InProgress,
-    Finished,
+    Failed
 }

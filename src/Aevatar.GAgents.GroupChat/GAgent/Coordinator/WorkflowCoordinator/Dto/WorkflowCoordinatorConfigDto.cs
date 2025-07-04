@@ -6,6 +6,7 @@ namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 public class WorkflowCoordinatorConfigDto:ConfigurationBase
 {
     [Id(0)] public List<WorkflowUnitDto> WorkflowUnitList { get; set; } = new();
+    [Id(1)] public string? InitContent { get; set; } = null;
 }
 
 [GenerateSerializer]
