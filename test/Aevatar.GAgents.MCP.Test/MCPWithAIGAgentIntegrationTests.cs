@@ -36,20 +36,20 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
         // Arrange - 配置MCP GAgent
         var mcpConfig = new MCPGAgentConfig
         {
-            Servers = new List<MCPServerConfig>
-            {
+            Servers =
+            [
                 new MCPServerConfig
                 {
                     ServerName = "test-integration",
                     Command = "test"
                 }
-            }
+            ]
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);
 
         // 创建一个简单的订阅者GAgent
-        var subscriberGAgent = await _gAgentFactory.GetGAgentAsync<TestSubscriberGAgent>();
+        var subscriberGAgent = await _gAgentFactory.GetGAgentAsync<ITestSubscriberGAgent>();
         await mcpGAgent.RegisterAsync(subscriberGAgent);
 
         // Act - 通过订阅者发布工具调用事件
@@ -61,9 +61,14 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
     }
 }
 
-// 测试用的订阅者GAgent
+public interface ITestSubscriberGAgent : IStateGAgent<TestSubscriberState>
+{
+    Task CallMCPToolAsync();
+    Task<string?> GetLastResultAsync();
+}
+
 [GAgent]
-public class TestSubscriberGAgent : GAgentBase<TestSubscriberState, TestSubscriberLogEvent>
+public class TestSubscriberGAgent : GAgentBase<TestSubscriberState, TestSubscriberLogEvent>, ITestSubscriberGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -107,6 +112,4 @@ public class TestSubscriberState : StateBase
 }
 
 [GenerateSerializer]
-public class TestSubscriberLogEvent : StateLogEventBase<TestSubscriberLogEvent>
-{
-}
+public class TestSubscriberLogEvent : StateLogEventBase<TestSubscriberLogEvent>;

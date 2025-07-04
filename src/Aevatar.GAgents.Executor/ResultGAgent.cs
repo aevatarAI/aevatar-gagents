@@ -66,6 +66,11 @@ public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEv
             return;
         }
 
+        if (typedWrapper.PublisherGrainId.Type == GrainType.Create("Aevatar.Core.PublishingGAgent"))
+        {
+            return;
+        }
+
         var result = JsonConvert.SerializeObject(typedWrapper.Event);
         RaiseEvent(new ResultArrivedStateLogEvent
         {

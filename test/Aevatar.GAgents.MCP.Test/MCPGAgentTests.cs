@@ -124,15 +124,15 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers = new List<MCPServerConfig>
-            {
+            Servers =
+            [
                 new MCPServerConfig
                 {
                     ServerName = "sqlite",
                     Command = "npx",
-                    Args = new List<string> { "-y", "@modelcontextprotocol/server-sqlite", "memory:" }
+                    Args = ["-y", "@modelcontextprotocol/server-sqlite", "memory:"]
                 }
-            },
+            ],
             EnableToolDiscovery = true
         };
 
@@ -144,13 +144,17 @@ public class MCPGAgentTests : AevatarMCPTestBase
             ServerName = "sqlite"
         };
 
-        var response = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, discoverEvent);
+        var responseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, discoverEvent);
+        var response = JsonConvert.DeserializeObject<MCPToolsDiscoveredEvent>(responseJson, new JsonSerializerSettings
+        {
+            Converters = { new GrainIdConverter() }
+        });
 
         // Assert
         response.ShouldNotBeNull();
-        // response.ServerName.ShouldBe("sqlite");
-        // response.Tools.ShouldNotBeNull();
-        // response.Tools.Count.ShouldBeGreaterThan(0);
+        response.ServerName.ShouldBe("sqlite");
+        response.Tools.ShouldNotBeNull();
+        response.Tools.Count.ShouldBeGreaterThan(0);
 
         // Verify available tools
         var availableTools = await mcpGAgent.GetAvailableToolsAsync();
@@ -164,15 +168,15 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange - 配置多个实际可用的MCP服务器
         var config = new MCPGAgentConfig
         {
-            Servers = new List<MCPServerConfig>
-            {
-                // 文件系统服务器
+            Servers =
+            [
                 new MCPServerConfig
                 {
                     ServerName = "filesystem",
                     Command = "npx",
                     Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" }
                 },
+
                 // SQLite内存数据库服务器
                 new MCPServerConfig
                 {
@@ -180,6 +184,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
                     Command = "npx",
                     Args = new List<string> { "-y", "@modelcontextprotocol/server-sqlite", "memory:" }
                 },
+
                 // Fetch HTTP请求服务器
                 new MCPServerConfig
                 {
@@ -187,7 +192,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
                     Command = "npx",
                     Args = new List<string> { "-y", "@modelcontextprotocol/server-fetch" }
                 }
-            },
+            ],
             EnableToolDiscovery = true,
             RequestTimeout = TimeSpan.FromSeconds(30)
         };
@@ -206,7 +211,11 @@ public class MCPGAgentTests : AevatarMCPTestBase
                 ["path"] = "/tmp"
             }
         };
-        var fsResponse = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fsListEvent);
+        var fsResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fsListEvent);
+        var fsResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(fsResponseJson, new JsonSerializerSettings
+        {
+            Converters = { new GrainIdConverter() }
+        });
 
         // 2. SQLite查询
         var sqlCreateEvent = new MCPToolCallEvent
@@ -218,7 +227,12 @@ public class MCPGAgentTests : AevatarMCPTestBase
                 ["query"] = "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)"
             }
         };
-        var sqlResponse = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, sqlCreateEvent);
+        var sqlResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, sqlCreateEvent);
+        var sqlResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(sqlResponseJson,
+            new JsonSerializerSettings
+            {
+                Converters = { new GrainIdConverter() }
+            });
 
         // 3. HTTP请求
         var fetchEvent = new MCPToolCallEvent
@@ -230,13 +244,20 @@ public class MCPGAgentTests : AevatarMCPTestBase
                 ["url"] = "https://api.github.com"
             }
         };
-        var fetchResponse = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fetchEvent);
+        var fetchResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fetchEvent);
+        var fetchResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(fetchResponseJson,
+            new JsonSerializerSettings
+            {
+                Converters = { new GrainIdConverter() }
+            });
 
         // Assert
         fsResponse.ShouldNotBeNull();
-        // fsResponse.Success.ShouldBeTrue();
-        // sqlResponse.Success.ShouldBeTrue();
-        // fetchResponse.Success.ShouldBeTrue();
+        fsResponse.Success.ShouldBeTrue();
+        sqlResponse.ShouldNotBeNull();
+        sqlResponse.Success.ShouldBeTrue();
+        fetchResponse.ShouldNotBeNull();
+        fetchResponse.Success.ShouldBeTrue();
 
         // 验证所有服务器都已连接
         var serverStates = await mcpGAgent.GetServerStatesAsync();
@@ -250,14 +271,14 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers = new List<MCPServerConfig>
-            {
+            Servers =
+            [
                 new MCPServerConfig
                 {
                     ServerName = "test-server",
                     Command = "test"
                 }
-            }
+            ]
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
@@ -270,11 +291,17 @@ public class MCPGAgentTests : AevatarMCPTestBase
             Arguments = new Dictionary<string, object>()
         };
 
-        var response = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent);
+        var responseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent);
+        var response = JsonConvert.DeserializeObject<MCPToolResponseEvent>(responseJson,
+            new JsonSerializerSettings
+            {
+                Converters = { new GrainIdConverter() }
+            });
 
         // Assert
         response.ShouldNotBeNull();
-        // response.Success.ShouldBeFalse();
-        // response.ErrorMessage.ShouldContain("not found");
+        response.Success.ShouldBeFalse();
+        response.ErrorMessage.ShouldNotBeNull();
+        response.ErrorMessage.ShouldContain("not found");
     }
 }
