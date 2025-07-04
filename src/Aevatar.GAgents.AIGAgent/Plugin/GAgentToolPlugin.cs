@@ -8,6 +8,7 @@ using Aevatar.GAgents.Executor;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Orleans.Runtime;
 
 namespace Aevatar.GAgents.AIGAgent.Plugin;
@@ -178,8 +179,7 @@ public class GAgentToolPlugin
 
 public class GrainIdConverter : JsonConverter<GrainId>
 {
-    public override GrainId ReadJson(JsonReader reader, Type objectType, GrainId existingValue, bool hasExistingValue,
-        JsonSerializer serializer)
+    public override GrainId ReadJson(JsonReader reader, Type objectType, GrainId existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         if (reader.TokenType == JsonToken.Null)
             return default;
@@ -195,8 +195,27 @@ public class GrainIdConverter : JsonConverter<GrainId>
                 }
                 catch (FormatException)
                 {
-                    // 如果解析失败，创建一个新的 GrainId
                     return GrainId.Create("User", value);
+                }
+            }
+        }
+        else if (reader.TokenType == JsonToken.StartObject)
+        {
+            JObject jsonObject = JObject.Load(reader);
+            
+            if (jsonObject.TryGetValue("tv", out var typeValue) && 
+                jsonObject.TryGetValue("kv", out var keyValue))
+            {
+                string typeStr = typeValue.ToString();
+                string keyStr = keyValue.ToString();
+
+                try
+                {
+                    return GrainId.Parse($"{typeStr}/{keyStr}");
+                }
+                catch
+                {
+                    return GrainId.Create(typeStr, keyStr);
                 }
             }
         }

@@ -17,7 +17,7 @@ using Orleans;
 namespace Aevatar.GAgents.MCP.GAgents;
 
 public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IMCPGAgent
+    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TState : MCPGAgentState, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -64,7 +64,6 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                 break;
 
             case UpdateAvailableToolsLogEvent updateToolsEvent:
-                // 清除该服务器的旧工具
                 var keysToRemove = State.AvailableTools.Keys
                     .Where(k => k.StartsWith($"{updateToolsEvent.ServerName}."))
                     .ToList();
@@ -73,14 +72,12 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                     State.AvailableTools.Remove(key);
                 }
 
-                // 添加新工具
                 foreach (var tool in updateToolsEvent.Tools)
                 {
                     tool.ServerName = updateToolsEvent.ServerName;
                     State.AvailableTools[$"{updateToolsEvent.ServerName}.{tool.Name}"] = tool;
                 }
 
-                // 更新服务器状态中的工具列表
                 if (State.ServerStates.ContainsKey(updateToolsEvent.ServerName))
                 {
                     State.ServerStates[updateToolsEvent.ServerName].RegisteredTools =
@@ -121,7 +118,6 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
             {
                 var client = await _mcpClientProvider.GetOrCreateClientAsync(serverConfig);
 
-                // 订阅连接状态变化
                 client.ConnectionStatusChanged += async (sender, args) =>
                 {
                     await UpdateServerStatusAsync(args.ServerName, args.IsConnected);

@@ -33,6 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
+    <ProjectReference Include="..\..\src\Aevatar.GAgents.MCP\Aevatar.GAgents.MCP.csproj" />
     <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
   </ItemGroup>
   

@@ -6,7 +6,7 @@ using Aevatar.GAgents.MCP.State;
 
 namespace Aevatar.GAgents.MCP.GAgents;
 
-public interface IMCPGAgent
+public interface IMCPGAgent : IStateGAgent<MCPGAgentState>
 {
     Task<Dictionary<string, MCPToolInfo>> GetAvailableToolsAsync();
     Task<List<MCPServerState>> GetServerStatesAsync();

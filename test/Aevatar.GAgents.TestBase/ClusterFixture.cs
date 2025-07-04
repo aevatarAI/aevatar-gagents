@@ -7,6 +7,7 @@ using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.Executor;
+using Aevatar.GAgents.MCP.Provider;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using Aevatar.Plugins;
@@ -163,6 +164,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
                     services.AddSingleton<IGAgentManager, GAgentManager>();
                     services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
+                    services.AddSingleton<IMCPClientProvider, MockMCPClientProvider>();
                 })
                 .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
