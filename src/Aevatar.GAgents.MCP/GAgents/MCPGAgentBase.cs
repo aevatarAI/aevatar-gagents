@@ -44,6 +44,11 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         {
             RaiseEvent(new AddMCPServerLogEvent { ServerConfig = serverConfig });
         }
+        
+        await ConfirmEvents();
+        
+        // 初始化MCP服务器
+        await InitializeMCPServersAsync();
     }
 
     protected override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)

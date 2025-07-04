@@ -1,17 +1,11 @@
-using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AI.Options;
-using Aevatar.GAgents.AIGAgent.Agent;
-using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.GEvents;
 using Aevatar.GAgents.MCP.Options;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Orleans;
 using Shouldly;
 using Xunit;
@@ -50,10 +44,16 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
 
         // 创建一个简单的订阅者GAgent
         var subscriberGAgent = await _gAgentFactory.GetGAgentAsync<ITestSubscriberGAgent>();
+        
+        // 建立双向订阅关系
         await mcpGAgent.RegisterAsync(subscriberGAgent);
+        await subscriberGAgent.RegisterAsync(mcpGAgent);
 
         // Act - 通过订阅者发布工具调用事件
         await subscriberGAgent.CallMCPToolAsync();
+        
+        // 等待事件处理完成
+        await Task.Delay(1000);
 
         // Assert
         var result = await subscriberGAgent.GetLastResultAsync();
@@ -74,6 +74,17 @@ public class TestSubscriberGAgent : GAgentBase<TestSubscriberState, TestSubscrib
     {
         return Task.FromResult("Test subscriber for MCP events");
     }
+    
+    protected override void GAgentTransitionState(TestSubscriberState state, StateLogEventBase<TestSubscriberLogEvent> @event)
+    {
+        switch (@event)
+        {
+            case TestResultReceivedEvent resultEvent:
+                state.LastResult = resultEvent.Result;
+                state.LastSuccess = resultEvent.Success;
+                break;
+        }
+    }
 
     public async Task CallMCPToolAsync()
     {
@@ -93,9 +104,12 @@ public class TestSubscriberGAgent : GAgentBase<TestSubscriberState, TestSubscrib
     [EventHandler]
     public async Task HandleEventAsync(MCPToolResponseEvent @event)
     {
-        State.LastResult = @event.Result?.ToString();
-        State.LastSuccess = @event.Success;
-        await Task.CompletedTask;
+        RaiseEvent(new TestResultReceivedEvent
+        {
+            Result = @event.Result?.ToString() ?? "Success", 
+            Success = @event.Success
+        });
+        await ConfirmEvents();
     }
 
     public Task<string?> GetLastResultAsync()
@@ -113,3 +127,10 @@ public class TestSubscriberState : StateBase
 
 [GenerateSerializer]
 public class TestSubscriberLogEvent : StateLogEventBase<TestSubscriberLogEvent>;
+
+[GenerateSerializer]
+public class TestResultReceivedEvent : TestSubscriberLogEvent
+{
+    [Id(0)] public string Result { get; set; } = string.Empty;
+    [Id(1)] public bool Success { get; set; }
+}
