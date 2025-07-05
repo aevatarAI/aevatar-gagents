@@ -22,9 +22,7 @@ namespace Aevatar.GAgents.AIGAgent.Agent;
 /// Partial class for AIGAgentBase that adds GAgent tool registration capabilities
 /// </summary>
 public abstract partial class
-    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent
-    where TState : AIGAgentStateBase, new()
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
@@ -147,17 +145,14 @@ public abstract partial class
 
                     // Create a wrapper function that calls the plugin
                     var function = KernelFunctionFactory.CreateFromMethod(
-                        method: async (string parameters) =>
-                        {
-                            return await _gAgentToolPlugin!.InvokeGAgentAsync(
-                                grainType.ToString(),
-                                eventType.Name,
-                                parameters);
-                        },
+                        method: async (string parameters) => await _gAgentToolPlugin!.InvokeGAgentAsync(
+                            grainType.ToString()!,
+                            eventType.Name,
+                            parameters),
                         functionName: functionName,
                         description: description,
-                        parameters: new[]
-                        {
+                        parameters:
+                        [
                             new KernelParameterMetadata("parameters")
                             {
                                 Description =
@@ -165,7 +160,7 @@ public abstract partial class
                                 IsRequired = true,
                                 ParameterType = typeof(string)
                             }
-                        },
+                        ],
                         returnParameter: new KernelReturnParameterMetadata
                         {
                             Description = "JSON result containing success status and response data",
@@ -184,7 +179,7 @@ public abstract partial class
         }
 
         // Import all dynamic functions as a plugin
-        if (dynamicFunctions.Any())
+        if (dynamicFunctions.Count != 0)
         {
             ImportPluginFunctionsToKernel(kernel, "DynamicGAgentFunctions", dynamicFunctions);
         }
@@ -279,7 +274,7 @@ public abstract partial class
     private string GenerateFunctionName(GrainType grainType, Type eventType)
     {
         // Clean the grain type string to make it a valid function name
-        var cleanGrainType = grainType.ToString()
+        var cleanGrainType = grainType.ToString()!
             .Replace("/", "_")
             .Replace(".", "_")
             .Replace("-", "_");

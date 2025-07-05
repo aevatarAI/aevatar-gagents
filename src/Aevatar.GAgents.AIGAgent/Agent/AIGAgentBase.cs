@@ -94,10 +94,11 @@ public abstract partial class
         {
             RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
         }
-        
+
         if (initializeDto.AllowedGAgentTypes != null)
         {
-            RaiseEvent(new SetAllowedGAgentTypesStateLogEvent { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
+            RaiseEvent(new SetAllowedGAgentTypesStateLogEvent
+                { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
         }
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
@@ -112,18 +113,19 @@ public abstract partial class
         try
         {
             var result = await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
-            
+
             // Register GAgent tools if enabled
             if (result && State.EnableGAgentTools)
             {
                 await RegisterGAgentsAsToolsAsync();
             }
-            
+
             return result;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize brain during InitializeAsync. This may be due to invalid configuration.");
+            Logger.LogError(ex,
+                "Failed to initialize brain during InitializeAsync. This may be due to invalid configuration.");
             return false; // Return false to indicate initialization failed
         }
     }
@@ -327,7 +329,8 @@ public abstract partial class
         var chatBrain = ConvertBrain<IChatBrain>();
         try
         {
-            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, imageKeys, history, ifUseKnowledge,
+            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, imageKeys, history,
+                ifUseKnowledge,
                 promptSettings,
                 cancellationToken: cancellationToken);
 
@@ -427,7 +430,7 @@ public abstract partial class
 
         return result;
     }
-    
+
     private ChatRole ConvertToChatRole(AuthorRole authorRole)
     {
         if (authorRole == AuthorRole.System)
@@ -461,7 +464,8 @@ public abstract partial class
             var config = GetCurrentLLMConfig();
             if (config == null)
             {
-                Logger.LogWarning("Unable to resolve LLM configuration during grain activation for {GrainId}", this.GetPrimaryKey());
+                Logger.LogWarning("Unable to resolve LLM configuration during grain activation for {GrainId}",
+                    this.GetPrimaryKey());
                 return;
             }
 
@@ -474,7 +478,9 @@ public abstract partial class
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Failed to initialize brain during grain activation for {GrainId}. This may be due to invalid configuration.", this.GetPrimaryKey());
+                    Logger.LogError(ex,
+                        "Failed to initialize brain during grain activation for {GrainId}. This may be due to invalid configuration.",
+                        this.GetPrimaryKey());
                     // Don't throw - allow grain to activate without brain initialization
                 }
             }
@@ -558,7 +564,7 @@ public abstract partial class
             LLMConfigKey = llmConfigKey,
             SystemLLM = llmConfigKey // For backward compatibility
         };
-        
+
         RaiseEvent(setLLMConfigKeyEvent);
         await ConfirmEvents();
     }
@@ -573,7 +579,7 @@ public abstract partial class
             LLM = null,
             SystemLLM = systemLLM
         };
-        
+
         RaiseEvent(setSystemLLMEvent);
         await ConfirmEvents();
     }
@@ -588,7 +594,7 @@ public abstract partial class
             LLM = llmConfig,
             SystemLLM = systemLLM
         };
-        
+
         RaiseEvent(setLLMEvent);
         await ConfirmEvents();
     }
@@ -610,15 +616,16 @@ public abstract partial class
         if (ShouldPerformMigration())
         {
             Logger.LogDebug("Performing LLM configuration migration for grain {GrainId}", this.GetPrimaryKey());
-            
+
             // Create migration event based on current state
             var migrationEvent = CreateMigrationEvent();
             if (migrationEvent != null)
             {
                 RaiseEvent(migrationEvent);
                 await ConfirmEvents();
-                
-                Logger.LogInformation("Successfully migrated LLM configuration for grain {GrainId} from legacy format", this.GetPrimaryKey());
+
+                Logger.LogInformation("Successfully migrated LLM configuration for grain {GrainId} from legacy format",
+                    this.GetPrimaryKey());
             }
         }
     }
@@ -659,13 +666,13 @@ public abstract partial class
         {
             return ResolveSystemConfig(State.LLMConfigKey);
         }
-        
+
         // Priority 2: SystemLLM (existing format)
         if (!State.SystemLLM.IsNullOrEmpty())
         {
             return ResolveSystemConfig(State.SystemLLM);
         }
-        
+
         // Priority 3: Fallback to old resolved config (backwards compatibility)
         return State.LLM;
     }
@@ -677,6 +684,7 @@ public abstract partial class
         {
             return config;
         }
+
         return null;
     }
 
@@ -692,11 +700,11 @@ public abstract partial class
         {
             var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
 
-            if (systemConfigs.Value.SystemLLMConfigs == null || 
+            if (systemConfigs.Value.SystemLLMConfigs == null ||
                 !systemConfigs.Value.SystemLLMConfigs.TryGetValue(llmConfigDto.SystemLLM, out var config))
             {
-                Logger.LogError("SystemLLMConfigs is null or does not contain key: {SystemLLM}. Available keys: {Keys}", 
-                    llmConfigDto.SystemLLM, 
+                Logger.LogError("SystemLLMConfigs is null or does not contain key: {SystemLLM}. Available keys: {Keys}",
+                    llmConfigDto.SystemLLM,
                     systemConfigs.Value.SystemLLMConfigs?.Keys.ToArray() ?? Array.Empty<string>());
                 return null;
             }
@@ -712,9 +720,10 @@ public abstract partial class
         // Check if brain is null first
         if (_brain == null)
         {
-            throw new AIOtherException($"brain is null, cannot convert to {typeof(T)}", new Exception("AI Brain is null"));
+            throw new AIOtherException($"brain is null, cannot convert to {typeof(T)}",
+                new Exception("AI Brain is null"));
         }
-        
+
         if (_brain is not T result)
         {
             throw new AIOtherException($"brain can not convert to {typeof(T)}", new Exception("AI Brain not match"));
