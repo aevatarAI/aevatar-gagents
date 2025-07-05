@@ -10,9 +10,9 @@ public class WorkflowCoordinatorLogEvent : StateLogEventBase<WorkflowCoordinator
 }
 
 [GenerateSerializer]
-public class InitWorkflowCoordinatorLogEvent : WorkflowCoordinatorLogEvent
+public class SetWorkflowCoordinatorLogEvent : WorkflowCoordinatorLogEvent
 {
-    [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; }
+    [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; } = new();
     [Id(1)] public Guid BlackBoardId { get; set; }
 }
 
@@ -45,5 +45,4 @@ public class WorkflowStartLogEvent : WorkflowCoordinatorLogEvent
 [GenerateSerializer]
 public class ResetWorkflowLogEvent : WorkflowCoordinatorLogEvent
 {
-    [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; }
 }
