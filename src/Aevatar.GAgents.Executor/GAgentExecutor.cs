@@ -1,5 +1,6 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic.PublishGAgent;
 using Orleans.Streams;
 
 namespace Aevatar.GAgents.Executor;
@@ -26,6 +27,7 @@ public class GAgentExecutor : IGAgentExecutor
     public async Task<string> ExecuteGAgentEventHandler(IGAgent gAgent, EventBase @event)
     {
         var resultGAgent = await _gAgentFactory.GetGAgentAsync<IResultGAgent>();
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
 
         var executionId = Guid.NewGuid().ToString();
 
@@ -49,9 +51,12 @@ public class GAgentExecutor : IGAgentExecutor
             // Subscribe ResultGAgent to the target GAgent to receive results
             await gAgent.RegisterAsync(resultGAgent);
             
-            // Publish the event directly to the target GAgent 
-            // The target GAgent will process it and publish any result events
-            await gAgent.PublishAsync(@event);
+            // Also subscribe the target GAgent to PublishingGAgent to receive the event
+            await publishingGAgent.RegisterAsync(gAgent);
+            
+            // Publish the event through PublishingGAgent 
+            // The target GAgent will receive and process it, then publish any result events
+            await publishingGAgent.PublishEventAsync(@event);
 
             return await resultTask.Task.WaitAsync(AevatarGAgentExecutorConstants.GAgentExecutorTimeout);
         }
@@ -64,6 +69,8 @@ public class GAgentExecutor : IGAgentExecutor
             await subscription.UnsubscribeAsync();
             // Unregister ResultGAgent from the target GAgent
             await gAgent.UnregisterAsync(resultGAgent);
+            // Unregister target GAgent from PublishingGAgent
+            await publishingGAgent.UnregisterAsync(gAgent);
         }
     }
 
