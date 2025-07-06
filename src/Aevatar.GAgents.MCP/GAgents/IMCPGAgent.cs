@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.GEvents;
 using Aevatar.GAgents.MCP.Model;
 using Aevatar.GAgents.MCP.State;
 
@@ -10,4 +11,5 @@ public interface IMCPGAgent : IStateGAgent<MCPGAgentState>
 {
     Task<Dictionary<string, MCPToolInfo>> GetAvailableToolsAsync();
     Task<List<MCPServerState>> GetServerStatesAsync();
+    Task<MCPToolResponseEvent> CallToolAsync(string serverName, string toolName, Dictionary<string, object> arguments);
 }

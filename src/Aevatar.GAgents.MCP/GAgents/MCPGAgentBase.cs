@@ -109,6 +109,19 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         return Task.FromResult(State.ServerStates.Values.ToList());
     }
 
+    public async Task<MCPToolResponseEvent> CallToolAsync(string serverName, string toolName, Dictionary<string, object> arguments)
+    {
+        var toolCallEvent = new MCPToolCallEvent
+        {
+            ServerName = serverName,
+            ToolName = toolName,
+            Arguments = arguments,
+            RequestId = Guid.NewGuid()
+        };
+
+        return await HandleEventAsync(toolCallEvent);
+    }
+
     private async Task InitializeMCPServersAsync()
     {
         foreach (var serverConfig in State.ServerConfigs)
