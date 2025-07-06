@@ -84,14 +84,15 @@ public class StdioMCPClient : IMCPClient
     {
         try
         {
+            var args = _config.Args ?? new List<string>();
             _logger.LogInformation("Starting MCP server {ServerName} with command: {Command} {Args}", 
-                _config.ServerName, _config.Command, string.Join(" ", _config.Args?.ToList() ?? Array.Empty<string>().ToList()));
+                _config.ServerName, _config.Command, string.Join(" ", args));
 
             // Start the process
             var startInfo = new ProcessStartInfo
             {
                 FileName = _config.Command,
-                Arguments = string.Join(" ", _config.Args?.ToList() ?? Array.Empty<string>().ToList()),
+                Arguments = string.Join(" ", args),
                 UseShellExecute = false,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
