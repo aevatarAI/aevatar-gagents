@@ -10,4 +10,8 @@
         <PackageReference Include="Aevatar" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    </ItemGroup>
+
 </Project>
