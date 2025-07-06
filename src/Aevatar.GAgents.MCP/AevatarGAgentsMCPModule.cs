@@ -11,21 +11,21 @@ public class AevatarGAgentsMCPModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         
-        // 注册MCP Client Provider
+        // 注册MCP Client Provider依赖
         // 注册HttpClient用于HTTP transport
-        context.Services.AddHttpClient<RealMCPClientProvider>();
+        context.Services.AddHttpClient<MCPClientProviderSelector>();
         
-        // 使用真实的MCP Client Provider
-        context.Services.TryAddSingleton<IMCPClientProvider, RealMCPClientProvider>();
+        // 使用Provider选择器，自动根据配置选择合适的Provider
+        context.Services.TryAddSingleton<IMCPClientProvider, MCPClientProviderSelector>();
         
         // 在开发/测试环境中，你可以切换到Mock实现：
         // context.Services.TryAddSingleton<IMCPClientProvider, MockMCPClientProvider>();
         
-        // 未来可以添加其他transport的支持：
-        // 1. Stdio-based provider (for stdio transport):
-        //    context.Services.AddSingleton<IMCPClientProvider, StdioMCPClientProvider>();
+        // 如果需要直接使用特定的Provider：
+        // 1. Stdio-based provider only:
+        //    context.Services.TryAddSingleton<IMCPClientProvider, StdioMCPClientProvider>();
         //
-        // 2. WebSocket-based provider:
-        //    context.Services.AddSingleton<IMCPClientProvider, WebSocketMCPClientProvider>();
+        // 2. HTTP-based provider only:
+        //    context.Services.TryAddSingleton<IMCPClientProvider, RealMCPClientProvider>();
     }
 }

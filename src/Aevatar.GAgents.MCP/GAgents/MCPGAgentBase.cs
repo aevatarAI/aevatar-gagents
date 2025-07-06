@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.MCP.GEvents;
@@ -12,7 +7,6 @@ using Aevatar.GAgents.MCP.Provider;
 using Aevatar.GAgents.MCP.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans;
 
 namespace Aevatar.GAgents.MCP.GAgents;
 
@@ -44,9 +38,9 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         {
             RaiseEvent(new AddMCPServerLogEvent { ServerConfig = serverConfig });
         }
-        
+
         await ConfirmEvents();
-        
+
         // 初始化MCP服务器
         await InitializeMCPServersAsync();
     }

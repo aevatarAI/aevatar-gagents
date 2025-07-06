@@ -71,6 +71,9 @@ public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEv
             return;
         }
 
+        Logger.LogInformation("ResultGAgent received event: {EventType} from {Publisher}",
+            typedWrapper.Event.GetType().Name, typedWrapper.PublisherGrainId);
+
         var result = JsonConvert.SerializeObject(typedWrapper.Event);
         RaiseEvent(new ResultArrivedStateLogEvent
         {

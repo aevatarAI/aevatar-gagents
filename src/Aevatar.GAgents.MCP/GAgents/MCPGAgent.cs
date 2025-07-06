@@ -11,21 +11,12 @@ using Orleans;
 namespace Aevatar.GAgents.MCP.GAgents;
 
 [GenerateSerializer]
-public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>
-{
-    
-}
+public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
 
 [GAgent]
 public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
     IMCPGAgent
 {
-    private readonly ILogger<MCPGAgent> _logger;
-
-    public MCPGAgent(ILogger<MCPGAgent> logger)
-    {
-        _logger = logger;
-    }
 
     public override Task<string> GetDescriptionAsync()
     {
