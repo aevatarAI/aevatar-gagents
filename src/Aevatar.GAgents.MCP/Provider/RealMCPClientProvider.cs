@@ -302,7 +302,7 @@ public class RealMCPClient : IMCPClient
                         Type = GetTypeFromSchema(prop.Value),
                         Description = prop.Value.TryGetProperty("description", out var desc) ? desc.GetString() : string.Empty,
                         Required = IsRequired(inputSchema.Value, prop.Name),
-                        DefaultValue = prop.Value.TryGetProperty("default", out var def) ? def : null
+                        DefaultValue = prop.Value.TryGetProperty("default", out var def) ? ConvertJsonElementToBasicType(def) : null
                     };
                     parameters[prop.Name] = param;
                 }
@@ -346,6 +346,45 @@ public class RealMCPClient : IMCPClient
     }
 
     private string NextRequestId() => (++_requestId).ToString();
+    
+    private object? ConvertJsonElementToBasicType(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return element.GetString();
+            case JsonValueKind.Number:
+                if (element.TryGetInt32(out var intValue))
+                    return intValue;
+                if (element.TryGetInt64(out var longValue))
+                    return longValue;
+                if (element.TryGetDouble(out var doubleValue))
+                    return doubleValue;
+                return element.GetDecimal();
+            case JsonValueKind.True:
+                return true;
+            case JsonValueKind.False:
+                return false;
+            case JsonValueKind.Null:
+                return null;
+            case JsonValueKind.Array:
+                var list = new List<object?>();
+                foreach (var item in element.EnumerateArray())
+                {
+                    list.Add(ConvertJsonElementToBasicType(item));
+                }
+                return list;
+            case JsonValueKind.Object:
+                var dict = new Dictionary<string, object?>();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
+                }
+                return dict;
+            default:
+                return element.ToString();
+        }
+    }
 
     private class JsonRpcRequest
     {
