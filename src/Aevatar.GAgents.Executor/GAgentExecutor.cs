@@ -1,6 +1,5 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Basic.PublishGAgent;
 using Orleans.Streams;
 
 namespace Aevatar.GAgents.Executor;
@@ -27,7 +26,7 @@ public class GAgentExecutor : IGAgentExecutor
     public async Task<string> ExecuteGAgentEventHandler(IGAgent gAgent, EventBase @event)
     {
         var resultGAgent = await _gAgentFactory.GetGAgentAsync<IResultGAgent>();
-        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<Core.Abstractions.IPublishingGAgent>();
 
         var executionId = Guid.NewGuid().ToString();
 
