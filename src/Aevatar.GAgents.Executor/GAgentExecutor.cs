@@ -26,7 +26,6 @@ public class GAgentExecutor : IGAgentExecutor
     public async Task<string> ExecuteGAgentEventHandler(IGAgent gAgent, EventBase @event)
     {
         var resultGAgent = await _gAgentFactory.GetGAgentAsync<IResultGAgent>();
-        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
 
         var executionId = Guid.NewGuid().ToString();
 
@@ -47,7 +46,12 @@ public class GAgentExecutor : IGAgentExecutor
             await resultGAgent.SetExecutionContextAsync(executionId, AevatarCoreConstants.StreamProvider,
                 AevatarGAgentExecutorConstants.GAgentExecutorStreamNamespace);
 
-            await publishingGAgent.PublishEventAsync(@event, gAgent, resultGAgent);
+            // Subscribe ResultGAgent to the target GAgent to receive results
+            await gAgent.RegisterAsync(resultGAgent);
+            
+            // Publish the event directly to the target GAgent 
+            // The target GAgent will process it and publish any result events
+            await gAgent.PublishAsync(@event);
 
             return await resultTask.Task.WaitAsync(AevatarGAgentExecutorConstants.GAgentExecutorTimeout);
         }
@@ -58,6 +62,8 @@ public class GAgentExecutor : IGAgentExecutor
         finally
         {
             await subscription.UnsubscribeAsync();
+            // Unregister ResultGAgent from the target GAgent
+            await gAgent.UnregisterAsync(resultGAgent);
         }
     }
 

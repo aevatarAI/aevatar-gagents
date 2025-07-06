@@ -3,6 +3,7 @@ using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.GAgents.Executor;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
@@ -33,7 +34,8 @@ public class AevatarGAgentTestBaseModule : AbpModule
                 context.Services.GetRequiredService<IPluginGAgentManager>()));
         context.Services.AddSingleton<IGAgentService>(sp =>
             new GAgentService(context.Services.GetRequiredService<IGAgentManager>(),
-                context.Services.GetRequiredService<ClusterFixture>().Cluster.Client));
+                context.Services.GetRequiredService<ClusterFixture>().Cluster.Client,
+                context.Services.GetRequiredService<ILogger<GAgentService>>()));
         context.Services.AddSingleton<IGAgentExecutor>(sp =>
             new GAgentExecutor(context.Services.GetRequiredService<ClusterFixture>().Cluster.Client));
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentTestBaseModule>(); });

@@ -4,6 +4,7 @@ using Aevatar.GAgents.AIGAgent.Test.Modules;
 using Aevatar.GAgents.Executor;
 using Aevatar.GAgents.TestBase;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Modularity;
 
@@ -31,7 +32,7 @@ public class AevatarAIGAgentTestModule : AbpModule
         {
             var gAgentManager = provider.GetRequiredService<IGAgentManager>();
             var clusterClient = provider.GetRequiredService<IClusterClient>();
-            return new GAgentService(gAgentManager, clusterClient);
+            return new GAgentService(gAgentManager, clusterClient, provider.GetRequiredService<ILogger<GAgentService>>());
         });
 
         context.Services.AddSingleton<IGAgentFactory>(provider =>

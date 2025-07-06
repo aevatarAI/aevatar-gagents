@@ -49,6 +49,10 @@ public class GAgentService : IGAgentService
             {
                 try
                 {
+                    if (grainType.ToString()!.StartsWith("proxy"))
+                    {
+                        continue;
+                    }
                     var grainId = GrainId.Create(grainType, Guid.NewGuid().ToString());
                     // Create temporary instance to get event types
                     var tempGAgent = await _gAgentFactory.GetGAgentAsync(grainId);
