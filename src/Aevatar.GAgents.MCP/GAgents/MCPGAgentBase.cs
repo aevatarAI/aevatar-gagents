@@ -163,9 +163,16 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
             var client = await _mcpClientProvider.GetOrCreateClientAsync(serverConfig);
 
+            // 从工具名称中提取实际的工具名（去掉服务器前缀）
+            var actualToolName = @event.ToolName;
+            if (@event.ToolName.StartsWith($"{@event.ServerName}."))
+            {
+                actualToolName = @event.ToolName.Substring(@event.ServerName.Length + 1);
+            }
+
             // 使用配置的超时时间
             using var cts = new CancellationTokenSource(State.RequestTimeout);
-            var result = await client.CallToolAsync(@event.ToolName, @event.Arguments);
+            var result = await client.CallToolAsync(actualToolName, @event.Arguments);
 
             RaiseEvent(new RecordToolCallLogEvent
             {
