@@ -17,7 +17,6 @@ public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
 public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
     IMCPGAgent
 {
-
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("MCP GAgent for interacting with Model Context Protocol servers");
