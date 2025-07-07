@@ -161,8 +161,8 @@ public abstract partial class
 
                 foreach (var eventType in eventTypes)
                 {
-                    var functionName = eventType.Name;
-                    var functionDescription = $"Execute {eventType.Name} on {grainType} GAgent. {gAgentDescription}";
+                    var functionName = GenerateFunctionName(grainType, eventType);
+                    var functionDescription = GenerateFunctionDescription(grainType, eventType, gAgentDescription);
 
                     // Create the kernel function with tracking wrapper
                     var function = KernelFunctionFactory.CreateFromMethod(
@@ -222,11 +222,48 @@ public abstract partial class
                 // Create plugin for this GAgent
                 if (functions.Count > 0)
                 {
-                    var pluginName = $"GAgent_{grainType.ToString()?.Replace("/", "_").Replace(".", "_") ?? "Unknown"}";
+                    // Generate a short plugin name to avoid exceeding OpenAI's 64-char limit
+                    // when combined with function names
+                    var fullGrainType = grainType.ToString() ?? "Unknown";
+                    var cleanGrainType = fullGrainType.Replace("/", "_").Replace(".", "_");
+                    
+                    // Start with a short prefix
+                    var pluginName = "GA_";
+                    
+                    // Try to extract the most meaningful part of the grain type
+                    var parts = fullGrainType.Split('/');
+                    if (parts.Length > 1)
+                    {
+                        // Use the last part after '/' (e.g., "chatgagent" from "demo/chatgagent")
+                        pluginName += parts[parts.Length - 1].Replace(".", "_");
+                    }
+                    else
+                    {
+                        // Try to shorten long type names
+                        var typeParts = cleanGrainType.Split('_');
+                        if (typeParts.Length > 2)
+                        {
+                            // Take the last meaningful part
+                            pluginName += typeParts[typeParts.Length - 1];
+                        }
+                        else
+                        {
+                            pluginName += cleanGrainType;
+                        }
+                    }
+                    
+                    // Ensure plugin name is not too long (max 20 chars to leave room for function names)
+                    if (pluginName.Length > 20)
+                    {
+                        // Generate a hash for uniqueness
+                        var hash = Math.Abs(fullGrainType.GetHashCode()).ToString("X6");
+                        pluginName = $"GA_{hash}";
+                    }
+                    
                     kernel.Plugins.AddFromFunctions(pluginName, functions.DistinctBy(f => f.Name).ToList());
 
-                    Logger.LogInformation("Registered GAgent plugin '{PluginName}' with {ToolCount} tools",
-                        pluginName, functions.Count);
+                    Logger.LogInformation("Registered GAgent plugin '{PluginName}' with {ToolCount} tools (original: {OriginalType})",
+                        pluginName, functions.Count, grainType);
                 }
             }
             catch (Exception ex)
@@ -280,6 +317,14 @@ public abstract partial class
     {
         try
         {
+            // Remove existing plugin with the same name to avoid duplicates
+            var existingPlugin = kernel.Plugins.FirstOrDefault(p => p.Name == pluginName);
+            if (existingPlugin != null)
+            {
+                kernel.Plugins.Remove(existingPlugin);
+                Logger.LogDebug("Removed existing plugin '{PluginName}' before re-importing", pluginName);
+            }
+            
             // Use the modern API directly
             kernel.Plugins.AddFromObject(plugin, pluginName);
             Logger.LogInformation("Successfully imported plugin '{PluginName}' to kernel", pluginName);
@@ -312,13 +357,91 @@ public abstract partial class
     /// </summary>
     private string GenerateFunctionName(GrainType grainType, Type eventType)
     {
+        const int maxLength = 64;
+        // Reserve space for potential plugin prefix
+        // Plugin name format: "GAgent_{grainType}" could add extra length
+        const int reservedPrefixLength = 7; // "GAgent_" 
+        const int effectiveMaxLength = maxLength - reservedPrefixLength - 1; // -1 for potential dot separator
+
         // Clean the grain type string to make it a valid function name
         var cleanGrainType = grainType.ToString()!
             .Replace("/", "_")
             .Replace(".", "_")
             .Replace("-", "_");
 
-        return $"{cleanGrainType}_{eventType.Name}";
+        // Clean the event type name
+        var cleanEventType = eventType.Name
+            .Replace(".", "_")
+            .Replace("-", "_");
+
+        // Try just the event type name first (simplest and most readable)
+        if (cleanEventType.Length <= effectiveMaxLength)
+        {
+            Logger.LogInformation(
+                "Generated function name: {FunctionName} (length: {Length}) for GrainType: {GrainType}, EventType: {EventType}",
+                cleanEventType, cleanEventType.Length, grainType, eventType.Name);
+            return cleanEventType;
+        }
+
+        // Try with shortened grain type (last part only)
+        var parts = grainType.ToString()!.Split('/');
+        if (parts.Length > 1)
+        {
+            cleanGrainType = parts[parts.Length - 1]
+                .Replace(".", "_")
+                .Replace("-", "_");
+        }
+
+        // Try shortened grain type + event type
+        var shortGrainType = cleanGrainType.Length > 15 ? cleanGrainType.Substring(0, 15) : cleanGrainType;
+        var functionName = $"{shortGrainType}_{cleanEventType}";
+        
+        if (functionName.Length <= effectiveMaxLength)
+        {
+            Logger.LogInformation(
+                "Generated function name: {FunctionName} (length: {Length}) for GrainType: {GrainType}, EventType: {EventType}",
+                functionName, functionName.Length, grainType, eventType.Name);
+            return functionName;
+        }
+
+        // If still too long, we need to be more aggressive
+        // Calculate a stable hash for uniqueness
+        var fullName = $"{grainType}_{eventType.Name}";
+        var hash = Math.Abs(fullName.GetHashCode()).ToString("X8");
+
+        // Strategy 1: Try to keep some of event type with hash
+        var eventPart = cleanEventType.Length > 20 ? cleanEventType.Substring(0, 20) : cleanEventType;
+        functionName = $"{eventPart}_{hash}";
+
+        if (functionName.Length <= effectiveMaxLength)
+        {
+            Logger.LogInformation(
+                "Generated function name: {FunctionName} (length: {Length}) for GrainType: {GrainType}, EventType: {EventType}",
+                functionName, functionName.Length, grainType, eventType.Name);
+            return functionName;
+        }
+
+        // Strategy 2: Further shorten event type
+        eventPart = cleanEventType.Length > 10 ? cleanEventType.Substring(0, 10) : cleanEventType;
+        functionName = $"{eventPart}_{hash}";
+
+        if (functionName.Length <= effectiveMaxLength)
+        {
+            Logger.LogInformation(
+                "Generated function name: {FunctionName} (length: {Length}) for GrainType: {GrainType}, EventType: {EventType}",
+                functionName, functionName.Length, grainType, eventType.Name);
+            return functionName;
+        }
+
+        // Last resort: just use a prefix and hash
+        functionName = $"fn_{hash}";
+
+        Logger.LogInformation(
+            "Generated function name: {FunctionName} (length: {Length}) for GrainType: {GrainType}, EventType: {EventType}",
+            functionName, functionName.Length, grainType, eventType.Name);
+
+        // This should never exceed effectiveMaxLength (3 + 8 = 11 characters)
+        return functionName;
     }
 
     /// <summary>
@@ -327,6 +450,80 @@ public abstract partial class
     private string GenerateFunctionDescription(GrainType grainType, Type eventType, string gAgentDescription)
     {
         return $"Execute {eventType.Name} on {grainType} GAgent. {gAgentDescription}";
+    }
+
+    /// <summary>
+    /// Generates a safe function name for MCP tools that won't exceed 64 characters
+    /// </summary>
+    private string GenerateMCPFunctionName(string serverName, string toolName)
+    {
+        const int maxLength = 64;
+
+        // Clean names to make them valid function names
+        var cleanServerName = serverName
+            .Replace("/", "_")
+            .Replace(".", "_")
+            .Replace("-", "_");
+
+        var cleanToolName = toolName
+            .Replace("/", "_")
+            .Replace(".", "_")
+            .Replace("-", "_");
+
+        // Check if tool name already contains server name prefix
+        if (cleanToolName.StartsWith(cleanServerName + "_", StringComparison.OrdinalIgnoreCase))
+        {
+            // Tool name already has server prefix, use it as is
+            if (cleanToolName.Length <= maxLength)
+            {
+                Logger.LogDebug("MCP function name: {FunctionName} (length: {Length})",
+                    cleanToolName, cleanToolName.Length);
+                return cleanToolName;
+            }
+        }
+        else
+        {
+            // Try with server prefix
+            var functionName = $"{cleanServerName}_{cleanToolName}";
+            if (functionName.Length <= maxLength)
+            {
+                Logger.LogDebug("MCP function name: {FunctionName} (length: {Length})",
+                    functionName, functionName.Length);
+                return functionName;
+            }
+        }
+
+        // If too long, we need to shorten
+        var fullName = $"{serverName}_{toolName}";
+        var hash = Math.Abs(fullName.GetHashCode()).ToString("X8");
+
+        // Try to keep the tool name with a hash
+        if (cleanToolName.Length + hash.Length + 1 <= maxLength)
+        {
+            var shortened = $"{cleanToolName}_{hash}";
+            Logger.LogDebug("MCP function name (with hash): {FunctionName} (length: {Length})",
+                shortened, shortened.Length);
+            return shortened;
+        }
+
+        // Further shorten the tool name
+        var maxToolNameLength = maxLength - hash.Length - 5; // Reserve space for "mcp_" prefix and hash
+        if (maxToolNameLength > 0)
+        {
+            var shortenedToolName = cleanToolName.Length > maxToolNameLength
+                ? cleanToolName.Substring(0, maxToolNameLength)
+                : cleanToolName;
+            var shortened = $"mcp_{shortenedToolName}_{hash}";
+            Logger.LogDebug("MCP function name (shortened): {FunctionName} (length: {Length})",
+                shortened, shortened.Length);
+            return shortened;
+        }
+
+        // Last resort: just use mcp_ prefix and hash
+        var lastResort = $"mcp_{hash}";
+        Logger.LogDebug("MCP function name (last resort): {FunctionName} (length: {Length})",
+            lastResort, lastResort.Length);
+        return lastResort;
     }
 
     /// <summary>
@@ -570,7 +767,7 @@ public abstract partial class
             Logger.LogDebug("MCP tools are disabled");
             return;
         }
-        
+
         // For now, we need to get MCP servers from somewhere else
         // This is a placeholder - the actual implementation should get servers from configuration
         var mcpServers = new List<string> { "filesystem" }; // Example server
@@ -601,6 +798,10 @@ public abstract partial class
                                 var description = !string.IsNullOrEmpty(tool.Description)
                                     ? tool.Description
                                     : $"Tool {tool.Name} from MCP server {serverName}";
+
+                                // Generate a safe function name that won't exceed 64 characters
+                                var safeFunctionName = GenerateMCPFunctionName(serverName, tool.Name);
+                                Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", safeFunctionName, safeFunctionName.Length);
 
                                 // Create the kernel function with tracking wrapper
                                 var function = KernelFunctionFactory.CreateFromMethod(
@@ -652,7 +853,7 @@ public abstract partial class
                                             throw;
                                         }
                                     },
-                                    tool.Name,
+                                    safeFunctionName,
                                     description);
 
                                 // Set parameters metadata
@@ -661,7 +862,8 @@ public abstract partial class
                             }
 
                             // Create plugin for this MCP server
-                            var pluginName = $"MCP_{serverName}";
+                            // Clean server name to be a valid plugin name (only ASCII letters, digits, and underscores)
+                            var pluginName = $"MCP_{serverName.Replace("-", "_").Replace(".", "_").Replace(" ", "_")}";
                             kernel.Plugins.AddFromFunctions(pluginName, functions);
 
                             Logger.LogInformation("Registered MCP plugin '{PluginName}' with {ToolCount} tools",
@@ -726,16 +928,16 @@ public abstract partial class
 
                     // Get description
                     string? description = null;
-                    if (paramSchema.TryGetProperty("description", out var descProp))
+                    if (paramSchema.TryGetProperty("description", out var descJsonElement))
                     {
-                        description = descProp.GetString();
+                        description = descJsonElement.GetString();
                     }
 
                     // Get type
                     Type paramType = typeof(object);
-                    if (paramSchema.TryGetProperty("type", out var typeProp))
+                    if (paramSchema.TryGetProperty("type", out var typeJsonElement))
                     {
-                        var typeStr = typeProp.GetString();
+                        var typeStr = typeJsonElement.GetString();
                         if (typeStr != null)
                         {
                             paramType = typeStr switch
@@ -761,10 +963,10 @@ public abstract partial class
 
                     // Create parameter metadata with only the name constructor
                     var metadata = new KernelParameterMetadata(paramName);
-                    
+
                     // Use reflection to set properties to handle API changes
                     var metadataType = metadata.GetType();
-                    
+
                     // Try to set Description property if it exists
                     var descriptionProperty = metadataType.GetProperty("Description");
                     if (descriptionProperty != null && descriptionProperty.CanWrite)
@@ -778,7 +980,7 @@ public abstract partial class
                             Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
                         }
                     }
-                    
+
                     // Try to set ParameterType property if it exists
                     var typeProperty = metadataType.GetProperty("ParameterType");
                     if (typeProperty != null && typeProperty.CanWrite)
@@ -792,7 +994,7 @@ public abstract partial class
                             Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
                         }
                     }
-                    
+
                     // Try to set IsRequired property if it exists
                     var reqProp = metadataType.GetProperty("IsRequired");
                     if (reqProp != null && reqProp.CanWrite)
@@ -837,7 +1039,8 @@ public abstract partial class
     /// <summary>
     /// Sets the parameter metadata for a kernel function based on MCP parameters
     /// </summary>
-    private void SetKernelFunctionParametersFromMCPParameters(KernelFunction function, Dictionary<string, MCPParameterInfo> mcpParameters)
+    private void SetKernelFunctionParametersFromMCPParameters(KernelFunction function,
+        Dictionary<string, MCPParameterInfo> mcpParameters)
     {
         try
         {
@@ -866,10 +1069,10 @@ public abstract partial class
 
                 // Create parameter metadata with only the name constructor
                 var metadata = new KernelParameterMetadata(paramName);
-                
+
                 // Use reflection to set properties to handle API changes
                 var metadataType = metadata.GetType();
-                
+
                 // Try to set Description property if it exists
                 var descriptionProperty = metadataType.GetProperty("Description");
                 if (descriptionProperty != null && descriptionProperty.CanWrite)
@@ -883,7 +1086,7 @@ public abstract partial class
                         Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
                     }
                 }
-                
+
                 // Try to set ParameterType property if it exists
                 var typeProperty = metadataType.GetProperty("ParameterType");
                 if (typeProperty != null && typeProperty.CanWrite)
@@ -897,7 +1100,7 @@ public abstract partial class
                         Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
                     }
                 }
-                
+
                 // Try to set IsRequired property if it exists
                 var reqProp = metadataType.GetProperty("IsRequired");
                 if (reqProp != null && reqProp.CanWrite)
@@ -959,10 +1162,10 @@ public abstract partial class
 
                 // Create parameter metadata with only the name constructor
                 var metadata = new KernelParameterMetadata(property.Name);
-                
+
                 // Use reflection to set properties to handle API changes
                 var metadataType = metadata.GetType();
-                
+
                 // Try to set Description property if it exists
                 var descriptionProperty = metadataType.GetProperty("Description");
                 if (descriptionProperty != null && descriptionProperty.CanWrite)
@@ -976,7 +1179,7 @@ public abstract partial class
                         Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
                     }
                 }
-                
+
                 // Try to set ParameterType property if it exists
                 var typeProperty = metadataType.GetProperty("ParameterType");
                 if (typeProperty != null && typeProperty.CanWrite)
@@ -990,7 +1193,7 @@ public abstract partial class
                         Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
                     }
                 }
-                
+
                 // Try to set IsRequired property if it exists
                 var reqProp = metadataType.GetProperty("IsRequired");
                 if (reqProp != null && reqProp.CanWrite)
@@ -1145,7 +1348,7 @@ public abstract partial class
             var grainType = GrainType.Create($"mcpgagent/{serverName}");
             var agentId = Guid.NewGuid();
             var grain = GrainFactory.GetGrain<IMCPGAgent>(agentId, grainType.ToString());
-            
+
             return grain;
         }
         catch (Exception ex)
@@ -1154,7 +1357,7 @@ public abstract partial class
             return null;
         }
     }
-    
+
     /// <summary>
     /// Calls an MCP tool
     /// </summary>
@@ -1167,7 +1370,7 @@ public abstract partial class
             {
                 throw new InvalidOperationException($"Failed to get MCP GAgent for server: {serverName}");
             }
-            
+
             // Convert JsonElement parameters to dictionary
             var arguments = new Dictionary<string, object>();
             if (parameters.ValueKind == JsonValueKind.Object)
@@ -1177,16 +1380,16 @@ public abstract partial class
                     arguments[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
                 }
             }
-            
+
             var toolResponse = await mcpGAgent.CallToolAsync(serverName, toolName, arguments);
             var result = toolResponse?.Result;
-            
+
             // Convert JsonElement to basic types for Orleans serialization
             if (result is JsonElement jsonResult)
             {
                 return ConvertJsonElementToBasicType(jsonResult);
             }
-            
+
             return result ?? new Dictionary<string, object> { ["result"] = "Success" };
         }
         catch (Exception ex)
@@ -1195,7 +1398,7 @@ public abstract partial class
             throw;
         }
     }
-    
+
     /// <summary>
     /// Converts a JsonElement to basic types for Orleans serialization
     /// </summary>
@@ -1223,6 +1426,7 @@ public abstract partial class
                 {
                     list.Add(ConvertJsonElementToBasicType(item));
                 }
+
                 return list;
             case JsonValueKind.Object:
                 var dict = new Dictionary<string, object>();
@@ -1230,6 +1434,7 @@ public abstract partial class
                 {
                     dict[property.Name] = ConvertJsonElementToBasicType(property.Value);
                 }
+
                 return dict;
             default:
                 return element.ToString();

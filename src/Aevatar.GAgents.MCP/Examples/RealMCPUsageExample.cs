@@ -78,13 +78,13 @@ public class RealMCPUsageExample
             EnableToolDiscovery = true,
             Servers = new List<MCPServerConfig>
             {
-                                    new MCPServerConfig
-                    {
-                        ServerName = "filesystem",
-                        Command = "npx",
-                        Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" },
-                        Environment = new Dictionary<string, string>()
-                    }
+                new MCPServerConfig
+                {
+                    ServerName = "filesystem",
+                    Command = "npx",
+                    Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" },
+                    Environment = new Dictionary<string, string>()
+                }
             }
         };
 
@@ -97,22 +97,22 @@ public class RealMCPUsageExample
             ServerName = "filesystem"
         };
 
-                                // NOTE: The actual usage would involve:
-            // 1. Creating event handler GAgents to receive responses
-            // 2. Using the GAgent's event system to publish events
-            // 3. Waiting for responses through the event handlers
-            
-            // For example, to discover tools:
-            // - Create a MCPDiscoverToolsEvent 
-            // - Publish it through the GAgent's event system
-            // - Handle the MCPToolsDiscoveredEvent response
-            
-            // To call a tool:
-            // - Create a MCPToolCallEvent with server name, tool name, and arguments
-            // - Publish it through the GAgent's event system  
-            // - Handle the MCPToolResponseEvent response
-            
-            logger.LogInformation("MCP GAgent configured with filesystem server");
+        // NOTE: The actual usage would involve:
+        // 1. Creating event handler GAgents to receive responses
+        // 2. Using the GAgent's event system to publish events
+        // 3. Waiting for responses through the event handlers
+
+        // For example, to discover tools:
+        // - Create a MCPDiscoverToolsEvent 
+        // - Publish it through the GAgent's event system
+        // - Handle the MCPToolsDiscoveredEvent response
+
+        // To call a tool:
+        // - Create a MCPToolCallEvent with server name, tool name, and arguments
+        // - Publish it through the GAgent's event system  
+        // - Handle the MCPToolResponseEvent response
+
+        logger.LogInformation("MCP GAgent configured with filesystem server");
     }
 
     private static async Task UseMultipleMCPServers(IGAgentFactory gAgentFactory, ILogger logger)
@@ -124,46 +124,46 @@ public class RealMCPUsageExample
             EnableToolDiscovery = true,
             Servers = new List<MCPServerConfig>
             {
-                                    new MCPServerConfig
-                    {
-                        ServerName = "filesystem",
-                        Command = "npx",
-                        Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" }
-                    },
-                    new MCPServerConfig
-                    {
-                        ServerName = "time",
-                        Command = "npx",
-                        Args = new List<string> { "-y", "@modelcontextprotocol/server-time" }
-                    },
-                    new MCPServerConfig
-                    {
-                        ServerName = "memory",
-                        Command = "npx",
-                        Args = new List<string> { "-y", "@modelcontextprotocol/server-memory" }
-                    }
+                new MCPServerConfig
+                {
+                    ServerName = "filesystem",
+                    Command = "npx",
+                    Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" }
+                },
+                new MCPServerConfig
+                {
+                    ServerName = "time",
+                    Command = "npx",
+                    Args = new List<string> { "-y", "@modelcontextprotocol/server-time" }
+                },
+                new MCPServerConfig
+                {
+                    ServerName = "memory",
+                    Command = "npx",
+                    Args = new List<string> { "-y", "@modelcontextprotocol/server-memory" }
+                }
             }
         };
 
-                    var mcpGAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
+        var mcpGAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
 
-            // Get available tools from all servers
-            var availableTools = await mcpGAgent.GetAvailableToolsAsync();
-            logger.LogInformation("Available tools across all servers:");
-            foreach (var tool in availableTools)
-            {
-                logger.LogInformation("  - {Server}.{Tool}: {Description}", 
-                    tool.Value.ServerName, tool.Key, tool.Value.Description);
-            }
+        // Get available tools from all servers
+        var availableTools = await mcpGAgent.GetAvailableToolsAsync();
+        logger.LogInformation("Available tools across all servers:");
+        foreach (var tool in availableTools)
+        {
+            logger.LogInformation("  - {Server}.{Tool}: {Description}",
+                tool.Value.ServerName, tool.Key, tool.Value.Description);
+        }
 
-            // Get server states  
-            var serverStates = await mcpGAgent.GetServerStatesAsync();
-            logger.LogInformation("Server states:");
-            foreach (var state in serverStates)
-            {
-                logger.LogInformation("  - {Server}: Connected={Connected}", 
-                    state.ServerName, state.IsConnected);
-            }
+        // Get server states  
+        var serverStates = await mcpGAgent.GetServerStatesAsync();
+        logger.LogInformation("Server states:");
+        foreach (var state in serverStates)
+        {
+            logger.LogInformation("  - {Server}: Connected={Connected}",
+                state.ServerName, state.IsConnected);
+        }
     }
 
     private static async Task UseHttpMCPServer(IGAgentFactory gAgentFactory, ILogger logger)
@@ -176,120 +176,120 @@ public class RealMCPUsageExample
             RequestTimeout = TimeSpan.FromSeconds(30),
             Servers = new List<MCPServerConfig>
             {
-                                    new MCPServerConfig
+                new MCPServerConfig
+                {
+                    ServerName = "custom-api",
+                    Command = "http://localhost:3000/mcp", // For HTTP servers, command is the URL
+                    Args = new List<string>(),
+                    Environment = new Dictionary<string, string>
                     {
-                        ServerName = "custom-api",
-                        Command = "http://localhost:3000/mcp",  // For HTTP servers, command is the URL
-                        Args = new List<string>(),
-                        Environment = new Dictionary<string, string>
-                        {
-                            ["API_KEY"] = "your-api-key"
-                        }
+                        ["API_KEY"] = "your-api-key"
                     }
+                }
             }
         };
 
-                    var mcpGAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
+        var mcpGAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
 
-            logger.LogInformation("HTTP-based MCP server configured");
-            
-            // The HTTP server would expose tools via the MCP protocol
-            // Tools can be discovered and called just like with stdio servers
-            var availableTools = await mcpGAgent.GetAvailableToolsAsync();
-            
-            logger.LogInformation("Available tools from HTTP server: {Count}", availableTools.Count);
+        logger.LogInformation("HTTP-based MCP server configured");
+
+        // The HTTP server would expose tools via the MCP protocol
+        // Tools can be discovered and called just like with stdio servers
+        var availableTools = await mcpGAgent.GetAvailableToolsAsync();
+
+        logger.LogInformation("Available tools from HTTP server: {Count}", availableTools.Count);
     }
 }
 
-    // Example response handlers
-    [GenerateSerializer]
-    public class DiscoveryHandlerState : StateBase
+// Example response handlers
+[GenerateSerializer]
+public class DiscoveryHandlerState : StateBase
+{
+    [Id(0)] public int EventCount { get; set; }
+}
+
+[GenerateSerializer]
+public class DiscoveryHandlerStateLogEvent : StateLogEventBase<DiscoveryHandlerStateLogEvent>;
+
+[GAgent("discovery_response", "sample")]
+public class DiscoveryResponseHandler : GAgentBase<DiscoveryHandlerState, DiscoveryHandlerStateLogEvent>
+{
+    private readonly ILogger<DiscoveryResponseHandler> _logger;
+
+    public DiscoveryResponseHandler(ILogger<DiscoveryResponseHandler> logger)
     {
-        [Id(0)] public int EventCount { get; set; }
+        _logger = logger;
     }
-    
-    [GenerateSerializer]
-    public class DiscoveryHandlerStateLogEvent : StateLogEventBase<DiscoveryHandlerStateLogEvent>;
-    
-    [GAgent]
-    public class DiscoveryResponseHandler : GAgentBase<DiscoveryHandlerState, DiscoveryHandlerStateLogEvent>
+
+    public override Task<string> GetDescriptionAsync()
     {
-        private readonly ILogger<DiscoveryResponseHandler> _logger;
+        return Task.FromResult("Handles MCP tool discovery responses");
+    }
 
-        public DiscoveryResponseHandler(ILogger<DiscoveryResponseHandler> logger)
-        {
-            _logger = logger;
-        }
-
-        public override Task<string> GetDescriptionAsync()
-        {
-            return Task.FromResult("Handles MCP tool discovery responses");
-        }
-
-        [EventHandler]
-        public async Task HandleToolsDiscovered(MCPToolsDiscoveredEvent @event)
+    [EventHandler]
+    public async Task HandleToolsDiscovered(MCPToolsDiscoveredEvent @event)
     {
-        _logger.LogInformation("Discovered {Count} tools from {Server}:", 
+        _logger.LogInformation("Discovered {Count} tools from {Server}:",
             @event.Tools.Count, @event.ServerName);
-            
+
         foreach (var tool in @event.Tools)
         {
-            _logger.LogInformation("  - {Name}: {Description}", 
+            _logger.LogInformation("  - {Name}: {Description}",
                 tool.Name, tool.Description);
-                
-                            if (tool.Parameters.Count > 0)
+
+            if (tool.Parameters.Count > 0)
+            {
+                _logger.LogInformation("    Parameters:");
+                foreach (var param in tool.Parameters)
                 {
-                    _logger.LogInformation("    Parameters:");
-                    foreach (var param in tool.Parameters)
-                    {
-                        _logger.LogInformation("      - {Name} ({Type}): {Description}", 
-                            param.Key, param.Value.Type, param.Value.Description);
-                    }
+                    _logger.LogInformation("      - {Name} ({Type}): {Description}",
+                        param.Key, param.Value.Type, param.Value.Description);
                 }
+            }
         }
-            
+
         await Task.CompletedTask;
     }
 }
 
-    [GenerateSerializer]
-    public class ToolHandlerState : StateBase
+[GenerateSerializer]
+public class ToolHandlerState : StateBase
+{
+    [Id(0)] public int EventCount { get; set; }
+}
+
+[GenerateSerializer]
+public class ToolHandlerStateLogEvent : StateLogEventBase<ToolHandlerStateLogEvent>;
+
+[GAgent("tool_response", "sample")]
+public class ToolResponseHandler : GAgentBase<ToolHandlerState, ToolHandlerStateLogEvent>
+{
+    private readonly ILogger<ToolResponseHandler> _logger;
+
+    public ToolResponseHandler(ILogger<ToolResponseHandler> logger)
     {
-        [Id(0)] public int EventCount { get; set; }
+        _logger = logger;
     }
-    
-    [GenerateSerializer]
-    public class ToolHandlerStateLogEvent : StateLogEventBase<ToolHandlerStateLogEvent>;
-    
-    [GAgent]
-    public class ToolResponseHandler : GAgentBase<ToolHandlerState, ToolHandlerStateLogEvent>
+
+    public override Task<string> GetDescriptionAsync()
     {
-        private readonly ILogger<ToolResponseHandler> _logger;
+        return Task.FromResult("Handles MCP tool call responses");
+    }
 
-        public ToolResponseHandler(ILogger<ToolResponseHandler> logger)
-        {
-            _logger = logger;
-        }
-
-        public override Task<string> GetDescriptionAsync()
-        {
-            return Task.FromResult("Handles MCP tool call responses");
-        }
-
-        [EventHandler]
-        public async Task HandleToolResponse(MCPToolResponseEvent @event)
+    [EventHandler]
+    public async Task HandleToolResponse(MCPToolResponseEvent @event)
     {
         if (@event.Success)
         {
-            _logger.LogInformation("Tool '{Tool}' on '{Server}' succeeded with result: {Result}", 
+            _logger.LogInformation("Tool '{Tool}' on '{Server}' succeeded with result: {Result}",
                 @event.ToolName, @event.ServerName, @event.Result);
         }
         else
         {
-                            _logger.LogError("Tool '{Tool}' on '{Server}' failed with error: {Error}", 
-                    @event.ToolName, @event.ServerName, @event.ErrorMessage);
+            _logger.LogError("Tool '{Tool}' on '{Server}' failed with error: {Error}",
+                @event.ToolName, @event.ServerName, @event.ErrorMessage);
         }
-            
+
         await Task.CompletedTask;
     }
 }

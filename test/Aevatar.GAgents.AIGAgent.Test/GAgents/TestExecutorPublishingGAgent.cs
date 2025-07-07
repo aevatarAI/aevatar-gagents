@@ -16,7 +16,7 @@ public class TestExecutorPublishingGAgentState : StateBase
 [GenerateSerializer]
 public class TestExecutorPublishingGAgentStateLogEvent : StateLogEventBase<TestExecutorPublishingGAgentStateLogEvent>;
 
-[GAgent]
+[GAgent("executor_publishing", "test")]
 public class TestExecutorPublishingGAgent : GAgentBase<TestExecutorPublishingGAgentState, TestExecutorPublishingGAgentStateLogEvent>, Aevatar.GAgents.Basic.PublishGAgent.IPublishingGAgent
 {
     private readonly ILogger<TestExecutorPublishingGAgent> _logger;

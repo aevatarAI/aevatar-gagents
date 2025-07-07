@@ -152,7 +152,9 @@ public abstract partial class
                 {
                     // Semantic Kernel function names can only contain ASCII letters, digits, and underscores
                     var mcpToolFullName = $"{serverName}.{toolName}";
-                    var kernelFunctionName = $"{serverName}_{toolName}".Replace(".", "_").Replace("-", "_");
+                    // Use GenerateMCPFunctionName to ensure the name doesn't exceed 64 characters
+                    var kernelFunctionName = GenerateMCPFunctionName(serverName, toolName);
+                    Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", kernelFunctionName, kernelFunctionName.Length);
 
                     // Store the mapping for later use
                     _toolNameMapping[kernelFunctionName] = mcpToolFullName;
@@ -171,8 +173,19 @@ public abstract partial class
 
                 if (functions.Any())
                 {
-                    kernel.Plugins.AddFromFunctions(serverName, functions);
-                    Logger.LogInformation($"Registered {functions.Count} tools from MCP server {serverName}");
+                    // Clean server name to be a valid plugin name (only ASCII letters, digits, and underscores)
+                    var pluginName = $"MCP_{serverName.Replace("-", "_").Replace(".", "_").Replace(" ", "_")}";
+                    
+                    // Remove existing plugin with the same name to avoid duplicates
+                    var existingPlugin = kernel.Plugins.FirstOrDefault(p => p.Name == pluginName);
+                    if (existingPlugin != null)
+                    {
+                        kernel.Plugins.Remove(existingPlugin);
+                        Logger.LogDebug("Removed existing MCP plugin '{PluginName}' before re-registering", pluginName);
+                    }
+                    
+                    kernel.Plugins.AddFromFunctions(pluginName, functions);
+                    Logger.LogInformation($"Registered {functions.Count} tools from MCP server {serverName} as plugin {pluginName}");
                 }
             }
             catch (Exception ex)

@@ -37,7 +37,7 @@ public class MockExecutorTestResponseEvent : EventBase
 public interface IMockExecutorGAgent : IStateGAgent<MockExecutorGAgentState>;
 
 // Mock GAgent implementation
-[GAgent]
+[GAgent("mock_executor", "test")]
 public class MockExecutorGAgent : GAgentBase<MockExecutorGAgentState, MockExecutorGAgentStateLogEvent>,
     IMockExecutorGAgent
 {

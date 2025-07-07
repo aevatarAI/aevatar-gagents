@@ -37,7 +37,7 @@ public interface IResultGAgent : IStateGAgent<ResultGAgentState>
     Task SetExecutionContextAsync(string executionId, string streamProvider, string streamNamespace);
 }
 
-[GAgent]
+[GAgent("result", "aevatar")]
 public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEvent>,
     IResultGAgent
 {

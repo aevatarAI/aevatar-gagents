@@ -13,7 +13,7 @@ namespace Aevatar.GAgents.MCP.GAgents;
 [GenerateSerializer]
 public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
 
-[GAgent]
+[GAgent("mcp", "aevatar")]
 public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
     IMCPGAgent
 {
