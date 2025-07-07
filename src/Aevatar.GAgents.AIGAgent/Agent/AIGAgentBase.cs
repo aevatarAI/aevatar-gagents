@@ -100,6 +100,25 @@ public abstract partial class
             RaiseEvent(new SetAllowedGAgentTypesStateLogEvent
                 { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
         }
+        
+        // Handle MCP tools configuration
+        if (initializeDto.EnableMCPTools)
+        {
+            RaiseEvent(new SetEnableMCPToolsStateLogEvent { EnableMCPTools = true });
+        }
+        
+        // Configure MCP servers if provided
+        if (initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
+        {
+            // This will be handled after brain initialization
+            State.EnableMCPTools = true;
+        }
+        
+        // Configure selected GAgents if provided
+        if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Any())
+        {
+            State.SelectedGAgents = initializeDto.SelectedGAgents;
+        }
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
         {
@@ -118,6 +137,12 @@ public abstract partial class
             if (result && State.EnableGAgentTools)
             {
                 await RegisterGAgentsAsToolsAsync();
+            }
+            
+            // Configure MCP servers if provided in initialization
+            if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
+            {
+                await ConfigureMCPServersAsync(initializeDto.MCPServers);
             }
 
             return result;
@@ -475,6 +500,12 @@ public abstract partial class
                 try
                 {
                     await InitializeBrainAsync(config, State.PromptTemplate);
+
+                    // Register tools after brain initialization if enabled
+                    if (State.EnableGAgentTools || State.EnableMCPTools)
+                    {
+                        await UpdateKernelWithAllToolsAsync();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -532,6 +563,18 @@ public abstract partial class
                 break;
             case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
                 State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
+                break;
+            case ConfigureMCPServersStateLogEvent configureMCPServersEvent:
+                State.MCPAgents = configureMCPServersEvent.MCPServers;
+                break;
+            case SetEnableMCPToolsStateLogEvent setEnableMCPToolsEvent:
+                State.EnableMCPTools = setEnableMCPToolsEvent.EnableMCPTools;
+                break;
+            case SetRegisteredMCPFunctionsStateLogEvent setRegisteredMCPFunctionsEvent:
+                State.RegisteredMCPFunctions = setRegisteredMCPFunctionsEvent.RegisteredFunctions;
+                break;
+            case SetSelectedGAgentsStateLogEvent setSelectedGAgentsEvent:
+                State.SelectedGAgents = setSelectedGAgentsEvent.SelectedGAgents;
                 break;
         }
 

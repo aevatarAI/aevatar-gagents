@@ -69,6 +69,10 @@ public class StdioMCPClient : IMCPClient
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonElement>> _pendingRequests = new();
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _readTask;
+    
+    // Configurable timeouts
+    private readonly TimeSpan _processStartTimeout = TimeSpan.FromMinutes(2); // 2 minutes for npx to download
+    private readonly TimeSpan _requestTimeout = TimeSpan.FromSeconds(60); // 60 seconds for regular requests
 
     public bool IsConnected => _isConnected;
 
@@ -100,6 +104,15 @@ public class StdioMCPClient : IMCPClient
                 CreateNoWindow = true
             };
 
+            // Add environment variables if specified
+            if (_config.Environment != null)
+            {
+                foreach (var kvp in _config.Environment)
+                {
+                    startInfo.Environment[kvp.Key] = kvp.Value;
+                }
+            }
+
             _process = Process.Start(startInfo);
             if (_process == null)
             {
@@ -112,6 +125,29 @@ public class StdioMCPClient : IMCPClient
             // Start reading responses
             _cancellationTokenSource = new CancellationTokenSource();
             _readTask = Task.Run(() => ReadResponsesAsync(_cancellationTokenSource.Token));
+            
+            // Start reading stderr to log any errors
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!_process.StandardError.EndOfStream)
+                    {
+                        var line = await _process.StandardError.ReadLineAsync();
+                        if (!string.IsNullOrEmpty(line))
+                        {
+                            _logger.LogWarning("MCP server {ServerName} stderr: {Message}", _config.ServerName, line);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error reading stderr for {ServerName}", _config.ServerName);
+                }
+            });
+
+            // Wait a bit for the process to start
+            await Task.Delay(1000);
 
             // Send initialize request
             var initRequest = new
@@ -135,7 +171,7 @@ public class StdioMCPClient : IMCPClient
                 id = NextRequestId()
             };
 
-            var response = await SendRequestAsync(initRequest);
+            var response = await SendRequestAsync(initRequest, _processStartTimeout);
             if (response.TryGetProperty("serverInfo", out var serverInfo))
             {
                 _isConnected = true;
@@ -337,6 +373,11 @@ public class StdioMCPClient : IMCPClient
 
     private async Task<JsonElement> SendRequestAsync(object request)
     {
+        return await SendRequestAsync(request, _requestTimeout);
+    }
+
+    private async Task<JsonElement> SendRequestAsync(object request, TimeSpan timeout)
+    {
         var requestId = GetRequestId(request);
         var tcs = new TaskCompletionSource<JsonElement>();
         _pendingRequests[requestId] = tcs;
@@ -349,8 +390,8 @@ public class StdioMCPClient : IMCPClient
             await _stdin!.WriteLineAsync(json);
             await _stdin.FlushAsync();
 
-            // Wait for response with timeout
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            // Wait for response with configurable timeout
+            using var cts = new CancellationTokenSource(timeout);
             using var registration = cts.Token.Register(() => tcs.TrySetCanceled());
             
             var response = await tcs.Task;

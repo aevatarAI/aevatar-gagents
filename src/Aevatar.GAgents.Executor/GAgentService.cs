@@ -49,7 +49,7 @@ public class GAgentService : IGAgentService
             {
                 try
                 {
-                    if (grainType.ToString()!.StartsWith("proxy"))
+                    if (grainType.ToString()!.StartsWith("proxy") || grainType.ToString()!.StartsWith("Aevatar.Core.ArtifactGAgent"))
                     {
                         continue;
                     }
