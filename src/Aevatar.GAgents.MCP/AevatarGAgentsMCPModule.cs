@@ -26,6 +26,9 @@ public class AevatarGAgentsMCPModule : AbpModule
         //    context.Services.TryAddSingleton<IMCPClientProvider, StdioMCPClientProvider>();
         //
         // 2. HTTP-based provider only:
-        //    context.Services.TryAddSingleton<IMCPClientProvider, RealMCPClientProvider>();
+        //    context.Services.TryAddSingleton<IMCPClientProvider, HttpMCPClientProvider>();
+        //
+        // 3. SSE-based provider only:
+        //    context.Services.TryAddSingleton<IMCPClientProvider, SSEMCPClientProvider>();
     }
 }

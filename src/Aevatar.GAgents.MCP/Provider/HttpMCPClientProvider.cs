@@ -8,15 +8,15 @@ using Microsoft.Extensions.Logging;
 namespace Aevatar.GAgents.MCP.Provider;
 
 /// <summary>
-/// Real implementation of MCP client provider using JSON-RPC over HTTP
+/// HTTP implementation of MCP client provider using JSON-RPC over HTTP
 /// </summary>
-public class RealMCPClientProvider : IMCPClientProvider
+public class HttpMCPClientProvider : IMCPClientProvider
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<RealMCPClientProvider> _logger;
-    private readonly Dictionary<string, RealMCPClient> _clients = new();
+    private readonly ILogger<HttpMCPClientProvider> _logger;
+    private readonly Dictionary<string, HttpMCPClient> _clients = new();
 
-    public RealMCPClientProvider(HttpClient httpClient, ILogger<RealMCPClientProvider> logger)
+    public HttpMCPClientProvider(HttpClient httpClient, ILogger<HttpMCPClientProvider> logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -29,7 +29,7 @@ public class RealMCPClientProvider : IMCPClientProvider
             return Task.FromResult<IMCPClient>(existingClient);
         }
 
-        var client = new RealMCPClient(config, _httpClient, _logger);
+        var client = new HttpMCPClient(config, _httpClient, _logger);
         _clients[config.ServerName] = client;
             
         return Task.FromResult<IMCPClient>(client);
@@ -55,9 +55,9 @@ public class RealMCPClientProvider : IMCPClientProvider
 }
 
 /// <summary>
-/// Real MCP client implementation using JSON-RPC over HTTP
+/// HTTP MCP client implementation using JSON-RPC over HTTP
 /// </summary>
-public class RealMCPClient : IMCPClient
+public class HttpMCPClient : IMCPClient
 {
     private readonly MCPServerConfig _config;
     private readonly HttpClient _httpClient;
@@ -71,7 +71,7 @@ public class RealMCPClient : IMCPClient
 
     public event EventHandler<MCPConnectionStatusEventArgs>? ConnectionStatusChanged;
 
-    public RealMCPClient(MCPServerConfig config, HttpClient httpClient, ILogger logger)
+    public HttpMCPClient(MCPServerConfig config, HttpClient httpClient, ILogger logger)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
@@ -84,29 +84,7 @@ public class RealMCPClient : IMCPClient
         {
             // Build endpoint from command and args
             var endpoint = GetEndpointFromConfig(_config);
-            _logger.LogInformation("Connecting to MCP server {ServerName} at {Endpoint}", _config.ServerName, endpoint);
-
-            // Check if this is an SSE endpoint (temporary workaround)
-            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
-                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning("SSE transport detected for {ServerName}. SSE is not fully supported yet.", _config.ServerName);
-                
-                // For SSE endpoints, we'll mark as connected without initialization
-                // This is a temporary workaround until proper SSE support is implemented
-                _isConnected = true;
-                _serverInfo = new ServerInfo { Name = _config.ServerName, Version = "1.0.0" };
-                _serverCapabilities = new ServerCapabilities { Tools = new { } };
-                
-                ConnectionStatusChanged?.Invoke(this, new MCPConnectionStatusEventArgs
-                {
-                    ServerName = _config.ServerName,
-                    IsConnected = true,
-                    Message = "Connected (SSE mode - limited functionality)"
-                });
-                
-                return true;
-            }
+            _logger.LogInformation("Connecting to HTTP MCP server {ServerName} at {Endpoint}", _config.ServerName, endpoint);
 
             // Send initialize request
             var initRequest = new JsonRpcRequest
@@ -208,41 +186,6 @@ public class RealMCPClient : IMCPClient
         try
         {
             var endpoint = GetEndpointFromConfig(_config);
-            
-            // Check if this is an SSE endpoint (temporary workaround)
-            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
-                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogInformation("Returning predefined tools for SSE server {ServerName}", _config.ServerName);
-                
-                // Return predefined tools for zhipu web search
-                if (_config.ServerName.Contains("zhipu", StringComparison.OrdinalIgnoreCase) &&
-                    _config.ServerName.Contains("search", StringComparison.OrdinalIgnoreCase))
-                {
-                    return new List<MCPToolInfo>
-                    {
-                        new MCPToolInfo
-                        {
-                            Name = "web_search",
-                            Description = "Search the web using Zhipu AI's web search capabilities",
-                            Parameters = new Dictionary<string, MCPParameterInfo>
-                            {
-                                ["query"] = new MCPParameterInfo
-                                {
-                                    Name = "query",
-                                    Type = "string",
-                                    Description = "The search query",
-                                    Required = true
-                                }
-                            }
-                        }
-                    };
-                }
-                
-                // Return empty list for other SSE servers
-                return new List<MCPToolInfo>();
-            }
-
             var request = new JsonRpcRequest
             {
                 Method = "tools/list",
@@ -280,21 +223,6 @@ public class RealMCPClient : IMCPClient
         try
         {
             var endpoint = GetEndpointFromConfig(_config);
-            
-            // Check if this is an SSE endpoint (temporary workaround)
-            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
-                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning("SSE tool calling not fully implemented. Returning placeholder response for {ToolName}", toolName);
-                
-                // Return a placeholder response for SSE tools
-                return new MCPToolResult
-                {
-                    Success = false,
-                    ErrorMessage = $"SSE transport is not fully supported yet. Tool '{toolName}' cannot be called via SSE."
-                };
-            }
-
             var request = new JsonRpcRequest
             {
                 Method = "tools/call",

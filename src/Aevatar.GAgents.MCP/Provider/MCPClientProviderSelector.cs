@@ -10,19 +10,21 @@ public class MCPClientProviderSelector : IMCPClientProvider
 {
     private readonly ILogger<MCPClientProviderSelector> _logger;
     private readonly StdioMCPClientProvider _stdioProvider;
-    private readonly RealMCPClientProvider _httpProvider;
+    private readonly HttpMCPClientProvider _httpProvider;
+    private readonly SSEMCPClientProvider _sseProvider;
     private readonly Dictionary<string, IMCPClientProvider> _providerCache = new();
 
     public MCPClientProviderSelector(
         ILogger<MCPClientProviderSelector> logger,
         ILogger<StdioMCPClientProvider> stdioLogger,
-        ILogger<RealMCPClientProvider> httpLogger,
+        ILogger<HttpMCPClientProvider> httpLogger,
+        ILogger<SSEMCPClientProvider> sseLogger,
         HttpClient httpClient)
     {
         _logger = logger;
         _stdioProvider = new StdioMCPClientProvider(stdioLogger);
-        _httpProvider = new RealMCPClientProvider(httpClient, httpLogger);
-        // SSE support is handled by RealMCPClientProvider with special configuration
+        _httpProvider = new HttpMCPClientProvider(httpClient, httpLogger);
+        _sseProvider = new SSEMCPClientProvider(httpClient, sseLogger);
     }
 
     public Task<IMCPClient> GetOrCreateClientAsync(MCPServerConfig config)
@@ -67,12 +69,7 @@ public class MCPClientProviderSelector : IMCPClientProvider
             {
                 case "sse":
                     _logger.LogInformation("Using SSE provider for {ServerName}", config.ServerName);
-                    // SSE is handled by HTTP provider with special SSE URL
-                    if (!string.IsNullOrEmpty(config.Url))
-                    {
-                        config.Command = config.Url; // Use SSE URL as command
-                    }
-                    provider = _httpProvider;
+                    provider = _sseProvider;
                     break;
                 case "http":
                     _logger.LogInformation("Using HTTP provider for {ServerName}", config.ServerName);
@@ -101,18 +98,27 @@ public class MCPClientProviderSelector : IMCPClientProvider
     
     private IMCPClientProvider AutoDetectProvider(MCPServerConfig config)
     {
+        // Check URL first for SSE detection
+        var endpoint = !string.IsNullOrEmpty(config.Url) ? config.Url : config.Command;
+        
+        // If endpoint contains "/sse" or ends with "/events", use SSE provider
+        if (endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase) ||
+            endpoint.EndsWith("/events", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation("Auto-detected SSE provider for {ServerName}", config.ServerName);
+            return _sseProvider;
+        }
+        
         // If command starts with http:// or https://, use HTTP provider
-        if (config.Command.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            config.Command.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        if (endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogInformation("Auto-detected HTTP provider for {ServerName}", config.ServerName);
             return _httpProvider;
         }
-        else
-        {
-            // Otherwise use stdio provider for process-based servers
-            _logger.LogInformation("Auto-detected stdio provider for {ServerName}", config.ServerName);
-            return _stdioProvider;
-        }
+        
+        // Otherwise use stdio provider for process-based servers
+        _logger.LogInformation("Auto-detected stdio provider for {ServerName}", config.ServerName);
+        return _stdioProvider;
     }
 } 
