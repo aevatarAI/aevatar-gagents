@@ -488,7 +488,26 @@ public class StdioMCPClient : IMCPClient
     {
         if (schema.TryGetProperty("type", out var type))
         {
-            return type.GetString() ?? "any";
+            // Handle both string and array types
+            if (type.ValueKind == JsonValueKind.String)
+            {
+                return type.GetString() ?? "any";
+            }
+            else if (type.ValueKind == JsonValueKind.Array)
+            {
+                // For array types (e.g., ["string", "null"]), take the first non-null type
+                foreach (var item in type.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.String)
+                    {
+                        var typeStr = item.GetString();
+                        if (typeStr != null && typeStr != "null")
+                        {
+                            return typeStr;
+                        }
+                    }
+                }
+            }
         }
         return "any";
     }

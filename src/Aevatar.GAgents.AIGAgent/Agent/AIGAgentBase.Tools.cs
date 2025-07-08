@@ -457,73 +457,65 @@ public abstract partial class
     /// </summary>
     private string GenerateMCPFunctionName(string serverName, string toolName)
     {
-        const int maxLength = 64;
-
-        // Clean names to make them valid function names
+        // For MCP tools, we need to consider the total length including plugin name
+        // OpenAI checks the full "plugin.function" name which must be <= 64 chars
+        // Plugin name format: MCP_{serverName} (with replacements)
+        // So we need to ensure: len("MCP_" + serverName + "." + functionName) <= 64
+        
+        const int maxTotalLength = 64;
+        
+        // Clean server name for plugin name
         var cleanServerName = serverName
             .Replace("/", "_")
             .Replace(".", "_")
-            .Replace("-", "_");
-
+            .Replace("-", "_")
+            .Replace(" ", "_");
+            
+        // Calculate plugin name and its length
+        var pluginName = $"MCP_{cleanServerName}";
+        var pluginPrefixLength = pluginName.Length + 1; // +1 for the dot separator
+        
+        // Calculate max allowed function name length
+        var maxFunctionLength = maxTotalLength - pluginPrefixLength;
+        
+        // Clean tool name
         var cleanToolName = toolName
             .Replace("/", "_")
             .Replace(".", "_")
-            .Replace("-", "_");
-
-        // Check if tool name already contains server name prefix
-        if (cleanToolName.StartsWith(cleanServerName + "_", StringComparison.OrdinalIgnoreCase))
+            .Replace("-", "_")
+            .Replace(" ", "_");
+            
+        // If tool name is already short enough, use it
+        if (cleanToolName.Length <= maxFunctionLength)
         {
-            // Tool name already has server prefix, use it as is
-            if (cleanToolName.Length <= maxLength)
-            {
-                Logger.LogDebug("MCP function name: {FunctionName} (length: {Length})",
-                    cleanToolName, cleanToolName.Length);
-                return cleanToolName;
-            }
+            Logger.LogDebug("MCP function name: {FunctionName} (length: {Length}, total with plugin: {Total})",
+                cleanToolName, cleanToolName.Length, pluginPrefixLength + cleanToolName.Length);
+            return cleanToolName;
+        }
+        
+        // Tool name is too long, we need to shorten it
+        var hash = Math.Abs($"{serverName}_{toolName}".GetHashCode()).ToString("X8");
+        
+        // Try to keep some meaningful part of the tool name
+        var hashLength = hash.Length + 1; // +1 for underscore
+        var maxMeaningfulLength = maxFunctionLength - hashLength;
+        
+        if (maxMeaningfulLength > 10) // Keep at least 10 chars of the tool name
+        {
+            var shortenedToolName = cleanToolName.Substring(0, maxMeaningfulLength);
+            var shortened = $"{shortenedToolName}_{hash}";
+            Logger.LogWarning("MCP tool '{ToolName}' shortened to '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
+                toolName, shortened, $"{pluginName}.{shortened}", pluginPrefixLength + shortened.Length);
+            return shortened;
         }
         else
         {
-            // Try with server prefix
-            var functionName = $"{cleanServerName}_{cleanToolName}";
-            if (functionName.Length <= maxLength)
-            {
-                Logger.LogDebug("MCP function name: {FunctionName} (length: {Length})",
-                    functionName, functionName.Length);
-                return functionName;
-            }
-        }
-
-        // If too long, we need to shorten
-        var fullName = $"{serverName}_{toolName}";
-        var hash = Math.Abs(fullName.GetHashCode()).ToString("X8");
-
-        // Try to keep the tool name with a hash
-        if (cleanToolName.Length + hash.Length + 1 <= maxLength)
-        {
-            var shortened = $"{cleanToolName}_{hash}";
-            Logger.LogDebug("MCP function name (with hash): {FunctionName} (length: {Length})",
-                shortened, shortened.Length);
+            // Very limited space, just use hash with prefix
+            var shortened = $"fn_{hash}";
+            Logger.LogWarning("MCP tool '{ToolName}' replaced with hash '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
+                toolName, shortened, $"{pluginName}.{shortened}", pluginPrefixLength + shortened.Length);
             return shortened;
         }
-
-        // Further shorten the tool name
-        var maxToolNameLength = maxLength - hash.Length - 5; // Reserve space for "mcp_" prefix and hash
-        if (maxToolNameLength > 0)
-        {
-            var shortenedToolName = cleanToolName.Length > maxToolNameLength
-                ? cleanToolName.Substring(0, maxToolNameLength)
-                : cleanToolName;
-            var shortened = $"mcp_{shortenedToolName}_{hash}";
-            Logger.LogDebug("MCP function name (shortened): {FunctionName} (length: {Length})",
-                shortened, shortened.Length);
-            return shortened;
-        }
-
-        // Last resort: just use mcp_ prefix and hash
-        var lastResort = $"mcp_{hash}";
-        Logger.LogDebug("MCP function name (last resort): {FunctionName} (length: {Length})",
-            lastResort, lastResort.Length);
-        return lastResort;
     }
 
     /// <summary>

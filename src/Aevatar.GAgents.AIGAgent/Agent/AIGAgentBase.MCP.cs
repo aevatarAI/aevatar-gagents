@@ -148,19 +148,22 @@ public abstract partial class
 
                 var functions = new List<KernelFunction>();
 
-                foreach (var (toolName, tool) in tools)
+                foreach (var (toolKey, tool) in tools)
                 {
-                    // Semantic Kernel function names can only contain ASCII letters, digits, and underscores
-                    var mcpToolFullName = $"{serverName}.{toolName}";
+                    // toolKey already contains serverName prefix (e.g., "mcp-server-weread.get_bookshelf")
+                    // Extract the actual tool name
+                    var actualToolName = tool.Name;
+                    var mcpToolFullName = toolKey; // Use the key as-is
+                    
                     // Use GenerateMCPFunctionName to ensure the name doesn't exceed 64 characters
-                    var kernelFunctionName = GenerateMCPFunctionName(serverName, toolName);
+                    var kernelFunctionName = GenerateMCPFunctionName(serverName, actualToolName);
                     Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", kernelFunctionName, kernelFunctionName.Length);
 
                     // Store the mapping for later use
                     _toolNameMapping[kernelFunctionName] = mcpToolFullName;
 
                     var function = KernelFunctionFactory.CreateFromMethod(
-                        async (KernelArguments args) => await CallMCPToolAsync(serverName, toolName, args),
+                        async (KernelArguments args) => await CallMCPToolAsync(serverName, actualToolName, args),
                         functionName: kernelFunctionName,
                         description: tool.Description,
                         parameters: ConvertMCPToKernelParameters(tool.Parameters)
