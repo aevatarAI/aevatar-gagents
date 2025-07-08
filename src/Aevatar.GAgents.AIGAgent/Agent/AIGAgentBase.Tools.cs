@@ -226,10 +226,10 @@ public abstract partial class
                     // when combined with function names
                     var fullGrainType = grainType.ToString() ?? "Unknown";
                     var cleanGrainType = fullGrainType.Replace("/", "_").Replace(".", "_").Replace("-", "_");
-                    
+
                     // Start with a short prefix
                     var pluginName = "GA_";
-                    
+
                     // Try to extract the most meaningful part of the grain type
                     var parts = fullGrainType.Split('/');
                     if (parts.Length > 1)
@@ -252,7 +252,7 @@ public abstract partial class
                             pluginName += cleanGrainType;
                         }
                     }
-                    
+
                     // Ensure plugin name is not too long (max 20 chars to leave room for function names)
                     if (pluginName.Length > 20)
                     {
@@ -261,29 +261,33 @@ public abstract partial class
                         using (var sha = System.Security.Cryptography.SHA256.Create())
                         {
                             var hash = sha.ComputeHash(hashBytes);
-                            var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_").Replace("+", "_");
+                            var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_")
+                                .Replace("+", "_");
                             pluginName = $"GA_{shortHash}";
                         }
                     }
-                    
+
                     // Check if plugin already exists and remove it
                     var existingPlugin = kernel.Plugins.FirstOrDefault(p => p.Name == pluginName);
                     if (existingPlugin != null)
                     {
                         kernel.Plugins.Remove(existingPlugin);
-                        Logger.LogDebug("Removed existing plugin '{PluginName}' before adding new functions", pluginName);
+                        Logger.LogDebug("Removed existing plugin '{PluginName}' before adding new functions",
+                            pluginName);
                     }
-                    
+
                     try
                     {
                         kernel.Plugins.AddFromFunctions(pluginName, functions.DistinctBy(f => f.Name).ToList());
-                        Logger.LogInformation("Registered GAgent plugin '{PluginName}' with {ToolCount} tools (original: {OriginalType})",
+                        Logger.LogInformation(
+                            "Registered GAgent plugin '{PluginName}' with {ToolCount} tools (original: {OriginalType})",
                             pluginName, functions.Count, grainType);
                     }
                     catch (ArgumentException ex) when (ex.Message.Contains("already been added"))
                     {
                         // This can happen in race conditions, log it but continue
-                        Logger.LogWarning("Plugin '{PluginName}' already exists (race condition), skipping registration for {GrainType}", 
+                        Logger.LogWarning(
+                            "Plugin '{PluginName}' already exists (race condition), skipping registration for {GrainType}",
                             pluginName, grainType);
                     }
                 }
@@ -346,7 +350,7 @@ public abstract partial class
                 kernel.Plugins.Remove(existingPlugin);
                 Logger.LogDebug("Removed existing plugin '{PluginName}' before re-importing", pluginName);
             }
-            
+
             // Use the modern API directly
             kernel.Plugins.AddFromObject(plugin, pluginName);
             Logger.LogInformation("Successfully imported plugin '{PluginName}' to kernel", pluginName);
@@ -417,7 +421,7 @@ public abstract partial class
         // Try shortened grain type + event type
         var shortGrainType = cleanGrainType.Length > 15 ? cleanGrainType.Substring(0, 15) : cleanGrainType;
         var functionName = $"{shortGrainType}_{cleanEventType}";
-        
+
         if (functionName.Length <= effectiveMaxLength)
         {
             Logger.LogInformation(
@@ -483,30 +487,30 @@ public abstract partial class
         // OpenAI checks the full "plugin.function" name which must be <= 64 chars
         // Plugin name format: MCP_{serverName} (with replacements)
         // So we need to ensure: len("MCP_" + serverName + "." + functionName) <= 64
-        
+
         const int maxTotalLength = 64;
-        
+
         // Clean server name for plugin name
         var cleanServerName = serverName
             .Replace("/", "_")
             .Replace(".", "_")
             .Replace("-", "_")
             .Replace(" ", "_");
-            
+
         // Calculate plugin name and its length
         var pluginName = $"MCP_{cleanServerName}";
         var pluginPrefixLength = pluginName.Length + 1; // +1 for the dot separator
-        
+
         // Calculate max allowed function name length
         var maxFunctionLength = maxTotalLength - pluginPrefixLength;
-        
+
         // Clean tool name
         var cleanToolName = toolName
             .Replace("/", "_")
             .Replace(".", "_")
             .Replace("-", "_")
             .Replace(" ", "_");
-            
+
         // If tool name is already short enough, use it
         if (cleanToolName.Length <= maxFunctionLength)
         {
@@ -514,19 +518,20 @@ public abstract partial class
                 cleanToolName, cleanToolName.Length, pluginPrefixLength + cleanToolName.Length);
             return cleanToolName;
         }
-        
+
         // Tool name is too long, we need to shorten it
         var hash = Math.Abs($"{serverName}_{toolName}".GetHashCode()).ToString("X8");
-        
+
         // Try to keep some meaningful part of the tool name
         var hashLength = hash.Length + 1; // +1 for underscore
         var maxMeaningfulLength = maxFunctionLength - hashLength;
-        
+
         if (maxMeaningfulLength > 10) // Keep at least 10 chars of the tool name
         {
             var shortenedToolName = cleanToolName.Substring(0, maxMeaningfulLength);
             var shortened = $"{shortenedToolName}_{hash}";
-            Logger.LogWarning("MCP tool '{ToolName}' shortened to '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
+            Logger.LogWarning(
+                "MCP tool '{ToolName}' shortened to '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
                 toolName, shortened, $"{pluginName}.{shortened}", pluginPrefixLength + shortened.Length);
             return shortened;
         }
@@ -534,7 +539,8 @@ public abstract partial class
         {
             // Very limited space, just use hash with prefix
             var shortened = $"fn_{hash}";
-            Logger.LogWarning("MCP tool '{ToolName}' replaced with hash '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
+            Logger.LogWarning(
+                "MCP tool '{ToolName}' replaced with hash '{FunctionName}' (plugin.function: {PluginFunction}, length: {Length})",
                 toolName, shortened, $"{pluginName}.{shortened}", pluginPrefixLength + shortened.Length);
             return shortened;
         }
@@ -669,10 +675,10 @@ public abstract partial class
 
             // Enable GAgent tools
             State.EnableGAgentTools = true;
-            
+
             // Register all available GAgents
             await RegisterGAgentsAsToolsAsync();
-            
+
             Logger.LogInformation("Successfully registered all available GAgent tools");
             return true;
         }
@@ -706,7 +712,7 @@ public abstract partial class
 
             // Update state with selected GAgents
             RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = selectedGAgents });
-            
+
             // Persist state changes
             await ConfirmEvents();
 
@@ -739,11 +745,11 @@ public abstract partial class
             Logger.LogInformation("Clearing all GAgent tools");
 
             // Clear selected GAgents
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = new List<GrainType>() });
-            
+            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = [] });
+
             // Clear registered functions
-            RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent { RegisteredFunctions = new List<string>() });
-            
+            RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent { RegisteredFunctions = [] });
+
             // Persist state changes
             await ConfirmEvents();
 
@@ -752,7 +758,8 @@ public abstract partial class
             if (kernel != null)
             {
                 // Remove all GAgent plugins
-                var gagentPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("GA_") || p.Name == "GAgentTools").ToList();
+                var gagentPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("GA_") || p.Name == "GAgentTools")
+                    .ToList();
                 foreach (var plugin in gagentPlugins)
                 {
                     kernel.Plugins.Remove(plugin);
@@ -885,7 +892,8 @@ public abstract partial class
 
                                 // Generate a safe function name that won't exceed 64 characters
                                 var safeFunctionName = GenerateMCPFunctionName(serverName, tool.Name);
-                                Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", safeFunctionName, safeFunctionName.Length);
+                                Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})",
+                                    safeFunctionName, safeFunctionName.Length);
 
                                 // Create the kernel function with tracking wrapper
                                 var function = KernelFunctionFactory.CreateFromMethod(

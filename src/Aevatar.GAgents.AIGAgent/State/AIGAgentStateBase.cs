@@ -26,11 +26,15 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(13)] public bool EnableGAgentTools { get; set; } = false;
     [Id(14)] public List<string> RegisteredGAgentFunctions { get; set; } = new();
     [Id(15)] public List<string>? AllowedGAgentTypes { get; set; }
-    
+
     // MCP-related state fields
     [Id(16)] public Dictionary<string, MCPGAgentReference> MCPAgents { get; set; } = new();
     [Id(17)] public List<GrainType> SelectedGAgents { get; set; } = [];
-    [Id(18)] public Dictionary<string, string> GAgentToolMapping { get; set; } = new(); // Maps kernel function names to GAgent info
+
+    [Id(18)]
+    public Dictionary<string, string> GAgentToolMapping { get; set; } =
+        new(); // Maps kernel function names to GAgent info
+
     [Id(19)] public bool EnableMCPTools { get; set; } = false;
     [Id(20)] public List<string> RegisteredMCPFunctions { get; set; } = new();
 }

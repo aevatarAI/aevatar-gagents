@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.Model;
@@ -214,6 +215,15 @@ public abstract partial class
     /// </summary>
     private async Task<string> CallMCPToolAsync(string serverName, string toolName, KernelArguments kernelArgs)
     {
+        var toolStartTime = DateTime.UtcNow;
+        var toolCall = new ToolCallDetail
+        {
+            ToolName = toolName,
+            ServerName = serverName,
+            Arguments = new Dictionary<string, object>(),
+            Timestamp = toolStartTime.ToString("yyyy-MM-dd HH:mm:ss.fff UTC")
+        };
+
         try
         {
             Logger.LogInformation($"[{DateTime.UtcNow:HH:mm:ss.fff}] Calling MCP tool: {serverName}.{toolName}");
@@ -222,7 +232,12 @@ public abstract partial class
 
             if (!State.MCPAgents.TryGetValue(serverName, out var agentRef))
             {
-                return $"Error: MCP server '{serverName}' not found";
+                var errorMsg = $"Error: MCP server '{serverName}' not found";
+                toolCall.Success = false;
+                toolCall.Result = errorMsg;
+                toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
+                _currentToolCalls.Add(toolCall);
+                return errorMsg;
             }
 
             var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(agentRef.AgentId);
@@ -237,17 +252,45 @@ public abstract partial class
                 }
             }
 
+            // Store arguments in tool call
+            toolCall.Arguments = parameters;
+
             // Call the MCP tool with the actual tool name (not the kernel function name)
             var response = await mcpAgent.CallToolAsync(serverName, toolName, parameters);
 
             Logger.LogInformation($"[{DateTime.UtcNow:HH:mm:ss.fff}] MCP tool {serverName}.{toolName} completed");
 
-            return response.Result?.ToString() ?? string.Empty;
+            var result = response.Result?.ToString() ?? string.Empty;
+            
+            // Track successful tool call
+            toolCall.Success = true;
+            toolCall.Result = result;
+            toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
+            _currentToolCalls.Add(toolCall);
+            
+            Logger.LogInformation(
+                "[MCP Tool Call] {ServerName}.{ToolName} completed in {Duration}ms",
+                serverName, toolName, toolCall.DurationMs);
+
+            return result;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Error calling MCP tool {serverName}.{toolName}");
-            return $"Error calling tool: {ex.Message}";
+            
+            var errorResult = $"Error calling tool: {ex.Message}";
+            
+            // Track failed tool call
+            toolCall.Success = false;
+            toolCall.Result = errorResult;
+            toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
+            _currentToolCalls.Add(toolCall);
+            
+            Logger.LogError(ex,
+                "[MCP Tool Call] {ServerName}.{ToolName} failed after {Duration}ms",
+                serverName, toolName, toolCall.DurationMs);
+            
+            return errorResult;
         }
     }
 
