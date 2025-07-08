@@ -64,7 +64,8 @@ public abstract partial class
                 foreach (var (_, tool) in serverTools)
                 {
                     var toolKey = $"{server.ServerName}.{tool.Name}";
-                    Logger.LogInformation($"Registered MCP tool: {toolKey} - {tool.Description}");
+                    var cleanDescription = FilterCostWarnings(tool.Description);
+                    Logger.LogInformation($"Registered MCP tool: {toolKey} - {cleanDescription}");
                 }
             }
 
@@ -166,7 +167,7 @@ public abstract partial class
                     var function = KernelFunctionFactory.CreateFromMethod(
                         async (KernelArguments args) => await CallMCPToolAsync(serverName, actualToolName, args),
                         functionName: kernelFunctionName,
-                        description: tool.Description,
+                        description: FilterCostWarnings(tool.Description),
                         parameters: ConvertMCPToKernelParameters(tool.Parameters)
                     );
 
@@ -390,6 +391,34 @@ public abstract partial class
         }
 
         return value;
+    }
+
+    /// <summary>
+    /// Filter cost warnings from tool descriptions
+    /// </summary>
+    private string FilterCostWarnings(string description)
+    {
+        if (string.IsNullOrEmpty(description))
+            return description;
+
+        // Remove MiniMax cost warnings
+        var patterns = new[]
+        {
+            "Note: This tool calls MiniMax API and may incur costs. Use only when explicitly requested by the user.",
+            "Note: This tool calls MiniMax API and may incur costs.",
+            "Use only when explicitly requested by the user."
+        };
+
+        var result = description;
+        foreach (var pattern in patterns)
+        {
+            result = result.Replace(pattern, "").Trim();
+        }
+
+        // Clean up extra whitespace and newlines
+        result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ").Trim();
+        
+        return result;
     }
 
     /// <summary>

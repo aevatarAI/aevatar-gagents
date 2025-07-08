@@ -16,4 +16,6 @@ public class MCPServerConfig
     [Id(5)] public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds(5);
     [Id(6)] public string? Url { get; set; } // For SSE endpoints
     [Id(7)] public string? TransportType { get; set; } // "stdio", "http", "sse"
+    [Id(8)] public int? InitialDelayMs { get; set; } // Custom initial delay for servers that need more time
+    [Id(9)] public int? MaxRetries { get; set; } // Custom max retries for initialization
 }

@@ -136,14 +136,30 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                 };
 
                 var connected = await client.ConnectAsync();
+                
+                // Update server status first
+                await UpdateServerStatusAsync(serverConfig.ServerName, connected);
 
                 if (connected && State.EnableToolDiscovery)
                 {
-                    var tools = await client.DiscoverToolsAsync();
-                    await UpdateServerToolsAsync(serverConfig.ServerName, tools);
+                    try
+                    {
+                        var tools = await client.DiscoverToolsAsync();
+                        await UpdateServerToolsAsync(serverConfig.ServerName, tools);
+                        
+                        Logger.LogInformation("Successfully discovered {ToolCount} tools from {ServerName}", 
+                            tools.Count, serverConfig.ServerName);
+                    }
+                    catch (Exception toolEx)
+                    {
+                        // Tool discovery failure shouldn't mark the server as disconnected
+                        Logger.LogWarning(toolEx, "Failed to discover tools from {ServerName}, but server is still connected", 
+                            serverConfig.ServerName);
+                        
+                        // Update with empty tool list
+                        await UpdateServerToolsAsync(serverConfig.ServerName, new List<MCPToolInfo>());
+                    }
                 }
-
-                await UpdateServerStatusAsync(serverConfig.ServerName, connected);
             }
             catch (Exception ex)
             {
