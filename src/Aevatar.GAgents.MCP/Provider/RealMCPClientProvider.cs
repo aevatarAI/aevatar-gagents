@@ -86,6 +86,28 @@ public class RealMCPClient : IMCPClient
             var endpoint = GetEndpointFromConfig(_config);
             _logger.LogInformation("Connecting to MCP server {ServerName} at {Endpoint}", _config.ServerName, endpoint);
 
+            // Check if this is an SSE endpoint (temporary workaround)
+            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
+                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("SSE transport detected for {ServerName}. SSE is not fully supported yet.", _config.ServerName);
+                
+                // For SSE endpoints, we'll mark as connected without initialization
+                // This is a temporary workaround until proper SSE support is implemented
+                _isConnected = true;
+                _serverInfo = new ServerInfo { Name = _config.ServerName, Version = "1.0.0" };
+                _serverCapabilities = new ServerCapabilities { Tools = new { } };
+                
+                ConnectionStatusChanged?.Invoke(this, new MCPConnectionStatusEventArgs
+                {
+                    ServerName = _config.ServerName,
+                    IsConnected = true,
+                    Message = "Connected (SSE mode - limited functionality)"
+                });
+                
+                return true;
+            }
+
             // Send initialize request
             var initRequest = new JsonRpcRequest
             {
@@ -116,14 +138,14 @@ public class RealMCPClient : IMCPClient
                 _isConnected = true;
 
                 _logger.LogInformation("Successfully connected to {ServerName}", _config.ServerName);
-                    
+
                 ConnectionStatusChanged?.Invoke(this, new MCPConnectionStatusEventArgs
                 {
                     ServerName = _config.ServerName,
                     IsConnected = true,
                     Message = "Connected successfully"
                 });
-                    
+
                 return true;
             }
 
@@ -133,22 +155,29 @@ public class RealMCPClient : IMCPClient
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error connecting to MCP server {ServerName}", _config.ServerName);
-                
+
             ConnectionStatusChanged?.Invoke(this, new MCPConnectionStatusEventArgs
             {
                 ServerName = _config.ServerName,
                 IsConnected = false,
                 Message = ex.Message
             });
-                
+
             return false;
         }
     }
-        
+
     private string GetEndpointFromConfig(MCPServerConfig config)
     {
         // For HTTP servers, the command should be the URL
         // For stdio servers, this would need different handling
+
+        // Use URL if available (for SSE connections)
+        if (!string.IsNullOrEmpty(config.Url))
+        {
+            return config.Url;
+        }
+
         return config.Command;
     }
 
@@ -157,14 +186,14 @@ public class RealMCPClient : IMCPClient
         _isConnected = false;
         _serverInfo = null;
         _serverCapabilities = null;
-            
+
         ConnectionStatusChanged?.Invoke(this, new MCPConnectionStatusEventArgs
         {
             ServerName = _config.ServerName,
             IsConnected = false,
             Message = "Disconnected"
         });
-            
+
         _logger.LogInformation("Disconnected from {ServerName}", _config.ServerName);
         await Task.CompletedTask;
     }
@@ -178,6 +207,42 @@ public class RealMCPClient : IMCPClient
 
         try
         {
+            var endpoint = GetEndpointFromConfig(_config);
+            
+            // Check if this is an SSE endpoint (temporary workaround)
+            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
+                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogInformation("Returning predefined tools for SSE server {ServerName}", _config.ServerName);
+                
+                // Return predefined tools for zhipu web search
+                if (_config.ServerName.Contains("zhipu", StringComparison.OrdinalIgnoreCase) &&
+                    _config.ServerName.Contains("search", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new List<MCPToolInfo>
+                    {
+                        new MCPToolInfo
+                        {
+                            Name = "web_search",
+                            Description = "Search the web using Zhipu AI's web search capabilities",
+                            Parameters = new Dictionary<string, MCPParameterInfo>
+                            {
+                                ["query"] = new MCPParameterInfo
+                                {
+                                    Name = "query",
+                                    Type = "string",
+                                    Description = "The search query",
+                                    Required = true
+                                }
+                            }
+                        }
+                    };
+                }
+                
+                // Return empty list for other SSE servers
+                return new List<MCPToolInfo>();
+            }
+
             var request = new JsonRpcRequest
             {
                 Method = "tools/list",
@@ -185,7 +250,6 @@ public class RealMCPClient : IMCPClient
                 Id = NextRequestId()
             };
 
-            var endpoint = GetEndpointFromConfig(_config);
             var response = await SendRequestAsync<ToolsListResult>(endpoint, request);
             if (response?.Tools != null)
             {
@@ -215,6 +279,22 @@ public class RealMCPClient : IMCPClient
 
         try
         {
+            var endpoint = GetEndpointFromConfig(_config);
+            
+            // Check if this is an SSE endpoint (temporary workaround)
+            if (_config.TransportType?.ToLowerInvariant() == "sse" || 
+                endpoint.Contains("/sse", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("SSE tool calling not fully implemented. Returning placeholder response for {ToolName}", toolName);
+                
+                // Return a placeholder response for SSE tools
+                return new MCPToolResult
+                {
+                    Success = false,
+                    ErrorMessage = $"SSE transport is not fully supported yet. Tool '{toolName}' cannot be called via SSE."
+                };
+            }
+
             var request = new JsonRpcRequest
             {
                 Method = "tools/call",
@@ -226,7 +306,6 @@ public class RealMCPClient : IMCPClient
                 Id = NextRequestId()
             };
 
-            var endpoint = GetEndpointFromConfig(_config);
             var response = await SendRequestAsync<ToolCallResult>(endpoint, request);
             if (response != null)
             {
@@ -257,39 +336,72 @@ public class RealMCPClient : IMCPClient
 
     private async Task<T?> SendRequestAsync<T>(string endpoint, JsonRpcRequest request) where T : class
     {
-        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions 
-        { 
+        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
+        {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         });
-            
+
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
         _logger.LogDebug("Sending JSON-RPC request: {Request}", json);
-            
-        var response = await _httpClient.PostAsync(endpoint, content);
+
+        // Handle authorization from URL query string
+        var uri = new Uri(endpoint);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri.GetLeftPart(UriPartial.Path));
+        httpRequest.Content = content;
+        
+        // Extract authorization from query string if present
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var authToken = query["Authorization"] ?? query["authorization"] ?? query["auth"] ?? query["token"];
+        if (!string.IsNullOrEmpty(authToken))
+        {
+            httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+            _logger.LogDebug("Added authorization header from URL query string");
+        }
+        
+        // Add any remaining query parameters back to the URL (except auth-related ones)
+        var remainingQuery = new List<string>();
+        foreach (string key in query.AllKeys)
+        {
+            if (key != null && 
+                !key.Equals("Authorization", StringComparison.OrdinalIgnoreCase) &&
+                !key.Equals("authorization", StringComparison.OrdinalIgnoreCase) &&
+                !key.Equals("auth", StringComparison.OrdinalIgnoreCase) &&
+                !key.Equals("token", StringComparison.OrdinalIgnoreCase))
+            {
+                remainingQuery.Add($"{key}={Uri.EscapeDataString(query[key] ?? "")}");
+            }
+        }
+        
+        if (remainingQuery.Any())
+        {
+            httpRequest.RequestUri = new Uri($"{uri.GetLeftPart(UriPartial.Path)}?{string.Join("&", remainingQuery)}");
+        }
+
+        var response = await _httpClient.SendAsync(httpRequest);
         response.EnsureSuccessStatusCode();
-            
+
         var responseJson = await response.Content.ReadAsStringAsync();
         _logger.LogDebug("Received JSON-RPC response: {Response}", responseJson);
-            
-        var rpcResponse = JsonSerializer.Deserialize<JsonRpcResponse<T>>(responseJson, new JsonSerializerOptions 
-        { 
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+
+        var rpcResponse = JsonSerializer.Deserialize<JsonRpcResponse<T>>(responseJson, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
-            
+
         if (rpcResponse?.Error != null)
         {
             throw new Exception($"JSON-RPC Error: {rpcResponse.Error.Message} (Code: {rpcResponse.Error.Code})");
         }
-            
+
         return rpcResponse?.Result;
     }
 
     private Dictionary<string, MCPParameterInfo> ConvertParameters(JsonElement? inputSchema)
     {
         var parameters = new Dictionary<string, MCPParameterInfo>();
-            
+
         if (inputSchema?.ValueKind == JsonValueKind.Object)
         {
             if (inputSchema.Value.TryGetProperty("properties", out var properties))
@@ -300,15 +412,19 @@ public class RealMCPClient : IMCPClient
                     {
                         Name = prop.Name,
                         Type = GetTypeFromSchema(prop.Value),
-                        Description = prop.Value.TryGetProperty("description", out var desc) ? desc.GetString() : string.Empty,
+                        Description = prop.Value.TryGetProperty("description", out var desc)
+                            ? desc.GetString()
+                            : string.Empty,
                         Required = IsRequired(inputSchema.Value, prop.Name),
-                        DefaultValue = prop.Value.TryGetProperty("default", out var def) ? ConvertJsonElementToBasicType(def) : null
+                        DefaultValue = prop.Value.TryGetProperty("default", out var def)
+                            ? ConvertJsonElementToBasicType(def)
+                            : null
                     };
                     parameters[prop.Name] = param;
                 }
             }
         }
-            
+
         return parameters;
     }
 
@@ -337,6 +453,7 @@ public class RealMCPClient : IMCPClient
                 }
             }
         }
+
         return "any";
     }
 
@@ -350,6 +467,7 @@ public class RealMCPClient : IMCPClient
                     return true;
             }
         }
+
         return false;
     }
 
@@ -357,15 +475,15 @@ public class RealMCPClient : IMCPClient
     {
         if (content == null || content.Count == 0)
             return null;
-                
+
         if (content.Count == 1)
             return content[0].Text;
-                
+
         return content.Select(c => c.Text ?? string.Empty).ToList();
     }
 
     private string NextRequestId() => (++_requestId).ToString();
-    
+
     private object? ConvertJsonElementToBasicType(JsonElement element)
     {
         switch (element.ValueKind)
@@ -392,6 +510,7 @@ public class RealMCPClient : IMCPClient
                 {
                     list.Add(ConvertJsonElementToBasicType(item));
                 }
+
                 return list;
             case JsonValueKind.Object:
                 var dict = new Dictionary<string, object?>();
@@ -399,6 +518,7 @@ public class RealMCPClient : IMCPClient
                 {
                     dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
                 }
+
                 return dict;
             default:
                 return element.ToString();
@@ -407,154 +527,117 @@ public class RealMCPClient : IMCPClient
 
     private class JsonRpcRequest
     {
-        [JsonPropertyName("jsonrpc")]
-        public string JsonRpc { get; set; } = "2.0";
-            
-        [JsonPropertyName("method")]
-        public string Method { get; set; } = string.Empty;
-            
-        [JsonPropertyName("params")]
-        public object? Params { get; set; }
-            
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
+        [JsonPropertyName("jsonrpc")] public string JsonRpc { get; set; } = "2.0";
+
+        [JsonPropertyName("method")] public string Method { get; set; } = string.Empty;
+
+        [JsonPropertyName("params")] public object? Params { get; set; }
+
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
     }
 
     private class JsonRpcResponse<T>
     {
-        [JsonPropertyName("jsonrpc")]
-        public string JsonRpc { get; set; } = string.Empty;
-            
-        [JsonPropertyName("result")]
-        public T? Result { get; set; }
-            
-        [JsonPropertyName("error")]
-        public JsonRpcError? Error { get; set; }
-            
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
+        [JsonPropertyName("jsonrpc")] public string JsonRpc { get; set; } = string.Empty;
+
+        [JsonPropertyName("result")] public T? Result { get; set; }
+
+        [JsonPropertyName("error")] public JsonRpcError? Error { get; set; }
+
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
     }
 
     private class JsonRpcError
     {
-        [JsonPropertyName("code")]
-        public int Code { get; set; }
-            
-        [JsonPropertyName("message")]
-        public string Message { get; set; } = string.Empty;
-            
-        [JsonPropertyName("data")]
-        public object? Data { get; set; }
+        [JsonPropertyName("code")] public int Code { get; set; }
+
+        [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
+
+        [JsonPropertyName("data")] public object? Data { get; set; }
     }
 
     private class InitializeParams
     {
-        [JsonPropertyName("protocolVersion")]
-        public string ProtocolVersion { get; set; } = string.Empty;
-            
-        [JsonPropertyName("capabilities")]
-        public ClientCapabilities Capabilities { get; set; } = new();
-            
-        [JsonPropertyName("clientInfo")]
-        public ClientInfo ClientInfo { get; set; } = new();
+        [JsonPropertyName("protocolVersion")] public string ProtocolVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("capabilities")] public ClientCapabilities Capabilities { get; set; } = new();
+
+        [JsonPropertyName("clientInfo")] public ClientInfo ClientInfo { get; set; } = new();
     }
 
     private class ClientInfo
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-            
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = string.Empty;
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
     }
 
     private class ClientCapabilities
     {
-        [JsonPropertyName("roots")]
-        public object Roots { get; set; } = new { };
-            
-        [JsonPropertyName("sampling")]
-        public object Sampling { get; set; } = new { };
-            
-        [JsonPropertyName("elicitation")]
-        public object Elicitation { get; set; } = new { };
+        [JsonPropertyName("roots")] public object Roots { get; set; } = new { };
+
+        [JsonPropertyName("sampling")] public object Sampling { get; set; } = new { };
+
+        [JsonPropertyName("elicitation")] public object Elicitation { get; set; } = new { };
     }
 
     private class InitializeResult
     {
-        [JsonPropertyName("protocolVersion")]
-        public string ProtocolVersion { get; set; } = string.Empty;
-            
-        [JsonPropertyName("capabilities")]
-        public ServerCapabilities Capabilities { get; set; } = new();
-            
-        [JsonPropertyName("serverInfo")]
-        public ServerInfo ServerInfo { get; set; } = new();
+        [JsonPropertyName("protocolVersion")] public string ProtocolVersion { get; set; } = string.Empty;
+
+        [JsonPropertyName("capabilities")] public ServerCapabilities Capabilities { get; set; } = new();
+
+        [JsonPropertyName("serverInfo")] public ServerInfo ServerInfo { get; set; } = new();
     }
 
     private class ServerInfo
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-            
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = string.Empty;
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")] public string Version { get; set; } = string.Empty;
     }
 
     private class ServerCapabilities
     {
-        [JsonPropertyName("tools")]
-        public object? Tools { get; set; }
-            
-        [JsonPropertyName("resources")]
-        public object? Resources { get; set; }
-            
-        [JsonPropertyName("prompts")]
-        public object? Prompts { get; set; }
+        [JsonPropertyName("tools")] public object? Tools { get; set; }
+
+        [JsonPropertyName("resources")] public object? Resources { get; set; }
+
+        [JsonPropertyName("prompts")] public object? Prompts { get; set; }
     }
 
     private class ToolsListResult
     {
-        [JsonPropertyName("tools")]
-        public List<ToolInfo> Tools { get; set; } = new();
+        [JsonPropertyName("tools")] public List<ToolInfo> Tools { get; set; } = new();
     }
 
     private class ToolInfo
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-            
-        [JsonPropertyName("description")]
-        public string Description { get; set; } = string.Empty;
-            
-        [JsonPropertyName("inputSchema")]
-        public JsonElement? InputSchema { get; set; }
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")] public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("inputSchema")] public JsonElement? InputSchema { get; set; }
     }
 
     private class ToolCallParams
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-            
-        [JsonPropertyName("arguments")]
-        public Dictionary<string, object> Arguments { get; set; } = new();
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("arguments")] public Dictionary<string, object> Arguments { get; set; } = new();
     }
 
     private class ToolCallResult
     {
-        [JsonPropertyName("content")]
-        public List<ContentItem>? Content { get; set; }
-            
-        [JsonPropertyName("isError")]
-        public bool IsError { get; set; }
+        [JsonPropertyName("content")] public List<ContentItem>? Content { get; set; }
+
+        [JsonPropertyName("isError")] public bool IsError { get; set; }
     }
 
     private class ContentItem
     {
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = string.Empty;
-            
-        [JsonPropertyName("text")]
-        public string? Text { get; set; }
+        [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
+
+        [JsonPropertyName("text")] public string? Text { get; set; }
     }
 }
