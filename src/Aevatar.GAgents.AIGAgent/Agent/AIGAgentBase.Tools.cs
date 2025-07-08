@@ -144,7 +144,7 @@ public abstract partial class
         var dynamicFunctions = new List<KernelFunction>();
 
         // Remove existing GAgent plugins to avoid duplicates
-        var existingGAgentPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("GAgent_")).ToList();
+        var existingGAgentPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("GA_")).ToList();
         foreach (var plugin in existingGAgentPlugins)
         {
             kernel.Plugins.Remove(plugin);
@@ -225,7 +225,7 @@ public abstract partial class
                     // Generate a short plugin name to avoid exceeding OpenAI's 64-char limit
                     // when combined with function names
                     var fullGrainType = grainType.ToString() ?? "Unknown";
-                    var cleanGrainType = fullGrainType.Replace("/", "_").Replace(".", "_");
+                    var cleanGrainType = fullGrainType.Replace("/", "_").Replace(".", "_").Replace("-", "_");
                     
                     // Start with a short prefix
                     var pluginName = "GA_";
@@ -235,7 +235,8 @@ public abstract partial class
                     if (parts.Length > 1)
                     {
                         // Use the last part after '/' (e.g., "chatgagent" from "demo/chatgagent")
-                        pluginName += parts[parts.Length - 1].Replace(".", "_");
+                        var lastPart = parts[^1].Replace(".", "_").Replace("-", "_");
+                        pluginName += lastPart;
                     }
                     else
                     {
@@ -255,15 +256,36 @@ public abstract partial class
                     // Ensure plugin name is not too long (max 20 chars to leave room for function names)
                     if (pluginName.Length > 20)
                     {
-                        // Generate a hash for uniqueness
-                        var hash = Math.Abs(fullGrainType.GetHashCode()).ToString("X6");
-                        pluginName = $"GA_{hash}";
+                        // Generate a more unique hash using the full grain type
+                        var hashBytes = System.Text.Encoding.UTF8.GetBytes(fullGrainType);
+                        using (var sha = System.Security.Cryptography.SHA256.Create())
+                        {
+                            var hash = sha.ComputeHash(hashBytes);
+                            var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_").Replace("+", "_");
+                            pluginName = $"GA_{shortHash}";
+                        }
                     }
                     
-                    kernel.Plugins.AddFromFunctions(pluginName, functions.DistinctBy(f => f.Name).ToList());
-
-                    Logger.LogInformation("Registered GAgent plugin '{PluginName}' with {ToolCount} tools (original: {OriginalType})",
-                        pluginName, functions.Count, grainType);
+                    // Check if plugin already exists and remove it
+                    var existingPlugin = kernel.Plugins.FirstOrDefault(p => p.Name == pluginName);
+                    if (existingPlugin != null)
+                    {
+                        kernel.Plugins.Remove(existingPlugin);
+                        Logger.LogDebug("Removed existing plugin '{PluginName}' before adding new functions", pluginName);
+                    }
+                    
+                    try
+                    {
+                        kernel.Plugins.AddFromFunctions(pluginName, functions.DistinctBy(f => f.Name).ToList());
+                        Logger.LogInformation("Registered GAgent plugin '{PluginName}' with {ToolCount} tools (original: {OriginalType})",
+                            pluginName, functions.Count, grainType);
+                    }
+                    catch (ArgumentException ex) when (ex.Message.Contains("already been added"))
+                    {
+                        // This can happen in race conditions, log it but continue
+                        Logger.LogWarning("Plugin '{PluginName}' already exists (race condition), skipping registration for {GrainType}", 
+                            pluginName, grainType);
+                    }
                 }
             }
             catch (Exception ex)
@@ -359,8 +381,8 @@ public abstract partial class
     {
         const int maxLength = 64;
         // Reserve space for potential plugin prefix
-        // Plugin name format: "GAgent_{grainType}" could add extra length
-        const int reservedPrefixLength = 7; // "GAgent_" 
+        // Plugin name format: "GA_{grainType}" could add extra length
+        const int reservedPrefixLength = 3; // "GA_" 
         const int effectiveMaxLength = maxLength - reservedPrefixLength - 1; // -1 for potential dot separator
 
         // Clean the grain type string to make it a valid function name
