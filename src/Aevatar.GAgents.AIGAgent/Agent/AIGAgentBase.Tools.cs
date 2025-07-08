@@ -596,17 +596,10 @@ public abstract partial class
 
         await UpdateKernelWithMCPToolsAsync();
 
-        if (State.EnableGAgentTools)
+        if (State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Count > 0)
         {
-            // If no specific GAgents are selected, register all available GAgents
-            if (State.SelectedGAgents.IsNullOrEmpty() || State.SelectedGAgents.Count == 0)
-            {
-                await RegisterGAgentsAsToolsAsync();
-            }
-            else
-            {
-                await UpdateKernelWithGAgentToolsAsync();
-            }
+            // Only register GAgent tools if specific GAgents have been selected
+            await UpdateKernelWithGAgentToolsAsync();
         }
     }
 
@@ -660,34 +653,65 @@ public abstract partial class
     }
 
     /// <summary>
+    /// Registers all available GAgent tools
+    /// </summary>
+    public virtual async Task<bool> RegisterAllGAgentToolsAsync()
+    {
+        try
+        {
+            if (_brain == null)
+            {
+                Logger.LogWarning("Cannot register GAgent tools: Brain not initialized");
+                return false;
+            }
+
+            Logger.LogInformation("Registering all available GAgent tools");
+
+            // Enable GAgent tools
+            State.EnableGAgentTools = true;
+            
+            // Register all available GAgents
+            await RegisterGAgentsAsToolsAsync();
+            
+            Logger.LogInformation("Successfully registered all available GAgent tools");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to register all GAgent tools");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Configure selected GAgent tools
     /// </summary>
     public virtual async Task<bool> ConfigureGAgentToolsAsync(List<GrainType> selectedGAgents)
     {
         try
         {
+            if (_brain == null)
+            {
+                Logger.LogWarning("Cannot configure GAgent tools: Brain not initialized");
+                return false;
+            }
+
             Logger.LogInformation("Configuring GAgent tools: {Count} GAgents selected", selectedGAgents.Count);
 
+            // Enable GAgent tools if not already enabled
+            if (!State.EnableGAgentTools)
+            {
+                RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
+            }
+
             // Update state with selected GAgents
-            State.SelectedGAgents = selectedGAgents;
-
-            // Create and raise an event for state persistence
-            // Since we can't use the specific event type, we update state directly
-            // and let the derived class handle persistence through its own events
-
-            // Force state persistence by raising a dummy event
-            var dummyEvent = Activator.CreateInstance<TStateLogEvent>();
-            RaiseEvent(dummyEvent);
+            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = selectedGAgents });
+            
+            // Persist state changes
             await ConfirmEvents();
 
-            // Also update the registered functions list if needed
-            State.RegisteredGAgentFunctions = new List<string>();
-
-            // If brain is initialized, update kernel with new tools
-            if (_brain != null)
-            {
-                await UpdateKernelWithGAgentToolsAsync();
-            }
+            // Update kernel with new tools
+            await UpdateKernelWithGAgentToolsAsync();
 
             Logger.LogInformation("Successfully configured {Count} GAgent tools", selectedGAgents.Count);
             return true;
@@ -695,6 +719,52 @@ public abstract partial class
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to configure GAgent tools");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Clears all registered GAgent tools
+    /// </summary>
+    public virtual async Task<bool> ClearGAgentToolsAsync()
+    {
+        try
+        {
+            if (_brain == null)
+            {
+                Logger.LogWarning("Cannot clear GAgent tools: Brain not initialized");
+                return false;
+            }
+
+            Logger.LogInformation("Clearing all GAgent tools");
+
+            // Clear selected GAgents
+            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = new List<GrainType>() });
+            
+            // Clear registered functions
+            RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent { RegisteredFunctions = new List<string>() });
+            
+            // Persist state changes
+            await ConfirmEvents();
+
+            // Update kernel to remove tools
+            var kernel = GetKernelFromBrain();
+            if (kernel != null)
+            {
+                // Remove all GAgent plugins
+                var gagentPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("GA_") || p.Name == "GAgentTools").ToList();
+                foreach (var plugin in gagentPlugins)
+                {
+                    kernel.Plugins.Remove(plugin);
+                }
+            }
+
+            Logger.LogInformation("Successfully cleared all GAgent tools");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to clear GAgent tools");
             return false;
         }
     }

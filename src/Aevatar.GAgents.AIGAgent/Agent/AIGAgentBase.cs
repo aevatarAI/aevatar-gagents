@@ -133,10 +133,10 @@ public abstract partial class
         {
             var result = await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
 
-            // Register GAgent tools if enabled
-            if (result && State.EnableGAgentTools)
+            // Register selected GAgent tools if any were specified
+            if (result && State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Any())
             {
-                await RegisterGAgentsAsToolsAsync();
+                await UpdateKernelWithGAgentToolsAsync();
             }
             
             // Configure MCP servers if provided in initialization

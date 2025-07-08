@@ -60,4 +60,14 @@ public interface IAIGAgent
     /// Configure selected GAgent tools
     /// </summary>
     Task<bool> ConfigureGAgentToolsAsync(List<GrainType> selectedGAgents);
+
+    /// <summary>
+    /// Registers all available GAgent tools
+    /// </summary>
+    Task<bool> RegisterAllGAgentToolsAsync();
+
+    /// <summary>
+    /// Clears all registered GAgent tools
+    /// </summary>
+    Task<bool> ClearGAgentToolsAsync();
 }
