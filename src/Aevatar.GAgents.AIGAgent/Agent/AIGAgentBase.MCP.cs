@@ -214,7 +214,7 @@ public abstract partial class
     /// <summary>
     /// Call an MCP tool
     /// </summary>
-    private async Task<string> CallMCPToolAsync(string serverName, string toolName, KernelArguments kernelArgs)
+    protected async Task<string> CallMCPToolAsync(string serverName, string toolName, KernelArguments kernelArgs)
     {
         var toolStartTime = DateTime.UtcNow;
         var toolCall = new ToolCallDetail
