@@ -105,9 +105,9 @@ public class StdioMCPClient : IMCPClient
             };
 
             // Add environment variables if specified
-            if (_config.Environment != null)
+            if (_config.Env != null)
             {
-                foreach (var kvp in _config.Environment)
+                foreach (var kvp in _config.Env)
                 {
                     startInfo.Environment[kvp.Key] = kvp.Value;
                 }

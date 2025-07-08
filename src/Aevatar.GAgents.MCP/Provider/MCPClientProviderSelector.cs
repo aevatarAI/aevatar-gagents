@@ -68,9 +68,9 @@ public class MCPClientProviderSelector : IMCPClientProvider
                 case "sse":
                     _logger.LogInformation("Using SSE provider for {ServerName}", config.ServerName);
                     // SSE is handled by HTTP provider with special SSE URL
-                    if (!string.IsNullOrEmpty(config.SseUrl))
+                    if (!string.IsNullOrEmpty(config.Url))
                     {
-                        config.Command = config.SseUrl; // Use SSE URL as command
+                        config.Command = config.Url; // Use SSE URL as command
                     }
                     provider = _httpProvider;
                     break;

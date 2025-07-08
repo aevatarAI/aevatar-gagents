@@ -22,7 +22,7 @@ public static class CommonMCPServersExample
                 ServerName = "filesystem",
                 Command = "npx",
                 Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" },
-                Environment = new Dictionary<string, string>
+                Env = new Dictionary<string, string>
                 {
                     ["NODE_ENV"] = "production"
                 }
@@ -34,7 +34,7 @@ public static class CommonMCPServersExample
                 ServerName = "github",
                 Command = "npx",
                 Args = new List<string> { "-y", "@modelcontextprotocol/server-github" },
-                Environment = new Dictionary<string, string>
+                Env = new Dictionary<string, string>
                 {
                     ["GITHUB_TOKEN"] = "your-github-token" // 需要替换为实际的token
                 }

@@ -83,7 +83,7 @@ public class RealMCPUsageExample
                     ServerName = "filesystem",
                     Command = "npx",
                     Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" },
-                    Environment = new Dictionary<string, string>()
+                    Env = new Dictionary<string, string>()
                 }
             }
         };
@@ -181,7 +181,7 @@ public class RealMCPUsageExample
                     ServerName = "custom-api",
                     Command = "http://localhost:3000/mcp", // For HTTP servers, command is the URL
                     Args = new List<string>(),
-                    Environment = new Dictionary<string, string>
+                    Env = new Dictionary<string, string>
                     {
                         ["API_KEY"] = "your-api-key"
                     }

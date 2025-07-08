@@ -41,7 +41,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
                     ServerName = "filesystem",
                     Command = "npx",
                     Args = ["-y", "@modelcontextprotocol/server-filesystem"],
-                    Environment = new Dictionary<string, string>
+                    Env = new Dictionary<string, string>
                     {
                         ["NODE_ENV"] = "production"
                     }
@@ -52,7 +52,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
                     ServerName = "github",
                     Command = "npx",
                     Args = ["-y", "@modelcontextprotocol/server-github"],
-                    Environment = new Dictionary<string, string>
+                    Env = new Dictionary<string, string>
                     {
                         ["GITHUB_TOKEN"] = "test-token"
                     }
