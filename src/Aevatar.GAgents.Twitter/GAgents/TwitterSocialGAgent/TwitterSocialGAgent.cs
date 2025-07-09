@@ -65,8 +65,7 @@ public class TwitterSocialGAgent : GroupMemberGAgentBase<TwitterSocialGAgentStat
             // No messages - use AI to generate content
             _logger.LogInformation($"{State.MemberName} no messages, using AI to generate content");
             var aiMessages = await ChatWithHistory("Generate a tweet");
-            contentToTweet = aiMessages?.FirstOrDefault()?.Content ?? 
-                           $"{State.MemberName} is active (BlackboardId: {blackboardId.ToString()[..8]})";
+            contentToTweet = aiMessages?.FirstOrDefault()?.Content ?? $"{State.MemberName} is ready to chat";
         }
         else
         {
