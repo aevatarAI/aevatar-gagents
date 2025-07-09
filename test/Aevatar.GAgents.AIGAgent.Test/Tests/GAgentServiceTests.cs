@@ -87,7 +87,7 @@ public class GAgentServiceTests : AevatarAIGAgentTestBase
         if (gAgents.Count > 0)
         {
             gAgents.ShouldContain(gt =>
-                gt.ToString()!.Contains("MockExecutorGAgent", StringComparison.OrdinalIgnoreCase));
+                gt.ToString()!.Contains("test.mock_executor", StringComparison.OrdinalIgnoreCase));
         }
     }
 

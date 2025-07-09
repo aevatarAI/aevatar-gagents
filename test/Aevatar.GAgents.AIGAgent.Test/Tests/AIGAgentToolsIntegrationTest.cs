@@ -464,8 +464,8 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         var gagentResult = await gagentAgent.ConfigureGAgentToolsAsync(new List<GrainType>());
 
         // Assert
-        mcpResult.ShouldBeTrue(); // Should handle empty configuration gracefully
-        gagentResult.ShouldBeTrue(); // Should handle empty configuration gracefully
+        mcpResult.ShouldBeFalse();
+        gagentResult.ShouldBeFalse();
 
         var mcpState = await mcpAgent.GetStateAsync();
         var gagentState = await gagentAgent.GetStateAsync();

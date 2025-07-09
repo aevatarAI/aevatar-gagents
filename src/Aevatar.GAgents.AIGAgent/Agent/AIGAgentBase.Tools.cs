@@ -692,6 +692,12 @@ public abstract partial class
     {
         try
         {
+            if (selectedGAgents.Count == 0)
+            {
+                // No GAgents selected, nothing to configure
+                return false;
+            }
+
             if (_brain == null)
             {
                 Logger.LogWarning("Cannot configure GAgent tools: Brain not initialized");
