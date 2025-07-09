@@ -1,5 +1,6 @@
 using GroupChat.GAgent.Dto;
 using Orleans;
+using Aevatar.GAgents.AIGAgent.Dtos;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 
@@ -7,8 +8,8 @@ namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 public class ChatAIGAgentConfigDto : GroupMemberConfigDto
 {
     [Id(0)]
-    public string? InitialPrompt { get; set; }
+    public string Instructions { get; set; } = string.Empty;
     
-    // No additional chat-specific configuration needed
-    // LLM model and other AI settings are handled by InitializeAsync
+    [Id(1)]
+    public LLMConfigDto LLMConfig { get; set; } = new();
 } 

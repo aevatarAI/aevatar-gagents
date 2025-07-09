@@ -9,6 +9,7 @@ using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using AIChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using WorkflowChatMessage = GroupChat.GAgent.Feature.Common.ChatMessage;
 
@@ -18,7 +19,8 @@ namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(ChatAIGAgent))]
-public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgentEvent, EventBase, ChatAIGAgentConfigDto>,
+public class ChatAIGAgent :
+    GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgentEvent, EventBase, ChatAIGAgentConfigDto>,
     IChatAIGAgent
 {
     private readonly ILogger<ChatAIGAgent> _logger;
@@ -41,59 +43,43 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
         return Task.FromResult(80);
     }
 
-    protected override async Task<ChatResponse> ChatAsync(Guid blackboardId, List<WorkflowChatMessage>? coordinatorMessages)
+    protected override async Task<ChatResponse> ChatAsync(Guid blackboardId,
+        List<WorkflowChatMessage>? coordinatorMessages)
     {
         var response = new ChatResponse();
-        
+
         if (coordinatorMessages == null || coordinatorMessages.Count == 0)
         {
-            // If no input messages and we have an initial prompt, use it to generate AI response
-            if (!string.IsNullOrWhiteSpace(State.InitialPrompt))
+                        // Let AI generate a default response based on its Instructions
+            _logger.LogInformation($"{State.MemberName} generating default AI response based on Instructions");
+            
+            // Use Instructions as base context and let AI say something
+            var promptWithInstructions = $"{State.PromptTemplate ?? ""} Please say something to start the conversation.";
+            var defaultAiMessages = await ChatWithHistory(promptWithInstructions);
+            var defaultResponse = defaultAiMessages?.FirstOrDefault()?.Content;
+
+            // Save conversation to state
+            RaiseEvent(new ChatResponseEvent()
             {
-                _logger.LogInformation($"{State.MemberName} using initial prompt: {State.InitialPrompt}");
-                
-                // Use AI to generate response based on initial prompt
-                var initialAiMessages = await ChatWithHistory(State.InitialPrompt);
-                var initialAiResponse = initialAiMessages?.FirstOrDefault()?.Content ?? $"{State.MemberName}: I'm having trouble processing the initial prompt.";
-                
-                // Save conversation to state
-                RaiseEvent(new ChatResponseEvent()
-                {
-                    Response = initialAiResponse,
-                    Timestamp = DateTime.UtcNow
-                });
-                await ConfirmEvents();
-                
-                response.Content = initialAiResponse;
-                return response;
-            }
-            else
-            {
-                // Default behavior when no initial prompt is set
-                var defaultMessage = $"{State.MemberName} is ready to chat (BlackboardId: {blackboardId.ToString()[..8]})";
-                
-                // Save this response to state
-                RaiseEvent(new ChatResponseEvent()
-                {
-                    Response = defaultMessage,
-                    Timestamp = DateTime.UtcNow
-                });
-                await ConfirmEvents();
-                
-                response.Content = defaultMessage;
-                return response;
-            }
+                Response = defaultResponse,
+                Timestamp = DateTime.UtcNow
+            });
+            await ConfirmEvents();
+
+            response.Content = defaultResponse;
+            return response;
         }
 
         // Process the workflow messages
         var userMessage = string.Join(" ", coordinatorMessages.Select(m => m.Content));
-        
+
         _logger.LogInformation($"{State.MemberName} processing workflow message: {userMessage}");
-        
+
         // Use real AI through ChatWithHistory method
         var aiMessages = await ChatWithHistory(userMessage);
-        var aiResponse = aiMessages?.FirstOrDefault()?.Content ?? $"{State.MemberName}: I'm having trouble processing your request.";
-        
+        var aiResponse = aiMessages?.FirstOrDefault()?.Content ??
+                         $"{State.MemberName}: I'm having trouble processing your request.";
+
         // Save conversation to state
         RaiseEvent(new ChatResponseEvent()
         {
@@ -101,7 +87,7 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
             Timestamp = DateTime.UtcNow
         });
         await ConfirmEvents();
-        
+
         response.Content = aiResponse;
 
         return response;
@@ -118,23 +104,20 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
     {
         return Task.FromResult(State.LastResponse ?? "No response yet");
     }
-    
+
     protected override async Task PerformConfigAsync(ChatAIGAgentConfigDto configuration)
     {
         // Call the base implementation to set MemberName
         await base.PerformConfigAsync(configuration);
-        
-        // Set the initial prompt if provided
-        if (!string.IsNullOrWhiteSpace(configuration.InitialPrompt))
+
+        // Initialize the AI agent with the provided configuration
+        await InitializeAsync(new InitializeDto()
         {
-            RaiseEvent(new SetInitialPromptEvent()
-            {
-                InitialPrompt = configuration.InitialPrompt
-            });
-            await ConfirmEvents();
-        }
-        
-        _logger.LogDebug("PerformConfigAsync ChatAIGAgent completed");
+            Instructions = configuration.Instructions,
+            LLMConfig = configuration.LLMConfig
+        });
+
+        _logger.LogDebug("PerformConfigAsync ChatAIGAgent configuration and initialization completed");
     }
 
     protected override void GroupMemberTransitionState(ChatAIGAgentState state,
@@ -142,7 +125,7 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
     {
         _logger.LogDebug("GroupMemberTransitionState: {data}, type:{type}",
             JsonConvert.SerializeObject(@event), @event.GetType().FullName);
-        
+
         switch (@event)
         {
             case ChatResponseEvent chatResponseEvent:
@@ -150,9 +133,6 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
                 State.LastActivityTime = chatResponseEvent.Timestamp;
                 State.TotalInteractions++;
                 break;
-            case SetInitialPromptEvent setInitialPromptEvent:
-                State.InitialPrompt = setInitialPromptEvent.InitialPrompt;
-                break;
         }
     }
-} 
+}
