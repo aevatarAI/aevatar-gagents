@@ -38,6 +38,55 @@ public sealed class AIChatTest : AevatarAIGAgentTestBase
             await chatAgent.ChatAsync("Obtain the content of the picture", new List<string> { "image1.png" });
         result.ShouldContain("Mock Content");
     }
+    
+    [Fact]
+    public async Task CancelStreamChatTest()
+    {
+        var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
+        await chatAgent.InitializeAsync(new InitializeDto()
+        {
+            Instructions = "you are a image reader",
+            LLMConfig = new LLMConfigDto() { SystemLLM = "OpenAI" },
+            StreamingConfig = new StreamingConfig()
+            {
+                TimeOutInternal = 30000
+            },
+            StreamingModeEnabled = true
+        });
+        
+        var cancelResult = await chatAgent.CancelChatAsync();
+        cancelResult.ShouldBeFalse();
+        
+        var streamTask = Task.Run(async () =>
+        {
+            var result = await chatAgent.ChatAsync("test", aiChatContextDto: new AIChatContextDto());
+            return result;
+        });
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await Task.Delay(5000); 
+            return await chatAgent.CancelChatAsync();
+        });
+        await Task.WhenAll(streamTask, cancelTask);
+        cancelTask.Result.ShouldBeFalse();
+        streamTask.Result.ShouldBe("MockStreamingContent");
+        
+        streamTask = Task.Run(async () =>
+        {
+            var result = await chatAgent.ChatAsync("test", aiChatContextDto: new AIChatContextDto());
+            await Task.Delay(10000);
+            return result;
+        });
+
+        cancelTask = Task.Run(async () =>
+        {
+            await Task.Delay(100); 
+            return await chatAgent.CancelChatAsync();
+        });
+        await Task.WhenAll(streamTask, cancelTask);
+        cancelTask.Result.ShouldBeTrue();
+    }
 
     [Fact]
     public async Task ImageStreamTest()

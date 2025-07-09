@@ -283,6 +283,22 @@ public abstract partial class
         return invokeResponse.ChatReponseList;
     }
 
+    private CancellationTokenSource _cancellationTokenSource;
+
+    protected async Task<bool> CancelStreamingRequestAsync()
+    {
+        try
+        {
+            _cancellationTokenSource.Cancel();
+            return await Task.FromResult(true);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "CancelStreamingRequest fail: {message}", e.Message);
+            return await Task.FromResult(false);
+        }
+    }
+
     private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null,
         List<ChatMessage>? history = null, bool ifUseKnowledge = false,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
@@ -290,13 +306,13 @@ public abstract partial class
     {
         var streamingConfig = State.StreamingConfig;
         var result = new InvokePromptResponse();
+        using var cts = new CancellationTokenSource();
         if (streamingConfig?.TimeOutInternal > 0)
         {
-            using var cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
-            cancellationToken = cts.Token;
         }
-
+        _cancellationTokenSource = cts;
+        cancellationToken = cts.Token;
 
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
@@ -308,7 +324,8 @@ public abstract partial class
         var chatBrain = ConvertBrain<IChatBrain>();
         try
         {
-            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, imageKeys, history, ifUseKnowledge,
+            var responseStreaming = await chatBrain.InvokePromptStreamingAsync(content, imageKeys, history,
+                ifUseKnowledge,
                 promptSettings,
                 cancellationToken: cancellationToken);
 
@@ -316,6 +333,7 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
@@ -399,6 +417,10 @@ public abstract partial class
                         "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
                 });
             }
+        }
+        finally
+        {
+            _cancellationTokenSource.Dispose();
         }
 
         chatMessage.Content = completeContent.ToString();
