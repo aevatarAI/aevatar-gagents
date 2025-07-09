@@ -18,4 +18,11 @@ public class ChatResponseEvent : ChatAIGAgentEvent
     
     [Id(1)]
     public DateTime Timestamp { get; set; }
+}
+
+[GenerateSerializer]
+public class SetInitialPromptEvent : ChatAIGAgentEvent
+{
+    [Id(0)]
+    public string? InitialPrompt { get; set; }
 } 

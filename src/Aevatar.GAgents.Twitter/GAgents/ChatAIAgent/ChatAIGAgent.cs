@@ -48,18 +48,42 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
         
         if (coordinatorMessages == null || coordinatorMessages.Count == 0)
         {
-            var defaultMessage = $"{State.MemberName} is ready to chat (BlackboardId: {blackboardId.ToString()[..8]})";
-            
-            // Save this response to state
-            RaiseEvent(new ChatResponseEvent()
+            // If no input messages and we have an initial prompt, use it to generate AI response
+            if (!string.IsNullOrWhiteSpace(State.InitialPrompt))
             {
-                Response = defaultMessage,
-                Timestamp = DateTime.UtcNow
-            });
-            await ConfirmEvents();
-            
-            response.Content = defaultMessage;
-            return response;
+                _logger.LogInformation($"{State.MemberName} using initial prompt: {State.InitialPrompt}");
+                
+                // Use AI to generate response based on initial prompt
+                var initialAiMessages = await ChatWithHistory(State.InitialPrompt);
+                var initialAiResponse = initialAiMessages?.FirstOrDefault()?.Content ?? $"{State.MemberName}: I'm having trouble processing the initial prompt.";
+                
+                // Save conversation to state
+                RaiseEvent(new ChatResponseEvent()
+                {
+                    Response = initialAiResponse,
+                    Timestamp = DateTime.UtcNow
+                });
+                await ConfirmEvents();
+                
+                response.Content = initialAiResponse;
+                return response;
+            }
+            else
+            {
+                // Default behavior when no initial prompt is set
+                var defaultMessage = $"{State.MemberName} is ready to chat (BlackboardId: {blackboardId.ToString()[..8]})";
+                
+                // Save this response to state
+                RaiseEvent(new ChatResponseEvent()
+                {
+                    Response = defaultMessage,
+                    Timestamp = DateTime.UtcNow
+                });
+                await ConfirmEvents();
+                
+                response.Content = defaultMessage;
+                return response;
+            }
         }
 
         // Process the workflow messages
@@ -98,9 +122,18 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
     
     protected override async Task PerformConfigAsync(ChatAIGAgentConfigDto configuration)
     {
-        // Only call the base implementation to set MemberName
-        // No additional chat-specific configuration needed
+        // Call the base implementation to set MemberName
         await base.PerformConfigAsync(configuration);
+        
+        // Set the initial prompt if provided
+        if (!string.IsNullOrWhiteSpace(configuration.InitialPrompt))
+        {
+            RaiseEvent(new SetInitialPromptEvent()
+            {
+                InitialPrompt = configuration.InitialPrompt
+            });
+            await ConfirmEvents();
+        }
         
         _logger.LogDebug("PerformConfigAsync ChatAIGAgent completed");
     }
@@ -117,6 +150,9 @@ public class ChatAIGAgent : GroupMemberGAgentBase<ChatAIGAgentState, ChatAIGAgen
                 State.LastResponse = chatResponseEvent.Response;
                 State.LastActivityTime = chatResponseEvent.Timestamp;
                 State.TotalInteractions++;
+                break;
+            case SetInitialPromptEvent setInitialPromptEvent:
+                State.InitialPrompt = setInitialPromptEvent.InitialPrompt;
                 break;
         }
     }

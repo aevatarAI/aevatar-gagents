@@ -15,4 +15,7 @@ public class ChatAIGAgentState : GroupMemberState
     
     [Id(2)]
     public int TotalInteractions { get; set; } = 0;
+    
+    [Id(3)]
+    public string? InitialPrompt { get; set; }
 } 
