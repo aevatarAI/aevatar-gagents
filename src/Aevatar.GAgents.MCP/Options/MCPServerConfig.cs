@@ -1,21 +1,49 @@
-using System;
-using System.Collections.Generic;
-using Aevatar.Core.Abstractions;
-using Orleans;
-
 namespace Aevatar.GAgents.MCP.Options;
 
+// ReSharper disable InconsistentNaming
 [GenerateSerializer]
 public class MCPServerConfig
 {
     [Id(0)] public string ServerName { get; set; } = string.Empty;
     [Id(1)] public string Command { get; set; } = string.Empty;
-    [Id(2)] public List<string> Args { get; set; } = new();
+    [Id(2)] public List<string> Args { get; set; } = [];
     [Id(3)] public Dictionary<string, string> Env { get; set; } = new();
-    [Id(4)] public bool AutoReconnect { get; set; } = true;
-    [Id(5)] public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds(5);
-    [Id(6)] public string? Url { get; set; } // For SSE endpoints
-    [Id(7)] public string? TransportType { get; set; } // "stdio", "http", "sse"
-    [Id(8)] public int? InitialDelayMs { get; set; } // Custom initial delay for servers that need more time
-    [Id(9)] public int? MaxRetries { get; set; } // Custom max retries for initialization
+    [Id(4)] public string Description { get; set; } = string.Empty;
+
+    [Id(5)] public bool AutoReconnect { get; set; } = true;
+    [Id(6)] public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// For SSE endpoints
+    /// </summary>
+    [Id(7)]
+    public string? Url { get; set; }
+
+    /// <summary>
+    /// "stdio", "http", "sse"
+    /// </summary>
+    [Id(8)]
+    public string? TransportType { get; set; }
+
+    /// <summary>
+    /// Custom initial delay for servers that need more time
+    /// </summary>
+    [Id(9)]
+    public int? InitialDelayMs { get; set; }
+
+    /// <summary>
+    /// Custom max retries for initialization
+    /// </summary>
+    [Id(10)]
+    public int? MaxRetries { get; set; }
+}
+
+public static class MCPServerConfigExtensions
+{
+    public static bool IsValid(this MCPServerConfig config)
+    {
+        return !string.IsNullOrWhiteSpace(config.ServerName) &&
+               !string.IsNullOrWhiteSpace(config.Command) &&
+               config.Args.Count > 0;
+    }
 }

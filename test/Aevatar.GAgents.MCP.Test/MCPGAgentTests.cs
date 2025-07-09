@@ -34,30 +34,16 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers =
-            [
-                new MCPServerConfig()
+            Server =new MCPServerConfig()
+            {
+                ServerName = "filesystem",
+                Command = "npx",
+                Args = ["-y", "@modelcontextprotocol/server-filesystem"],
+                Env = new Dictionary<string, string>
                 {
-                    ServerName = "filesystem",
-                    Command = "npx",
-                    Args = ["-y", "@modelcontextprotocol/server-filesystem"],
-                    Env = new Dictionary<string, string>
-                    {
-                        ["NODE_ENV"] = "production"
-                    }
-                },
-
-                new MCPServerConfig()
-                {
-                    ServerName = "github",
-                    Command = "npx",
-                    Args = ["-y", "@modelcontextprotocol/server-github"],
-                    Env = new Dictionary<string, string>
-                    {
-                        ["GITHUB_TOKEN"] = "test-token"
-                    }
+                    ["NODE_ENV"] = "production"
                 }
-            ],
+            },
             EnableToolDiscovery = true
         };
 
@@ -77,15 +63,12 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers =
-            [
-                new MCPServerConfig
-                {
-                    ServerName = "filesystem",
-                    Command = "npx",
-                    Args = ["-y", "@modelcontextprotocol/server-filesystem"]
-                }
-            ]
+            Server = new MCPServerConfig
+            {
+                ServerName = "filesystem",
+                Command = "npx",
+                Args = ["-y", "@modelcontextprotocol/server-filesystem"]
+            }
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
@@ -122,15 +105,12 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers =
-            [
-                new MCPServerConfig
-                {
-                    ServerName = "sqlite",
-                    Command = "npx",
-                    Args = ["-y", "@modelcontextprotocol/server-sqlite", "memory:"]
-                }
-            ],
+            Server = new MCPServerConfig
+            {
+                ServerName = "sqlite",
+                Command = "npx",
+                Args = ["-y", "@modelcontextprotocol/server-sqlite", "memory:"]
+            },
             EnableToolDiscovery = true
         };
 
@@ -161,122 +141,16 @@ public class MCPGAgentTests : AevatarMCPTestBase
     }
 
     [Fact]
-    public async Task Multiple_MCP_Servers_Can_Work_Together()
-    {
-        // Arrange - 配置多个实际可用的MCP服务器
-        var config = new MCPGAgentConfig
-        {
-            Servers =
-            [
-                new MCPServerConfig
-                {
-                    ServerName = "filesystem",
-                    Command = "npx",
-                    Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" }
-                },
-
-                // SQLite内存数据库服务器
-                new MCPServerConfig
-                {
-                    ServerName = "sqlite",
-                    Command = "npx",
-                    Args = new List<string> { "-y", "@modelcontextprotocol/server-sqlite", "memory:" }
-                },
-
-                // Fetch HTTP请求服务器
-                new MCPServerConfig
-                {
-                    ServerName = "fetch",
-                    Command = "npx",
-                    Args = new List<string> { "-y", "@modelcontextprotocol/server-fetch" }
-                }
-            ],
-            EnableToolDiscovery = true,
-            RequestTimeout = TimeSpan.FromSeconds(30)
-        };
-
-        var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
-
-        // Act - 测试每个服务器的工具调用
-
-        // 1. 文件系统操作
-        var fsListEvent = new MCPToolCallEvent
-        {
-            ServerName = "filesystem",
-            ToolName = "list_directory",
-            Arguments = new Dictionary<string, object>
-            {
-                ["path"] = "/tmp"
-            }
-        };
-        var fsResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fsListEvent);
-        var fsResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(fsResponseJson, new JsonSerializerSettings
-        {
-            Converters = { new GrainIdConverter() }
-        });
-
-        // 2. SQLite查询
-        var sqlCreateEvent = new MCPToolCallEvent
-        {
-            ServerName = "sqlite",
-            ToolName = "execute_query",
-            Arguments = new Dictionary<string, object>
-            {
-                ["query"] = "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)"
-            }
-        };
-        var sqlResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, sqlCreateEvent);
-        var sqlResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(sqlResponseJson,
-            new JsonSerializerSettings
-            {
-                Converters = { new GrainIdConverter() }
-            });
-
-        // 3. HTTP请求
-        var fetchEvent = new MCPToolCallEvent
-        {
-            ServerName = "fetch",
-            ToolName = "fetch",
-            Arguments = new Dictionary<string, object>
-            {
-                ["url"] = "https://api.github.com"
-            }
-        };
-        var fetchResponseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, fetchEvent);
-        var fetchResponse = JsonConvert.DeserializeObject<MCPToolResponseEvent>(fetchResponseJson,
-            new JsonSerializerSettings
-            {
-                Converters = { new GrainIdConverter() }
-            });
-
-        // Assert
-        fsResponse.ShouldNotBeNull();
-        fsResponse.Success.ShouldBeTrue();
-        sqlResponse.ShouldNotBeNull();
-        sqlResponse.Success.ShouldBeTrue();
-        fetchResponse.ShouldNotBeNull();
-        fetchResponse.Success.ShouldBeTrue();
-
-        // 验证所有服务器都已连接
-        var serverStates = await mcpGAgent.GetServerStatesAsync();
-        serverStates.Count.ShouldBe(3);
-        serverStates.All(s => s.IsConnected).ShouldBeTrue();
-    }
-
-    [Fact]
     public async Task MCPGAgent_Should_Handle_Server_Not_Found_Error()
     {
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Servers =
-            [
-                new MCPServerConfig
-                {
-                    ServerName = "test-server",
-                    Command = "test"
-                }
-            ]
+            Server = new MCPServerConfig
+            {
+                ServerName = "test-server",
+                Command = "test"
+            }
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);

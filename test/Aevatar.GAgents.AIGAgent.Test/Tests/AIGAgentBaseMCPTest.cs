@@ -1,22 +1,16 @@
-// ABOUTME: This file contains comprehensive unit tests for AIGAgentBase MCP functionality
-// ABOUTME: Tests MCP server configuration, tool discovery, and tool calling flows
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.Test.TestAgents;
 using Aevatar.GAgents.MCP.Options;
-using Aevatar.GAgents.MCP.Model;
-using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using Xunit;
 
 namespace Aevatar.GAgents.AIGAgent.Test.Tests;
 
+/// <summary>
+/// This file contains comprehensive unit tests for AIGAgentBase MCP functionality.
+/// Tests MCP server configuration, tool discovery, and tool calling flows.
+/// </summary>
 public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 {
     private readonly IGAgentFactory _agentFactory;
@@ -26,11 +20,11 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         _agentFactory = GetRequiredService<IGAgentFactory>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can config mcp servers to state.")]
     public async Task ConfigureMCPServersAsync_Should_ReturnTrue_When_ValidServersProvided()
     {
         // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
+        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>();
         await agent.InitializeAsync(new InitializeDto
         {
             Instructions = "Test MCP agent",
@@ -43,7 +37,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
             {
                 ServerName = "test-server",
                 Command = "test-command",
-                Args = new List<string> { "arg1", "arg2" },
+                Args = ["arg1", "arg2"],
                 Env = new Dictionary<string, string> { ["TEST_VAR"] = "test_value" }
             }
         };
@@ -53,13 +47,13 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.MCPAgents.ShouldContainKey("test-server");
         state.EnableMCPTools.ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Cannot config mcp servers with invalid data.")]
     public async Task ConfigureMCPServersAsync_Should_ReturnFalse_When_InvalidServersProvided()
     {
         // Arrange
@@ -86,7 +80,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can config multiple mcp servers to state.")]
     public async Task ConfigureMCPServersAsync_Should_UpdateStateCorrectly_When_MultipleServersConfigured()
     {
         // Arrange
@@ -118,14 +112,14 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.MCPAgents.ShouldContainKey("server1");
         state.MCPAgents.ShouldContainKey("server2");
         state.MCPAgents.Count.ShouldBe(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "Available MCP tools should return empty when no mcp servers configured.")]
     public async Task GetAvailableMCPToolsAsync_Should_ReturnEmptyList_When_NoServersConfigured()
     {
         // Arrange
@@ -144,7 +138,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         tools.ShouldBeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can return available MCP tools when servers configured.")]
     public async Task GetAvailableMCPToolsAsync_Should_ReturnTools_When_ServersConfigured()
     {
         // Arrange
@@ -161,7 +155,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
             {
                 ServerName = "test-server",
                 Command = "test-command",
-                Args = new List<string> { "arg1" }
+                Args = ["arg1"]
             }
         };
 
@@ -172,11 +166,9 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 
         // Assert
         tools.ShouldNotBeNull();
-        // Note: In a real test, this would depend on the actual MCP server implementation
-        // For now, we're testing the structure works correctly
     }
 
-    [Fact]
+    [Fact(DisplayName = "Cannot call MCP tool when mcp server not found.")]
     public async Task TestMCPToolCallAsync_Should_ReturnFalse_When_ServerNotFound()
     {
         // Arrange
@@ -200,7 +192,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         result.ShouldBeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can track tool calls when MCP tool called.")]
     public async Task TestMCPToolCallAsync_Should_TrackToolCall_When_Called()
     {
         // Arrange
@@ -223,7 +215,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         // Assert
         var toolCalls = await agent.GetCurrentToolCallsAsync();
         toolCalls.ShouldNotBeNull();
-        
+
         if (toolCalls.Any())
         {
             var toolCall = toolCalls.First();
@@ -235,7 +227,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can clear tracked tool calls when MCP tool calls cleared.")]
     public async Task ClearToolCallsAsync_Should_ClearTrackedCalls_When_Called()
     {
         // Arrange
@@ -247,7 +239,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         });
 
         var parameters = new Dictionary<string, object> { ["param1"] = "value1" };
-        
+
         // Add some tool calls
         await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
 
@@ -368,7 +360,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
             var toolCall = toolCalls.First();
             toolCall.Arguments.ShouldContainKey("testParam");
             toolCall.Arguments["testParam"].ShouldBeOfType<List<object>>();
-            
+
             var list = (List<object>)toolCall.Arguments["testParam"];
             list.Count.ShouldBe(3);
             list[0].ShouldBe("item1");
@@ -402,7 +394,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
             var toolCall = toolCalls.First();
             toolCall.Arguments.ShouldContainKey("testParam");
             toolCall.Arguments["testParam"].ShouldBeOfType<Dictionary<string, object>>();
-            
+
             var dict = (Dictionary<string, object>)toolCall.Arguments["testParam"];
             dict.ShouldContainKey("key1");
             dict.ShouldContainKey("key2");
@@ -437,7 +429,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should handle long names gracefully
-        
+
         var state = await agent.GetStateAsync();
         state.MCPAgents.ShouldContainKey("very-long-server-name-that-exceeds-normal-limits");
     }
@@ -447,7 +439,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
     {
         // This test verifies that the cost warning filtering works correctly
         // The actual filtering is done internally, so we test it indirectly
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -494,7 +486,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeFalse();
-        
+
         var toolCalls = await agent.GetCurrentToolCallsAsync();
         if (toolCalls.Any())
         {
@@ -548,7 +540,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         {
             var toolCall = toolCalls.First();
             toolCall.Timestamp.ShouldNotBeNullOrEmpty();
-            
+
             // Parse timestamp and verify it's reasonable
             var timestamp = DateTime.Parse(toolCall.Timestamp.Replace(" UTC", ""));
             timestamp.ShouldBeGreaterThan(beforeCall.AddSeconds(-1));

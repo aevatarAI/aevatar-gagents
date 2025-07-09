@@ -4,24 +4,17 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.AIGAgent.GEvents;
 using Aevatar.GAgents.AIGAgent.Plugin;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.Executor;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.Model;
-using Aevatar.GAgents.MCP.Provider;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Orleans;
 using Orleans.Runtime;
 
@@ -173,7 +166,7 @@ public abstract partial class
                             {
                                 ToolName = functionName,
                                 ServerName = grainType.ToString() ?? "GAgent",
-                                Arguments = args.ToDictionary(kvp => kvp.Key, kvp => kvp.Value ?? new object()),
+                                Arguments = args.ToDictionary(),
                                 Timestamp = toolStartTime.ToString("yyyy-MM-dd HH:mm:ss.fff UTC")
                             };
 
@@ -551,15 +544,13 @@ public abstract partial class
     /// </summary>
     private bool IsGAgentAllowed(GrainType grainType)
     {
-        if (State.AllowedGAgentTypes == null || State.AllowedGAgentTypes.Count == 0)
+        if (State.AllowedGAgentTypes.Count == 0)
         {
             // No restrictions, all GAgents are allowed
             return true;
         }
 
-        var grainTypeString = grainType.ToString();
-        return State.AllowedGAgentTypes.Any(allowed =>
-            grainTypeString.Contains(allowed, StringComparison.OrdinalIgnoreCase));
+        return State.AllowedGAgentTypes.Contains(grainType);
     }
 
     /// <summary>
@@ -646,7 +637,7 @@ public abstract partial class
     [GenerateSerializer]
     public class SetAllowedGAgentTypesStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        [Id(0)] public List<string>? AllowedGAgentTypes { get; set; }
+        [Id(0)] public List<GrainType> AllowedGAgentTypes { get; set; } = [];
     }
 
     /// <summary>
@@ -687,6 +678,11 @@ public abstract partial class
             Logger.LogError(ex, "Failed to register all GAgent tools");
             return false;
         }
+    }
+
+    public Task<List<GrainType>> GetAvailableGAgentToolsAsync()
+    {
+        return Task.FromResult(State.AllowedGAgentTypes);
     }
 
     /// <summary>
@@ -904,8 +900,7 @@ public abstract partial class
                                         {
                                             ToolName = tool.Name,
                                             ServerName = serverName,
-                                            Arguments = args.ToDictionary(kvp => kvp.Key,
-                                                kvp => kvp.Value ?? new object()),
+                                            Arguments = args.ToDictionary(),
                                             Timestamp = toolStartTime.ToString("yyyy-MM-dd HH:mm:ss.fff UTC")
                                         };
 

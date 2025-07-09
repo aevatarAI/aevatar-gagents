@@ -1,20 +1,14 @@
-// ABOUTME: This file contains comprehensive unit tests for AIGAgentBase Tools functionality
-// ABOUTME: Tests GAgent tool registration, selection, and execution flows
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.Test.TestAgents;
-using Microsoft.Extensions.DependencyInjection;
-using Orleans.Runtime;
 using Shouldly;
-using Xunit;
 
 namespace Aevatar.GAgents.AIGAgent.Test.Tests;
 
+/// <summary>
+/// This file contains comprehensive unit tests for AIGAgentBase Tools functionality.
+/// Tests GAgent tool registration, selection, and execution flows.
+/// </summary>
 public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 {
     private readonly IGAgentFactory _agentFactory;
@@ -40,7 +34,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
     }
@@ -81,7 +75,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
         state.SelectedGAgents.ShouldNotBeEmpty();
@@ -130,7 +124,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.Count.ShouldBe(3);
         state.SelectedGAgents.ShouldContain(GrainType.Create("test/chatgagent"));
@@ -161,7 +155,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.ShouldBeEmpty();
         state.RegisteredGAgentFunctions.ShouldBeEmpty();
@@ -272,7 +266,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should handle long names gracefully
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.ShouldNotBeEmpty();
     }
@@ -299,7 +293,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should handle similar names gracefully
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.Count.ShouldBe(2);
     }
@@ -325,7 +319,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should generate descriptions correctly
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.ShouldNotBeEmpty();
     }
@@ -353,7 +347,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should allow all GAgents when no restrictions
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.Count.ShouldBe(2);
     }
@@ -363,7 +357,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     {
         // This test verifies that tool execution tracking works correctly
         // In a real scenario, this would involve calling actual tools
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -382,7 +376,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify tool configuration was successful
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
@@ -393,7 +387,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     public async Task ToolExecution_Should_HandleEventMapping_When_KernelArgumentsProvided()
     {
         // This test verifies that kernel arguments are properly mapped to event properties
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -412,7 +406,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify the configuration was successful
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.ShouldContain(GrainType.Create("test/chatgagent"));
@@ -422,7 +416,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     public async Task PluginManagement_Should_HandlePluginRegistration_When_GAgentsConfigured()
     {
         // This test verifies that plugin management works correctly
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -442,7 +436,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify plugins were registered
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
@@ -453,7 +447,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     public async Task PluginManagement_Should_RemoveExistingPlugins_When_NewPluginsRegistered()
     {
         // This test verifies that old plugins are removed when new ones are registered
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -481,7 +475,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify new configuration replaced old one
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.Count.ShouldBe(2);
@@ -494,7 +488,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     public async Task ErrorHandling_Should_HandleGrainActivationErrors_When_InvalidGrainTypeProvided()
     {
         // This test verifies that invalid grain types are handled gracefully
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -513,7 +507,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue(); // Should handle invalid grain types gracefully
-        
+
         var state = await agent.GetStateAsync();
         state.SelectedGAgents.ShouldNotBeEmpty();
     }
@@ -522,7 +516,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     public async Task StateManagement_Should_PersistToolConfiguration_When_StateChanged()
     {
         // This test verifies that tool configuration is properly persisted
-        
+
         // Arrange
         var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
         await agent.InitializeAsync(new InitializeDto
@@ -541,7 +535,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify state was persisted
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();

@@ -64,7 +64,7 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
     {
         // Arrange
         var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
-        var allowedTypes = new List<string> { "ChatAIGAgent" };
+        var allowedTypes = new List<GrainType> { chatAgent.GetGrainId().Type };
         
         await chatAgent.InitializeAsync(new InitializeDto
         {
@@ -81,10 +81,8 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         state.EnableGAgentTools.ShouldBeTrue();
         state.AllowedGAgentTypes.ShouldNotBeNull();
         state.AllowedGAgentTypes.Count.ShouldBe(1);
-        state.AllowedGAgentTypes[0].ShouldBe("ChatAIGAgent");
+        state.AllowedGAgentTypes[0].ToString().ShouldBe("ChatAIGAgent");
     }
-
-
 
     [Fact]
     public async Task Should_Handle_Multiple_Agents_With_Tools()
@@ -106,7 +104,7 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
             Instructions = "Second AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
             EnableGAgentTools = true,
-            AllowedGAgentTypes = new List<string> { "GroupGAgent" }
+            AllowedGAgentTypes = [GrainType.Create("GroupGAgent")]
         });
         
         // Assert
@@ -122,7 +120,7 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         // Agent 2 has restrictions
         state2.AllowedGAgentTypes.ShouldNotBeNull();
         state2.AllowedGAgentTypes.Count.ShouldBe(1);
-        state2.AllowedGAgentTypes[0].ShouldBe("GroupGAgent");
+        state2.AllowedGAgentTypes[0].ToString().ShouldBe("GroupGAgent");
     }
 
     [Fact]

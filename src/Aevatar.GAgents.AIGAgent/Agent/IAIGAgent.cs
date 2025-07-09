@@ -8,6 +8,7 @@ using Orleans.Runtime;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
+// ReSharper disable InconsistentNaming
 public interface IAIGAgent
 {
     Task<bool> InitializeAsync(InitializeDto dto);
@@ -65,6 +66,12 @@ public interface IAIGAgent
     /// Registers all available GAgent tools
     /// </summary>
     Task<bool> RegisterAllGAgentToolsAsync();
+
+    /// <summary>
+    /// Get available GAgent tools from all registered GAgentTypes
+    /// </summary>
+    /// <returns></returns>
+    Task<List<GrainType>> GetAvailableGAgentToolsAsync();
 
     /// <summary>
     /// Clears all registered GAgent tools

@@ -24,8 +24,8 @@ public abstract class AIGAgentStateBase : StateBase
     [Id(11)] public int LastTotalTokenUsage { get; set; } = 0;
     [Id(12)] public string? LLMConfigKey { get; set; } = null;
     [Id(13)] public bool EnableGAgentTools { get; set; } = false;
-    [Id(14)] public List<string> RegisteredGAgentFunctions { get; set; } = new();
-    [Id(15)] public List<string>? AllowedGAgentTypes { get; set; }
+    [Id(14)] public List<string> RegisteredGAgentFunctions { get; set; } = [];
+    [Id(15)] public List<GrainType> AllowedGAgentTypes { get; set; } = [];
 
     // MCP-related state fields
     [Id(16)] public Dictionary<string, MCPGAgentReference> MCPAgents { get; set; } = new();

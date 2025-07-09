@@ -18,7 +18,7 @@ public class InitializeDto
     [Id(2)] public bool StreamingModeEnabled { get; set; }
     [Id(3)] public StreamingConfig StreamingConfig { get; set; }
     [Id(4)] public bool EnableGAgentTools { get; set; } = false;
-    [Id(5)] public List<string>? AllowedGAgentTypes { get; set; }
+    [Id(5)] public List<GrainType> AllowedGAgentTypes { get; set; } = [];
     
     // MCP configuration options
     [Id(6)] public bool EnableMCPTools { get; set; } = false;

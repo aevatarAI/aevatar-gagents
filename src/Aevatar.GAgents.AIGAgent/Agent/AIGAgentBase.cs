@@ -27,33 +27,27 @@ using Orleans.Concurrency;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
-public abstract partial class
+public abstract class
     AIGAgentBase<TState, TStateLogEvent> : AIGAgentBase<TState, TStateLogEvent, EventBase, ConfigurationBase>
     where TState : AIGAgentStateBase, new()
-    where TStateLogEvent : StateLogEventBase<TStateLogEvent>
-{
-}
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>;
 
-public abstract partial class
+public abstract class
     AIGAgentBase<TState, TStateLogEvent, TEvent> : AIGAgentBase<TState, TStateLogEvent, TEvent, ConfigurationBase>
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
-    where TEvent : EventBase
-{
-}
+    where TEvent : EventBase;
 
 [Reentrant]
 public abstract partial class
-    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IAIGAgent
-    where TState : AIGAgentStateBase, new()
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
     private readonly IBrainFactory _brainFactory;
     private readonly IServiceProvider _serviceProvider;
-    private IBrain? _brain = null;
+    private IBrain? _brain;
 
     protected AIGAgentBase()
     {
@@ -100,20 +94,20 @@ public abstract partial class
             RaiseEvent(new SetAllowedGAgentTypesStateLogEvent
                 { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
         }
-        
+
         // Handle MCP tools configuration
         if (initializeDto.EnableMCPTools)
         {
             RaiseEvent(new SetEnableMCPToolsStateLogEvent { EnableMCPTools = true });
         }
-        
+
         // Configure MCP servers if provided
         if (initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
         {
             // This will be handled after brain initialization
             State.EnableMCPTools = true;
         }
-        
+
         // Configure selected GAgents if provided
         if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Any())
         {
@@ -138,7 +132,7 @@ public abstract partial class
             {
                 await UpdateKernelWithGAgentToolsAsync();
             }
-            
+
             // Configure MCP servers if provided in initialization
             if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
             {

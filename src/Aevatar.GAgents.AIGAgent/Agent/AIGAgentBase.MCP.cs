@@ -19,6 +19,7 @@ using Orleans;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
+// ReSharper disable InconsistentNaming
 /// <summary>
 /// Partial class for AIGAgentBase that adds MCP (Model Context Protocol) tool capabilities
 /// </summary>
@@ -43,10 +44,16 @@ public abstract partial class
 
             foreach (var server in servers)
             {
+                if (!server.IsValid())
+                {
+                    Logger.LogWarning("Skipping invalid MCP server configuration");
+                    continue;
+                }
+
                 // Create config for the MCP agent
                 var mcpConfig = new MCPGAgentConfig
                 {
-                    Servers = new List<MCPServerConfig> { server }
+                    Server = server
                 };
 
                 var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);
@@ -56,17 +63,21 @@ public abstract partial class
                 {
                     AgentId = mcpAgentId,
                     ServerName = server.ServerName,
-                    Description = server.ServerName
+                    Description = server.Description
                 };
 
                 // Log available tools from this server
                 var serverTools = await mcpAgent.GetAvailableToolsAsync();
                 foreach (var (_, tool) in serverTools)
                 {
-                    var toolKey = $"{server.ServerName}.{tool.Name}";
-                    var cleanDescription = FilterCostWarnings(tool.Description);
-                    Logger.LogInformation($"Registered MCP tool: {toolKey} - {cleanDescription}");
+                    Logger.LogInformation($"Registered MCP tool: {server.ServerName}.{tool.Name} - {tool.Description}");
                 }
+            }
+
+            if (!mcpAgents.Any())
+            {
+                // No valid MCP servers configured
+                return false;
             }
 
             // Update state
@@ -75,7 +86,13 @@ public abstract partial class
                 MCPServers = mcpAgents
             };
 
+            var enableMCPToolsEvent = new SetEnableMCPToolsStateLogEvent
+            {
+                EnableMCPTools = true
+            };
+
             RaiseEvent(configureServersEvent);
+            RaiseEvent(enableMCPToolsEvent);
             await ConfirmEvents();
 
             // Update kernel tools if brain is initialized
@@ -156,10 +173,11 @@ public abstract partial class
                     // Extract the actual tool name
                     var actualToolName = tool.Name;
                     var mcpToolFullName = toolKey; // Use the key as-is
-                    
+
                     // Use GenerateMCPFunctionName to ensure the name doesn't exceed 64 characters
                     var kernelFunctionName = GenerateMCPFunctionName(serverName, actualToolName);
-                    Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", kernelFunctionName, kernelFunctionName.Length);
+                    Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})", kernelFunctionName,
+                        kernelFunctionName.Length);
 
                     // Store the mapping for later use
                     _toolNameMapping[kernelFunctionName] = mcpToolFullName;
@@ -167,7 +185,7 @@ public abstract partial class
                     var function = KernelFunctionFactory.CreateFromMethod(
                         async (KernelArguments args) => await CallMCPToolAsync(serverName, actualToolName, args),
                         functionName: kernelFunctionName,
-                        description: FilterCostWarnings(tool.Description),
+                        description: tool.Description,
                         parameters: ConvertMCPToKernelParameters(tool.Parameters)
                     );
 
@@ -180,7 +198,7 @@ public abstract partial class
                 {
                     // Clean server name to be a valid plugin name (only ASCII letters, digits, and underscores)
                     var pluginName = $"MCP_{serverName.Replace("-", "_").Replace(".", "_").Replace(" ", "_")}";
-                    
+
                     // Remove existing plugin with the same name to avoid duplicates
                     var existingPlugin = kernel.Plugins.FirstOrDefault(p => p.Name == pluginName);
                     if (existingPlugin != null)
@@ -188,9 +206,10 @@ public abstract partial class
                         kernel.Plugins.Remove(existingPlugin);
                         Logger.LogDebug("Removed existing MCP plugin '{PluginName}' before re-registering", pluginName);
                     }
-                    
+
                     kernel.Plugins.AddFromFunctions(pluginName, functions);
-                    Logger.LogInformation($"Registered {functions.Count} tools from MCP server {serverName} as plugin {pluginName}");
+                    Logger.LogInformation(
+                        $"Registered {functions.Count} tools from MCP server {serverName} as plugin {pluginName}");
                 }
             }
             catch (Exception ex)
@@ -221,13 +240,13 @@ public abstract partial class
         {
             ToolName = toolName,
             ServerName = serverName,
-            Arguments = new Dictionary<string, object>(),
+            Arguments = kernelArgs.ToDictionary(),
             Timestamp = toolStartTime.ToString("yyyy-MM-dd HH:mm:ss.fff UTC")
         };
 
         try
         {
-            Logger.LogInformation($"[{DateTime.UtcNow:HH:mm:ss.fff}] Calling MCP tool: {serverName}.{toolName}");
+            Logger.LogInformation($"Calling MCP tool: {serverName}.{toolName}");
 
             var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
 
@@ -259,16 +278,16 @@ public abstract partial class
             // Call the MCP tool with the actual tool name (not the kernel function name)
             var response = await mcpAgent.CallToolAsync(serverName, toolName, parameters);
 
-            Logger.LogInformation($"[{DateTime.UtcNow:HH:mm:ss.fff}] MCP tool {serverName}.{toolName} completed");
+            Logger.LogInformation($"MCP tool {serverName}.{toolName} completed");
 
             var result = response.Result?.ToString() ?? string.Empty;
-            
+
             // Track successful tool call
             toolCall.Success = true;
             toolCall.Result = result;
             toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
             _currentToolCalls.Add(toolCall);
-            
+
             Logger.LogInformation(
                 "[MCP Tool Call] {ServerName}.{ToolName} completed in {Duration}ms",
                 serverName, toolName, toolCall.DurationMs);
@@ -278,19 +297,19 @@ public abstract partial class
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Error calling MCP tool {serverName}.{toolName}");
-            
+
             var errorResult = $"Error calling tool: {ex.Message}";
-            
+
             // Track failed tool call
             toolCall.Success = false;
             toolCall.Result = errorResult;
             toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
             _currentToolCalls.Add(toolCall);
-            
+
             Logger.LogError(ex,
                 "[MCP Tool Call] {ServerName}.{ToolName} failed after {Duration}ms",
                 serverName, toolName, toolCall.DurationMs);
-            
+
             return errorResult;
         }
     }
@@ -306,10 +325,10 @@ public abstract partial class
         {
             // Only use the basic constructor with name
             var metadata = new KernelParameterMetadata(name);
-            
+
             // Try to set properties using reflection to handle API changes
             var metadataType = metadata.GetType();
-            
+
             // Try to set Description property if it exists
             var descProp = metadataType.GetProperty("Description");
             if (descProp != null && descProp.CanWrite)
@@ -323,7 +342,7 @@ public abstract partial class
                     Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
                 }
             }
-            
+
             // Try to set IsRequired property if it exists  
             var reqProp = metadataType.GetProperty("IsRequired");
             if (reqProp != null && reqProp.CanWrite)
@@ -391,34 +410,6 @@ public abstract partial class
         }
 
         return value;
-    }
-
-    /// <summary>
-    /// Filter cost warnings from tool descriptions
-    /// </summary>
-    private string FilterCostWarnings(string description)
-    {
-        if (string.IsNullOrEmpty(description))
-            return description;
-
-        // Remove MiniMax cost warnings
-        var patterns = new[]
-        {
-            "Note: This tool calls MiniMax API and may incur costs. Use only when explicitly requested by the user.",
-            "Note: This tool calls MiniMax API and may incur costs.",
-            "Use only when explicitly requested by the user."
-        };
-
-        var result = description;
-        foreach (var pattern in patterns)
-        {
-            result = result.Replace(pattern, "").Trim();
-        }
-
-        // Clean up extra whitespace and newlines
-        result = System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ").Trim();
-        
-        return result;
     }
 
     /// <summary>

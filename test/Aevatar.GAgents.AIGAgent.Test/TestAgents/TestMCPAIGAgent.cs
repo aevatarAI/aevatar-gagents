@@ -1,21 +1,16 @@
 // ABOUTME: This file implements a test AIGAgent specifically for MCP tool testing
 // ABOUTME: Provides minimal implementation focused on MCP functionality validation
 
-using System;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Test.TestAgents.Events;
 using Aevatar.GAgents.AIGAgent.Test.TestAgents.States;
-using Aevatar.GAgents.MCP.Model;
-using Aevatar.GAgents.MCP.Options;
-using Orleans;
 using Orleans.Providers;
 
 namespace Aevatar.GAgents.AIGAgent.Test.TestAgents;
 
+// ReSharper disable InconsistentNaming
 public interface ITestMCPAIGAgent : IAIGAgent, IStateGAgent<TestMCPAIGAgentState>
 {
     Task<bool> TestMCPToolCallAsync(string serverName, string toolName, Dictionary<string, object> parameters);
@@ -46,7 +41,7 @@ public class TestMCPAIGAgent :
             }
 
             var result = await CallMCPToolAsync(serverName, toolName, kernelArgs);
-            return !string.IsNullOrEmpty(result);
+            return !result.Contains("Error");
         }
         catch
         {

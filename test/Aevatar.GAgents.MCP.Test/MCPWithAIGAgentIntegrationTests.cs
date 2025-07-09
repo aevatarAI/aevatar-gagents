@@ -27,17 +27,13 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
     [Fact]
     public async Task MCPGAgent_Should_Work_With_Event_Subscription()
     {
-        // Arrange - 配置MCP GAgent
         var mcpConfig = new MCPGAgentConfig
         {
-            Servers =
-            [
-                new MCPServerConfig
-                {
-                    ServerName = "test-integration",
-                    Command = "test"
-                }
-            ]
+            Server = new MCPServerConfig
+            {
+                ServerName = "test-integration",
+                Command = "test"
+            }
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);

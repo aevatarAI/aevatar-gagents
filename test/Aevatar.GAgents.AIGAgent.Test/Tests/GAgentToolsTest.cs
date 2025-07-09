@@ -57,7 +57,7 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
     {
         // Arrange
         var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
-        var allowedTypes = new List<string> { "ChatAIGAgent", "GroupGAgent" };
+        var allowedTypes = new List<GrainType> { GrainType.Create("ChatAIGAgent"), GrainType.Create("GroupGAgent") };
         
         // Act
         await chatAgent.InitializeAsync(new InitializeDto
@@ -72,8 +72,8 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         var state = await chatAgent.GetStateAsync();
         state.AllowedGAgentTypes.ShouldNotBeNull();
         state.AllowedGAgentTypes.Count.ShouldBe(2);
-        state.AllowedGAgentTypes.ShouldContain("ChatAIGAgent");
-        state.AllowedGAgentTypes.ShouldContain("GroupGAgent");
+        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("ChatAIGAgent"));
+        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("GroupGAgent"));
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
             Instructions = "You are an AI with limited agent access",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
             EnableGAgentTools = true,
-            AllowedGAgentTypes = new List<string> { "NonExistentType" }
+            AllowedGAgentTypes = [GrainType.Create("NonExistentType")]
         });
         
         // Wait for registration attempt
@@ -219,7 +219,7 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         // Assert
         var state = await chatAgent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.AllowedGAgentTypes.ShouldContain("NonExistentType");
+        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("NonExistentType"));
         // With a non-existent type filter, no functions should be registered
         // (or registration might fail due to reflection issues in test)
     }

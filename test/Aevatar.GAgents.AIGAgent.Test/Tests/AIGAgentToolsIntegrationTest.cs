@@ -1,21 +1,15 @@
-// ABOUTME: This file contains integration tests for both MCP and GAgent tools working together
-// ABOUTME: Tests real-world scenarios where both tool types are used in combination
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.Test.TestAgents;
 using Aevatar.GAgents.MCP.Options;
-using Microsoft.Extensions.DependencyInjection;
-using Orleans.Runtime;
 using Shouldly;
-using Xunit;
 
 namespace Aevatar.GAgents.AIGAgent.Test.Tests;
 
+/// <summary>
+/// This file contains integration tests for both MCP and GAgent tools working together.
+/// Tests real-world scenarios where both tool types are used in combination
+/// </summary>
 public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
 {
     private readonly IGAgentFactory _agentFactory;
@@ -113,7 +107,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         // Assert
         var mcpToolCalls = await mcpAgent.GetCurrentToolCallsAsync();
         mcpToolCalls.ShouldNotBeEmpty();
-        
+
         var mcpToolCall = mcpToolCalls.FirstOrDefault(tc => tc.ToolName == "mcp-tool");
         mcpToolCall.ShouldNotBeNull();
         mcpToolCall.ServerName.ShouldBe("test-server");
@@ -155,13 +149,13 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         // Assert
         var toolCalls = await mcpAgent.GetCurrentToolCallsAsync();
         toolCalls.Count.ShouldBe(2);
-        
+
         var tool1Call = toolCalls.FirstOrDefault(tc => tc.ToolName == "tool1");
         var tool2Call = toolCalls.FirstOrDefault(tc => tc.ToolName == "tool2");
-        
+
         tool1Call.ShouldNotBeNull();
         tool2Call.ShouldNotBeNull();
-        
+
         tool1Call.Arguments.ShouldContainKey("param1");
         tool2Call.Arguments.ShouldContainKey("param2");
     }
@@ -184,7 +178,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
 
         // Assert
         result.ShouldBeFalse();
-        
+
         var toolCalls = await mcpAgent.GetCurrentToolCallsAsync();
         if (toolCalls.Any())
         {
@@ -218,7 +212,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         await mcpAgent.ConfigureMCPServersAsync(mcpServers);
 
         var parameters = new Dictionary<string, object> { ["param"] = "value" };
-        
+
         // Make some tool calls
         await mcpAgent.TestMCPToolCallAsync("clear-test-server", "tool1", parameters);
         await mcpAgent.TestMCPToolCallAsync("clear-test-server", "tool2", parameters);
@@ -284,7 +278,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
             toolCall.Arguments.ShouldContainKey("bool_param");
             toolCall.Arguments.ShouldContainKey("array_param");
             toolCall.Arguments.ShouldContainKey("object_param");
-            
+
             toolCall.Arguments["string_param"].ShouldBe("test string");
             toolCall.Arguments["int_param"].ShouldBe(42);
             toolCall.Arguments["bool_param"].ShouldBe(true);
@@ -327,7 +321,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
             var toolCall = toolCalls.First();
             toolCall.DurationMs.ShouldBeGreaterThan(0);
             toolCall.Timestamp.ShouldNotBeNullOrEmpty();
-            
+
             // Verify timestamp is reasonable
             var timestamp = DateTime.Parse(toolCall.Timestamp.Replace(" UTC", ""));
             timestamp.ShouldBeGreaterThan(startTime.AddSeconds(-1));

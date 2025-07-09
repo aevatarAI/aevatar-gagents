@@ -84,7 +84,8 @@ public class HttpMCPClient : IMCPClient
         {
             // Build endpoint from command and args
             var endpoint = GetEndpointFromConfig(_config);
-            _logger.LogInformation("Connecting to HTTP MCP server {ServerName} at {Endpoint}", _config.ServerName, endpoint);
+            _logger.LogInformation("Connecting to HTTP MCP server {ServerName} at {Endpoint}", _config.ServerName,
+                endpoint);
 
             // Send initialize request
             var initRequest = new JsonRpcRequest
@@ -278,21 +279,22 @@ public class HttpMCPClient : IMCPClient
         var uri = new Uri(endpoint);
         var httpRequest = new HttpRequestMessage(HttpMethod.Post, uri.GetLeftPart(UriPartial.Path));
         httpRequest.Content = content;
-        
+
         // Extract authorization from query string if present
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
         var authToken = query["Authorization"] ?? query["authorization"] ?? query["auth"] ?? query["token"];
         if (!string.IsNullOrEmpty(authToken))
         {
-            httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+            httpRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
             _logger.LogDebug("Added authorization header from URL query string");
         }
-        
+
         // Add any remaining query parameters back to the URL (except auth-related ones)
         var remainingQuery = new List<string>();
         foreach (string key in query.AllKeys)
         {
-            if (key != null && 
+            if (key != null &&
                 !key.Equals("Authorization", StringComparison.OrdinalIgnoreCase) &&
                 !key.Equals("authorization", StringComparison.OrdinalIgnoreCase) &&
                 !key.Equals("auth", StringComparison.OrdinalIgnoreCase) &&
@@ -301,7 +303,7 @@ public class HttpMCPClient : IMCPClient
                 remainingQuery.Add($"{key}={Uri.EscapeDataString(query[key] ?? "")}");
             }
         }
-        
+
         if (remainingQuery.Any())
         {
             httpRequest.RequestUri = new Uri($"{uri.GetLeftPart(UriPartial.Path)}?{string.Join("&", remainingQuery)}");

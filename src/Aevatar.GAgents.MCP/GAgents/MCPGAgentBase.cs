@@ -26,22 +26,19 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
-        // 设置配置
         RaiseEvent(new SetConfigurationLogEvent
         {
             EnableToolDiscovery = configuration.EnableToolDiscovery,
             RequestTimeout = configuration.RequestTimeout
         });
 
-        // 添加服务器配置
-        foreach (var serverConfig in configuration.Servers)
+        if (configuration.Server != null)
         {
-            RaiseEvent(new AddMCPServerLogEvent { ServerConfig = serverConfig });
+            RaiseEvent(new AddMCPServerLogEvent { ServerConfig = configuration.Server });
         }
 
         await ConfirmEvents();
 
-        // 初始化MCP服务器
         await InitializeMCPServersAsync();
     }
 
@@ -109,7 +106,8 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         return Task.FromResult(State.ServerStates.Values.ToList());
     }
 
-    public async Task<MCPToolResponseEvent> CallToolAsync(string serverName, string toolName, Dictionary<string, object> arguments)
+    public async Task<MCPToolResponseEvent> CallToolAsync(string serverName, string toolName,
+        Dictionary<string, object> arguments)
     {
         var toolCallEvent = new MCPToolCallEvent
         {
@@ -136,7 +134,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                 };
 
                 var connected = await client.ConnectAsync();
-                
+
                 // Update server status first
                 await UpdateServerStatusAsync(serverConfig.ServerName, connected);
 
@@ -146,16 +144,17 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                     {
                         var tools = await client.DiscoverToolsAsync();
                         await UpdateServerToolsAsync(serverConfig.ServerName, tools);
-                        
-                        Logger.LogInformation("Successfully discovered {ToolCount} tools from {ServerName}", 
+
+                        Logger.LogInformation("Successfully discovered {ToolCount} tools from {ServerName}",
                             tools.Count, serverConfig.ServerName);
                     }
                     catch (Exception toolEx)
                     {
                         // Tool discovery failure shouldn't mark the server as disconnected
-                        Logger.LogWarning(toolEx, "Failed to discover tools from {ServerName}, but server is still connected", 
+                        Logger.LogWarning(toolEx,
+                            "Failed to discover tools from {ServerName}, but server is still connected",
                             serverConfig.ServerName);
-                        
+
                         // Update with empty tool list
                         await UpdateServerToolsAsync(serverConfig.ServerName, new List<MCPToolInfo>());
                     }
@@ -192,14 +191,12 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
             var client = await _mcpClientProvider.GetOrCreateClientAsync(serverConfig);
 
-            // 从工具名称中提取实际的工具名（去掉服务器前缀）
             var actualToolName = @event.ToolName;
             if (@event.ToolName.StartsWith($"{@event.ServerName}."))
             {
                 actualToolName = @event.ToolName.Substring(@event.ServerName.Length + 1);
             }
 
-            // 使用配置的超时时间
             using var cts = new CancellationTokenSource(State.RequestTimeout);
             var result = await client.CallToolAsync(actualToolName, @event.Arguments);
 
@@ -312,7 +309,6 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
         await ConfirmEvents();
 
-        // 发布状态事件
         await PublishAsync(new MCPServerStatusEvent
         {
             ServerName = serverName,
@@ -322,9 +318,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
     }
 
     [GenerateSerializer]
-    public class MCPGAgentBaseStateLogEvent : StateLogEventBase<TStateLogEvent>
-    {
-    }
+    public class MCPGAgentBaseStateLogEvent : StateLogEventBase<TStateLogEvent>;
 
     [GenerateSerializer]
     public class AddMCPServerLogEvent : MCPGAgentBaseStateLogEvent
