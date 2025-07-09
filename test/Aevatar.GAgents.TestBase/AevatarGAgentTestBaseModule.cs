@@ -37,7 +37,8 @@ public class AevatarGAgentTestBaseModule : AbpModule
                 context.Services.GetRequiredService<ClusterFixture>().Cluster.Client,
                 context.Services.GetRequiredService<ILogger<GAgentService>>()));
         context.Services.AddSingleton<IGAgentExecutor>(sp =>
-            new GAgentExecutor(context.Services.GetRequiredService<ClusterFixture>().Cluster.Client));
+            new GAgentExecutor(context.Services.GetRequiredService<ClusterFixture>().Cluster.Client,
+                context.Services.GetRequiredService<IGAgentService>()));
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentTestBaseModule>(); });
     }
 }

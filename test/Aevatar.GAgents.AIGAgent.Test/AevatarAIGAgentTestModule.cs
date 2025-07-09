@@ -25,7 +25,8 @@ public class AevatarAIGAgentTestModule : AbpModule
         context.Services.AddSingleton<IGAgentExecutor>(provider =>
         {
             var clusterClient = provider.GetRequiredService<IClusterClient>();
-            return new GAgentExecutor(clusterClient);
+            var gAgentService = provider.GetRequiredService<IGAgentService>();
+            return new GAgentExecutor(clusterClient, gAgentService);
         });
 
         context.Services.AddSingleton<IGAgentService>(provider =>
