@@ -8,5 +8,5 @@ public class ChatAIGAgentConfigDto : GroupMemberConfigDto
 {
     [Id(0)] public string Instructions { get; set; } = string.Empty;
 
-    [Id(1)] public string? SystemLLM { get; set; }
+    [Id(1)] public string SystemLLM { get; set; }
 }
