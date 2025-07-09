@@ -50,11 +50,12 @@ public class ChatAIGAgent :
 
         if (coordinatorMessages == null || coordinatorMessages.Count == 0)
         {
-                        // Let AI generate a default response based on its Instructions
+            // Let AI generate a default response based on its Instructions
             _logger.LogInformation($"{State.MemberName} generating default AI response based on Instructions");
-            
+
             // Use Instructions as base context and let AI say something
-            var promptWithInstructions = $"{State.PromptTemplate ?? ""} Please say something to start the conversation.";
+            var promptWithInstructions =
+                $"{State.PromptTemplate ?? ""} Please say something to start the conversation.";
             var defaultAiMessages = await ChatWithHistory(promptWithInstructions);
             var defaultResponse = defaultAiMessages?.FirstOrDefault()?.Content;
 
@@ -114,7 +115,7 @@ public class ChatAIGAgent :
         await InitializeAsync(new InitializeDto()
         {
             Instructions = configuration.Instructions,
-            LLMConfig = configuration.LLMConfig
+            LLMConfig = new() { SystemLLM = configuration.SystemLLM }
         });
 
         _logger.LogDebug("PerformConfigAsync ChatAIGAgent configuration and initialization completed");

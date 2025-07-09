@@ -14,7 +14,8 @@ namespace Aevatar.GAgents.Twitter.GAgents.DirectAIAgent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(DirectAIGAgent))]
-public class DirectAIGAgent : AIGAgentBase<DirectAIGAgentState, DirectAIGAgentEvent, EventBase, DirectAIGAgentConfigDto>,
+public class DirectAIGAgent :
+    AIGAgentBase<DirectAIGAgentState, DirectAIGAgentEvent, EventBase, DirectAIGAgentConfigDto>,
     IDirectAIGAgent
 {
     private readonly ILogger<DirectAIGAgent> _logger;
@@ -33,14 +34,14 @@ public class DirectAIGAgent : AIGAgentBase<DirectAIGAgentState, DirectAIGAgentEv
     public async Task<string?> ChatAsync(string message)
     {
         _logger.LogInformation("DirectAIGAgent processing message: {Message}", message);
-        
+
         try
         {
             if (string.IsNullOrWhiteSpace(message))
             {
                 return "Please provide a message.";
             }
-            
+
             // Use ChatWithHistory method from AIGAgentBase
             var aiMessages = await ChatWithHistory(message);
             return aiMessages?.FirstOrDefault()?.Content;
@@ -59,23 +60,24 @@ public class DirectAIGAgent : AIGAgentBase<DirectAIGAgentState, DirectAIGAgentEv
 
     protected override async Task PerformConfigAsync(DirectAIGAgentConfigDto configuration)
     {
-        _logger.LogInformation("Configuring DirectAIGAgent with Instructions: {Instructions}", configuration.Instructions);
-        
+        _logger.LogInformation("Configuring DirectAIGAgent with Instructions: {Instructions}",
+            configuration.Instructions);
+
         // Initialize the AI agent with the provided configuration
         await InitializeAsync(new InitializeDto()
         {
             Instructions = configuration.Instructions,
-            LLMConfig = configuration.LLMConfig
+            LLMConfig = new() { SystemLLM = configuration.SystemLLM }
         });
-        
+
         _logger.LogInformation("DirectAIGAgent configuration and initialization completed");
     }
-    
+
     protected override void AIGAgentTransitionState(DirectAIGAgentState state,
         StateLogEventBase<DirectAIGAgentEvent> @event)
     {
         _logger.LogDebug("DirectAIGAgent state transition: {EventType}", @event.GetType().Name);
-        
+
         switch (@event)
         {
             case ChatResponseEvent chatResponseEvent:
@@ -85,6 +87,4 @@ public class DirectAIGAgent : AIGAgentBase<DirectAIGAgentState, DirectAIGAgentEv
                 break;
         }
     }
-
-
-} 
+}

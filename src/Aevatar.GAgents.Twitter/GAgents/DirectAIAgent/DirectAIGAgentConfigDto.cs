@@ -1,6 +1,5 @@
 using Orleans;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AIGAgent.Dtos;
 
 namespace Aevatar.GAgents.Twitter.GAgents.DirectAIAgent;
 
@@ -8,5 +7,7 @@ namespace Aevatar.GAgents.Twitter.GAgents.DirectAIAgent;
 public class DirectAIGAgentConfigDto : ConfigurationBase
 {
     [Id(0)] public string Instructions { get; set; } = string.Empty;
-    [Id(1)] public LLMConfigDto LLMConfig { get; set; } = new();
+    
+    [Id(1)]
+    public string? SystemLLM { get; set; }
 } 
