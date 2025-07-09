@@ -251,7 +251,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
                 return new MCPToolsDiscoveredEvent
                 {
                     ServerName = @event.ServerName,
-                    Tools = new List<MCPToolInfo>()
+                    Tools = []
                 };
             }
 
@@ -276,7 +276,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
             return new MCPToolsDiscoveredEvent
             {
                 ServerName = @event.ServerName,
-                Tools = new List<MCPToolInfo>()
+                Tools = []
             };
         }
     }

@@ -34,7 +34,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Server =new MCPServerConfig()
+            Server = new MCPServerConfig()
             {
                 ServerName = "filesystem",
                 Command = "npx",
@@ -84,7 +84,8 @@ public class MCPGAgentTests : AevatarMCPTestBase
             }
         };
 
-        var responseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent);
+        var responseJson =
+            await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent, typeof(MCPToolResponseEvent));
         _testOutputHelper.WriteLine(responseJson);
         var response = JsonConvert.DeserializeObject<MCPToolResponseEvent>(responseJson, new JsonSerializerSettings
         {
@@ -122,7 +123,8 @@ public class MCPGAgentTests : AevatarMCPTestBase
             ServerName = "sqlite"
         };
 
-        var responseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, discoverEvent);
+        var responseJson =
+            await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, discoverEvent, typeof(MCPToolsDiscoveredEvent));
         var response = JsonConvert.DeserializeObject<MCPToolsDiscoveredEvent>(responseJson, new JsonSerializerSettings
         {
             Converters = { new GrainIdConverter() }
@@ -163,7 +165,8 @@ public class MCPGAgentTests : AevatarMCPTestBase
             Arguments = new Dictionary<string, object>()
         };
 
-        var responseJson = await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent);
+        var responseJson =
+            await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, toolCallEvent, typeof(MCPToolResponseEvent));
         var response = JsonConvert.DeserializeObject<MCPToolResponseEvent>(responseJson,
             new JsonSerializerSettings
             {

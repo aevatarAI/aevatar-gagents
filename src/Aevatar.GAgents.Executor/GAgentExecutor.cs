@@ -23,10 +23,10 @@ public class GAgentExecutor : IGAgentExecutor
         _clusterClient = clusterClient;
     }
 
-    public async Task<string> ExecuteGAgentEventHandler(IGAgent gAgent, EventBase @event)
+    public async Task<string> ExecuteGAgentEventHandler(IGAgent gAgent, EventBase @event, Type? expectedResultType = null)
     {
         var resultGAgent = await _gAgentFactory.GetGAgentAsync<IResultGAgent>();
-        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<Core.Abstractions.IPublishingGAgent>();
+        var publishingGAgent = await _gAgentFactory.GetGAgentAsync<IPublishingGAgent>();
 
         var executionId = Guid.NewGuid().ToString();
 
@@ -44,8 +44,13 @@ public class GAgentExecutor : IGAgentExecutor
 
         try
         {
-            await resultGAgent.SetExecutionContextAsync(executionId, AevatarCoreConstants.StreamProvider,
-                AevatarGAgentExecutorConstants.GAgentExecutorStreamNamespace);
+            await resultGAgent.ConfigAsync(new ResultGAgentConfiguration
+            {
+                ExecutionId = executionId,
+                StreamProvider = AevatarCoreConstants.StreamProvider,
+                StreamNamespace = AevatarGAgentExecutorConstants.GAgentExecutorStreamNamespace,
+                ExpectedResultType = expectedResultType
+            });
 
             // Subscribe ResultGAgent to the target GAgent to receive results
             await gAgent.RegisterAsync(resultGAgent);
@@ -73,15 +78,15 @@ public class GAgentExecutor : IGAgentExecutor
         }
     }
 
-    public async Task<string> ExecuteGAgentEventHandler(GrainId grainId, EventBase @event)
+    public async Task<string> ExecuteGAgentEventHandler(GrainId grainId, EventBase @event, Type? expectedResultType = null)
     {
         var targetGAgent = await _gAgentFactory.GetGAgentAsync(grainId);
-        return await ExecuteGAgentEventHandler(targetGAgent, @event);
+        return await ExecuteGAgentEventHandler(targetGAgent, @event, expectedResultType);
     }
 
-    public async Task<string> ExecuteGAgentEventHandler(GrainType grainType, EventBase @event)
+    public async Task<string> ExecuteGAgentEventHandler(GrainType grainType, EventBase @event, Type? expectedResultType = null)
     {
         var grainId = GrainId.Create(grainType, Guid.NewGuid().ToString());
-        return await ExecuteGAgentEventHandler(grainId, @event);
+        return await ExecuteGAgentEventHandler(grainId, @event, expectedResultType);
     }
 }

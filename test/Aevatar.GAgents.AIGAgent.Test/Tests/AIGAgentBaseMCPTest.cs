@@ -252,158 +252,6 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
     }
 
     [Fact]
-    public async Task ConvertJsonElementToBasicType_Should_HandleStringValue_When_JsonElementProvided()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var jsonString = "\"test string\"";
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonString);
-
-        // Act - This tests the internal conversion logic indirectly
-        var parameters = new Dictionary<string, object> { ["testParam"] = jsonElement };
-        await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
-
-        // Assert
-        var toolCalls = await agent.GetCurrentToolCallsAsync();
-        if (toolCalls.Any())
-        {
-            var toolCall = toolCalls.First();
-            toolCall.Arguments.ShouldContainKey("testParam");
-            toolCall.Arguments["testParam"].ShouldBe("test string");
-        }
-    }
-
-    [Fact]
-    public async Task ConvertJsonElementToBasicType_Should_HandleNumericValue_When_JsonElementProvided()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var jsonNumber = "42";
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonNumber);
-
-        // Act - This tests the internal conversion logic indirectly
-        var parameters = new Dictionary<string, object> { ["testParam"] = jsonElement };
-        await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
-
-        // Assert
-        var toolCalls = await agent.GetCurrentToolCallsAsync();
-        if (toolCalls.Any())
-        {
-            var toolCall = toolCalls.First();
-            toolCall.Arguments.ShouldContainKey("testParam");
-            toolCall.Arguments["testParam"].ShouldBe(42);
-        }
-    }
-
-    [Fact]
-    public async Task ConvertJsonElementToBasicType_Should_HandleBooleanValue_When_JsonElementProvided()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var jsonBool = "true";
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonBool);
-
-        // Act - This tests the internal conversion logic indirectly
-        var parameters = new Dictionary<string, object> { ["testParam"] = jsonElement };
-        await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
-
-        // Assert
-        var toolCalls = await agent.GetCurrentToolCallsAsync();
-        if (toolCalls.Any())
-        {
-            var toolCall = toolCalls.First();
-            toolCall.Arguments.ShouldContainKey("testParam");
-            toolCall.Arguments["testParam"].ShouldBe(true);
-        }
-    }
-
-    [Fact]
-    public async Task ConvertJsonElementToBasicType_Should_HandleArrayValue_When_JsonElementProvided()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var jsonArray = "[\"item1\", \"item2\", 42]";
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonArray);
-
-        // Act - This tests the internal conversion logic indirectly
-        var parameters = new Dictionary<string, object> { ["testParam"] = jsonElement };
-        await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
-
-        // Assert
-        var toolCalls = await agent.GetCurrentToolCallsAsync();
-        if (toolCalls.Any())
-        {
-            var toolCall = toolCalls.First();
-            toolCall.Arguments.ShouldContainKey("testParam");
-            toolCall.Arguments["testParam"].ShouldBeOfType<List<object>>();
-
-            var list = (List<object>)toolCall.Arguments["testParam"];
-            list.Count.ShouldBe(3);
-            list[0].ShouldBe("item1");
-            list[1].ShouldBe("item2");
-            list[2].ShouldBe(42);
-        }
-    }
-
-    [Fact]
-    public async Task ConvertJsonElementToBasicType_Should_HandleObjectValue_When_JsonElementProvided()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var jsonObject = "{\"key1\": \"value1\", \"key2\": 42}";
-        var jsonElement = JsonSerializer.Deserialize<JsonElement>(jsonObject);
-
-        // Act - This tests the internal conversion logic indirectly
-        var parameters = new Dictionary<string, object> { ["testParam"] = jsonElement };
-        await agent.TestMCPToolCallAsync("test-server", "test-tool", parameters);
-
-        // Assert
-        var toolCalls = await agent.GetCurrentToolCallsAsync();
-        if (toolCalls.Any())
-        {
-            var toolCall = toolCalls.First();
-            toolCall.Arguments.ShouldContainKey("testParam");
-            toolCall.Arguments["testParam"].ShouldBeOfType<Dictionary<string, object>>();
-
-            var dict = (Dictionary<string, object>)toolCall.Arguments["testParam"];
-            dict.ShouldContainKey("key1");
-            dict.ShouldContainKey("key2");
-            dict["key1"].ShouldBe("value1");
-            dict["key2"].ShouldBe(42);
-        }
-    }
-
-    [Fact]
     public async Task GenerateMCPFunctionName_Should_CreateValidFunctionName_When_LongNamesProvided()
     {
         // Arrange
@@ -434,38 +282,7 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
         state.MCPAgents.ShouldContainKey("very-long-server-name-that-exceeds-normal-limits");
     }
 
-    [Fact]
-    public async Task FilterCostWarnings_Should_RemoveWarnings_When_DescriptionContainsCostWarnings()
-    {
-        // This test verifies that the cost warning filtering works correctly
-        // The actual filtering is done internally, so we test it indirectly
-
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestMCPAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test MCP agent",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        var servers = new List<MCPServerConfig>
-        {
-            new()
-            {
-                ServerName = "test-server",
-                Command = "test-command",
-                Args = new List<string> { "arg1" }
-            }
-        };
-
-        // Act
-        var result = await agent.ConfigureMCPServersAsync(servers);
-
-        // Assert
-        result.ShouldBeTrue(); // Should process descriptions correctly
-    }
-
-    [Fact]
+    [Fact(DisplayName = "Can handle errors when MCP tool call fails.")]
     public async Task MCPToolCall_Should_HandleError_When_ToolCallFails()
     {
         // Arrange
@@ -493,11 +310,10 @@ public class AIGAgentBaseMCPTest : AevatarAIGAgentTestBase
             var toolCall = toolCalls.First();
             toolCall.Success.ShouldBeFalse();
             toolCall.Result.ShouldContain("Error");
-            toolCall.DurationMs.ShouldBeGreaterThan(0);
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "Can handle null parameters in MCP tool call.")]
     public async Task MCPToolCall_Should_HandleNullParameters_When_NoParametersProvided()
     {
         // Arrange

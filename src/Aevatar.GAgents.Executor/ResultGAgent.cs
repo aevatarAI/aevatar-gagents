@@ -13,6 +13,7 @@ public class ResultGAgentState : StateBase
     [Id(1)] public string? ExecutionId { get; set; }
     [Id(2)] public string? StreamProvider { get; set; }
     [Id(3)] public string? StreamNamespace { get; set; }
+    [Id(4)] public Type? ExpectedResultType { get; set; }
 }
 
 [GenerateSerializer]
@@ -30,15 +31,28 @@ public class SetExecutionContextGAgentStateLogEvent : ResultGAgentStateLogEvent
 }
 
 [GenerateSerializer]
+public class SetExpectedResultTypeStateLogEvent : ResultGAgentStateLogEvent
+{
+    [Id(0)] public Type ExpectedResultType { get; set; }
+}
+
+[GenerateSerializer]
 public class ResultGAgentStateLogEvent : StateLogEventBase<ResultGAgentStateLogEvent>;
 
-public interface IResultGAgent : IStateGAgent<ResultGAgentState>
+public interface IResultGAgent : IStateGAgent<ResultGAgentState>;
+
+[GenerateSerializer]
+public class ResultGAgentConfiguration : ConfigurationBase
 {
-    Task SetExecutionContextAsync(string executionId, string streamProvider, string streamNamespace);
+    [Id(0)] public string ExecutionId { get; set; }
+    [Id(1)] public string StreamProvider { get; set; }
+    [Id(2)] public string StreamNamespace { get; set; }
+    [Id(3)] public Type? ExpectedResultType { get; set; }
 }
 
 [GAgent("result", "aevatar")]
-public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEvent>,
+public class ResultGAgent :
+    GAgentBase<ResultGAgentState, ResultGAgentStateLogEvent, EventBase, ResultGAgentConfiguration>,
     IResultGAgent
 {
     public override Task<string> GetDescriptionAsync()
@@ -47,14 +61,22 @@ public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEv
             "This is a GAgent for collecting GAgent's event handler execution results with Streams support.");
     }
 
-    public async Task SetExecutionContextAsync(string executionId, string streamProvider, string streamNamespace)
+    protected override async Task PerformConfigAsync(ResultGAgentConfiguration configuration)
     {
         RaiseEvent(new SetExecutionContextGAgentStateLogEvent
         {
-            ExecutionId = executionId,
-            StreamProvider = streamProvider,
-            StreamNamespace = streamNamespace
+            ExecutionId = configuration.ExecutionId,
+            StreamProvider = configuration.StreamProvider,
+            StreamNamespace = configuration.StreamNamespace
         });
+        if (configuration.ExpectedResultType != null)
+        {
+            RaiseEvent(new SetExpectedResultTypeStateLogEvent
+            {
+                ExpectedResultType = configuration.ExpectedResultType
+            });
+        }
+
         await ConfirmEvents();
     }
 
@@ -67,6 +89,11 @@ public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEv
         }
 
         if (typedWrapper.PublisherGrainId.Type == GrainType.Create("Aevatar.Core.PublishingGAgent"))
+        {
+            return;
+        }
+
+        if (State.ExpectedResultType is not null && typedWrapper.Event.GetType() != State.ExpectedResultType)
         {
             return;
         }
@@ -118,6 +145,9 @@ public class ResultGAgent : GAgentBase<ResultGAgentState, ResultGAgentStateLogEv
                 state.ExecutionId = contextEvent.ExecutionId;
                 state.StreamProvider = contextEvent.StreamProvider;
                 state.StreamNamespace = contextEvent.StreamNamespace;
+                break;
+            case SetExpectedResultTypeStateLogEvent typeEvent:
+                state.ExpectedResultType = typeEvent.ExpectedResultType;
                 break;
         }
     }
