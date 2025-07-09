@@ -11,7 +11,6 @@ using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
-using Aevatar.Core;
 
 namespace Aevatar.GAgents.Twitter.GAgents.TwitterSocialGAgent;
 

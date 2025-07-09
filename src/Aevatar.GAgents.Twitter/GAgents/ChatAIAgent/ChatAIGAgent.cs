@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AIGAgent.Dtos;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
