@@ -31,7 +31,9 @@ jobs:
           Aevatar.GAgents.Router,
           Aevatar.GAgents.GraphRetrievalAgent,
           Aevatar.GAgents.GroupChat,
-          Aevatar.GAgents.MultiAIChatGAgent
+          Aevatar.GAgents.MultiAIChatGAgent,
+          Aevatar.GAgents.PsiOmni,
+          Aevatar.GAgents.PsiOmni.Plugins,
         ]
     steps:
       - name: Checkout code
