@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -11,12 +12,14 @@ using GroupChat.GAgent;
 
 namespace Aevatar.GAgents.PsiOmni;
 
+public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
+
 [GAgent("omni", "psi")]
 public partial class
-    PsiOmniGAgent : GroupMemberGAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>
+    PsiOmniGAgent : GroupMemberGAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>, IPshOmniGAgent
 {
     private static readonly Dictionary<RealizationStatus, string> SystemPrompts =
-        new Dictionary<RealizationStatus, string>()
+        new()
         {
             [RealizationStatus.Unrealized] = """
                                              You are a professional analyst that analyzes the task given by the user. You help an
@@ -109,11 +112,18 @@ public partial class
 
     protected override async Task PerformConfigAsync(PsiOmniGAgentConfig configuration)
     {
+        // First, call the base class method
+        await base.PerformConfigAsync(configuration);
+        
         RaiseEvent(new SetDepthEvent()
         {
             Depth = configuration.Depth
         });
         await ConfirmEvents();
+        
+        // Note: We don't initialize Brain here to maintain backward compatibility.
+        // Brain initialization should be done explicitly if needed.
+        // The agent will use IKernelFactory by default.
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -147,14 +157,19 @@ public partial class
     {
         if (!InitializedOk())
         {
+            Logger.LogWarning("PsiOmniGAgent is not initialized properly. Skipping run.");
             // Do nothing
             return;
         }
+        
+        Logger.LogInformation("Running PsiOmniGAgent with trigger: {Trigger}", trigger);
 
         Kernel kernel;
         ChatHistory chatHistory;
         int preHistoryLength;
         var systemPrompt = SystemPrompts[State.RealizationStatus];
+        Logger.LogInformation("Status: {RealizationStatus}", State.RealizationStatus);
+        Logger.LogInformation("Prompt: {systemPrompt}", systemPrompt);
         switch (State.RealizationStatus)
         {
             case RealizationStatus.Unrealized:
@@ -166,6 +181,11 @@ public partial class
                 break;
             case RealizationStatus.Orchestrator:
                 kernel = GetKernel_Orchestrator();
+                if (kernel == null)
+                {
+                    Logger.LogWarning("Cannot get kernel for Orchestrator mode, skipping run");
+                    return;
+                }
                 systemPrompt += $"\n\n## Existing Child Agents (Try your best to re-use them):\n{GetAllChildAgents()}";
                 systemPrompt += $"\n\nYour agent Id is: <agentId>{this.GetGrainId()}</agentId>";
                 (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
@@ -173,6 +193,11 @@ public partial class
                 break;
             case RealizationStatus.Specialized:
                 kernel = GetKernel_Specialized();
+                if (kernel == null)
+                {
+                    Logger.LogWarning("Cannot get kernel for Specialized mode, skipping run");
+                    return;
+                }
                 (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
                 OnChatDoneAsync_Specialized(chatHistory, preHistoryLength);
                 break;
@@ -185,11 +210,13 @@ public partial class
     {
         if (State.ChatHistory.IsNullOrEmpty())
         {
+            Logger.LogInformation("ChatHistory is empty.");
             return false;
         }
 
         if (State.Configuration == null)
         {
+            Logger.LogInformation("Configuration is empty.");
             return false;
         }
 
@@ -209,24 +236,37 @@ public partial class
 
     private async Task<(ChatHistory, int)> RunCoreAsync(Kernel kernel, string systemPrompt)
     {
-        // 1. 获取 chat completion 服务
-        var chatService = kernel.GetRequiredService<IChatCompletionService>();
-        // 2. 构造 PromptExecutionSettings
-        var maxTokens = 4000; // 默认最大 token
-        var temperature = 0.1; // 默认温度
-        // 只用 OpenAI 版本（无 config.Model 判断）
-        var executionSettings = new OpenAIPromptExecutionSettings
-        {
-            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-            MaxTokens = maxTokens,
-            Temperature = temperature
-        };
+        try
+        { 
+            Logger.LogInformation("RunCoreAsync.1");
+            // 1. 获取 chat completion 服务
+            var chatService = kernel.GetRequiredService<IChatCompletionService>();
+            Logger.LogInformation("RunCoreAsync.2");
+            // 2. 构造 PromptExecutionSettings
+            var maxTokens = 4000; // 默认最大 token
+            var temperature = 0.1; // 默认温度
+            // 只用 OpenAI 版本（无 config.Model 判断）
+            var executionSettings = new OpenAIPromptExecutionSettings
+            {
+                ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+                MaxTokens = maxTokens,
+                Temperature = temperature
+            };
+            Logger.LogInformation("RunCoreAsync.3");
 
-        var chatHistory = GetChatHistory(systemPrompt);
-        var preChatHistoryLength = chatHistory.Count;
-        var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
-        chatHistory.Add(result);
-        return (chatHistory, preChatHistoryLength);
+            var chatHistory = GetChatHistory(systemPrompt);
+            var preChatHistoryLength = chatHistory.Count;
+            Logger.LogInformation("preChatHistoryLength: {Count}", preChatHistoryLength);
+            var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
+            chatHistory.Add(result);
+            Logger.LogInformation("RunCoreAsync.4");
+            return (chatHistory, preChatHistoryLength);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error during RunCoreAsync: {Message}", e.Message);
+            throw;
+        }
     }
 
     private async Task ReplyAsync(string finalResult)
@@ -278,6 +318,7 @@ public partial class
                 break;
             case ReceiveUserMessageEvent payload:
 
+                Logger.LogInformation("StateTransition for ReceiveUserMessageEvent");
                 if (!payload.Event.CallId.IsNullOrEmpty())
                 {
                     state.CallId = payload.Event.CallId;

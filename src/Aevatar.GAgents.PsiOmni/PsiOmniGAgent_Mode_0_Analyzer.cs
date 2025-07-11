@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
@@ -20,6 +21,7 @@ public partial class PsiOmniGAgent
     private void OnChatDoneAsync_Analyzer(ChatHistory chatHistory, int preChatHistoryLength)
     {
         var result = chatHistory.Last().Content ?? string.Empty;
+        Logger.LogInformation("OnChatDoneAsync_Analyzer Result: {Result}", result);
         if (result.Contains("ORCHESTRATOR") || result.Contains("SPECIALIZED"))
         {
             var jsonStartIndex = result.IndexOf('{');
