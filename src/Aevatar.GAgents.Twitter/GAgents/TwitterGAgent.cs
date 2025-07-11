@@ -10,15 +10,19 @@ using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Twitter.GEvents;
 using Aevatar.GAgents.Twitter.Grains;
 using Aevatar.GAgents.Twitter.Options;
+using GroupChat.GAgent;
+using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Aevatar.GAgents.Twitter.Agent;
 
-[Description("Handle telegram")]
+[Description("Handle twitter with workflow support")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TwitterGAgent))]
-public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBase, InitTwitterOptionsDto>,
+public class TwitterGAgent : GroupMemberGAgentBase<TwitterGAgentState, TweetSEvent, EventBase, TwitterWorkflowConfigDto>,
     ITwitterGAgent
 {
     private readonly ILogger<TwitterGAgent> _logger;
@@ -31,9 +35,67 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult(
-            "Represents an agent responsible for informing other agents when a twitter thread is published.");
+            "Represents an agent responsible for Twitter operations and workflow participation.");
     }
 
+    // Implementation of GroupMemberGAgentBase abstract methods
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId)
+    {
+        // Twitter agent shows interest when it has bound account
+        if (!State.UserName.IsNullOrEmpty() && !State.UserId.IsNullOrEmpty())
+        {
+            return Task.FromResult(80); // High interest when account is bound
+        }
+        return Task.FromResult(20); // Low interest when no account is bound
+    }
+
+    protected override async Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? messages)
+    {
+        var response = new ChatResponse();
+        
+        if (messages == null || messages.Count == 0)
+        {
+            // Send a default tweet when no messages
+            await PublishAsync(new SocialResponseGEvent()
+            {
+                RequestId = Guid.NewGuid(),
+                ResponseContent = $"{State.MemberName} received workflow trigger but no messages (BlackboardId: {blackboardId.ToString()[..8]})",
+                ReplyMessageId = ""
+            });
+            
+            response.Content = $"{State.MemberName} tweeted default message for empty workflow";
+            return response;
+        }
+
+        // Process the workflow messages
+        var content = string.Join(" ", messages.Select(m => m.Content));
+        
+        _logger.LogInformation($"{State.MemberName} processing workflow message: {content}");
+        
+        // Always send tweet - use content or default message
+        var tweetContent = !content.IsNullOrEmpty() 
+            ? content 
+            : $"{State.MemberName} processed workflow but content was empty (BlackboardId: {blackboardId.ToString()[..8]})";
+
+        await PublishAsync(new SocialResponseGEvent()
+        {
+            RequestId = Guid.NewGuid(),
+            ResponseContent = tweetContent,
+            ReplyMessageId = ""
+        });
+        
+        response.Content = $"{State.MemberName} will tweet: {tweetContent}";
+
+        return response;
+    }
+
+    protected override Task GroupChatFinishAsync(Guid blackboardId)
+    {
+        _logger.LogInformation($"{State.MemberName} workflow finished for blackboard {blackboardId}");
+        return Task.CompletedTask;
+    }
+
+    // Existing Twitter event handlers remain unchanged
     [EventHandler]
     public async Task HandleEventAsync(ReceiveReplyGEvent @event)
     {
@@ -201,26 +263,30 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         return Task.FromResult(!State.UserName.IsNullOrEmpty());
     }
 
-    protected override async Task PerformConfigAsync(InitTwitterOptionsDto initializationEvent)
+    protected override async Task PerformConfigAsync(TwitterWorkflowConfigDto configuration)
     {
+        // First call the base implementation to set MemberName
+        await base.PerformConfigAsync(configuration);
+        
+        // Then handle Twitter-specific configuration
         _logger.LogDebug("PerformConfigAsync , data: {data}",
-            JsonConvert.SerializeObject(initializationEvent));
+            JsonConvert.SerializeObject(configuration));
         RaiseEvent(new TwitterOptionsSEvent()
         {
-            ConsumerKey = initializationEvent.ConsumerKey,
-            ConsumerSecret = initializationEvent.ConsumerSecret,
-            EncryptionPassword = initializationEvent.EncryptionPassword,
-            BearerToken = initializationEvent.BearerToken,
-            ReplyLimit = initializationEvent.ReplyLimit,
+            ConsumerKey = configuration.ConsumerKey,
+            ConsumerSecret = configuration.ConsumerSecret,
+            EncryptionPassword = configuration.EncryptionPassword,
+            BearerToken = configuration.BearerToken,
+            ReplyLimit = configuration.ReplyLimit,
         });
 
         await ConfirmEvents();
     }
 
-    protected override void GAgentTransitionState(TwitterGAgentState state,
+    protected override void GroupMemberTransitionState(TwitterGAgentState state,
         StateLogEventBase<TweetSEvent> @event)
     {
-        _logger.LogDebug("PerformConfigAsync, GAgentTransitionState: {data}, type:{type}",
+        _logger.LogDebug("GroupMemberTransitionState: {data}, type:{type}",
             JsonConvert.SerializeObject(@event), @event.GetType().FullName);
         switch (@event)
         {
