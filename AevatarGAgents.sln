@@ -67,6 +67,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MultiAIChat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent.Test", "test\Aevatar.GAgents.ChatAgent.Test\Aevatar.GAgents.ChatAgent.Test.csproj", "{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni", "src\Aevatar.GAgents.PsiOmni\Aevatar.GAgents.PsiOmni.csproj", "{9E47A958-1272-4F61-A559-75A1394E515C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,10 @@ Global
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E47A958-1272-4F61-A559-75A1394E515C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E47A958-1272-4F61-A559-75A1394E515C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E47A958-1272-4F61-A559-75A1394E515C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E47A958-1272-4F61-A559-75A1394E515C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -215,6 +221,7 @@ Global
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{164C499B-F6D5-4847-907C-36FE8AC9B022} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{9E47A958-1272-4F61-A559-75A1394E515C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
