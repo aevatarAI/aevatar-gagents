@@ -18,7 +18,9 @@ public partial class PsiOmniGAgent
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 
+        // Add the orchestrator-specific functions as a plugin
         kernel.Plugins.AddFromObject(this, "AgentServices");
+
         return kernel;
     }
 

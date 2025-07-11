@@ -19,19 +19,19 @@ public partial class PsiOmniGAgent
     [EventHandler]
     public async Task HandleUserMessageEventAsync(UserMessageEvent @event)
     {
+        Logger.LogInformation("{Message}", @event);
         if (@event.TargetAgentId != this.GetGrainId().ToString())
         {
             // Not for me
             return;
         }
 
-        if (_receivedMessageIds.Contains(@event.UniqueId))
+        if (!_receivedMessageIds.Add(@event.UniqueId))
         {
             return;
         }
 
-        _receivedMessageIds.Add(@event.UniqueId);
-        RaiseEvent(new ReceiveUserMessageEvent()
+        RaiseEvent(new ReceiveUserMessageEvent
         {
             Event = @event
         });

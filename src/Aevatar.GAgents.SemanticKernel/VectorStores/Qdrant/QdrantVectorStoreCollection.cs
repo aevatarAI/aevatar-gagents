@@ -9,17 +9,16 @@ namespace Aevatar.GAgents.SemanticKernel.VectorStores.Qdrant;
 
 internal class QdrantVectorStoreCollection : IVectorStoreCollection
 {
-    private readonly IVectorStoreRecordCollection<Guid, TextSnippet<Guid>> _vectorStoreRecordCollection;
+    private readonly VectorStoreCollection<Guid, TextSnippet<Guid>> _vectorStoreCollection;
 
-    public QdrantVectorStoreCollection(IVectorStoreRecordCollection<Guid, TextSnippet<Guid>> vectorStoreRecordCollection)
+    public QdrantVectorStoreCollection(VectorStoreCollection<Guid, TextSnippet<Guid>> vectorStoreCollection)
     {
-        _vectorStoreRecordCollection = vectorStoreRecordCollection;
+        _vectorStoreCollection = vectorStoreCollection;
     }
 
-    public Task InitializeAsync(string collectionName)
+    public async Task InitializeAsync(string collectionName)
     {
-        _vectorStoreRecordCollection.CreateCollectionIfNotExistsAsync();
-        return Task.CompletedTask;
+        await _vectorStoreCollection.EnsureCollectionExistsAsync();
     }
 
     public Task UploadRecordAsync(List<BrainContent> files)

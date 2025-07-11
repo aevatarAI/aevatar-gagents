@@ -56,7 +56,7 @@ public static class AevatarAzureAIInferenceKernelBuilderExtensions
             var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
 
             var builder = new Azure.AI.Inference.ChatCompletionsClient(endpoint, new Azure.AzureKeyCredential(apiKey ?? SingleSpace), options)
-                .AsChatClient(modelId)
+                .AsIChatClient(modelId)
                 .AsBuilder()
                 .UseFunctionInvocation(loggerFactory, f => f.MaximumIterationsPerRequest = MaxInflightAutoInvokes);
             
