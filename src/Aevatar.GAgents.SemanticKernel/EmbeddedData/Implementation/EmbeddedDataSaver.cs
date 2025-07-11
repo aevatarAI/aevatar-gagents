@@ -13,7 +13,7 @@ namespace Aevatar.GAgents.SemanticKernel.EmbeddedDataLoader;
 
 internal class EmbeddedDataSaverProvider(
     UniqueKeyGenerator<Guid> uniqueKeyGenerator,
-    IVectorStoreRecordCollection<Guid, TextSnippet<Guid>> vectorStoreCollection,
+    VectorStoreCollection<Guid, TextSnippet<Guid>> vectorStoreCollection,
     ITextEmbeddingGenerationService textEmbeddingGenerationService,
     IChunk chunk) : IEmbeddedDataSaverProvider
 {
@@ -22,7 +22,7 @@ internal class EmbeddedDataSaverProvider(
         CancellationToken cancellationToken)
     {
         // Create the collection if it doesn't exist.
-        await vectorStoreCollection.CreateCollectionIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
+        await vectorStoreCollection.EnsureCollectionExistsAsync(cancellationToken).ConfigureAwait(false);
 
         if (string.IsNullOrEmpty(content))
         {
@@ -51,13 +51,7 @@ internal class EmbeddedDataSaverProvider(
             });
 
             var records = await Task.WhenAll(recordTasks).ConfigureAwait(false);
-            var upsertKeys =
-                vectorStoreCollection.UpsertBatchAsync(records, cancellationToken: cancellationToken);
-            await foreach (var key in upsertKeys.ConfigureAwait(false))
-            {
-                Console.WriteLine($"Upserted record '{key}' into VectorDB");
-            }
-
+            await vectorStoreCollection.UpsertAsync(records, cancellationToken: cancellationToken).ConfigureAwait(false);
             await Task.Delay(betweenBatchDelayInMs, cancellationToken).ConfigureAwait(false);
         }
     }

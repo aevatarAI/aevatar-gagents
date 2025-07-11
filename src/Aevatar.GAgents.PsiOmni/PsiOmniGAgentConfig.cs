@@ -1,0 +1,11 @@
+using GroupChat.GAgent.Dto;
+using Aevatar.GAgents.AIGAgent.Dtos;
+
+namespace Aevatar.GAgents.PsiOmni;
+
+[GenerateSerializer]
+public class PsiOmniGAgentConfig : GroupMemberConfigDto
+{
+    [Id(0)] public int Depth { get; set; } = 0;
+    [Id(1)] public LLMConfigDto? LLMConfig { get; set; }
+}
