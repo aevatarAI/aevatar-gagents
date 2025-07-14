@@ -95,6 +95,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni.Plugins", "src\Aevatar.GAgents.PsiOmni.Plugins\Aevatar.GAgents.PsiOmni.Plugins.csproj", "{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MCP.Core", "src\Aevatar.GAgents.MCP.Core\Aevatar.GAgents.MCP.Core.csproj", "{EFAFBD60-6B0D-4504-8915-950F587D7FA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat.Core", "src\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj", "{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AIGAgent.Core", "src\Aevatar.GAgents.AIGAgent.Core\Aevatar.GAgents.AIGAgent.Core.csproj", "{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -233,6 +239,18 @@ Global
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -276,6 +294,9 @@ Global
 		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{9E47A958-1272-4F61-A559-75A1394E515C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

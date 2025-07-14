@@ -1,9 +1,9 @@
-using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 
 namespace Aevatar.GAgents.MCP.Options;
 
 [GenerateSerializer]
-public class MCPGAgentConfig : ConfigurationBase
+public class MCPGAgentConfig : GroupMemberConfigDto
 {
     [Id(0)] public MCPServerConfig? Server { get; set; }
     [Id(1)] public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);

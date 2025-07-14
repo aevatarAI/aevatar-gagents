@@ -26,14 +26,18 @@ jobs:
           Aevatar.GAgents.Basic,
           Aevatar.GAgents.AI.Abstractions,
           Aevatar.GAgents.AIGAgent,
+          Aevatar.GAgents.AIGAgent.Core,
           Aevatar.GAgents.SemanticKernel,
           Aevatar.GAgents.ChatAgent,
           Aevatar.GAgents.Router,
           Aevatar.GAgents.GraphRetrievalAgent,
           Aevatar.GAgents.GroupChat,
+          Aevatar.GAgents.GroupChat.Core,
           Aevatar.GAgents.MultiAIChatGAgent,
           Aevatar.GAgents.PsiOmni,
           Aevatar.GAgents.PsiOmni.Plugins,
+          Aevatar.GAgents.MCP,
+          Aevatar.GAgents.MCP.Core,
         ]
     steps:
       - name: Checkout code

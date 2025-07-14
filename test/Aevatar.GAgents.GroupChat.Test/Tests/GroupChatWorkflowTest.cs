@@ -1,12 +1,11 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 using Aevatar.GAgents.GroupChat.Feature.Extension;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
-using GroupChat.GAgent.Dto;
-using Orleans;
 using Shouldly;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;

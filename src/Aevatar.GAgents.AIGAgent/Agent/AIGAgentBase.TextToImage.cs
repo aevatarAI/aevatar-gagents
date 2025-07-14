@@ -10,8 +10,8 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
-using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.State;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
 using Orleans;
 

@@ -1,17 +1,18 @@
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.Core.GEvents;
+using Aevatar.GAgents.MCP.Core.Model;
+using Aevatar.GAgents.MCP.Core.State;
 using Aevatar.GAgents.MCP.GEvents;
-using Aevatar.GAgents.MCP.Model;
 using Aevatar.GAgents.MCP.Options;
 using Aevatar.GAgents.MCP.Provider;
-using Aevatar.GAgents.MCP.State;
+using GroupChat.GAgent;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Aevatar.GAgents.MCP.GAgents;
 
 public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
+    GroupMemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TState : MCPGAgentState, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -42,7 +43,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         await InitializeMCPServersAsync();
     }
 
-    protected override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected override void GroupMemberTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
         switch (@event)
         {

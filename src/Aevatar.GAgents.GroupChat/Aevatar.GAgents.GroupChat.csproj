@@ -12,6 +12,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
+      <ProjectReference Include="..\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="GAgent\GroupMember\Dto\" />
+      <Folder Include="GAgent\GroupMember\LogEvent\" />
     </ItemGroup>
 
 </Project>

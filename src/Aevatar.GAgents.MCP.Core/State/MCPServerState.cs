@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using Orleans;
-
-namespace Aevatar.GAgents.MCP.State;
+namespace Aevatar.GAgents.MCP.Core.State;
 
 [GenerateSerializer]
 public class MCPServerState

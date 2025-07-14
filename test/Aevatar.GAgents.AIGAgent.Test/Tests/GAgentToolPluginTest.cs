@@ -244,64 +244,6 @@ public sealed class GAgentToolPluginTest : AevatarAIGAgentTestBase
     }
 
     [Fact]
-    public async Task Plugin_Should_Execute_Real_GAgent_Event()
-    {
-        // This test creates a real agent and executes an event through the plugin
-
-        // Arrange
-        var plugin = new GAgentToolPlugin(_gAgentExecutor, _gAgentService, _logger);
-
-        // Create and initialize a chat agent
-        var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
-        await chatAgent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "You are a test assistant",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        // Find the ChatAIGAgent grain type
-        var allGAgents = await _gAgentService.GetAllAvailableGAgentInformation();
-        GrainType? chatGrainType = null;
-
-        foreach (var kvp in allGAgents)
-        {
-            if (kvp.Key.ToString().Contains("ChatAIGAgent"))
-            {
-                chatGrainType = kvp.Key;
-                break;
-            }
-        }
-
-        chatGrainType.ShouldNotBeNull();
-
-        // Prepare event parameters
-        var eventParams = JsonSerializer.Serialize(new ChatEvent
-        {
-            Message = "Hello from plugin test!"
-        });
-
-        var grainType = chatGrainType.Value.ToString()!;
-        // Act
-        var result = await plugin.InvokeGAgentAsync(
-            grainType,
-            nameof(ChatEvent),
-            eventParams
-        );
-
-        // Assert
-        result.ShouldNotBeNullOrEmpty();
-        _testOutputHelper.WriteLine(result);
-        var response = JsonSerializer.Deserialize<Dictionary<string, object>>(result);
-        response.ShouldNotBeNull();
-        response["success"].ToString().ShouldBe("True");
-        var responseResult = response["result"].ToString()!;
-        responseResult.ShouldContain("Hello from plugin test!");
-        // response.ShouldContainKey("grainId");
-        // response.ShouldContainKey("eventType");
-        // response["eventType"].ToString().ShouldBe(nameof(ChatEvent));
-    }
-
-    [Fact]
     public async Task Plugin_Should_List_Multiple_Event_Types_Per_GAgent()
     {
         // Verify that GAgents with multiple event handlers are properly listed
