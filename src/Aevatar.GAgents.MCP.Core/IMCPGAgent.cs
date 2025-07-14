@@ -1,11 +1,9 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MCP.GEvents;
-using Aevatar.GAgents.MCP.Model;
-using Aevatar.GAgents.MCP.State;
+using Aevatar.GAgents.MCP.Core.GEvents;
+using Aevatar.GAgents.MCP.Core.Model;
+using Aevatar.GAgents.MCP.Core.State;
 
-namespace Aevatar.GAgents.MCP.GAgents;
+namespace Aevatar.GAgents.MCP.Core;
 
 public interface IMCPGAgent : IStateGAgent<MCPGAgentState>
 {

@@ -1,5 +1,5 @@
-using GroupChat.GAgent.Dto;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 
 namespace Aevatar.GAgents.PsiOmni;
 

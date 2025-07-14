@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.Core.GEvents;
 using Orleans;
 
 namespace Aevatar.GAgents.MCP.GEvents;

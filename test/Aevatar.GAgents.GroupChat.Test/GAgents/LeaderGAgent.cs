@@ -1,9 +1,8 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 using GroupChat.GAgent;
-using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
-using Orleans;
 
 namespace Aevatar.GAgents.GroupChat.Test.GAgents;
 

@@ -1,9 +1,7 @@
-using System;
 using System.ComponentModel;
 using Aevatar.Core.Abstractions;
-using Orleans;
 
-namespace Aevatar.GAgents.MCP.GEvents;
+namespace Aevatar.GAgents.MCP.Core.GEvents;
 
 [GenerateSerializer]
 [Description("Response from MCP tool call")]

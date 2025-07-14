@@ -1,8 +1,6 @@
 using Aevatar.Core;
 using GroupChat.GAgent.Feature.Blackboard.LogEvent;
 using GroupChat.GAgent.Feature.Common;
-using GroupChat.GAgent.Feature.Coordinator;
-using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
 

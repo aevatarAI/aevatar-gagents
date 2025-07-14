@@ -1,6 +1,8 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.State;
 using Aevatar.GAgents.MCP.Options;
-using Aevatar.GAgents.MCP.State;
+using GroupChat.GAgent.Feature.Common;
 
 namespace Aevatar.GAgents.MCP.GAgents;
 
@@ -14,5 +16,19 @@ public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, E
     public override Task<string> GetDescriptionAsync()
     {
         return Task.FromResult("MCP GAgent for interacting with Model Context Protocol servers");
+    }
+
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId)
+    {
+        return Task.FromResult(1);
+    }
+
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages)
+    {
+        return Task.FromResult(new ChatResponse
+        {
+            Skip = true,
+            Continue = false
+        });
     }
 }
