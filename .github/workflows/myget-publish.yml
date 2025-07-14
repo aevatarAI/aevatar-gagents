@@ -38,6 +38,7 @@ jobs:
           Aevatar.GAgents.PsiOmni.Plugins,
           Aevatar.GAgents.MCP,
           Aevatar.GAgents.MCP.Core,
+          Aevatar.GAgents.Executor,
         ]
     steps:
       - name: Checkout code
