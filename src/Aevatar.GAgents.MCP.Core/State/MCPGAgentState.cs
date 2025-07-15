@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Options;
+using GroupChat.GAgent.GEvent;
 using Orleans;
 
-namespace Aevatar.GAgents.MCP.State;
+namespace Aevatar.GAgents.MCP.Core.State;
 
 [GenerateSerializer]
-public class MCPGAgentState : StateBase
+public class MCPGAgentState : GroupMemberState
 {
     [Id(0)] public Dictionary<string, MCPServerState> ServerStates { get; set; } = new();
     [Id(1)] public Dictionary<string, MCPToolInfo> AvailableTools { get; set; } = new();

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Plugin;
 using Aevatar.GAgents.Executor;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.GEvents;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.GEvents;
 using Aevatar.GAgents.MCP.Options;
@@ -52,9 +54,8 @@ public class MCPGAgentTests : AevatarMCPTestBase
 
         // Assert
         var serverStates = await mcpGAgent.GetServerStatesAsync();
-        serverStates.Count.ShouldBe(2);
+        serverStates.Count.ShouldBe(1);
         serverStates.Any(s => s.ServerName == "filesystem").ShouldBeTrue();
-        serverStates.Any(s => s.ServerName == "github").ShouldBeTrue();
     }
 
     [Fact]

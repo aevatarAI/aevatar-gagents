@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Options;
 using Microsoft.Extensions.Logging;
 

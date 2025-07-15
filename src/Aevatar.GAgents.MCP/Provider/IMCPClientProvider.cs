@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Options;
 
 namespace Aevatar.GAgents.MCP.Provider;

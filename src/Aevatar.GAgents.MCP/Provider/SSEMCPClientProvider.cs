@@ -1,7 +1,4 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Options;
 using Microsoft.Extensions.Logging;
 

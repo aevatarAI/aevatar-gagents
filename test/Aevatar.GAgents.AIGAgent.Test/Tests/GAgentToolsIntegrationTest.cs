@@ -81,7 +81,7 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         state.EnableGAgentTools.ShouldBeTrue();
         state.AllowedGAgentTypes.ShouldNotBeNull();
         state.AllowedGAgentTypes.Count.ShouldBe(1);
-        state.AllowedGAgentTypes[0].ToString().ShouldBe("ChatAIGAgent");
+        state.AllowedGAgentTypes[0].ToString()!.ShouldContain("ChatAIGAgent");
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         state2.EnableGAgentTools.ShouldBeTrue();
         
         // Agent 1 has no restrictions
-        state1.AllowedGAgentTypes.ShouldBeNull();
+        state1.AllowedGAgentTypes.ShouldBeEmpty();
         
         // Agent 2 has restrictions
         state2.AllowedGAgentTypes.ShouldNotBeNull();

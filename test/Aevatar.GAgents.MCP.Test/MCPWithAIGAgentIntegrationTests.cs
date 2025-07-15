@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.GEvents;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.GEvents;
 using Aevatar.GAgents.MCP.Options;

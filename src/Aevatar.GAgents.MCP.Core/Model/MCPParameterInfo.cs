@@ -1,6 +1,6 @@
 using Orleans;
 
-namespace Aevatar.GAgents.MCP.Model;
+namespace Aevatar.GAgents.MCP.Core.Model;
 
 [GenerateSerializer]
 public class MCPParameterInfo

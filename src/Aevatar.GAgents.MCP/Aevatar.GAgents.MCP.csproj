@@ -13,7 +13,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.GroupChat\Aevatar.GAgents.GroupChat.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.MCP.Core\Aevatar.GAgents.MCP.Core.csproj" />
     </ItemGroup>
 
 </Project>
