@@ -52,7 +52,7 @@ public class ClusterFixture : IDisposable, ISingletonDependency
         public void Configure(ISiloBuilder hostBuilder)
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("/opt/evn/appsettings.json")
+                .AddJsonFile("appsettings.json")
                 .AddJsonFile("appsettings.secrets.json", true)
                 .Build();
 

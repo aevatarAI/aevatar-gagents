@@ -24,18 +24,8 @@ public class MockBrainFactory : IBrainFactory
         _blobContainer = blobContainer;
     }
 
-    public IBrain? CreateBrain(LLMProviderConfig llmProviderConfig)
+    public IBrain? GetBrain(LLMProviderConfig llmProviderConfig)
     {
         return new MockBrain(_kernelBuilderFactory, _logger, _options, _blobContainer);
-    }
-
-    public IChatBrain? GetChatBrain(LLMProviderConfig llmProviderConfig)
-    {
-        return new MockBrain(_kernelBuilderFactory, _logger, _options, _blobContainer);
-    }
-
-    public ITextToImageBrain? GetTextToImageBrain(LLMProviderConfig llmProviderConfig)
-    {
-        throw new NotImplementedException();
     }
 }
