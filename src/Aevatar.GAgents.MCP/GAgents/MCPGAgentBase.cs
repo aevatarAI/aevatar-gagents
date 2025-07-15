@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.MCP.Core.GEvents;
 using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Core.State;
@@ -27,6 +28,12 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
+        await InitializeAsync(new InitializeDto
+        {
+            Instructions = "You are mcp gAgent and should not use a brain.",
+            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
+        });
+
         RaiseEvent(new SetConfigurationLogEvent
         {
             EnableToolDiscovery = configuration.EnableToolDiscovery,
