@@ -7,7 +7,7 @@ using GroupChat.GAgent.Dto;
 namespace Aevatar.GAgents.InputGAgent.Dto;
 
 [GenerateSerializer]
-public class InputConfigDto : GroupMemberConfigDto
+public class InputConfigDto : MemberConfigDto
 {
     [Id(1)] public string Input { get; set; } = string.Empty;
 }
