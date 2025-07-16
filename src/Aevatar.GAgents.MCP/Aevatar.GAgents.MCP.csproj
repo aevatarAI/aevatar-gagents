@@ -17,4 +17,12 @@
         <ProjectReference Include="..\Aevatar.GAgents.MCP.Core\Aevatar.GAgents.MCP.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Options\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Options\MCPServerConfig.cs" />
+    </ItemGroup>
+
 </Project>

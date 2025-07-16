@@ -217,8 +217,8 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
             await ConfirmEvents();
 
-            Logger.LogInformation("MCP tool {ToolName} completed with success: {Success}",
-                @event.ToolName, result.Success);
+            Logger.LogInformation("MCP tool {ToolName} completed with success: {Success}. Error (if have): {ErrorMessage}",
+                @event.ToolName, result.Success, result.ErrorMessage);
 
             return new MCPToolResponseEvent
             {
