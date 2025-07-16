@@ -14,7 +14,7 @@ public static class CommonMCPServersExample
             {
                 ServerName = "filesystem",
                 Command = "npx",
-                Args = new List<string> { "-y", "@modelcontextprotocol/server-filesystem", "/tmp" },
+                Args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
                 Env = new Dictionary<string, string>
                 {
                     ["NODE_ENV"] = "production"

@@ -40,7 +40,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
             RequestTimeout = configuration.RequestTimeout
         });
 
-        if (configuration.Server != null)
+        if (!configuration.Server.ServerName.IsNullOrEmpty())
         {
             RaiseEvent(new AddMCPServerLogEvent { ServerConfig = configuration.Server });
         }
