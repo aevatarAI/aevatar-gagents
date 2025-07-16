@@ -40,22 +40,21 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant C as Client
-    participant GC as GroupChat Coordinator
+    participant WC as Workflow Coordinator
     participant BB as Blackboard
     participant M1 as Member Agent 1
     participant M2 as Member Agent 2
     
-    C->>GC: StartAsync(blackboardId)
-    GC->>BB: ResetAsync()
-    GC->>M1: EvaluationInterestEvent
-    GC->>M2: EvaluationInterestEvent
-    M1->>GC: EvaluationInterestResponseEvent(score)
-    M2->>GC: EvaluationInterestResponseEvent(score)
-    GC->>M1: ChatEvent(speaker selection)
-    M1->>GC: ChatResponseEvent(response)
-    GC->>BB: SetMessageAsync(confirmed response)
+    C->>WC: StartWorkflowCoordinatorEvent
+    WC->>BB: ResetAsync()
+    WC->>M1: ChatEvent(with CoordinatorMessages)
+    M1->>WC: ChatResponseEvent(response)
+    WC->>BB: SetMessageAsync(confirmed response)
     BB->>BB: Update message history
-    GC->>GC: Next round coordination
+    WC->>WC: Activate next work unit in workflow
+    WC->>M2: ChatEvent(with previous context)
+    M2->>WC: ChatResponseEvent(response)
+    WC->>WC: Check workflow completion
 ```
 
 ## Core Components
@@ -113,11 +112,34 @@ Manages structured, workflow-based conversations with predefined execution order
 - **Sequential Execution**: Processes work units in dependency order
 - **Loop Detection**: Validates workflow can reach completion
 - **Dynamic Reconfiguration**: Supports workflow updates during execution
+- **Error Handling**: Proper failure states and recovery mechanisms
+- **Initial Content Support**: Can start workflows with predefined content
+
+**Enhanced State Management:**
+```csharp
+[GenerateSerializer]
+public class WorkflowCoordinatorState : StateBase
+{
+    [Id(0)] public Guid BlackboardId { get; set; }
+    [Id(1)] public long Term { get; set; } = 0;  // Changed from int to long
+    [Id(2)] public List<WorkUnitInfo> CurrentWorkUnitInfos { get; set; } = new();
+    [Id(3)] public Dictionary<long, string> TermToWorkUnitGrainId { get; set; } = new();
+    [Id(4)] public WorkflowCoordinatorStatus WorkflowStatus { get; set; } = WorkflowCoordinatorStatus.Pending;
+    [Id(5)] public List<WorkUnitInfo> BackupWorkUnitInfos { get; set; } = new();
+    [Id(6)] public DateTime? LastRunningTime { get; set; }
+    [Id(7)] public string? Content { get; set; } = null;  // Initial content support
+}
+```
 
 **Workflow States:**
 - `Pending`: Ready to start
 - `InProgress`: Currently executing
-- `Finished`: Completed successfully
+- `Failed`: Failed to start or encountered an error
+
+**New Error Handling Features:**
+- **WorkflowStartFailedLogEvent**: Handles workflow start failures gracefully
+- **Improved State Validation**: Better validation before workflow execution
+- **Recovery Mechanisms**: Support for workflow restart after failure
 
 ### 3. Group Member Agent Base (`GroupMemberGAgentBase`)
 
@@ -164,23 +186,48 @@ public class ChatResponse
 }
 ```
 
-### Event Types
+### Enhanced Event Types
 
-#### Coordination Events
+#### Coordination Events (Updated with long term support)
 - `EvaluationInterestEvent`: Requests interest scores from members
+  - `[Id(1)] public long ChatTerm { get; set; }`
 - `EvaluationInterestResponseEvent`: Member's interest score response
+  - `[Id(3)] public long ChatTerm { get; set; }`
 - `ChatEvent`: Notifies selected speaker to respond
+  - `[Id(3)] public long Term { get; set; }`
+  - `[Id(4)] public List<ChatMessage>? CoordinatorMessages { get; set; }`
 - `ChatResponseEvent`: Member's chat response
-- `CoordinatorConfirmChatResponse`: Confirmed response for blackboard
+  - `[Id(4)] public long Term { get; set; }`
 
-#### Lifecycle Events
-- `GroupChatFinishEvent`: Signals conversation completion
-- `CoordinatorPingEvent`: Heartbeat for active member detection
-- `CoordinatorPongEvent`: Member's heartbeat response
-
-#### Workflow Events
-- `StartWorkflowCoordinatorEvent`: Initiates workflow execution
+#### Enhanced Workflow Events
+- `StartWorkflowCoordinatorEvent`: Initiates workflow execution with optional initial content
 - `ResetWorkflowEvent`: Resets workflow state
+- `WorkflowStartFailedLogEvent`: New event for handling workflow start failures
+
+#### Log Events with Enhanced Term Support
+```csharp
+[GenerateSerializer]
+public class StartWorkUnitLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public string WorkUnitGrainId { get; set; }
+    [Id(1)] public long Term { get; set; }  // Changed from int to long
+}
+
+[GenerateSerializer]
+public class FinishedWorkUnitLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public string WorkUnitGrainId { get; set; }
+    [Id(1)] public long Term { get; set; }  // Changed from int to long
+}
+
+[GenerateSerializer]
+public class SetWorkflowCoordinatorLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; } = new();
+    [Id(1)] public Guid BlackBoardId { get; set; }
+    [Id(2)] public string? InitContent { get; set; } = null;  // New field
+}
+```
 
 ## Configuration and Setup
 
@@ -194,13 +241,14 @@ public class GroupMemberConfigDto : ConfigurationBase
 }
 ```
 
-### Workflow Configuration
+### Enhanced Workflow Configuration
 
 ```csharp
 [GenerateSerializer]
 public class WorkflowCoordinatorConfigDto : ConfigurationBase
 {
     [Id(0)] public List<WorkflowUnitDto> WorkflowUnitList { get; set; } = new();
+    [Id(1)] public string? InitContent { get; set; } = null;  // New: Initial content support
 }
 
 [GenerateSerializer]
@@ -235,46 +283,122 @@ public static async Task<bool> AddGroupChat(this IGAgent agent, IClusterClient c
 }
 ```
 
-### 2. Workflow-Based Group Chat
+### 2. Enhanced Workflow-Based Group Chat
 
 ```csharp
 public static async Task AddWorkflowGroupChat(this IGAgent agent, IGAgentFactory agentFactory, List<WorkflowUnitDto> workflowUnitList)
 {
     var workflowCoordinator = await agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+    
+    // Enhanced configuration with initial content support
     await workflowCoordinator.ConfigAsync(new WorkflowCoordinatorConfigDto()
     {
-        WorkflowUnitList = workflowUnitList
+        WorkflowUnitList = workflowUnitList,
+        InitContent = "Welcome to the workflow discussion!"  // Optional initial content
     });
     
     await agent.RegisterAsync(workflowCoordinator);
 }
 ```
 
-### 3. Implementing a Group Member
+### 3. Starting a Workflow with Custom Content
+
+```csharp
+// Start workflow with specific initial content
+await workflowCoordinator.PublishAsync(new StartWorkflowCoordinatorEvent
+{
+    InitContent = "Please analyze the following data and provide recommendations..."
+});
+```
+
+### 4. Implementing a Group Member with Enhanced Features
 
 ```csharp
 public class MyGroupMemberAgent : GroupMemberGAgentBase<MyState, MyStateLogEvent, MyEvent, GroupMemberConfigDto>
 {
     protected override async Task<int> GetInterestValueAsync(Guid blackboardId)
     {
+        // Enhanced interest calculation with context awareness
+        var messages = await GetMessageFromBlackboardAsync(blackboardId);
+        var relevanceScore = AnalyzeRelevance(messages);
+        
         // Return interest score (0-100)
         // 100 = highest priority, immediate selection
         // 0 = no interest
-        return await CalculateInterestScore(blackboardId);
+        return relevanceScore;
     }
 
     protected override async Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages)
     {
-        // Implement conversation logic
-        var response = await GenerateResponse(blackboardId, coordinatorMessages);
+        // Enhanced chat implementation with coordinator messages
+        var context = coordinatorMessages ?? await GetMessageFromBlackboardAsync(blackboardId);
+        var response = await GenerateContextAwareResponse(blackboardId, context);
         
         return new ChatResponse
         {
             Content = response,
-            Continue = true, // Set to false to end conversation
-            Skip = false     // Set to true to skip this turn
+            Continue = ShouldContinueConversation(context),
+            Skip = ShouldSkipTurn(context)
         };
     }
+
+    protected override async Task GroupChatFinishAsync(Guid blackboardId)
+    {
+        // Custom cleanup logic when conversation ends
+        await PerformWorkflowCleanup(blackboardId);
+        await SaveConversationSummary(blackboardId);
+    }
+}
+```
+
+## Enhanced State Management Features
+
+### Workflow State Queries
+
+The `WorkflowCoordinatorState` provides enhanced query methods:
+
+```csharp
+// Check if all work units are finished
+public bool CheckAllWorkUnitFinished()
+
+// Validate if a work unit can progress (dependencies satisfied)
+public bool CheckWorkUnitCanProgress(string workUnitGrainId)
+
+// Get upstream/downstream work unit relationships
+public List<string> GetUpStreamGrainIds(string currentGrainId)
+public List<string> GetDownStreamGrainIds(string currentGrainId)
+
+// Get work units that can start immediately (no dependencies)
+public List<string> GetTopUpStreamGrainIds()
+
+// Find work unit by term ID
+public WorkUnitInfo? GetWorkUnitFromTerm(long termId)  // Now supports long terms
+```
+
+### Enhanced Error Handling
+
+```csharp
+// Improved workflow start validation
+[EventHandler]
+public async Task HandleEventAsync(StartWorkflowCoordinatorEvent @event)
+{
+    if (State.WorkflowStatus != WorkflowCoordinatorStatus.Pending)
+    {
+        Logger.LogError("[WorkflowCoordinatorGAgent] The workflow is not ready to run.");
+        return;  // Graceful return instead of exception
+    }
+
+    if (State.BlackboardId == Guid.Empty || !State.CurrentWorkUnitInfos.Any())
+    {
+        Logger.LogError("[WorkflowCoordinatorGAgent] The workflow has not been initialized.");
+        
+        // New: Proper failure state handling
+        RaiseEvent(new WorkflowStartFailedLogEvent());
+        await ConfirmEvents();
+        return;
+    }
+
+    // Continue with workflow execution...
 }
 ```
 
@@ -285,26 +409,82 @@ public class MyGroupMemberAgent : GroupMemberGAgentBase<MyState, MyStateLogEvent
 - **Event Sourcing**: Efficient state persistence and recovery
 - **Streaming**: Orleans streams for high-throughput event processing
 - **Caching**: In-memory state caching for fast access
+- **Long Term Support**: Enhanced term handling for large-scale workflows
 
 ### Optimization Guidelines
 - **Interest Evaluation**: Keep interest calculation lightweight
 - **Message Filtering**: Use selective message retrieval for large conversations
 - **Workflow Validation**: Validate DAG structure before execution
 - **Heartbeat Frequency**: Tune ping/pong intervals based on requirements
+- **Term Management**: Use long terms for workflows with many steps
 
 ## Error Handling and Recovery
 
-### Common Error Scenarios
+### Enhanced Error Scenarios
 1. **Member Disconnection**: Detected via ping/pong timeout
 2. **Workflow Loops**: Prevented by DAG validation
-3. **State Corruption**: Recovered through event sourcing
-4. **Network Partitions**: Handled by Orleans clustering
+3. **Workflow Start Failures**: Handled with proper error states
+4. **State Corruption**: Recovered through event sourcing
+5. **Network Partitions**: Handled by Orleans clustering
+6. **Long-Running Workflows**: Support for extended execution periods
 
 ### Recovery Mechanisms
 - **Automatic Retry**: Built-in Orleans grain recovery
 - **State Reconstruction**: Event sourcing enables full state recovery
 - **Workflow Reset**: `ResetWorkflowEvent` for workflow recovery
 - **Blackboard Reset**: `ResetAsync()` for conversation restart
+- **Failure State Recovery**: Workflows can be restarted from Failed state
+
+## Advanced Features
+
+### Context-Aware Messaging
+
+The enhanced system now supports context-aware messaging through `CoordinatorMessages`:
+
+```csharp
+// Workflow coordinator passes relevant context to work units
+var upstreamGrains = State.GetUpStreamGrainIds(workUnitGrainId).Select(s => GrainId.Parse(s).GetGuidKey());
+var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
+var messages = await blackboard.GetLastChatMessageAsync(upstreamGrains.ToList());
+
+if (content != null)
+{
+    messages.Add(new ChatMessage() { MessageType = MessageType.BlackboardTopic, Content = content });
+}
+
+await PublishP2PAsync(speaker, new ChatEvent()
+{
+    BlackboardId = State.BlackboardId, 
+    Speaker = speaker.GetGuidKey(), 
+    Term = State.Term,
+    CoordinatorMessages = messages  // Context from upstream work units
+});
+```
+
+### Workflow Lifecycle Management
+
+Enhanced workflow lifecycle with proper state transitions:
+
+```csharp
+// State transitions now include Failed state
+case WorkflowStartLogEvent:
+    State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
+    State.LastRunningTime = DateTime.UtcNow;
+    break;
+
+case WorkflowStartFailedLogEvent:
+    State.WorkflowStatus = WorkflowCoordinatorStatus.Failed;
+    State.LastRunningTime = DateTime.UtcNow;
+    break;
+
+// Workflows can be reconfigured from Failed state
+if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending || 
+    State.WorkflowStatus == WorkflowCoordinatorStatus.Failed)
+{
+    State.CurrentWorkUnitInfos = nodeList;
+    State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+}
+```
 
 ## Extension Points
 
@@ -316,26 +496,30 @@ public class CustomCoordinator : CoordinatorGAgentBase<CustomState, CustomLogEve
 {
     protected override async Task<Guid> CoordinatorToSpeak(List<InterestInfo> interestInfos, List<GroupMember> members)
     {
-        // Custom speaker selection logic
+        // Custom speaker selection logic with enhanced context
         return await MyCustomSelectionAlgorithm(interestInfos, members);
+    }
+
+    protected override async Task<bool> NeedCheckMemberInterestValue(List<GroupMember> members, Guid blackboardId)
+    {
+        // Custom logic for when to check member interest
+        return await ShouldCheckInterest(members, blackboardId);
     }
 }
 ```
 
-### Custom Member Behaviors
-Override virtual methods in `GroupMemberGAgentBase` for specialized behavior:
+### Custom Workflow Coordinators
 
 ```csharp
-protected override async Task GroupChatFinishAsync(Guid blackboardId)
+public class CustomWorkflowCoordinator : WorkflowCoordinatorGAgent
 {
-    // Custom cleanup logic when conversation ends
-    await PerformCustomCleanup(blackboardId);
-}
-
-protected override async Task<bool> IgnoreBlackboardPingEvent(Guid blackboardId)
-{
-    // Custom logic to ignore ping events
-    return await ShouldIgnorePing(blackboardId);
+    protected override async Task TryActiveWorkUnitAsync(string workUnitGrainId, string? content = null)
+    {
+        // Enhanced work unit activation with custom logic
+        await PreActivationValidation(workUnitGrainId);
+        await base.TryActiveWorkUnitAsync(workUnitGrainId, content);
+        await PostActivationTracking(workUnitGrainId);
+    }
 }
 ```
 
@@ -346,12 +530,29 @@ protected override async Task<bool> IgnoreBlackboardPingEvent(Guid blackboardId)
 - **Aevatar.GAgents.AIGAgent**: AI agent base classes
 - **Microsoft.Orleans**: Orleans distributed computing framework
 - **Microsoft.Extensions.Logging**: Logging infrastructure
+- **Newtonsoft.Json**: JSON serialization for configuration
 
 ### Framework Integration
 - **ABP Framework**: Dependency injection and modularity
 - **Event Sourcing**: State persistence and recovery
 - **Orleans Streams**: Event distribution and processing
 - **MongoDB/Redis**: State storage and clustering
+
+## Testing and Examples
+
+### Sample Projects
+The module includes sample projects demonstrating various usage patterns:
+
+- **GroupChat.Silo**: Orleans silo configuration and hosting
+- **GroupChat.Client**: Client applications for testing
+- **GroupChat.Grains**: Sample grain implementations
+
+### Test Coverage
+Comprehensive test coverage includes:
+
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: End-to-end workflow testing
+- **Performance Tests**: Scalability and load testing
 
 ## Troubleshooting
 
@@ -361,27 +562,32 @@ protected override async Task<bool> IgnoreBlackboardPingEvent(Guid blackboardId)
    - Check Orleans cluster connectivity
    - Verify grain activation and registration
    - Monitor ping/pong heartbeats
+   - Validate workflow status is not Failed
 
 2. **Workflow Stuck**
    - Validate DAG structure for loops
    - Check work unit dependencies
    - Verify agent registration status
+   - Check if workflow is in Failed state
 
 3. **Message Loss**
    - Confirm blackboard connectivity
    - Check event sourcing persistence
    - Verify Orleans stream configuration
+   - Validate CoordinatorMessages flow
 
 4. **Performance Issues**
    - Monitor grain activation patterns
    - Optimize interest calculation methods
    - Tune coordinator timing parameters
+   - Consider term management for large workflows
 
 ### Debugging Tools
 - **Orleans Dashboard**: Monitor grain status and performance
 - **Logging**: Comprehensive logging throughout the framework
 - **Event Tracing**: Track event flow and processing
 - **State Inspection**: Direct access to grain state for debugging
+- **Workflow Status Monitoring**: Track workflow state transitions
 
 ## Best Practices
 
@@ -389,22 +595,32 @@ protected override async Task<bool> IgnoreBlackboardPingEvent(Guid blackboardId)
    - Keep interest calculation methods lightweight
    - Implement proper error handling in chat methods
    - Use meaningful member names for debugging
+   - Handle CoordinatorMessages appropriately
 
 2. **Workflow Design**
    - Validate DAG structure before deployment
    - Keep work units focused and atomic
    - Plan for error recovery and retries
+   - Use InitContent for workflow context
 
 3. **Resource Management**
    - Monitor conversation history size
    - Implement appropriate cleanup strategies
    - Use selective message retrieval for performance
+   - Consider long-term storage for extended workflows
 
-4. **Testing**
+4. **Error Handling**
+   - Implement graceful failure handling
+   - Use WorkflowStartFailedLogEvent for proper error states
+   - Plan for workflow recovery scenarios
+   - Monitor workflow execution times
+
+5. **Testing**
    - Use Orleans TestKit for unit testing
    - Test workflow validation logic thoroughly
    - Mock external dependencies appropriately
+   - Test failure scenarios and recovery
 
 ---
 
-*This documentation covers the core functionality of the GroupChat module. For specific implementation examples and advanced usage patterns, refer to the example projects and integration tests.*
+*This documentation covers the comprehensive functionality of the GroupChat module, including recent enhancements for improved error handling, long-term support, and context-aware messaging. For specific implementation examples and advanced usage patterns, refer to the sample projects and integration tests.*
