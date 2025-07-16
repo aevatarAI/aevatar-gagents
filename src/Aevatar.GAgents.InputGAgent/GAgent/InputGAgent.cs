@@ -13,7 +13,7 @@ namespace Aevatar.GAgents.InputGAgent.GAgent;
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(InputGAgent))]
-public class InputGAgent : GroupMemberGAgentBase<InputGAgentState, InputGAgentLogEvent, EventBase, InputConfigDto>, IInputGAgent
+public class InputGAgent : MemberGAgentBase<InputGAgentState, InputGAgentLogEvent, EventBase, InputConfigDto>, IInputGAgent
 {
     public override Task<string> GetDescriptionAsync()
     {
@@ -50,7 +50,7 @@ public class InputGAgent : GroupMemberGAgentBase<InputGAgentState, InputGAgentLo
         await ConfirmEvents();
     }
 
-    protected override void GroupMemberTransitionState(InputGAgentState state, StateLogEventBase<InputGAgentLogEvent> @event)
+    protected override void MemberTransitionState(InputGAgentState state, StateLogEventBase<InputGAgentLogEvent> @event)
     {
         switch (@event)
         {
