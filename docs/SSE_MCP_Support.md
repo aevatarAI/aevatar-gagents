@@ -2,69 +2,100 @@
 
 ## Current Status
 
-As of the latest update, SSE-based MCP servers have limited support in the Aevatar MCP implementation.
+The SSE MCP Client Provider provides a **complete, standards-compliant implementation** of the Model Context Protocol with Server-Sent Events transport, featuring automatic server type detection.
 
 ### What Works
 
-1. **Connection**: SSE servers can be "connected" without errors
-2. **Tool Discovery**: Predefined tools are returned for known SSE servers (e.g., zhipu-web-search-sse)
-3. **Configuration**: SSE servers can be configured with proper transport type detection
+1. **Full Protocol Support**: Complete implementation of MCP specification for SSE transport
+2. **Auto-Detection**: Automatically detects whether a server requires MCP initialization
+3. **Graceful Fallback**: If MCP initialization fails, treats the server as a simple SSE API
+4. **Tool Discovery**: Dynamic tool discovery for MCP servers, predefined tools for simple APIs
+5. **Tool Execution**: Full support for tool calling with proper request/response handling
+6. **Connection Management**: Robust connection handling with auto-reconnection support
+7. **Authorization**: Bearer token extraction from URL query parameters
 
-### What Doesn't Work
+## Implementation Details
 
-1. **Tool Execution**: SSE tool calls are not implemented and will return an error message
-2. **Real-time Events**: SSE event streams are not processed
-3. **Authorization**: While authorization headers are extracted from URLs, the actual SSE connection doesn't use them properly
+The `SSEMCPClientProvider` implements the complete MCP specification with intelligent auto-detection:
 
-## Temporary Workaround
+### Auto-Detection Mechanism
 
-The `RealMCPClientProvider` includes a temporary workaround that:
+When connecting to an SSE server, the client automatically:
 
-1. Detects SSE endpoints by checking:
-    - `TransportType` is "sse" (case-insensitive)
-    - URL contains "/sse"
+1. **Attempts MCP Initialization** (10-second timeout):
+   - Sends standard `initialize` request via HTTP POST
+   - If successful: treats as full MCP server
+   - If failed: treats as simple SSE API
 
-2. Skips the initialization phase for SSE endpoints
+2. **Connection Flow**:
+   - Try MCP initialization first
+   - On failure, fall back to simple SSE mode
+   - Establish SSE connection for server messages
+   - For MCP servers, send `initialized` notification
 
-3. Returns predefined tools for known SSE servers:
-    - zhipu-web-search: Returns a `web_search` tool with a `query` parameter
+### Transport Architecture
 
-4. Returns error messages when attempting to call SSE tools
+1. **Dual Transport Channels**:
+   - Client-to-server: HTTP POST with JSON-RPC 2.0 messages
+   - Server-to-client: SSE event stream
 
-## Future Improvements
+2. **Message Format** (MCP servers):
+   ```json
+   {
+       "jsonrpc": "2.0",
+       "id": "1",
+       "method": "tools/call",
+       "params": {
+           "name": "tool_name",
+           "arguments": { ... }
+       }
+   }
+   ```
 
-To fully support SSE MCP servers, the following improvements are needed:
+3. **Simple SSE API Format**:
+   - Direct POST of arguments as JSON
+   - SSE response processing for results
 
-### 1. Proper SSE Client Implementation
-- Create a dedicated `SSEMCPClientProvider` class
-- Use HttpClient with streaming support or a dedicated SSE library
-- Handle SSE event parsing (event:, data:, id:, etc.)
+## SSE Server Configuration Example
 
-### 2. Event Stream Processing
-- Parse SSE events according to the specification
-- Handle reconnection with Last-Event-ID
-- Process different event types (message, error, etc.)
+```json
+{
+  "ServerName": "example-sse-server",
+  "TransportType": "sse",
+  "Url": "https://example.com/api/mcp/sse?Authorization=<your-token>",
+  "AutoReconnect": true,
+  "ReconnectDelay": "00:00:05"
+}
+```
 
-### 3. Authentication
-- Move authorization from query parameters to headers
-- Support Bearer token authentication
-- Handle token refresh if needed
+The client will automatically detect whether the server is a full MCP server or a simple SSE API.
 
-### 4. Async Event Handling
-- Implement event handlers for real-time updates
-- Support streaming responses for tool calls
-- Handle connection lifecycle events
+## Error Resolution
 
-## Known SSE Servers
+### "The response ended prematurely" Error
 
-1. **zhipu-web-search-sse**
-    - Endpoint: https://open.bigmodel.cn/api/mcp/web_search/sse
-    - Authentication: Bearer token (from Authorization query parameter)
-    - Tools: web_search
+This error typically occurs when:
+- The server doesn't support MCP initialization
+- The server is a simple SSE API (not full MCP)
 
-## Testing
+**Solution**: The client automatically handles this by falling back to simple SSE mode. No configuration changes needed.
 
-When testing SSE connections:
-1. The server will appear as "connected" even though full functionality is not available
-2. Tools will be listed but cannot be executed
-3. Error messages will clearly indicate SSE limitations
+## Usage
+
+```csharp
+// Configure the SSE server
+var config = new MCPServerConfig
+{
+    ServerName = "my-sse-server",
+    TransportType = "sse",
+    Url = "https://api.example.com/sse?Authorization=token"
+};
+
+// The client will auto-detect the server type
+var mcpAgent = serviceProvider.GetRequiredService<IMCPGAgent>();
+var isConnected = await mcpAgent.IsConnectedAsync("my-sse-server");
+
+// Works with both MCP and simple SSE servers
+var tools = await mcpAgent.DiscoverToolsAsync("my-sse-server");
+var result = await mcpAgent.CallToolAsync("my-sse-server.tool_name", arguments);
+```

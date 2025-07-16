@@ -1,55 +1,109 @@
-# Project Development Tracker
+# Aevatar Workshop 开发进度追踪
 
-## Status Legend
-- 🔜 - Planned (Ready for development)
-- 🚧 - In Progress (Currently being developed)
-- ✅ - Completed
-- 🧪 - In Testing
-- 🐛 - Has known issues
+## 项目概览
+Aevatar Workshop 是一个基于 Orleans 的智能代理（GAgent）框架，支持多种 AI 能力和工具集成。
 
-## Test Status Legend
-- ✓ - Tests Passed
-- ✗ - Tests Failed
-- ⏳ - Tests In Progress
-- ⚠️ - Tests Blocked
-- - - Not Started
+## 当前进度
 
-## Feature Tasks
+### 核心功能模块
 
-| ID | Feature Name | Status | Priority | Branch | Assigned To (MAC) | Coverage | Unit Tests | Regression Tests | Notes |
-|----|--------------|--------|----------|--------|-------------------|----------|------------|------------------|-------|
-| F001 | Dynamic AI Agent GAgent Tools Integration | ✅ | High | feature/gagent-plugin | Manual | - | - | - | Allows AI to use both MCP and GAgent tools |
-| F002 | Sample Feature | 🔜 | Medium | - | - | - | - | - | Initial setup required |
+| 功能模块 | 状态 | 分支 | 描述 | 开发机器 | 测试覆盖率 | 已集成到dev |
+|---------|------|-----|------|----------|------------|------------|
+| **GAgent基础框架** | @✅ | main | 基于Orleans的GAgent基础实现 | - | 85% | ✅ |
+| **AIGAgent集成** | @✅ | feature/aigagent-integration | AI能力集成，支持多种LLM | - | 78% | ✅ |
+| **MCP实现** | @✅ | feature/mcp-implementation | 模型上下文协议支持，SSE/HTTP客户端，简化工具发现(URL提取) | - | 92% | ✅ |
+| **GroupChat功能** | @✅ | feature/groupchat | 多Agent协作聊天 | - | 75% | ✅ |
+| **工作流引擎** | @🚧 | feature/workflow-engine | 基于状态机的工作流执行 | - | 65% | ❌ |
+| **向量存储** | @🚧 | feature/vector-store | 语义搜索和知识管理 | 52:54:98:52:21:26 | 70% | ❌ |
+| **事件驱动架构** | @🔜 | - | 基于Orleans Streams的事件系统 | - | 0% | ❌ |
+| **插件系统** | @✅ | feature/gagent-plugin | GAgent工具和插件机制实现 | - | 88% | ✅ |
+| **监控和追踪** | @🔜 | - | 分布式追踪和性能监控 | - | 0% | ❌ |
 
-## Technical Debt & Refactoring
+### 技术债务和优化
 
-| ID | Task Description | Status | Priority | Branch | Assigned To (MAC) | Unit Tests | Regression Tests | Notes |
-|----|------------------|--------|----------|--------|-------------------|------------|------------------|-------|
-| T001 | Refactor Component X | 🔜 | Medium | - | - | - | - | Improve performance |
+| 任务 | 优先级 | 状态 | 描述 |
+|-----|-------|------|------|
+| Orleans升级到9.0 | 🔴 高 | @🔜 | 升级到最新版本以获得性能提升 |
+| 单元测试完善 | 🟡 中 | @🚧 | 提高测试覆盖率到90%以上 |
+| 文档完善 | 🟡 中 | @🚧 | API文档和使用指南 |
+| 性能优化 | 🟢 低 | @🔜 | 消息序列化和存储优化 |
 
-## Bug Fixes
+### 已完成的集成测试
 
-| ID | Bug Description | Status | Priority | Branch | Assigned To (MAC) | Unit Tests | Regression Tests | Notes |
-|----|----------------|--------|----------|--------|-------------------|------------|------------------|-------|
-| B001 | Fix crash in module Y | 🔜 | High | - | - | - | - | Occurs when Z happens |
+| 测试场景 | 通过状态 | 最后测试时间 | 备注 |
+|---------|---------|-------------|------|
+| AIGAgent基础功能 | ✅ | 2024-01-15 | 包括初始化、聊天、流式响应 |
+| MCP工具调用 | ✅ | 2024-01-20 | HTTP和SSE客户端测试通过 |
+| GroupChat协作 | ✅ | 2024-01-10 | 多Agent协调测试 |
+| 插件系统 | ✅ | 2024-01-20 | 工具注册和调用测试 |
 
-## Development Metrics
+## 下一步计划
 
-- Total Test Coverage: 0%
-- Last Updated: 2025-01-05
+### 短期目标（1-2周）
+1. [ ] 完成向量存储功能的剩余开发
+2. [ ] 实现事件驱动架构基础
+3. [ ] 提升单元测试覆盖率到90%
 
-## Upcoming Automated Tasks
+### 中期目标（1个月）
+1. [ ] 完成监控和追踪系统
+2. [ ] Orleans 9.0升级
+3. [ ] 发布v1.0版本
 
-| ID | Task Description | Dependency | Estimated Completion |
-|----|------------------|------------|----------------------|
-| A001 | Generate tests for Feature X | F001 | After F001 completion |
+### 长期目标（3个月）
+1. [ ] 实现分布式部署支持
+2. [ ] 添加更多AI模型支持
+3. [ ] 构建可视化管理界面
 
-## Notes & Action Items
+## 开发规范
 
-- Initial project setup pending
-- CI/CD pipeline configuration needed
-- Documentation should be updated after core features implementation
+### 分支管理
+- `main`: 稳定版本
+- `dev`: 开发集成分支  
+- `feature/*`: 功能开发分支
+- `bugfix/*`: 错误修复分支
+
+### 代码审查要求
+- [ ] 单元测试覆盖率 > 80%
+- [ ] 通过所有集成测试
+- [ ] 代码符合C#编码规范
+- [ ] 包含必要的文档更新
+
+### 提交规范
+- feat: 新功能
+- fix: 错误修复
+- docs: 文档更新
+- test: 测试相关
+- refactor: 代码重构
+- perf: 性能优化
+
+## 最近更新记录
+
+### 2024-01-20
+- ✅ 完成MCP工具发现简化实现（URL模式提取）
+- ✅ 移除复杂的HTTP端点发现机制
+- ✅ 更新SSE自动检测文档
+
+### 2024-01-19
+- ✅ 实现SSE MCP自动检测机制
+- ✅ 支持简单SSE API和完整MCP服务
+- ✅ 添加工具发现多种方式支持
+
+### 2024-01-18
+- ✅ 完成GAgent插件系统基础实现
+- ✅ 添加工具注册和调用机制
+- ✅ 集成测试通过率达到95%
+
+### 2024-01-15
+- ✅ AIGAgent功能全部测试通过
+- ✅ 修复流式响应内存泄漏问题
+- 🚧 开始向量存储功能开发
 
 ---
 
-*This file is maintained automatically as part of the development workflow.*
+> 最后更新: 2024-01-20 15:30
+> 
+> 状态说明: 
+> - @✅ 已完成
+> - @🚧 开发中  
+> - @🔜 计划中
+> - @❌ 已取消

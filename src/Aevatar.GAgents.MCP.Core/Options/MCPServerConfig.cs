@@ -36,14 +36,57 @@ public class MCPServerConfig
     /// </summary>
     [Id(10)]
     public int? MaxRetries { get; set; }
+    
+    /// <summary>
+    /// For simple SSE APIs: Custom endpoint for tool discovery (e.g., "/api/tools", "/capabilities")
+    /// If not specified, defaults to "/tools"
+    /// </summary>
+    [Id(11)]
+    public string? ToolDiscoveryEndpoint { get; set; }
+    
+    /// <summary>
+    /// For simple SSE APIs: Predefined tools when dynamic discovery is not available
+    /// </summary>
+    [Id(12)]
+    public List<MCPToolDefinition>? PredefinedTools { get; set; }
+}
+
+/// <summary>
+/// Tool definition for predefined tools in configuration
+/// </summary>
+[GenerateSerializer]
+public class MCPToolDefinition
+{
+    [Id(0)]
+    public string Name { get; set; } = string.Empty;
+    
+    [Id(1)]
+    public string Description { get; set; } = string.Empty;
+    
+    [Id(2)]
+    public Dictionary<string, MCPParameterDefinition>? Parameters { get; set; }
+}
+
+/// <summary>
+/// Parameter definition for predefined tools
+/// </summary>
+[GenerateSerializer]
+public class MCPParameterDefinition
+{
+    [Id(0)]
+    public string Type { get; set; } = "string";
+    
+    [Id(1)]
+    public string? Description { get; set; }
+    
+    [Id(2)]
+    public bool Required { get; set; }
 }
 
 public static class MCPServerConfigExtensions
 {
     public static bool IsValid(this MCPServerConfig config)
     {
-        return !string.IsNullOrWhiteSpace(config.ServerName) &&
-               !string.IsNullOrWhiteSpace(config.Command) &&
-               config.Args.Count > 0;
+        return !string.IsNullOrWhiteSpace(config.ServerName);
     }
 }
