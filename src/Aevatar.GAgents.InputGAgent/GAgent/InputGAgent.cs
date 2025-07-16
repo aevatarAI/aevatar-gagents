@@ -22,7 +22,7 @@ public class InputGAgent : GroupMemberGAgentBase<InputGAgentState, InputGAgentLo
 
     protected override Task<int> GetInterestValueAsync(Guid blackboardId)
     {
-        return Task.FromResult(50);
+        return Task.FromResult(100);
     }
 
     protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? messages)
