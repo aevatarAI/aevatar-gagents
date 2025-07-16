@@ -13,7 +13,7 @@ public class GroupChatFinishEvent : EventBase
 public class EvaluationInterestEvent : EventBase
 {
     [Id(0)] public Guid BlackboardId { get; set; }
-    [Id(1)] public int ChatTerm { get; set; }
+    [Id(1)] public long ChatTerm { get; set; }
 }
 
 [GenerateSerializer]
@@ -22,7 +22,7 @@ public class EvaluationInterestResponseEvent : EventBase
     [Id(0)] public Guid MemberId { get; set; }
     [Id(1)] public Guid BlackboardId { get; set; }
     [Id(2)] public int InterestValue { get; set; }
-    [Id(3)] public int ChatTerm { get; set; }
+    [Id(3)] public long ChatTerm { get; set; }
 }
 
 [GenerateSerializer]
@@ -44,7 +44,7 @@ public class ChatEvent : EventBase
 {
     [Id(0)] public Guid BlackboardId { get; set; }
     [Id(1)] public Guid Speaker { get; set; }
-    [Id(3)] public int Term { get; set; }
+    [Id(3)] public long Term { get; set; }
     [Id(4)] public List<ChatMessage>? CoordinatorMessages { get; set; } = null;
 }
 
@@ -55,7 +55,7 @@ public class ChatResponseEvent : EventBase
     [Id(1)] public Guid MemberId { get; set; }
     [Id(2)] public string MemberName { get; set; }
     [Id(3)] public ChatResponse ChatResponse { get; set; }
-    [Id(4)] public int Term { get; set; }
+    [Id(4)] public long Term { get; set; }
 }
 
 [GenerateSerializer]

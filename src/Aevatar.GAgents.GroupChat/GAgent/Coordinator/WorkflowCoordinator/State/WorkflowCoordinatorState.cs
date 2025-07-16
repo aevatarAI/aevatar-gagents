@@ -6,11 +6,13 @@ namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 public class WorkflowCoordinatorState : StateBase
 {
     [Id(0)] public Guid BlackboardId { get; set; }
-    [Id(1)] public int Term { get; set; } = 0;
+    [Id(1)] public long Term { get; set; } = 0;
     [Id(2)] public List<WorkUnitInfo> CurrentWorkUnitInfos { get; set; } = new List<WorkUnitInfo>();
-    [Id(3)] public Dictionary<int, string> TermToWorkUnitGrainId { get; set; } = new Dictionary<int, string>();
+    [Id(3)] public Dictionary<long, string> TermToWorkUnitGrainId { get; set; } = new Dictionary<long, string>();
     [Id(4)] public WorkflowCoordinatorStatus WorkflowStatus { get; set; } = WorkflowCoordinatorStatus.Pending;
     [Id(5)] public List<WorkUnitInfo> BackupWorkUnitInfos { get; set; } = new List<WorkUnitInfo>();
+    [Id(6)] public DateTime? LastRunningTime { get; set; }
+    [Id(7)] public string? Content { get; set; } = null;
 
     public WorkUnitInfo? GetWorkUnit(string workUnitGrainId)
     {
@@ -62,7 +64,7 @@ public class WorkflowCoordinatorState : StateBase
             .ToList();
     }
 
-    public WorkUnitInfo? GetWorkUnitFromTerm(int termId)
+    public WorkUnitInfo? GetWorkUnitFromTerm(long termId)
     {
         return TermToWorkUnitGrainId.TryGetValue(termId, out var result) == false
             ? null
