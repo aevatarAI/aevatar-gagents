@@ -6,9 +6,13 @@ using Aevatar.GAgents.InputGAgent.Dto;
 using Aevatar.GAgents.InputGAgent.GAgent.SEvent;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
+using Orleans.Providers;
 
 namespace Aevatar.GAgents.InputGAgent.GAgent;
 
+[StorageProvider(ProviderName = "PubSubStore")]
+[LogConsistencyProvider(ProviderName = "LogStorage")]
+[GAgent(nameof(InputGAgent))]
 public class InputGAgent : GroupMemberGAgentBase<InputGAgentState, InputGAgentLogEvent, EventBase, InputConfigDto>, IInputGAgent
 {
     public override Task<string> GetDescriptionAsync()
