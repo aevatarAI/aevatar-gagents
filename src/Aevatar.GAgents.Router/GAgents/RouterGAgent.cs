@@ -3,6 +3,7 @@ using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Router.GAgents.Features.Common;
 using Aevatar.GAgents.Router.GAgents.SEvents;
 using Aevatar.GAgents.Router.GEvents;
@@ -17,6 +18,17 @@ public interface IRouterGAgent : IAIGAgent, IGAgent
     public Task AddAgentDescription(Type agentType, List<Type> eventList);
 }
 
+[AgentDescription(
+    Name = "智能路由代理",
+    L1Description = "负责生成和管理工作流的智能路由代理，能够协调多个Agent协作",
+    L2Description = "这是一个专门用于工作流编排的AI代理，能够分析任务需求，智能地选择和组合合适的Agent来完成复杂的工作流程。支持动态路由、Agent协调、状态管理等功能，适用于需要多Agent协作的复杂业务场景。",
+    Category = "Workflow",
+    Capabilities = new[] { "workflow-management", "agent-coordination", "task-routing", "dynamic-orchestration" },
+    Tags = new[] { "workflow", "router", "orchestration", "coordination" },
+    InputFormat = "json",
+    OutputFormat = "json", 
+    UsageExample = "await RouteNextAsync(new RouteNextGEvent { TaskId = 'task-123', Context = context })"
+)]
 public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>, IRouterGAgent
 {
     private readonly ILogger<RouterGAgent> _logger;

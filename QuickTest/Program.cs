@@ -70,4 +70,4 @@ static void TestAssembly(string assemblyPath, string expectedAgentName)
     }
     
     Console.WriteLine();
-} 
+}
