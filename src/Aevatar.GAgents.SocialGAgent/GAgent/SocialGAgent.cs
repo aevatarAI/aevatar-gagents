@@ -8,9 +8,21 @@ using Aevatar.GAgents.ChatAgent.GAgent;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.SocialAgent.GAgent.SEvent;
+using Aevatar.GAgents.AI.Common;
 
 namespace Aevatar.GAgents.TestAgent;
 
+[AgentDescription(
+    Name = "社交聊天代理",
+    L1Description = "支持社交平台聊天交互的AI代理，具备多轮对话和情感理解能力",
+    L2Description = "这是一个专为社交场景设计的AI代理，能够处理用户的聊天请求，支持情感识别、多轮对话记忆、个性化回复等功能。适用于社交媒体平台、客服系统等需要友好交互的场景。",
+    Category = "Social",
+    Capabilities = new[] { "chat", "social-interaction", "emotion-understanding", "multi-turn-conversation" },
+    Tags = new[] { "social", "chat", "ai", "conversation" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await ChatAsync('你好，今天心情怎么样？')"
+)]
 [System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
