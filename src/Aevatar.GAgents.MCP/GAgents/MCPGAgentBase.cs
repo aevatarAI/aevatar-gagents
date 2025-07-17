@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Aevatar.GAgents.MCP.GAgents;
 
 public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    GroupMemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
+    MemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TState : MCPGAgentState, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -28,12 +28,6 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
 
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
-        await InitializeAsync(new InitializeDto
-        {
-            Instructions = "You are mcp gAgent and should not use a brain.",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
         RaiseEvent(new SetConfigurationLogEvent
         {
             EnableToolDiscovery = configuration.EnableToolDiscovery,
@@ -50,7 +44,7 @@ public abstract class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfigurati
         await InitializeMCPServersAsync();
     }
 
-    protected override void GroupMemberTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
+    protected override void MemberTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
         switch (@event)
         {

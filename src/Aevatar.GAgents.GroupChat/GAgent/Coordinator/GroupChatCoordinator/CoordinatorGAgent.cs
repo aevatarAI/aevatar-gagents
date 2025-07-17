@@ -320,8 +320,3 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
     }
     #endregion
 }
-
-public interface ICoordinatorGAgent : IGAgent
-{
-    Task StartAsync(Guid blackboardId);
-}

@@ -44,7 +44,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant with GAgent tools",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Assert
@@ -64,8 +63,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant with restricted GAgent access",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
-            AllowedGAgentTypes = allowedTypes
         });
         
         // Assert
@@ -87,7 +84,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant that can use other agents",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Wait a bit for async registration
@@ -189,7 +185,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are a basic AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = false // Explicitly disabled
         });
         
         // Assert
@@ -209,7 +204,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI with limited agent access",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
             AllowedGAgentTypes = [GrainType.Create("NonExistentType")]
         });
         

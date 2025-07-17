@@ -456,7 +456,3 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     #endregion
 }
-
-public interface IWorkflowCoordinatorGAgent : IStateGAgent<WorkflowCoordinatorState>
-{
-}

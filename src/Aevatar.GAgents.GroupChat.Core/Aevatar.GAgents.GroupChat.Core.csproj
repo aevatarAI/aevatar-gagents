@@ -11,4 +11,8 @@
       <ProjectReference Include="..\Aevatar.GAgents.AIGAgent.Core\Aevatar.GAgents.AIGAgent.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="GAgent\GroupMember\" />
+    </ItemGroup>
+
 </Project>

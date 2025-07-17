@@ -40,7 +40,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant that can coordinate with other agents",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
 
         // Act - Verify tools are enabled
@@ -70,7 +69,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI with limited agent access",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
             AllowedGAgentTypes = allowedTypes
         });
         
@@ -95,7 +93,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "First AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         var agent2 = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
@@ -103,7 +100,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "Second AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
             AllowedGAgentTypes = [GrainType.Create("GroupGAgent")]
         });
         
@@ -136,7 +132,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are a helpful AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Add some chat history
@@ -172,7 +167,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
                 {
                     Instructions = $"AI Assistant #{index}",
                     LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-                    EnableGAgentTools = index % 2 == 0 // Even indices have tools enabled
                 });
                 return agent;
             }));
