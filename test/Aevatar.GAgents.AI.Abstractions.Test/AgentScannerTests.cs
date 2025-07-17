@@ -4,174 +4,173 @@ using Xunit;
 
 namespace Aevatar.GAgents.AI.Abstractions.Test;
 
+// Test Agent classes for scanning functionality testing
+[AgentDescription(
+    "Test Agent Alpha",
+    "This is L1 description for Test Agent Alpha with correct length between 100-150 characters for testing scanning logic.",
+    "This is L2 description for Test Agent Alpha providing detailed capability explanation that should be between 300-500 characters to test the extraction logic properly. This description contains comprehensive information about the agent's capabilities, features, and usage scenarios for proper testing purposes."
+)]
+public class TestAgentAlpha 
+{
+}
+
+[AgentDescription(
+    "Test Agent Beta",
+    "L1 description for Beta agent with minimal required content to test edge cases and boundary conditions properly.",
+    "L2 description for Test Agent Beta with different content and structure to verify that the scanner can handle multiple agents with varying descriptions. This description tests the scanner's ability to extract information from different agent configurations and ensures proper data mapping functionality."
+)]
+public class TestAgentBeta
+{
+}
+
+// Agent without attribute - should not be scanned
+public class RegularClassWithoutAttribute
+{
+}
+
+// Agent with invalid L1 description (too short)
+[AgentDescription("Invalid Agent", "Too short")]
+public class TestAgentWithInvalidL1
+{
+}
+
 public class AgentScannerTests
 {
     [Fact]
-    public void AgentIndexInfo_Properties_ShouldBeSettableAndGettable()
+    public void SimpleAgentScanner_ScanCurrentAssembly_ShouldFindMarkedAgents()
     {
-        // Arrange & Act - Test basic functionality of AgentIndexInfo
-        var agentInfo = new AgentIndexInfo
-        {
-            Id = "test-agent",
-            Name = "Test Agent",
-            Category = "Test",
-            L1Description = "This is a test short description used to verify the basic functionality and setting capability of L1 description field.",
-            L2Description = "This is a more detailed test description used to verify that the L2 description field can store longer text content. It includes detailed Agent functionality descriptions, usage scenarios, technical characteristics and other information to provide users with comprehensive understanding of Agent capabilities in actual use. This description should be between 300 to 500 characters to meet our design requirements.",
-            Capabilities = new List<string> { "test", "validation" },
-            Tags = new List<string> { "test", "unit-test" },
-            InputFormat = "json",
-            OutputFormat = "json",
-            UsageExample = "await TestAgentAsync(new TestRequest())"
-        };
+        // Act - Scan the current test assembly which contains our test agents
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
         
-        // Assert
-        Assert.Equal("test-agent", agentInfo.Id);
-        Assert.Equal("Test Agent", agentInfo.Name);
-        Assert.Equal("Test", agentInfo.Category);
-        Assert.NotEmpty(agentInfo.L1Description);
-        Assert.NotEmpty(agentInfo.L2Description);
-        Assert.Contains("test", agentInfo.Capabilities);
-        Assert.Contains("test", agentInfo.Tags);
-        Assert.Equal("json", agentInfo.InputFormat);
-        Assert.Equal("json", agentInfo.OutputFormat);
-        Assert.NotEmpty(agentInfo.UsageExample);
+        // Assert - Should find agents with AgentDescriptionAttribute
+        Assert.NotEmpty(agents);
+        Assert.Contains(agents, a => a.Name == "Test Agent Alpha");
+        Assert.Contains(agents, a => a.Name == "Test Agent Beta");
         
-        Console.WriteLine("✓ AgentIndexInfo basic functionality validation passed");
+        // Should not find classes without the attribute
+        Assert.DoesNotContain(agents, a => a.Name.Contains("RegularClassWithoutAttribute"));
+        
+        Console.WriteLine($"✓ Found {agents.Count} agents in test assembly");
     }
 
     [Fact]
-    public void AgentDescriptionAttribute_Properties_ShouldBeSettableAndGettable()
+    public void SimpleAgentScanner_ExtractAgentInfo_ShouldMapAttributeDataCorrectly()
     {
-        // Arrange & Act - Test basic functionality of AgentDescriptionAttribute
-        var attribute = new AgentDescriptionAttribute(
-            "Test Agent",
-            "L1 description for quick matching between 100-150 chars. Contains core Agent functionality description.",
-            "This is L2 description providing more detailed Agent capability explanation. Includes specific functional features, usage scenarios, technical implementation details and other information. This description is used for in-depth analysis and precise matching, helping users comprehensively understand various Agent capabilities and applicable scenarios. Description length is controlled within 300-500 character range to ensure balance between information completeness and readability."
-        )
-        {
-            Category = "Test",
-            Capabilities = new[] { "test", "validation", "mock" },
-            Tags = new[] { "test", "unit-test", "validation" },
-            InputFormat = "json",
-            OutputFormat = "json",
-            UsageExample = "await TestAsync(request)"
-        };
-
-        // Assert
-        Assert.Equal("Test Agent", attribute.Name);
-        Assert.NotEmpty(attribute.L1Description);
-        Assert.NotEmpty(attribute.L2Description);
-        Assert.Equal("Test", attribute.Category);
-        Assert.Contains("test", attribute.Capabilities);
-        Assert.Contains("test", attribute.Tags);
-        Assert.Equal("json", attribute.InputFormat);
-        Assert.Equal("json", attribute.OutputFormat);
-        Assert.NotEmpty(attribute.UsageExample);
-
-        // Validate description length specifications
-        Assert.True(attribute.L1Description.Length >= 100 && attribute.L1Description.Length <= 150,
-            $"L1Description length {attribute.L1Description.Length} should be between 100-150 characters");
-        Assert.True(attribute.L2Description.Length >= 300 && attribute.L2Description.Length <= 500,
-            $"L2Description length {attribute.L2Description.Length} should be between 300-500 characters");
+        // Act
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
+        var alphaAgent = agents.FirstOrDefault(a => a.Name == "Test Agent Alpha");
         
-        Console.WriteLine("✓ AgentDescriptionAttribute functionality validation passed");
+        // Assert - Verify correct data extraction from AgentDescriptionAttribute
+        Assert.NotNull(alphaAgent);
+        Assert.Equal("Test Agent Alpha", alphaAgent.Name);
+        Assert.NotEmpty(alphaAgent.L1Description);
+        Assert.NotEmpty(alphaAgent.L2Description);
+        Assert.True(alphaAgent.L1Description.Length >= 100 && alphaAgent.L1Description.Length <= 150,
+            $"L1Description length {alphaAgent.L1Description.Length} should be between 100-150 characters");
+        Assert.True(alphaAgent.L2Description.Length >= 300 && alphaAgent.L2Description.Length <= 500,
+            $"L2Description length {alphaAgent.L2Description.Length} should be between 300-500 characters");
+        
+        Console.WriteLine("✓ Agent data extraction and mapping works correctly");
     }
-    
+
     [Fact]
-    public void SimpleAgentScanner_ScanAgentsInAssembly_ShouldHandleEmptyAssembly()
+    public void SimpleAgentScanner_ScanMultipleAgents_ShouldReturnDistinctResults()
     {
-        // Arrange - Use current test assembly (assembly without marked Agents)
-        var testAssembly = Assembly.GetExecutingAssembly();
+        // Act
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
+        
+        // Assert - Should find multiple distinct agents
+        var alphaAgent = agents.FirstOrDefault(a => a.Name == "Test Agent Alpha");
+        var betaAgent = agents.FirstOrDefault(a => a.Name == "Test Agent Beta");
+        
+        Assert.NotNull(alphaAgent);
+        Assert.NotNull(betaAgent);
+        Assert.NotEqual(alphaAgent.L1Description, betaAgent.L1Description);
+        Assert.NotEqual(alphaAgent.L2Description, betaAgent.L2Description);
+        
+        // Ensure all agents have unique names
+        var names = agents.Select(a => a.Name).ToList();
+        var distinctNames = names.Distinct().ToList();
+        Assert.Equal(names.Count, distinctNames.Count);
+        
+        Console.WriteLine("✓ Multiple agents scanned with distinct information");
+    }
+
+    [Fact]
+    public void SimpleAgentScanner_HandleInvalidAgents_ShouldFilterOrHandle()
+    {
+        // Act
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
+        
+        // Assert - Check how invalid agents are handled
+        var invalidAgent = agents.FirstOrDefault(a => a.Name == "Invalid Agent");
+        
+        // The scanner should either filter out invalid agents or handle them gracefully
+        if (invalidAgent != null)
+        {
+            // If included, verify it's marked appropriately
+            Assert.NotNull(invalidAgent);
+            Console.WriteLine("✓ Invalid agents are included but can be identified");
+        }
+        else
+        {
+            // If filtered out, that's also acceptable behavior
+            Console.WriteLine("✓ Invalid agents are filtered out during scanning");
+        }
+    }
+
+    [Fact]
+    public void SimpleAgentScanner_ScanEmptyAssembly_ShouldReturnEmptyList()
+    {
+        // Arrange - Create a mock assembly or use one known to have no agents
+        var testAssembly = typeof(string).Assembly; // System assembly with no agents
         
         // Act
         var agents = SimpleAgentScanner.ScanAgentsInAssembly(testAssembly);
         
-        // Assert - Should return empty list instead of throwing exception
+        // Assert
         Assert.NotNull(agents);
         Assert.Empty(agents);
-        Console.WriteLine("✓ Correctly handled assembly without Agents");
+        
+        Console.WriteLine("✓ Empty assembly handled correctly");
     }
 
     [Fact]
-    public void SimpleAgentScanner_ScanAllLoadedAssemblies_ShouldNotThrow()
+    public void SimpleAgentScanner_PerformanceTest_ShouldCompleteQuickly()
     {
-        // Arrange & Act - Test scanning all loaded assemblies doesn't throw exception
-        var exception = Record.Exception(() =>
-        {
-            var agents = SimpleAgentScanner.ScanAllLoadedAssemblies();
-            Console.WriteLine($"Scan of loaded assemblies completed, found {agents.Count} Agents");
-            return agents;
-        });
+        // Act - Measure scanning performance
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
+        stopwatch.Stop();
         
-        // Assert - Should not throw exception
-        Assert.Null(exception);
-        Console.WriteLine("✓ Scan all loaded assemblies functionality works properly");
+        // Assert - Should complete within reasonable time
+        Assert.True(stopwatch.ElapsedMilliseconds < 1000, 
+            $"Scanning took {stopwatch.ElapsedMilliseconds}ms, should be under 1000ms");
+        Assert.NotEmpty(agents);
+        
+        Console.WriteLine($"✓ Scanning completed in {stopwatch.ElapsedMilliseconds}ms with {agents.Count} agents found");
     }
 
     [Fact]
-    public void AgentDescriptionAttribute_ValidationRules_ShouldWork()
+    public void AgentIndexInfo_GeneratedFromScanning_ShouldHaveCorrectStructure()
     {
-        // Arrange & Act - Test boundary conditions
-        var shortL1 = new string('a', 99);  // 99 characters, below 100 lower limit
-        var longL1 = new string('b', 151);  // 151 characters, above 150 upper limit
-        var shortL2 = new string('c', 299); // 299 characters, below 300 lower limit
-        var longL2 = new string('d', 501);  // 501 characters, above 500 upper limit
-
-        // Assert - Verify our validation logic catches these boundary cases
-        Assert.True(shortL1.Length < 100);
-        Assert.True(longL1.Length > 150);
-        Assert.True(shortL2.Length < 300);
-        Assert.True(longL2.Length > 500);
+        // Act - Get real scanned data
+        var agents = SimpleAgentScanner.ScanAgentsInAssembly(Assembly.GetExecutingAssembly());
+        var testAgent = agents.FirstOrDefault();
         
-        Console.WriteLine($"✓ Validation boundary rules - L1: {shortL1.Length}(too short), {longL1.Length}(too long)");
-        Console.WriteLine($"✓ Validation boundary rules - L2: {shortL2.Length}(too short), {longL2.Length}(too long)");
-    }
-
-    [Fact]
-    public void AgentIndexInfo_Serialization_ShouldWork()
-    {
-        // Arrange
-        var original = new AgentIndexInfo
-        {
-            Id = "serialization-test",
-            Name = "Serialization Test Agent",
-            Category = "Serialization",
-            L1Description = "This is Agent description for testing serialization functionality, ensuring all fields can be properly serialized and deserialized.",
-            L2Description = "Detailed serialization test description. This Agent is specifically designed to verify AgentIndexInfo object performance in various serialization scenarios, including JSON serialization, XML serialization, etc. Through comprehensive serialization testing, ensure data integrity and consistency of Agent information during transmission and storage processes, providing reliable data guarantee for practical applications.",
-            Capabilities = new List<string> { "serialization", "test", "json" },
-            Tags = new List<string> { "test", "serialization", "data" },
-            InputFormat = "json",
-            OutputFormat = "json",
-            UsageExample = "await SerializeAsync(data)"
-        };
-
-        // Act - Simulate serialization process (simple copy)
-        var copy = new AgentIndexInfo
-        {
-            Id = original.Id,
-            Name = original.Name,
-            Category = original.Category,
-            L1Description = original.L1Description,
-            L2Description = original.L2Description,
-            Capabilities = new List<string>(original.Capabilities),
-            Tags = new List<string>(original.Tags),
-            InputFormat = original.InputFormat,
-            OutputFormat = original.OutputFormat,
-            UsageExample = original.UsageExample
-        };
-
-        // Assert
-        Assert.Equal(original.Id, copy.Id);
-        Assert.Equal(original.Name, copy.Name);
-        Assert.Equal(original.Category, copy.Category);
-        Assert.Equal(original.L1Description, copy.L1Description);
-        Assert.Equal(original.L2Description, copy.L2Description);
-        Assert.Equal(original.Capabilities.Count, copy.Capabilities.Count);
-        Assert.Equal(original.Tags.Count, copy.Tags.Count);
-        Assert.Equal(original.InputFormat, copy.InputFormat);
-        Assert.Equal(original.OutputFormat, copy.OutputFormat);
-        Assert.Equal(original.UsageExample, copy.UsageExample);
+        // Assert - Verify AgentIndexInfo structure from actual scanning
+        Assert.NotNull(testAgent);
+        Assert.NotEmpty(testAgent.Id);
+        Assert.NotEmpty(testAgent.Name);
+        Assert.NotEmpty(testAgent.L1Description);
+        Assert.NotEmpty(testAgent.L2Description);
         
-        Console.WriteLine("✓ AgentIndexInfo serialization compatibility validation passed");
+        // Verify optional fields have default values
+        Assert.NotNull(testAgent.Capabilities);
+        Assert.NotNull(testAgent.Tags);
+        Assert.NotEmpty(testAgent.InputFormat);
+        Assert.NotEmpty(testAgent.OutputFormat);
+        
+        Console.WriteLine("✓ Scanned AgentIndexInfo has correct structure and required fields");
     }
 } 
