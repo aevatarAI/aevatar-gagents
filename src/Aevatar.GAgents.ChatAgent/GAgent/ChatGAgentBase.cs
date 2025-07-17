@@ -32,20 +32,35 @@ public abstract class
     public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null,
         AIChatContextDto? aiChatContextDto = null, List<string>? imageKeys = null)
     {
-        var result = await ChatWithHistory(message, State.ChatHistory, promptSettings, context: aiChatContextDto,
+        var result = await ChatWithHistoryAndToolsAsync(message, State.ChatHistory, promptSettings, context: aiChatContextDto,
             imageKeys: imageKeys);
 
-        if (result is not { Count: > 0 }) return result;
+        if (result.Response.IsNullOrEmpty())
+        {
+            return new List<ChatMessage>();
+        }
 
-        var chatMessages = new List<ChatMessage>();
-        chatMessages.Add(new ChatMessage() { ChatRole = ChatRole.User, Content = message, ImageKeys = imageKeys});
-        chatMessages.AddRange(result);
+        var assistantMessage = new ChatMessage
+        {
+            ChatRole = ChatRole.Assistant,
+            Content = result.Response,
+        };
+        var chatMessages = new List<ChatMessage>
+        {
+            new()
+            {
+                ChatRole = ChatRole.User, 
+                Content = message, 
+                ImageKeys = imageKeys
+            },
+            assistantMessage
+        };
 
         RaiseEvent(new AddChatHistoryLogEvent() { ChatList = chatMessages });
 
         await ConfirmEvents();
 
-        return result;
+        return [assistantMessage];
     }
     
     public async Task<bool> ChatWithStreamAsync(string message, AIChatContextDto context,

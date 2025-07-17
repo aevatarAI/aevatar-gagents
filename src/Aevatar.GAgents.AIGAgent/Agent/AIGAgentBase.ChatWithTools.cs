@@ -37,11 +37,11 @@ public abstract partial class
     /// <returns>Response with tool call details</returns>
     public async Task<ChatWithDetailsResponse> ChatWithHistoryAndToolsAsync(
         string prompt,
-        List<string>? imageKeys = null,
         List<ChatMessage>? history = null,
         ExecutionPromptSettings? promptSettings = null,
         CancellationToken cancellationToken = default,
-        AIChatContextDto? context = null)
+        AIChatContextDto? context = null,
+        List<string>? imageKeys = null)
     {
         var response = new ChatWithDetailsResponse();
         var overallStartTime = DateTime.UtcNow;

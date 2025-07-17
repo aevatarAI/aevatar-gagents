@@ -55,8 +55,8 @@ public class ChatAIGAgent :
             // Use Instructions as base context and let AI say something
             var promptWithInstructions =
                 $"{State.PromptTemplate ?? ""} Please say something to start the conversation.";
-            var defaultAiMessages = await ChatWithHistory(promptWithInstructions);
-            var defaultResponse = defaultAiMessages?.FirstOrDefault()?.Content;
+            var chatWithDetails = await ChatWithHistoryAndToolsAsync(promptWithInstructions);
+            var defaultResponse = chatWithDetails.Response;
 
             // Save conversation to state
             RaiseEvent(new ChatResponseEvent()
@@ -76,9 +76,10 @@ public class ChatAIGAgent :
         _logger.LogInformation($"{State.MemberName} processing workflow message: {userMessage}");
 
         // Use real AI through ChatWithHistory method
-        var aiMessages = await ChatWithHistory(userMessage);
-        var aiResponse = aiMessages?.FirstOrDefault()?.Content ??
-                         $"{State.MemberName}: I'm having trouble processing your request.";
+        var aiMessages = await ChatWithHistoryAndToolsAsync(userMessage);
+        var aiResponse = !aiMessages.Response.IsNullOrEmpty()
+            ? aiMessages.Response
+            : $"{State.MemberName}: I'm having trouble processing your request.";
 
         // Save conversation to state
         RaiseEvent(new ChatResponseEvent()
