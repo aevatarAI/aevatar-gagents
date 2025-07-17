@@ -40,8 +40,8 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
     private async Task<string?>? InvokeLLMAsync(string prompt)
     {
-        var result = await ChatWithHistory(prompt);
-        return result?[0].Content;
+        var result = await ChatWithHistoryAndToolsAsync(prompt);
+        return result.Response;
     }
 
     public new async Task<bool> InitializeAsync(InitializeDto initializeDto)

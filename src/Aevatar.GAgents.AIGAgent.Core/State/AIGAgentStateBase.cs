@@ -1,5 +1,6 @@
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.AIGAgent.Dtos;
 
 namespace Aevatar.GAgents.AIGAgent.State;
 
@@ -33,6 +34,9 @@ public abstract class AIGAgentStateBase : StateBase
 
     [Id(19)] public bool EnableMCPTools { get; set; } = false;
     [Id(20)] public List<string> RegisteredMCPFunctions { get; set; } = new();
+    
+    // Tool call history
+    [Id(21)] public List<ToolCallHistoryEntry> ToolCallHistory { get; set; } = new();
 }
 
 [GenerateSerializer]

@@ -554,6 +554,23 @@ public abstract partial class
             case SetSelectedGAgentsStateLogEvent setSelectedGAgentsEvent:
                 State.SelectedGAgents = setSelectedGAgentsEvent.SelectedGAgents;
                 break;
+            case AddToolCallHistoryStateLogEvent addToolCallHistoryEvent:
+                // Add to tool call history
+                State.ToolCallHistory.Add(new ToolCallHistoryEntry
+                {
+                    ToolCalls = addToolCallHistoryEvent.ToolCalls,
+                    Timestamp = addToolCallHistoryEvent.Timestamp,
+                    RequestId = Guid.NewGuid().ToString()
+                });
+                // Keep only recent history (e.g., last 100 entries)
+                if (State.ToolCallHistory.Count > 100)
+                {
+                    State.ToolCallHistory = State.ToolCallHistory.TakeLast(100).ToList();
+                }
+                break;
+            case ClearToolCallHistoryStateLogEvent _:
+                State.ToolCallHistory.Clear();
+                break;
         }
 
         AIGAgentTransitionState(state, @event);

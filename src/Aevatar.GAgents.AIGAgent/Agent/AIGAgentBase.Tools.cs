@@ -32,7 +32,7 @@ public abstract partial class
     private IGAgentService? _gAgentService;
     private IGAgentExecutor? _gAgentExecutor;
     private GAgentToolPlugin? _gAgentToolPlugin;
-    private List<ToolCallDetail> _currentToolCalls = new(); // Track tool calls for current request
+    private readonly List<ToolCallDetail> _currentToolCalls = new(); // Track tool calls for current request
 
     /// <summary>
     /// Gets the current tool calls for tracking
