@@ -6,33 +6,33 @@
 
 ```mermaid
 graph TB
-    subgraph "现有系统"
+    subgraph existing["现有系统"]
         WC[WorkflowCoordinatorGAgent]
-        WU[WorkUnit GAgents]
+        WU["WorkUnit GAgents"]
         BB[BlackboardGAgent]
     end
     
-    subgraph "新增组件"
+    subgraph new_components["新增组件"]
         WRR[WorkflowRunRecordGAgent]
-        RDB[(运行记录存储)]
+        RDB[("运行记录存储")]
     end
     
-    subgraph "事件流"
+    subgraph events["事件流"]
         CE[ChatEvent]
         CRE[ChatResponseEvent]
         SWE[StartWorkflowCoordinatorEvent]
     end
     
-    WC -->|触发| SWE
-    WC -->|发送| CE
-    WU -->|响应| CRE
+    WC -->|"触发"| SWE
+    WC -->|"发送"| CE
+    WU -->|"响应"| CRE
     
-    WRR -->|监听| SWE
-    WRR -->|监听| CE  
-    WRR -->|监听| CRE
-    WRR -->|存储| RDB
+    WRR -->|"监听"| SWE
+    WRR -->|"监听"| CE  
+    WRR -->|"监听"| CRE
+    WRR -->|"存储"| RDB
     
-    WC -.->|注册/注销| WRR
+    WC -.->|"注册/注销"| WRR
     
     style WRR fill:#e1f5fe
     style RDB fill:#f3e5f5
@@ -59,15 +59,15 @@ sequenceDiagram
     
     Note over Client,State: 工作流启动阶段
     Client->>WC: StartWorkflowCoordinatorEvent
-    WC->>WRR: 注册RunRecordGAgent(可选)
+    WC->>WRR: 注册RunRecordGAgent
     WC->>WRR: StartWorkflowCoordinatorEvent
     WRR->>State: 创建运行记录
     
     Note over Client,State: 工作单元执行阶段
     loop 每个WorkUnit执行
-        WC->>WU: ChatEvent (输入数据)
+        WC->>WU: ChatEvent输入数据
         WRR->>State: 记录ChatEvent输入
-        WU->>WC: ChatResponseEvent (输出数据)
+        WU->>WC: ChatResponseEvent输出数据
         WRR->>State: 记录ChatResponseEvent输出
     end
     
@@ -81,30 +81,30 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    A[StartWorkflowCoordinatorEvent] --> B[创建WorkflowRunRecord]
-    B --> C[记录: 开始时间, 初始状态, WorkflowID]
+    A["StartWorkflowCoordinatorEvent"] --> B["创建WorkflowRunRecord"]
+    B --> C["记录开始时间和初始状态"]
     
-    C --> D[监听ChatEvent]
-    D --> E[记录WorkUnit输入]
-    E --> F{有输入数据?}
-    F -->|是| G[序列化CoordinatorMessages]
-    F -->|否| H[记录空输入]
-    G --> I[更新WorkUnitRecord]
+    C --> D["监听ChatEvent"]
+    D --> E["记录WorkUnit输入"]
+    E --> F{"有输入数据?"}
+    F -->|"是"| G["序列化CoordinatorMessages"]
+    F -->|"否"| H["记录空输入"]
+    G --> I["更新WorkUnitRecord"]
     H --> I
     
-    I --> J[监听ChatResponseEvent]
-    J --> K[记录WorkUnit输出]
-    K --> L{有输出数据?}
-    L -->|是| M[序列化ChatResponse]
-    L -->|否| N[记录异常状态]
-    M --> O[更新执行时间和状态]
+    I --> J["监听ChatResponseEvent"]
+    J --> K["记录WorkUnit输出"]
+    K --> L{"有输出数据?"}
+    L -->|"是"| M["序列化ChatResponse"]
+    L -->|"否"| N["记录异常状态"]
+    M --> O["更新执行时间和状态"]
     N --> O
     
-    O --> P{工作流完成?}
-    P -->|否| D
-    P -->|是| Q[GroupChatFinishEvent]
-    Q --> R[记录: 结束时间, 最终状态, 总执行时长]
-    R --> S[持久化完整记录]
+    O --> P{"工作流完成?"}
+    P -->|"否"| D
+    P -->|"是"| Q["GroupChatFinishEvent"]
+    Q --> R["记录结束时间和最终状态"]
+    R --> S["持久化完整记录"]
     
     style B fill:#e8f5e8
     style G fill:#fff3e0
@@ -122,24 +122,24 @@ erDiagram
         Guid WorkflowId
         long Term
         DateTime StartTime
-        DateTime? EndTime 
+        DateTime EndTime 
         WorkflowRunStatus Status
-        string? InitContent
-        List<WorkUnitInfo> WorkUnitInfos
-        List<WorkUnitExecutionRecord> WorkUnitRecords
+        string InitContent
+        WorkUnitInfo[] WorkUnitInfos
+        WorkUnitExecutionRecord[] WorkUnitRecords
     }
     
     WorkUnitExecutionRecord {
         string WorkUnitGrainId
         long Term
         DateTime StartTime
-        DateTime? EndTime
+        DateTime EndTime
         ExecutionStatus Status
         string InputData
         string OutputData
     }
     
-    WorkflowRunRecordState ||--o{ WorkUnitExecutionRecord : "包含"
+    WorkflowRunRecordState ||--o{ WorkUnitExecutionRecord : "contains"
 ```
 
 ### 状态枚举定义
@@ -169,16 +169,16 @@ erDiagram
 
 ```mermaid
 graph LR
-    subgraph "配置层"
+    subgraph config_layer["配置层"]
         Config[WorkflowCoordinatorConfig]
-        Config --> |EnableRunRecord=true| Register[注册RunRecordGAgent]
-        Config --> |EnableRunRecord=false| Skip[跳过记录功能]
+        Config -->|"EnableRunRecord=true"| Register["注册RunRecordGAgent"]
+        Config -->|"EnableRunRecord=false"| Skip["跳过记录功能"]
     end
     
-    subgraph "运行时"
-        Register --> Active[激活记录服务]
-        Active --> Monitor[监听事件流]
-        Monitor --> Persist[持久化记录]
+    subgraph runtime["运行时"]
+        Register --> Active["激活记录服务"]
+        Active --> Monitor["监听事件流"]
+        Monitor --> Persist["持久化记录"]
     end
     
     style Config fill:#e3f2fd
