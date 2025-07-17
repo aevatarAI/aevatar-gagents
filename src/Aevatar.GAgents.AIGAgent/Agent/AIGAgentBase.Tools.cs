@@ -355,23 +355,6 @@ public abstract partial class
     }
 
     /// <summary>
-    /// Imports plugin functions to the kernel using reflection
-    /// </summary>
-    private void ImportPluginFunctionsToKernel(Kernel kernel, string pluginName, IEnumerable<KernelFunction> functions)
-    {
-        try
-        {
-            // Use the modern API directly
-            kernel.Plugins.AddFromFunctions(pluginName, functions);
-            Logger.LogInformation("Successfully imported plugin functions '{PluginName}' to kernel", pluginName);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error importing plugin functions to kernel");
-        }
-    }
-
-    /// <summary>
     /// Generates a function name for a GAgent event
     /// </summary>
     private string GenerateFunctionName(GrainType grainType, Type eventType)
@@ -540,20 +523,6 @@ public abstract partial class
     }
 
     /// <summary>
-    /// Checks if a GAgent type is allowed based on configuration
-    /// </summary>
-    private bool IsGAgentAllowed(GrainType grainType)
-    {
-        if (State.AllowedGAgentTypes.Count == 0)
-        {
-            // No restrictions, all GAgents are allowed
-            return true;
-        }
-
-        return State.AllowedGAgentTypes.Contains(grainType);
-    }
-
-    /// <summary>
     /// Unregisters all GAgent tools
     /// </summary>
     protected virtual async Task UnregisterGAgentToolsAsync()
@@ -682,7 +651,7 @@ public abstract partial class
 
     public Task<List<GrainType>> GetAvailableGAgentToolsAsync()
     {
-        return Task.FromResult(State.AllowedGAgentTypes);
+        return Task.FromResult(State.SelectedGAgents);
     }
 
     /// <summary>
@@ -781,9 +750,11 @@ public abstract partial class
     /// <summary>
     /// Update kernel with selected GAgent tools
     /// </summary>
-    protected async Task UpdateKernelWithGAgentToolsAsync()
+    protected async Task UpdateKernelWithGAgentToolsAsync(List<GrainType>? selectedGAgents = null)
     {
-        if (_brain == null || State.SelectedGAgents == null || State.SelectedGAgents.Count == 0)
+        selectedGAgents ??= State.SelectedGAgents;
+
+        if (_brain == null || selectedGAgents.Count == 0)
         {
             Logger.LogInformation("No GAgent tools to register");
             return;
@@ -811,7 +782,7 @@ public abstract partial class
             var allGAgentInfo = await _gAgentService.GetAllAvailableGAgentInformation();
             var selectedGAgentInfo = new Dictionary<GrainType, List<Type>>();
 
-            foreach (var grainType in State.SelectedGAgents)
+            foreach (var grainType in selectedGAgents)
             {
                 try
                 {
@@ -839,7 +810,10 @@ public abstract partial class
 
             // Store registered function names in state directly
             var functionNames = registeredFunctions.Select(f => f.Name).ToList();
-            State.RegisteredGAgentFunctions = functionNames;
+            RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent
+            {
+                RegisteredFunctions = functionNames
+            });
 
             // Persist state changes
             await ConfirmEvents();

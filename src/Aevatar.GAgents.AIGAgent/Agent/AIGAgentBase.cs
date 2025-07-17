@@ -51,6 +51,12 @@ public abstract partial class
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
     }
 
+    protected override async Task PerformConfigAsync(TConfiguration configuration)
+    {
+        await base.PerformConfigAsync(configuration);
+        
+    }
+
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
         var llmConfig = GetLLMConfig(initializeDto.LLMConfig);
@@ -80,35 +86,16 @@ public abstract partial class
         var streamingConfigEventLog =
             await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
-        // Handle GAgent tools configuration
-        if (initializeDto.EnableGAgentTools)
-        {
-            RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
-        }
-
-        if (initializeDto.AllowedGAgentTypes != null)
-        {
-            RaiseEvent(new SetAllowedGAgentTypesStateLogEvent
-                { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
-        }
-
-        // Handle MCP tools configuration
-        if (initializeDto.EnableMCPTools)
+        if (initializeDto.MCPServers != null && initializeDto.MCPServers.Count != 0)
         {
             RaiseEvent(new SetEnableMCPToolsStateLogEvent { EnableMCPTools = true });
         }
 
-        // Configure MCP servers if provided
-        if (initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
-        {
-            // This will be handled after brain initialization
-            State.EnableMCPTools = true;
-        }
-
         // Configure selected GAgents if provided
-        if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Any())
+        if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Count != 0)
         {
-            State.SelectedGAgents = initializeDto.SelectedGAgents;
+            RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
+            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = initializeDto.SelectedGAgents });
         }
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
@@ -122,16 +109,16 @@ public abstract partial class
 
         try
         {
-            var result = await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+            var result = await InitializeBrainAsync(llmConfig, initializeDto.Instructions);
 
             // Register selected GAgent tools if any were specified
-            if (result && State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Any())
+            if (result && initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Count != 0)
             {
-                await UpdateKernelWithGAgentToolsAsync();
+                await UpdateKernelWithGAgentToolsAsync(initializeDto.SelectedGAgents);
             }
 
             // Configure MCP servers if provided in initialization
-            if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
+            if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Count != 0)
             {
                 await ConfigureMCPServersAsync(initializeDto.MCPServers);
             }
@@ -552,9 +539,9 @@ public abstract partial class
             case SetRegisteredGAgentFunctionsStateLogEvent setRegisteredFunctionsEvent:
                 State.RegisteredGAgentFunctions = setRegisteredFunctionsEvent.RegisteredFunctions;
                 break;
-            case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
-                State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
-                break;
+            // case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
+            //     State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
+            //     break;
             case ConfigureMCPServersStateLogEvent configureMCPServersEvent:
                 State.MCPAgents = configureMCPServersEvent.MCPServers;
                 break;

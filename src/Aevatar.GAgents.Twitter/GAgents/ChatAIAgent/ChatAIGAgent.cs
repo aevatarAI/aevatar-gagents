@@ -111,10 +111,12 @@ public class ChatAIGAgent :
         await base.PerformConfigAsync(configuration);
 
         // Initialize the AI agent with the provided configuration
-        await InitializeAsync(new InitializeDto()
+        await InitializeAsync(new InitializeDto
         {
             Instructions = configuration.Instructions,
-            LLMConfig = new() { SystemLLM = configuration.SystemLLM }
+            LLMConfig = new LLMConfigDto { SystemLLM = configuration.SystemLLM },
+            MCPServers = configuration.MCPServers,
+            SelectedGAgents = configuration.SelectedGAgents,
         });
 
         _logger.LogDebug("PerformConfigAsync ChatAIGAgent configuration and initialization completed");

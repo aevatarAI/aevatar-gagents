@@ -84,7 +84,8 @@ public abstract partial class
 
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
-        RaiseEvent(new SetMemberNameLogEvent() { MemberName = configuration.MemberName });
+        await base.PerformConfigAsync(configuration);
+        RaiseEvent(new SetMemberNameLogEvent { MemberName = configuration.MemberName });
         await ConfirmEvents();
     }
 

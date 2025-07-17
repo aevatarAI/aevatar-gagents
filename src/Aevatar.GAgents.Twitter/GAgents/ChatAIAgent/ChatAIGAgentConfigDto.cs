@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using Aevatar.GAgents.GroupChat.Core.Dto;
+using Aevatar.GAgents.MCP.Options;
 using Orleans;
+using Orleans.Runtime;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 
@@ -9,4 +12,7 @@ public class ChatAIGAgentConfigDto : GroupMemberConfigDto
     [Id(0)] public string Instructions { get; set; } = string.Empty;
 
     [Id(1)] public string SystemLLM { get; set; }
+
+    [Id(2)] public List<MCPServerConfig> MCPServers { get; set; } = [];
+    [Id(3)] public List<GrainType> SelectedGAgents { get; set; } = [];
 }
