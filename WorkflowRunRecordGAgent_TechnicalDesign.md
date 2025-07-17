@@ -86,13 +86,11 @@ flowchart TD
     
     C --> D["监听ChatEvent"]
     D --> E["记录WorkUnit输入"]
-    G --> I["更新WorkUnitRecord"]
-    H --> I
+    E --> I["更新WorkUnitRecord"]
     
     I --> J["监听ChatResponseEvent"]
     J --> K["记录WorkUnit输出"]
-    M --> O["更新执行时间和状态"]
-    N --> O
+    K --> O["更新执行时间和状态"]
     
     O --> P{"工作流完成?"}
     P -->|"否"| D
@@ -101,8 +99,6 @@ flowchart TD
     R --> S["持久化完整记录"]
     
     style B fill:#e8f5e8
-    style G fill:#fff3e0
-    style M fill:#fff3e0
     style R fill:#ffebee
 ```
 
