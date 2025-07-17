@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
@@ -9,6 +11,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Orleans;
@@ -103,38 +106,41 @@ public abstract partial class
                 string.Join(", ", kernel.Plugins.SelectMany(p => p.Select(f => f.Name))));
 
             // Configure execution settings for automatic tool calling
-            OpenAIPromptExecutionSettings executionSettings;
-            if (promptSettings != null)
-            {
-                // Use provided settings but ensure tool behavior is set
-                var temperature = double.TryParse(promptSettings.Temperature, out var temp) ? temp : 0.1;
-                executionSettings = new OpenAIPromptExecutionSettings
-                {
-                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                    Temperature = temperature,
-                    MaxTokens = promptSettings.MaxToken,
-                };
-            }
-            else
-            {
-                // Default settings with auto tool invocation
-                executionSettings = new OpenAIPromptExecutionSettings
-                {
-                    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
-                    Temperature = 0.1,
-                    MaxTokens = 2000
-                };
-            }
+            var executionSettings = CreateCompatibleExecutionSettings(promptSettings, enableTools: true);
 
             // Get response with automatic tool invocation
             Logger.LogInformation("[{Timestamp}] Starting LLM call with auto tool invocation",
                 DateTime.UtcNow.ToString("HH:mm:ss.fff"));
 
-            var chatResponse = await chatService.GetChatMessageContentAsync(
-                chatHistory,
-                executionSettings,
-                kernel,
-                cancellationToken);
+            ChatMessageContent chatResponse;
+            try
+            {
+                chatResponse = await chatService.GetChatMessageContentAsync(
+                    chatHistory,
+                    executionSettings,
+                    kernel,
+                    cancellationToken);
+            }
+            catch (HttpOperationException ex) when (ex.Message.Contains("max_tokens") &&
+                                                    ex.Message.Contains("max_completion_tokens"))
+            {
+                // Fallback to max_tokens if max_completion_tokens is not supported
+                Logger.LogWarning("Model doesn't support max_completion_tokens, falling back to max_tokens");
+
+                if (executionSettings.ExtensionData?.ContainsKey("max_completion_tokens") == true)
+                {
+                    var maxTokens = executionSettings.ExtensionData["max_completion_tokens"];
+                    executionSettings.ExtensionData.Remove("max_completion_tokens");
+                    executionSettings.ExtensionData["max_tokens"] = maxTokens;
+                }
+
+                // Retry with max_tokens
+                chatResponse = await chatService.GetChatMessageContentAsync(
+                    chatHistory,
+                    executionSettings,
+                    kernel,
+                    cancellationToken);
+            }
 
             response.Response = chatResponse.Content ?? "I couldn't generate a response.";
 
@@ -246,5 +252,48 @@ public abstract partial class
     [GenerateSerializer]
     public class ClearToolCallHistoryStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
+    }
+
+    /// <summary>
+    /// Creates OpenAI execution settings with proper max tokens configuration
+    /// </summary>
+    protected OpenAIPromptExecutionSettings CreateCompatibleExecutionSettings(
+        ExecutionPromptSettings? promptSettings = null,
+        bool enableTools = true)
+    {
+        var temperature = 0.1;
+        var maxTokens = 2000;
+
+        if (promptSettings != null)
+        {
+            if (!string.IsNullOrEmpty(promptSettings.Temperature))
+            {
+                double.TryParse(promptSettings.Temperature, out temperature);
+            }
+
+            if (promptSettings.MaxToken > 0)
+            {
+                maxTokens = promptSettings.MaxToken;
+            }
+        }
+
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = temperature,
+        };
+
+        if (enableTools)
+        {
+            executionSettings.ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions;
+        }
+
+        // Use ExtensionData for max tokens to support both old and new models
+        executionSettings.ExtensionData = new Dictionary<string, object>
+        {
+            // Use max_completion_tokens for newer models (GPT-4, etc.)
+            ["max_completion_tokens"] = maxTokens
+        };
+
+        return executionSettings;
     }
 }
