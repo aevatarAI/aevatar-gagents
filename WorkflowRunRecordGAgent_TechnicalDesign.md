@@ -86,17 +86,11 @@ flowchart TD
     
     C --> D["监听ChatEvent"]
     D --> E["记录WorkUnit输入"]
-    E --> F{"有输入数据?"}
-    F -->|"是"| G["序列化CoordinatorMessages"]
-    F -->|"否"| H["记录空输入"]
     G --> I["更新WorkUnitRecord"]
     H --> I
     
     I --> J["监听ChatResponseEvent"]
     J --> K["记录WorkUnit输出"]
-    K --> L{"有输出数据?"}
-    L -->|"是"| M["序列化ChatResponse"]
-    L -->|"否"| N["记录异常状态"]
     M --> O["更新执行时间和状态"]
     N --> O
     
