@@ -15,6 +15,7 @@ public class SetWorkflowCoordinatorLogEvent : WorkflowCoordinatorLogEvent
     [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; } = new();
     [Id(1)] public Guid BlackBoardId { get; set; }
     [Id(2)] public string? InitContent { get; set; } = null;
+    [Id(3)] public bool EnableExecutionRecord { get; set; }
 }
 
 [GenerateSerializer]
@@ -40,7 +41,7 @@ public class WorkflowFinishLogEvent : WorkflowCoordinatorLogEvent
 [GenerateSerializer]
 public class WorkflowStartLogEvent : WorkflowCoordinatorLogEvent
 {
-    
+    [Id(0)] public Guid ExecutionRecordId { get; set; }
 }
 
 [GenerateSerializer]

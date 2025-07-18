@@ -90,7 +90,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         await blackboard.ResetAsync();
 
-        RaiseEvent(new WorkflowStartLogEvent());
+        var executionRecordId = await RegisterExecutionRecordAsync(@event.InitContent ?? State.Content);
+    
+        RaiseEvent(new WorkflowStartLogEvent
+        {
+            ExecutionRecordId = executionRecordId
+        });
         await ConfirmEvents();
 
         // try start top upstream work unit
@@ -145,7 +150,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         }
 
         RaiseEvent(new SetWorkflowCoordinatorLogEvent
-            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId, InitContent = configuration.InitContent});
+            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId, InitContent = configuration.InitContent, EnableExecutionRecord = configuration.EnableExecutionRecord});
 
         await ConfirmEvents();
         
@@ -178,6 +183,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 
                 State.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
                 State.Content = setWorkflowCoordinatorLogEvent.InitContent;
+                State.EnableRunRecord = setWorkflowCoordinatorLogEvent.EnableExecutionRecord;
                 break;
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
@@ -208,6 +214,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                         workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Pending;
                     }
                 }
+                State.CurrentExecutionRecordId = Guid.Empty;
 
                 break;
 
@@ -224,20 +231,24 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 State.Term += 1;
                 break;
 
-            case WorkflowStartLogEvent:
+            case WorkflowStartLogEvent workflowStartLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
                 State.LastRunningTime = DateTime.UtcNow;
+                State.CurrentExecutionRecordId = workflowStartLogEvent.ExecutionRecordId;
+                State.RoundId += 1;
                 break;
 
             case ResetWorkflowLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 State.CurrentWorkUnitInfos.Clear();
                 State.BackupWorkUnitInfos.Clear();
+                State.CurrentExecutionRecordId = Guid.Empty;
                 break;
             
             case WorkflowStartFailedLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Failed;
                 State.LastRunningTime = DateTime.UtcNow;
+                State.CurrentExecutionRecordId = Guid.Empty;
                 break;
         }
     }
@@ -285,6 +296,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             await ConfirmEvents();
             
             await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
+            await UnregisterExecutionRecordAsync();
             Logger.LogDebug("[WorkflowCoordinatorGAgent] Workflow finished and work units unregistered");
         }
         Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync end");
@@ -311,6 +323,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         await PublishP2PAsync(speaker, new ChatEvent()
         {
             BlackboardId = State.BlackboardId, Speaker = speaker.GetGuidKey(), Term = State.Term,
+            CoordinatorMessages = messages
+        });
+
+        await PublishAsync(new StartExecuteWorkUnitEvent
+        {
+            WorkUnitGrainId = speaker.ToString(),
             CoordinatorMessages = messages
         });
 
@@ -436,6 +454,45 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             await UnregisterAsync(agent);
         }
         Logger.LogDebug("[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync end");
+    }
+
+    private async Task<Guid> RegisterExecutionRecordAsync(string content)
+    {
+        if (!State.EnableRunRecord)
+        {
+            return Guid.Empty;
+        }
+
+        var id = Guid.NewGuid();
+        var executionRecordAgent = GrainFactory.GetGrain<IBlackboardGAgent>(id);
+        await RegisterAsync(executionRecordAgent);
+
+        await PublishAsync(new StartExecuteWorkflowEvent
+        {
+            WorkflowId = this.GetPrimaryKey(),
+            RoundId = State.RoundId + 1,
+            Content = content,
+            WorkUnitInfos = State.CurrentWorkUnitInfos
+        });
+        
+        return id;
+    }
+    
+    private async Task UnregisterExecutionRecordAsync()
+    {
+        if (State.CurrentExecutionRecordId == Guid.Empty)
+        {
+            return;
+        }
+        
+        var executionRecordAgent = GrainFactory.GetGrain<IBlackboardGAgent>(State.CurrentExecutionRecordId);
+        
+        await PublishP2PAsync(executionRecordAgent.GetGrainId(), new GroupChatFinishEvent()
+        {
+            BlackboardId = State.BlackboardId
+        });
+        
+        await UnregisterAsync(executionRecordAgent);
     }
 
     #endregion

@@ -7,6 +7,8 @@ public class WorkflowCoordinatorConfigDto:ConfigurationBase
 {
     [Id(0)] public List<WorkflowUnitDto> WorkflowUnitList { get; set; } = new();
     [Id(1)] public string? InitContent { get; set; } = null;
+
+    [Id(2)] public bool EnableExecutionRecord { get; set; }
 }
 
 [GenerateSerializer]
