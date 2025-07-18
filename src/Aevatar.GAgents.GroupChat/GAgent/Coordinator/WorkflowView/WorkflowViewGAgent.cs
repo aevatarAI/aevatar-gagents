@@ -173,15 +173,15 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
             case UpdateWorkflowViewLogEvent updateWorkflowViewLogEvent:
                 foreach (var removeNodeId in updateWorkflowViewLogEvent.RemoveNodeIdList)
                 {
-                    var removeNode = State.WorkflowNodeList.FirstOrDefault(t => t.NodeId == removeNodeId);
+                    var removeNode = state.WorkflowNodeList.FirstOrDefault(t => t.NodeId == removeNodeId);
                     if (removeNode != null)
                     {
-                        State.WorkflowNodeList.Remove(removeNode);
+                        state.WorkflowNodeList.Remove(removeNode);
                     }
                 }
                 foreach (var node in updateWorkflowViewLogEvent.UpdateNodeList)
                 {
-                    var updateNode = State.WorkflowNodeList.FirstOrDefault(t => t.NodeId == node.NodeId);
+                    var updateNode = state.WorkflowNodeList.FirstOrDefault(t => t.NodeId == node.NodeId);
                     if (updateNode != null)
                     {
                         updateNode.Name = node.Name;
@@ -189,19 +189,19 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                         updateNode.ExtendedData = node.ExtendedData;
                     }
                 }
-                State.WorkflowNodeList.AddRange(updateWorkflowViewLogEvent.AddNodeList);
-                State.WorkflowNodeUnitList = updateWorkflowViewLogEvent.WorkflowNodeUnitList;
-                State.Name = updateWorkflowViewLogEvent.Name;
+                state.WorkflowNodeList.AddRange(updateWorkflowViewLogEvent.AddNodeList);
+                state.WorkflowNodeUnitList = updateWorkflowViewLogEvent.WorkflowNodeUnitList;
+                state.Name = updateWorkflowViewLogEvent.Name;
                 break;
             case UpdateNodeAgentIdLogEvent nodeAgentIdLogEvent:
-                var updateAgentIdNode = State.WorkflowNodeList.FirstOrDefault(t => t.NodeId == nodeAgentIdLogEvent.NodeId);
+                var updateAgentIdNode = state.WorkflowNodeList.FirstOrDefault(t => t.NodeId == nodeAgentIdLogEvent.NodeId);
                 if (updateAgentIdNode != null)
                 {
                     updateAgentIdNode.AgentId = nodeAgentIdLogEvent.AgentId;
                 }
                 break;
             case UpdateWorkflowAgentIdLogEvent updateWorkflowAgentIdLogEvent:
-                State.WorkflowCoordinatorGAgentId = updateWorkflowAgentIdLogEvent.AgentId;
+                state.WorkflowCoordinatorGAgentId = updateWorkflowAgentIdLogEvent.AgentId;
                 break;
         }
 
