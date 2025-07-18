@@ -16,8 +16,9 @@ public class WorkflowNodeDto
     [Id(0)] public string AgentType { get; set; }
     [Id(1)] public string Name { get; set; }
     [Id(2)] public Dictionary<string,string> ExtendedData { get; set; } = new();
-    [Id(3)] public Dictionary<string, object>? Properties { get; set; } = new();
+    [Id(3)] public Dictionary<string, object> Properties { get; set; } = new();
     [Id(4)] public Guid NodeId { get; set; }
+    [Id(5)] public Guid AgentId { get; set; }
 }
 
 [GenerateSerializer]
