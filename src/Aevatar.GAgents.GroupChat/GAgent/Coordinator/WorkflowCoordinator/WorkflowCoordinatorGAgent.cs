@@ -166,13 +166,13 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     ExtendedData = s.ExtendedData
                 }).ToList();
                 
-                if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
+                if (state.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
                 {
-                    State.CurrentWorkUnitInfos = nodeList;
+                    state.CurrentWorkUnitInfos = nodeList;
                 }
                 else
                 {
-                    State.BackupWorkUnitInfos = nodeList;
+                    state.BackupWorkUnitInfos = nodeList;
                 }
                 
                 state.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
@@ -180,23 +180,23 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
                 var workUnitInfoList =
-                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
+                    state.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
                 for (int i = 0; i < workUnitInfoList.Count; i++)
                 {
                     var workUnit = workUnitInfoList[i];
                     workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
                 }
 
-                State.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
+                state.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
                 break;
 
             case WorkflowFinishLogEvent workflowFinishLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
-                State.TermToWorkUnitGrainId = new Dictionary<int, string>();
-                if (State.BackupWorkUnitInfos.Count > 0)
+                state.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+                state.TermToWorkUnitGrainId = new Dictionary<int, string>();
+                if (state.BackupWorkUnitInfos.Count > 0)
                 {
-                    State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s => s).ToList();
-                    State.BackupWorkUnitInfos.Clear();
+                    state.CurrentWorkUnitInfos = state.BackupWorkUnitInfos.Select(s => s).ToList();
+                    state.BackupWorkUnitInfos.Clear();
                 }
                 else
                 {
@@ -211,25 +211,25 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             case StartWorkUnitLogEvent workUnitLogEvent:
                 var startWorkUnitInfoList =
-                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
+                    state.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
                 for (var i = 0; i < startWorkUnitInfoList.Count; i++)
                 {
                     var startWorkUnitInfo = startWorkUnitInfoList[i];
                     startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
                 }
 
-                State.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
-                State.Term += 1;
+                state.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
+                state.Term += 1;
                 break;
 
             case WorkflowStartLogEvent workflowStartLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
+                state.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
                 break;
 
             case ResetWorkflowLogEvent resetWorkflowLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
-                State.CurrentWorkUnitInfos.Clear();
-                State.BackupWorkUnitInfos.Clear();
+                state.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+                state.CurrentWorkUnitInfos.Clear();
+                state.BackupWorkUnitInfos.Clear();
                 break;
         }
     }

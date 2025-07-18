@@ -48,7 +48,7 @@ public class LeaderGAgentGAgent : GroupMemberGAgentBase<LeaderState, LeaderEvent
         switch (@event)
         {
             case LeaderHandleMessageLogEvent handleMessageLogEvent:
-                State.AgentNames = handleMessageLogEvent.PreWorkUnits;
+                state.AgentNames = handleMessageLogEvent.PreWorkUnits;
                 break;
         }
     }

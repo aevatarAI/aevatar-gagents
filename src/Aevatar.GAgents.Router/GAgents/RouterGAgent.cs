@@ -392,29 +392,29 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         switch (@event)
         {
             case SetAgentDescriptionSEvent setAgentDescriptionsEvent:
-                State.AgentDescriptions = setAgentDescriptionsEvent.AgentDescriptions;
+                state.AgentDescriptions = setAgentDescriptionsEvent.AgentDescriptions;
                 break;
             case SetTaskInfoSEvent beginTaskSEvent:
-                State.TasksInfo[beginTaskSEvent.TaskId] = new TaskInfo
+                state.TasksInfo[beginTaskSEvent.TaskId] = new TaskInfo
                 {
                     TaskDescription = beginTaskSEvent.TaskDescription,
                 };
                 break;
             case AddHistorySEvent addHistorySEvent:
-                if (State.TasksInfo.TryGetValue(addHistorySEvent.TaskId, out var taskToBeAdded) == false)
+                if (state.TasksInfo.TryGetValue(addHistorySEvent.TaskId, out var taskToBeAdded) == false)
                 {
                     break;
                 }
 
                 taskToBeAdded.History.Add(addHistorySEvent.RouterRecord);
-                State.TasksInfo[addHistorySEvent.TaskId] = taskToBeAdded;
+                state.TasksInfo[addHistorySEvent.TaskId] = taskToBeAdded;
                 break;
             case AddAgentDescriptionSEvent addAgentDescriptionSEvent:
-                State.AgentDescriptions[addAgentDescriptionSEvent.AgentName] =
+                state.AgentDescriptions[addAgentDescriptionSEvent.AgentName] =
                     addAgentDescriptionSEvent.AgentDescriptionInfo;
                 break;
             case UpdateHistorySEvent updateHistorySEvent:
-                if (State.TasksInfo.TryGetValue(updateHistorySEvent.TaskId, out var taskToBeUpdated) == false)
+                if (state.TasksInfo.TryGetValue(updateHistorySEvent.TaskId, out var taskToBeUpdated) == false)
                 {
                     break;
                 }
@@ -426,10 +426,10 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
                 }
 
                 taskToBeUpdated.History[cnt - 1] = updateHistorySEvent.RouterRecord;
-                State.TasksInfo[updateHistorySEvent.TaskId] = taskToBeUpdated;
+                state.TasksInfo[updateHistorySEvent.TaskId] = taskToBeUpdated;
                 break;
             case RemoveTaskSEvent removeTaskSEvent:
-                State.TasksInfo.Remove(removeTaskSEvent.TaskId);
+                state.TasksInfo.Remove(removeTaskSEvent.TaskId);
                 break;
         }
     }
