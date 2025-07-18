@@ -50,7 +50,7 @@ foreach (var agent in agents)
 
 ## 📖 Documentation
 
-**📘 [Complete Integration Guide](../../docs/agent-information-management-guide.md)**
+**📘 [Complete Integration Guide](../../md/agent-information-management-guide.md)**
 
 Includes:
 - Detailed usage examples
@@ -116,4 +116,4 @@ public ActionResult<List<AgentIndexInfo>> GetAgents()
 
 ---
 
-**For detailed integration instructions, see the [Integration Guide](../../docs/agent-information-management-guide.md)**
+**For detailed integration instructions, see the [Integration Guide](../../md/agent-information-management-guide.md)**
