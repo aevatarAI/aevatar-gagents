@@ -8,8 +8,13 @@ The Agent Information Management System provides a standardized way to mark, dis
 
 ### 1. Add Package Reference
 
+```bash
+dotnet add package Aevatar.GAgents.AI.Abstractions --version 1.0.0
+```
+
+Or add to your `.csproj` file:
 ```xml
-<ProjectReference Include="../../src/Aevatar.GAgents.AI.Abstractions/Aevatar.GAgents.AI.Abstractions.csproj" />
+<PackageReference Include="Aevatar.GAgents.AI.Abstractions" Version="1.0.0" />
 ```
 
 ### 2. Mark Your Agent

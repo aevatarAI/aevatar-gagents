@@ -2,6 +2,24 @@
 
 Agent Information Management System for automatic Agent discovery and metadata extraction.
 
+## 📦 Installation
+
+### Using .NET CLI
+```bash
+dotnet add package Aevatar.GAgents.AI.Abstractions --version 1.0.0
+```
+
+### Using PackageReference
+Add to your `.csproj` file:
+```xml
+<PackageReference Include="Aevatar.GAgents.AI.Abstractions" Version="1.0.0" />
+```
+
+### Using Package Manager Console
+```powershell
+Install-Package Aevatar.GAgents.AI.Abstractions -Version 1.0.0
+```
+
 ## 🚀 Quick Start
 
 ### 1. Mark Your Agent
@@ -80,12 +98,12 @@ dotnet test
 public class AgentDiscoveryService
 {
     private readonly List<AgentIndexInfo> _agents;
-    
+
     public AgentDiscoveryService()
     {
         _agents = SimpleAgentScanner.ScanAllLoadedAssemblies();
     }
-    
+
     public List<AgentIndexInfo> GetAllAgents() => _agents;
 }
 ```
@@ -94,7 +112,7 @@ public class AgentDiscoveryService
 ```csharp
 [HttpGet("agents")]
 public ActionResult<List<AgentIndexInfo>> GetAgents()
-{
+    {
     return _agentService.GetAllAgents();
 }
 ```
