@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core;
 
 namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 
@@ -13,6 +14,7 @@ public class WorkflowCoordinatorState : StateBase
     [Id(5)] public List<WorkUnitInfo> BackupWorkUnitInfos { get; set; } = new List<WorkUnitInfo>();
     [Id(6)] public DateTime? LastRunningTime { get; set; }
     [Id(7)] public string? Content { get; set; } = null;
+    [Id(8)] public Dictionary<string, WorkflowUnitCapabilities> NodeCapabilities { get; set; } = new();
 
     public WorkUnitInfo? GetWorkUnit(string workUnitGrainId)
     {

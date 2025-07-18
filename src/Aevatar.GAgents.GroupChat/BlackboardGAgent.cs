@@ -11,7 +11,11 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
 {
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult("blackboard");
+        return Task.FromResult(
+            "BlackboardGAgent - A shared memory space for workflow execution. " +
+            "Stores conversation history, intermediate results, and enables data sharing between non-connected workflow nodes. " +
+            "Acts as the central data repository following the Blackboard architectural pattern."
+        );
     }
 
     public async Task<bool> SetTopic(string topic)
@@ -21,8 +25,11 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
             return false;
         }
 
-        RaiseEvent(new AddChatHistoryLogEvent()
-            { MessageType = MessageType.BlackboardTopic, Content = topic });
+        RaiseEvent(new AddChatHistoryLogEvent
+        {
+            MessageType = MessageType.BlackboardTopic,
+            Content = topic
+        });
         await ConfirmEvents();
         return true;
     }
@@ -72,7 +79,7 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
         switch (@event)
         {
             case AddChatHistoryLogEvent addChatHistoryLogEvent:
-                var message = new ChatMessage()
+                var message = new ChatMessage
                 {
                     AgentName = addChatHistoryLogEvent.AgentName, Content = addChatHistoryLogEvent.Content,
                     MemberId = addChatHistoryLogEvent.MemberId,
@@ -81,10 +88,24 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
 
                 State.MessageList.Add(message);
                 break;
-            case CleanChatHistoryLogEvent cleanChatHistoryLogEvent:
+            case CleanChatHistoryLogEvent:
                 State.MessageList.Clear();
                 break;
         }
     }
 }
 
+[GenerateSerializer]
+public class BlackboardLogEvent : StateLogEventBase<BlackboardLogEvent>;
+
+[GenerateSerializer]
+public class AddChatHistoryLogEvent : BlackboardLogEvent
+{
+    [Id(0)] public MessageType MessageType { get; set; }
+    [Id(1)] public Guid MemberId { get; set; }
+    [Id(2)] public string AgentName { get; set; }
+    [Id(3)] public string Content { get; set; }
+}
+
+[GenerateSerializer]
+public class CleanChatHistoryLogEvent : BlackboardLogEvent;

@@ -1,13 +1,15 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
-using Aevatar.GAgents.GroupChat.WorkflowCoordinator.LogEvent;
-using GroupChat.GAgent.Feature.Blackboard;
+using Aevatar.GAgents.MCP.Core;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Volo.Abp.Threading;
 
 namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 
@@ -17,7 +19,17 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 {
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult("Workflow Coordinator GAgent");
+        var status = State.WorkflowStatus.ToString();
+        var nodeCount = State.CurrentWorkUnitInfos?.Count ?? 0;
+        var completedCount =
+            State.CurrentWorkUnitInfos?.Count(u => u.UnitStatusEnum == WorkerUnitStatusEnum.Finished) ?? 0;
+
+        return Task.FromResult(
+            "WorkflowCoordinatorGAgent - Orchestrates complex workflow execution with DAG-based task dependencies. " +
+            "Manages workflow lifecycle (Pending→InProgress→Finished), validates topology to prevent loops, " +
+            "coordinates parallel execution of independent nodes, and ensures data flow through the Blackboard pattern. " +
+            $"Current Status: {status}, Nodes: {nodeCount} (Completed: {completedCount})"
+        );
     }
 
     #region EventHandler
@@ -81,7 +93,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         if (State.BlackboardId == Guid.Empty || !State.CurrentWorkUnitInfos.Any())
         {
             Logger.LogError("[WorkflowCoordinatorGAgent] The workflow has not been initialized.");
-            
+
             RaiseEvent(new WorkflowStartFailedLogEvent());
             await ConfirmEvents();
             return;
@@ -105,16 +117,16 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
     public async Task HandleEventAsync(ResetWorkflowEvent @event)
     {
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent start");
-        
+
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         await blackboard.ResetAsync();
 
         await UnregisterWorkUnitAsync(State.BackupWorkUnitInfos);
         await UnregisterWorkUnitAsync(State.CurrentWorkUnitInfos);
-        
+
         RaiseEvent(new ResetWorkflowLogEvent());
         await ConfirmEvents();
-        
+
         Logger.LogDebug("[WorkflowCoordinatorGAgent] handler ResetWorkflowEvent end");
     }
 
@@ -131,7 +143,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         var blackBoardId = this.GetPrimaryKey();
         var blackboardAgent = GrainFactory.GetGrain<IBlackboardGAgent>(blackBoardId);
         await RegisterAsync(blackboardAgent);
-        
+
         var toUnregisterWorkUnit = new List<WorkUnitInfo>();
         if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending)
         {
@@ -145,28 +157,59 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         }
 
         RaiseEvent(new SetWorkflowCoordinatorLogEvent
-            { WorkflowUnit = configuration.WorkflowUnitList, BlackBoardId = blackBoardId, InitContent = configuration.InitContent});
+        {
+            WorkflowUnit = configuration.WorkflowUnitList,
+            BlackBoardId = blackBoardId,
+            InitContent = configuration.InitContent
+        });
 
         await ConfirmEvents();
-        
+
         await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
     }
 
     protected override void GAgentTransitionState(WorkflowCoordinatorState state,
         StateLogEventBase<WorkflowCoordinatorLogEvent> @event)
     {
+        var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
         switch (@event)
         {
             case SetWorkflowCoordinatorLogEvent setWorkflowCoordinatorLogEvent:
-                var nodeList = setWorkflowCoordinatorLogEvent.WorkflowUnit.Select(s => new WorkUnitInfo()
+                var nodeList = setWorkflowCoordinatorLogEvent.WorkflowUnit.Select(s => new WorkUnitInfo
                 {
                     GrainId = s.GrainId,
                     NextGrainId = s.NextGrainId,
                     UnitStatusEnum = WorkerUnitStatusEnum.Pending,
                     ExtendedData = s.ExtendedData
                 }).ToList();
-                
-                if (State.WorkflowStatus == WorkflowCoordinatorStatus.Pending || State.WorkflowStatus == WorkflowCoordinatorStatus.Failed)
+
+                // Collect capability information for all nodes
+                var allNodeGrainIds = nodeList.Select(n => GrainId.Parse(n.GrainId)).ToList();
+                var capabilitiesMap = new Dictionary<string, WorkflowUnitCapabilities>();
+
+                foreach (var node in nodeList)
+                {
+                    try
+                    {
+                        var gAgent = gAgentFactory.GetGAgentAsync(GrainId.Parse(node.GrainId)).Result;
+                        if (gAgent is IWorkflowUnit workflowUnit)
+                        {
+                            var capabilities = workflowUnit.GetCapabilitiesAsync().Result;
+                            capabilitiesMap[node.GrainId] = capabilities;
+                            Logger.LogInformation(
+                                $"Node {node.GrainId} provides: {string.Join(", ", capabilities.ProvidedCapabilities)}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning($"Failed to get capabilities for {node.GrainId}: {ex.Message}");
+                    }
+                }
+
+                // Store capability mapping for later use
+                State.NodeCapabilities = capabilitiesMap;
+
+                if (State.WorkflowStatus is WorkflowCoordinatorStatus.Pending or WorkflowCoordinatorStatus.Failed)
                 {
                     State.CurrentWorkUnitInfos = nodeList;
                     State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
@@ -175,7 +218,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 {
                     State.BackupWorkUnitInfos = nodeList;
                 }
-                
+
                 State.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
                 State.Content = setWorkflowCoordinatorLogEvent.InitContent;
                 break;
@@ -183,16 +226,15 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
                 var workUnitInfoList =
                     State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
-                for (int i = 0; i < workUnitInfoList.Count; i++)
+                foreach (var workUnit in workUnitInfoList)
                 {
-                    var workUnit = workUnitInfoList[i];
                     workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
                 }
 
                 State.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
                 break;
 
-            case WorkflowFinishLogEvent workflowFinishLogEvent:
+            case WorkflowFinishLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 State.TermToWorkUnitGrainId = new Dictionary<long, string>();
                 if (State.BackupWorkUnitInfos.Count > 0)
@@ -202,9 +244,8 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 }
                 else
                 {
-                    for (var i = 0; i < State.CurrentWorkUnitInfos.Count; i++)
+                    foreach (var workUnit in State.CurrentWorkUnitInfos)
                     {
-                        var workUnit = State.CurrentWorkUnitInfos[i];
                         workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Pending;
                     }
                 }
@@ -214,9 +255,8 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             case StartWorkUnitLogEvent workUnitLogEvent:
                 var startWorkUnitInfoList =
                     State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
-                for (var i = 0; i < startWorkUnitInfoList.Count; i++)
+                foreach (var startWorkUnitInfo in startWorkUnitInfoList)
                 {
-                    var startWorkUnitInfo = startWorkUnitInfoList[i];
                     startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
                 }
 
@@ -234,7 +274,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                 State.CurrentWorkUnitInfos.Clear();
                 State.BackupWorkUnitInfos.Clear();
                 break;
-            
+
             case WorkflowStartFailedLogEvent:
                 State.WorkflowStatus = WorkflowCoordinatorStatus.Failed;
                 State.LastRunningTime = DateTime.UtcNow;
@@ -248,7 +288,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     private IEnumerable<WorkUnitInfo> GetNewWorkUnits()
     {
-        return State.BackupWorkUnitInfos.Where(backup => 
+        return State.BackupWorkUnitInfos.Where(backup =>
             !State.CurrentWorkUnitInfos.Any(current => current.GrainId == backup.GrainId));
     }
 
@@ -283,10 +323,11 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             RaiseEvent(new WorkflowFinishLogEvent());
             await ConfirmEvents();
-            
+
             await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
             Logger.LogDebug("[WorkflowCoordinatorGAgent] Workflow finished and work units unregistered");
         }
+
         Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync end");
     }
 
@@ -299,16 +340,46 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             return;
         }
 
+        // Prepare workflow execution context
+        try
+        {
+            var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+
+            if (await gAgentFactory.GetGAgentAsync(GrainId.Parse(workUnitGrainId)) is IWorkflowUnit workflowUnit)
+            {
+                // Build execution context, including all workflow nodes as available resources
+                var context = new WorkflowExecutionContext
+                {
+                    WorkflowId = State.BlackboardId, // Use BlackboardId as workflow ID
+                    AvailableResources = State.GetAllWorkerUnitGrainIds()
+                        .Select(GrainId.Parse)
+                        .ToList(),
+                    SharedData = new Dictionary<string, object>
+                    {
+                        ["NodeCapabilities"] = State.NodeCapabilities,
+                        ["InitContent"] = content ?? State.Content ?? string.Empty
+                    }
+                };
+
+                await workflowUnit.PrepareForExecutionAsync(context);
+                Logger.LogInformation("Prepared execution context for workflow unit {WorkUnitGrainId}", workUnitGrainId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning("Failed to prepare execution context for {WorkUnitGrainId}: {ExMessage}", workUnitGrainId, ex.Message);
+        }
+
         var upstreamGrains = State.GetUpStreamGrainIds(workUnitGrainId).Select(s => GrainId.Parse(s).GetGuidKey());
         var blackboard = GrainFactory.GetGrain<IBlackboardGAgent>(State.BlackboardId);
         var messages = await blackboard.GetLastChatMessageAsync(upstreamGrains.ToList());
         if (content != null)
         {
-            messages.Add(new ChatMessage() { MessageType = MessageType.BlackboardTopic, Content = content });
+            messages.Add(new ChatMessage { MessageType = MessageType.BlackboardTopic, Content = content });
         }
 
         var speaker = GrainId.Parse(workUnitGrainId);
-        await PublishP2PAsync(speaker, new ChatEvent()
+        await PublishP2PAsync(speaker, new ChatEvent
         {
             BlackboardId = State.BlackboardId, Speaker = speaker.GetGuidKey(), Term = State.Term,
             CoordinatorMessages = messages
@@ -317,12 +388,12 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         RaiseEvent(new StartWorkUnitLogEvent() { WorkUnitGrainId = workUnitGrainId, Term = State.Term });
         await ConfirmEvents();
 
-        Logger.LogDebug($"[WorkflowCoordinatorGAgent] Active work:{workUnitGrainId} end");
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] Active work:{WorkUnitGrainId} end", workUnitGrainId);
     }
 
     private async Task TryRegisterWorkUnitsAsync(List<WorkflowUnitDto> workflowUnits)
     {
-        Logger.LogDebug($"[WorkflowCoordinatorGAgent] TryRegisterWorkUnitsAsync start, count: {workflowUnits.Count}");
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] TryRegisterWorkUnitsAsync start, count: {WorkflowUnitsCount}", workflowUnits.Count);
         if (workflowUnits.Count == 0)
         {
             Logger.LogDebug("[WorkflowCoordinatorGAgent] No workflow units to register");
@@ -345,50 +416,51 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             var grainId = GrainId.Parse(unit.GrainId);
             var agent = GrainFactory.GetGrain<IGAgent>(grainId);
-            
+
             var agentParent = await agent.GetParentAsync();
             if (agentParent != default && agentParent != this.GetGrainId())
             {
-                Logger.LogError($"[WorkflowCoordinatorGAgent] GAgent {unit.GrainId} already has a parent GAgent.");
+                Logger.LogError("[WorkflowCoordinatorGAgent] GAgent {UnitGrainId} already has a parent GAgent.", unit.GrainId);
                 throw new ArgumentException($"GAgent {unit.GrainId} already has a parent GAgent.");
             }
-            
+
             workflowUnitGrains.Add(unit.GrainId, agent);
         }
-        
+
         foreach (var item in workflowUnitGrains.Values)
         {
             await RegisterAsync(item);
         }
+
         Logger.LogDebug("[WorkflowCoordinatorGAgent] TryRegisterWorkUnitsAsync end");
     }
-    
+
     public bool IsAllPathsCanReachTerminal(List<WorkflowUnitDto> workflowUnits)
     {
         Dictionary<string, List<string>> graph = new();
-        HashSet<string> allNodeIds = new();
+        HashSet<string> allNodeIds = [];
 
         foreach (var unit in workflowUnits)
         {
             allNodeIds.Add(unit.GrainId);
             if (!graph.ContainsKey(unit.GrainId))
                 graph[unit.GrainId] = new List<string>();
-        
+
             if (!string.IsNullOrWhiteSpace(unit.NextGrainId))
             {
                 graph[unit.GrainId].Add(unit.NextGrainId);
-                allNodeIds.Add(unit.NextGrainId); 
+                allNodeIds.Add(unit.NextGrainId);
             }
         }
-        
+
         var terminalNodes = workflowUnits
             .Where(n => string.IsNullOrWhiteSpace(n.NextGrainId))
             .Select(n => n.GrainId)
             .ToHashSet();
-        
+
         var reachable = new HashSet<string>(terminalNodes);
         var queue = new Queue<string>(terminalNodes);
-        
+
         Dictionary<string, List<string>> reverseGraph = new();
 
         foreach (var unit in workflowUnits)
@@ -406,35 +478,24 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             var current = queue.Dequeue();
             if (reverseGraph.TryGetValue(current, out var preNodes))
             {
-                foreach (var node in preNodes)
+                foreach (var node in preNodes.Where(node => reachable.Add(node)))
                 {
-                    if (!reachable.Contains(node))
-                    {
-                        reachable.Add(node);
-                        queue.Enqueue(node);
-                    }
+                    queue.Enqueue(node);
                 }
             }
         }
-        
-        foreach (var nodeId in allNodeIds)
-        {
-            if (!reachable.Contains(nodeId))
-                return false; 
-        }
 
-        return true;
+        return allNodeIds.All(nodeId => reachable.Contains(nodeId));
     }
 
     private async Task UnregisterWorkUnitAsync(List<WorkUnitInfo> workUnitInfos)
     {
-        Logger.LogDebug($"[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync start, count: {workUnitInfos.Count}");
-        foreach (var workUnit in workUnitInfos)
+        Logger.LogDebug("[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync start, count: {Count}", workUnitInfos.Count);
+        foreach (var agent in workUnitInfos.Select(workUnit => GrainId.Parse(workUnit.GrainId)).Select(grainId => GrainFactory.GetGrain<IGAgent>(grainId)))
         {
-            var grainId = GrainId.Parse(workUnit.GrainId);
-            var agent = GrainFactory.GetGrain<IGAgent>(grainId);
             await UnregisterAsync(agent);
         }
+
         Logger.LogDebug("[WorkflowCoordinatorGAgent] UnregisterWorkUnitAsync end");
     }
 
@@ -456,3 +517,40 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
     #endregion
 }
+
+[GenerateSerializer]
+public class WorkflowCoordinatorLogEvent : StateLogEventBase<WorkflowCoordinatorLogEvent>;
+
+[GenerateSerializer]
+public class SetWorkflowCoordinatorLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public List<WorkflowUnitDto> WorkflowUnit { get; set; } = new();
+    [Id(1)] public Guid BlackBoardId { get; set; }
+    [Id(2)] public string? InitContent { get; set; } = null;
+}
+
+[GenerateSerializer]
+public class StartWorkUnitLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public string WorkUnitGrainId { get; set; }
+    [Id(1)] public long Term { get; set; }
+}
+
+[GenerateSerializer]
+public class FinishedWorkUnitLogEvent : WorkflowCoordinatorLogEvent
+{
+    [Id(0)] public string WorkUnitGrainId { get; set; }
+    [Id(1)] public long Term { get; set; }
+}
+
+[GenerateSerializer]
+public class WorkflowFinishLogEvent : WorkflowCoordinatorLogEvent;
+
+[GenerateSerializer]
+public class WorkflowStartLogEvent : WorkflowCoordinatorLogEvent;
+
+[GenerateSerializer]
+public class ResetWorkflowLogEvent : WorkflowCoordinatorLogEvent;
+
+[GenerateSerializer]
+public class WorkflowStartFailedLogEvent : WorkflowCoordinatorLogEvent;

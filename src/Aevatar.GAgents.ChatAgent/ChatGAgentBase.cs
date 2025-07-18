@@ -32,7 +32,8 @@ public abstract class
     public async Task<List<ChatMessage>?> ChatAsync(string message, ExecutionPromptSettings? promptSettings = null,
         AIChatContextDto? aiChatContextDto = null, List<string>? imageKeys = null)
     {
-        var result = await ChatWithHistoryAndToolsAsync(message, State.ChatHistory, promptSettings, context: aiChatContextDto,
+        var result = await ChatWithHistoryAndToolsAsync(message, State.ChatHistory, promptSettings,
+            context: aiChatContextDto,
             imageKeys: imageKeys);
 
         if (result.Response.IsNullOrEmpty())
@@ -49,8 +50,8 @@ public abstract class
         {
             new()
             {
-                ChatRole = ChatRole.User, 
-                Content = message, 
+                ChatRole = ChatRole.User,
+                Content = message,
                 ImageKeys = imageKeys
             },
             assistantMessage
@@ -62,11 +63,12 @@ public abstract class
 
         return [assistantMessage];
     }
-    
+
     public async Task<bool> ChatWithStreamAsync(string message, AIChatContextDto context,
         ExecutionPromptSettings? promptSettings = null, List<string>? imageKeys = null)
     {
-        var result = await PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context, imageKeys: imageKeys);
+        var result =
+            await PromptWithStreamAsync(message, State.ChatHistory, promptSettings, context, imageKeys: imageKeys);
         if (!result) return result;
 
         var chatMessages = new List<ChatMessage>();
@@ -95,7 +97,8 @@ public abstract class
         await HandleChatStreamAsync(context, errorEnum, errorMessage, content);
     }
 
-    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum, string? errorMessage,
+    protected virtual Task HandleChatStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
+        string? errorMessage,
         AIStreamChatContent? content)
     {
         return Task.CompletedTask;
@@ -188,14 +191,4 @@ public abstract class
                 break;
         }
     }
-}
-
-public interface IChatAgent : IGAgent, IAIGAgent
-{
-    Task<List<ChatMessage>?> ChatAsync(string message,
-        ExecutionPromptSettings? promptSettings = null, AIChatContextDto? aiChatContextDto = null, List<string>? imageKeys = null);
-    
-
-    Task<bool> ChatWithStreamAsync(string message, AIChatContextDto aiChatContextDto,
-        ExecutionPromptSettings? promptSettings = null, List<string>? imageKeys = null);
 }

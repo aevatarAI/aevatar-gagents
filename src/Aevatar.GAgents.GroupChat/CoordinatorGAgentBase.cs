@@ -1,16 +1,14 @@
-using System.Runtime.InteropServices.JavaScript;
 using Aevatar.Core;
 using GroupChat.GAgent.Feature.Coordinator.LogEvent;
-using Microsoft.Extensions.Logging;
 using Aevatar.Core.Abstractions;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
-using GroupChat.GAgent.GEvent;
 
 namespace GroupChat.GAgent.Feature.Coordinator;
 
 public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
     GAgentBase<TState, TStateLogEvent>,
-    ICoordinatorGAgent where TState : CoordinatorStateBase, new() where TStateLogEvent : StateLogEventBase<TStateLogEvent>, new()
+    ICoordinatorGAgent where TState : CoordinatorStateBase, new()
+    where TStateLogEvent : StateLogEventBase<TStateLogEvent>, new()
 {
     private IDisposable? _timer;
     private List<InterestInfo> _interestInfoList = new List<InterestInfo>();
@@ -19,7 +17,11 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult("Blackboard coordinator");
+        return Task.FromResult(
+            "CoordinatorGAgentBase - Base class for coordination agents that manage group chat sessions. " +
+            "Handles member interest evaluation, speaker selection, turn management, and session lifecycle. " +
+            "Monitors member participation and coordinates the flow of conversation between multiple agents."
+        );
     }
 
     public async Task StartAsync(Guid blackboardId)
@@ -28,7 +30,7 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         _groupMembers = new List<GroupMember>();
         _latestSendInterestTime = DateTime.Now;
 
-        RaiseEvent(new SetBlackboardLogEvent() { BlackboardId = blackboardId });
+        RaiseEvent(new SetBlackboardLogEvent { BlackboardId = blackboardId });
         await ConfirmEvents();
 
         TryStartTimer();
@@ -43,13 +45,13 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
             return;
         }
 
-        await PublishAsync(new CoordinatorConfirmChatResponse()
+        await PublishAsync(new CoordinatorConfirmChatResponse
         {
             BlackboardId = @event.BlackboardId, MemberId = @event.MemberId, MemberName = @event.MemberName,
             ChatResponse = @event.ChatResponse
         });
 
-        RaiseEvent(new AddChatTermLogEvent() { IfComplete = @event.ChatResponse.Continue });
+        RaiseEvent(new AddChatTermLogEvent { IfComplete = @event.ChatResponse.Continue });
         await ConfirmEvents();
 
         _interestInfoList.Clear();
@@ -57,11 +59,8 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         // group chat finished
         if (@event.ChatResponse.Continue == false)
         {
-            await PublishAsync(new GroupChatFinishEvent() { BlackboardId = State.BlackboardId });
-            if (_timer != null)
-            {
-                _timer.Dispose();
-            }
+            await PublishAsync(new GroupChatFinishEvent { BlackboardId = State.BlackboardId });
+            _timer?.Dispose();
 
             return;
         }
@@ -69,8 +68,11 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         // next round
         if (await NeedCheckMemberInterestValue(_groupMembers, State.BlackboardId))
         {
-            await PublishAsync(new EvaluationInterestEvent()
-                { BlackboardId = State.BlackboardId, ChatTerm = State.ChatTerm });
+            await PublishAsync(new EvaluationInterestEvent
+            {
+                BlackboardId = State.BlackboardId,
+                ChatTerm = State.ChatTerm
+            });
             _latestSendInterestTime = DateTime.Now;
         }
         else
@@ -90,8 +92,11 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         var member = _interestInfoList.Find(f => f.MemberId == @event.MemberId);
         if (member == null)
         {
-            _interestInfoList.Add(new InterestInfo()
-                { MemberId = @event.MemberId, InterestValue = @event.InterestValue });
+            _interestInfoList.Add(new InterestInfo
+            {
+                MemberId = @event.MemberId,
+                InterestValue = @event.InterestValue
+            });
         }
         else
         {
@@ -110,7 +115,11 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         var member = _groupMembers.Find(f => f.Id == @event.MemberId);
         if (member == null)
         {
-            member = new GroupMember() { Id = @event.MemberId, Name = @event.MemberName };
+            member = new GroupMember
+            {
+                Id = @event.MemberId,
+                Name = @event.MemberName
+            };
             _groupMembers.Add(member);
         }
 
@@ -207,8 +216,11 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
                 (DateTime.Now - _latestSendInterestTime).Seconds > 5 &&
                 _interestInfoList.Count <= (_groupMembers.Count * 2) / 3)
             {
-                await PublishAsync(new EvaluationInterestEvent()
-                    { BlackboardId = State.BlackboardId, ChatTerm = State.ChatTerm });
+                await PublishAsync(new EvaluationInterestEvent
+                {
+                    BlackboardId = State.BlackboardId,
+                    ChatTerm = State.ChatTerm
+                });
                 _latestSendInterestTime = DateTime.Now;
             }
 
@@ -282,7 +294,7 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         [Id(1)] public DateTime CreateTime { get; set; }
     }
 
-    
+
 
     #endregion
 
@@ -310,13 +322,14 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
                 State.ChatTerm = 0;
                 break;
         }
-        
+
         CoordinatorTransitionState(state, eventObj);
     }
-    
+
     protected virtual void CoordinatorTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
         // Derived classes can override this method.
     }
+
     #endregion
 }

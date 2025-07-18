@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
@@ -30,8 +31,70 @@ public abstract partial class
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
-    private Dictionary<string, string> _toolNameMapping = new(); // Maps kernel function names to MCP tool names
+    private readonly Dictionary<string, string> _toolNameMapping = new(); // Maps kernel function names to MCP tool names
 
+    public virtual async Task<bool> ConfigureMCPServersAsync(List<IMCPGAgent> mcpGAgents)
+    {
+        try
+        {
+            var mcpAgents = new Dictionary<string, MCPGAgentReference>();
+
+            foreach (var mcpAgent in mcpGAgents)
+            {
+                var mcpAgentId = mcpAgent.GetPrimaryKey();
+                var server = (await mcpAgent.GetServerStatesAsync()).First();
+
+                mcpAgents[server.ServerName] = new MCPGAgentReference
+                {
+                    AgentId = mcpAgentId,
+                    ServerName = server.ServerName,
+                    //Description = server.Description
+                };
+
+                // Log available tools from this server
+                var serverTools = await mcpAgent.GetAvailableToolsAsync();
+                foreach (var (_, tool) in serverTools)
+                {
+                    Logger.LogInformation($"Registered MCP tool: {server.ServerName}.{tool.Name} - {tool.Description}");
+                }
+            }
+
+            if (!mcpAgents.Any())
+            {
+                // No valid MCP servers configured
+                return false;
+            }
+
+            // Update state
+            var configureServersEvent = new ConfigureMCPServersStateLogEvent
+            {
+                MCPServers = mcpAgents
+            };
+
+            var enableMCPToolsEvent = new SetEnableMCPToolsStateLogEvent
+            {
+                EnableMCPTools = true
+            };
+
+            RaiseEvent(configureServersEvent);
+            RaiseEvent(enableMCPToolsEvent);
+            await ConfirmEvents();
+
+            // Update kernel tools if brain is initialized
+            if (_brain != null)
+            {
+                await UpdateKernelWithMCPToolsAsync();
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to configure MCP servers");
+            return false;
+        }
+    }
+    
     /// <summary>
     /// Configure MCP servers for this agent
     /// </summary>
@@ -262,13 +325,34 @@ public abstract partial class
 
             var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(agentRef.AgentId);
 
-            // Convert kernel arguments to basic types for Orleans serialization
+            // Get tool info to understand parameter types
+            var tools = await mcpAgent.GetAvailableToolsAsync();
+            MCPToolInfo? toolInfo = null;
+            foreach (var (_, tool) in tools)
+            {
+                if (tool.Name == toolName)
+                {
+                    toolInfo = tool;
+                    break;
+                }
+            }
+
+            // Convert kernel arguments to properly typed parameters
             var parameters = new Dictionary<string, object>();
             foreach (var (key, value) in kernelArgs)
             {
                 if (value != null)
                 {
-                    parameters[key] = ConvertJsonElementToBasicType(value);
+                    // Check if we have type information for this parameter
+                    if (toolInfo?.Parameters.TryGetValue(key, out var paramInfo) == true)
+                    {
+                        parameters[key] = ConvertToExpectedType(value, paramInfo.Type);
+                    }
+                    else
+                    {
+                        // No type info, use basic conversion
+                        parameters[key] = ConvertJsonElementToBasicType(value);
+                    }
                 }
             }
 
@@ -410,6 +494,154 @@ public abstract partial class
         }
 
         return value;
+    }
+
+    /// <summary>
+    /// Convert a value to the expected type based on MCP parameter type definition
+    /// </summary>
+    private object ConvertToExpectedType(object value, string expectedType)
+    {
+        // Handle JsonElement conversion first
+        if (value is JsonElement element)
+        {
+            return ConvertJsonElementToExpectedType(element, expectedType);
+        }
+
+        // Handle string to other types conversion
+        if (value is string strValue)
+        {
+            switch (expectedType.ToLower())
+            {
+                case "number":
+                case "float":
+                case "double":
+                    if (double.TryParse(strValue, out var doubleValue))
+                        return doubleValue;
+                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to number");
+                    
+                case "integer":
+                case "int":
+                    if (int.TryParse(strValue, out var intValue))
+                        return intValue;
+                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to integer");
+                    
+                case "boolean":
+                case "bool":
+                    if (bool.TryParse(strValue, out var boolValue))
+                        return boolValue;
+                    // Handle "0"/"1" as boolean
+                    if (strValue == "0") return false;
+                    if (strValue == "1") return true;
+                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to boolean");
+                    
+                case "array":
+                    // Try to parse as JSON array
+                    try
+                    {
+                        return JsonSerializer.Deserialize<List<object>>(strValue) ?? new List<object>();
+                    }
+                    catch
+                    {
+                        // If not JSON, return as single-element list
+                        return new List<object> { strValue };
+                    }
+                    
+                case "object":
+                    // Try to parse as JSON object
+                    try
+                    {
+                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ?? new Dictionary<string, object>();
+                    }
+                    catch
+                    {
+                        // If not JSON, return as-is
+                        return strValue;
+                    }
+                    
+                case "string":
+                    return strValue;
+                    
+                default:
+                    // Unknown type, return as-is
+                    return strValue;
+            }
+        }
+
+        // For non-string values, use the existing conversion logic
+        return ConvertJsonElementToBasicType(value);
+    }
+
+    /// <summary>
+    /// Convert JsonElement to expected type based on MCP parameter type definition
+    /// </summary>
+    private object ConvertJsonElementToExpectedType(JsonElement element, string expectedType)
+    {
+        switch (expectedType.ToLower())
+        {
+            case "string":
+                return element.ValueKind == JsonValueKind.String 
+                    ? element.GetString() ?? string.Empty 
+                    : element.ToString();
+                    
+            case "number":
+            case "float":
+            case "double":
+                if (element.ValueKind == JsonValueKind.Number)
+                    return element.GetDouble();
+                if (element.ValueKind == JsonValueKind.String && double.TryParse(element.GetString(), out var d))
+                    return d;
+                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to number");
+                
+            case "integer":
+            case "int":
+                if (element.ValueKind == JsonValueKind.Number)
+                    return element.GetInt32();
+                if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var i))
+                    return i;
+                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to integer");
+                
+            case "boolean":
+            case "bool":
+                if (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
+                    return element.GetBoolean();
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    var str = element.GetString();
+                    if (bool.TryParse(str, out var b))
+                        return b;
+                    if (str == "0") return false;
+                    if (str == "1") return true;
+                }
+                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to boolean");
+                
+            case "array":
+                if (element.ValueKind == JsonValueKind.Array)
+                {
+                    var list = new List<object>();
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        list.Add(ConvertJsonElementToBasicType(item));
+                    }
+                    return list;
+                }
+                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to array");
+                
+            case "object":
+                if (element.ValueKind == JsonValueKind.Object)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (var prop in element.EnumerateObject())
+                    {
+                        dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
+                    }
+                    return dict;
+                }
+                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to object");
+                
+            default:
+                // Unknown type, use basic conversion
+                return ConvertJsonElementToBasicType(element);
+        }
     }
 
     /// <summary>

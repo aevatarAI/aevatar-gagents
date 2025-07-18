@@ -70,6 +70,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Executor", "src\Aevatar.GAgents.Executor\Aevatar.GAgents.Executor.csproj", "{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{431973C0-FD6D-4030-ADBC-CE3D549B07F2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\AIGAgentBase_MCP_Type_Conversion.md = docs\AIGAgentBase_MCP_Type_Conversion.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "design", "design", "{2DE52441-A9C1-4C43-865B-310ED5E8B4FB}"
 	ProjectSection(SolutionItems) = preProject
