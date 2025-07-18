@@ -15,6 +15,8 @@ public class UpdateWorkflowViewLogEvent : WorkflowViewLogEvent
     [Id(0)] public List<WorkflowNodeDto> AddNodeList { get; set; } = new();
     [Id(1)] public List<WorkflowNodeDto> UpdateNodeList { get; set; } = new();
     [Id(2)] public List<Guid> RemoveNodeIdList { get; set; } = new();
+    [Id(3)] public List<WorkflowNodeUnitDto> WorkflowNodeUnitList { get; set; } = new();
+    [Id(4)] public string Name { get; set; }
 }
 
 [GenerateSerializer]

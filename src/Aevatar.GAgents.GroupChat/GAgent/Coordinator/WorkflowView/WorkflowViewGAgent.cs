@@ -44,20 +44,35 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                 AgentId = agentId
             });
         }
+
+        await ConfirmEvents();
         var workflowGAgentId = State.WorkflowCoordinatorGAgentId == Guid.Empty ? Guid.NewGuid() : State.WorkflowCoordinatorGAgentId;
         var workflowCoordinatorGAgent = GrainFactory.GetGrain<IWorkflowCoordinatorGAgent>(workflowGAgentId);
         var workflowConfig = new WorkflowCoordinatorConfigDto();
         var nodeMap = State.WorkflowNodeList.ToDictionary(r => r.NodeId, r => r);
-        foreach (var nodeUnit in State.WorkflowNodeUnitList)
+        foreach (var node in State.WorkflowNodeList)
         {
-            var curNode = nodeMap[nodeUnit.NodeId];
-            var nextNode = nodeMap[nodeUnit.NextNodeId];
-            workflowConfig.WorkflowUnitList.Add(new WorkflowUnitDto()
+            var nodeUnitList = State.WorkflowNodeUnitList.Where(t => t.NodeId == node.NodeId).ToList();
+            if (nodeUnitList.IsNullOrEmpty())
             {
-                ExtendedData = curNode.ExtendedData,
-                GrainId = GrainId.Create(curNode.AgentType, GuidToGrainKey(curNode.AgentId)).ToString(),
-                NextGrainId = GrainId.Create(nextNode.AgentType, GuidToGrainKey(nextNode.AgentId)).ToString()
-            });
+                workflowConfig.WorkflowUnitList.Add(new WorkflowUnitDto()
+                {
+                    ExtendedData = node.ExtendedData,
+                    GrainId = GrainId.Create(node.AgentType, GuidToGrainKey(node.AgentId)).ToString(),
+                    NextGrainId = ""
+                });
+                continue;
+            }
+            foreach (var nodeUnit in nodeUnitList)
+            {
+                var nextNode = nodeMap[nodeUnit.NextNodeId];
+                workflowConfig.WorkflowUnitList.Add(new WorkflowUnitDto()
+                {
+                    ExtendedData = node.ExtendedData,
+                    GrainId = GrainId.Create(node.AgentType, GuidToGrainKey(node.AgentId)).ToString(),
+                    NextGrainId = GrainId.Create(nextNode.AgentType, GuidToGrainKey(nextNode.AgentId)).ToString()
+                });
+            }
         }
         await workflowCoordinatorGAgent.ConfigAsync(workflowConfig);
         RaiseEvent(new UpdateWorkflowAgentIdLogEvent()
@@ -104,7 +119,7 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
 
     private async Task TrySaveWorkflowViewAsync(WorkflowViewConfigDto configuration)
     {
-        if (configuration.WorkflowNodeList.IsNullOrEmpty())
+        if (configuration.WorkflowNodeList.IsNullOrEmpty() || configuration.Name.IsNullOrEmpty())
         {
             return;
         }
@@ -139,11 +154,14 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
         }
 
         var removeNodeIdList = State.WorkflowNodeList.Select(t => t.NodeId).Except(nodeIdList).ToList();
+        
         RaiseEvent(new UpdateWorkflowViewLogEvent
         {
             AddNodeList = addNodeList,
             UpdateNodeList = updateNodeList,
-            RemoveNodeIdList = removeNodeIdList
+            RemoveNodeIdList = removeNodeIdList,
+            WorkflowNodeUnitList = configuration.WorkflowNodeUnitList,
+            Name = configuration.Name
         });
     }
 
@@ -172,6 +190,18 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                     }
                 }
                 State.WorkflowNodeList.AddRange(updateWorkflowViewLogEvent.AddNodeList);
+                State.WorkflowNodeUnitList = updateWorkflowViewLogEvent.WorkflowNodeUnitList;
+                State.Name = updateWorkflowViewLogEvent.Name;
+                break;
+            case UpdateNodeAgentIdLogEvent nodeAgentIdLogEvent:
+                var updateAgentIdNode = State.WorkflowNodeList.FirstOrDefault(t => t.NodeId == nodeAgentIdLogEvent.NodeId);
+                if (updateAgentIdNode != null)
+                {
+                    updateAgentIdNode.AgentId = nodeAgentIdLogEvent.AgentId;
+                }
+                break;
+            case UpdateWorkflowAgentIdLogEvent updateWorkflowAgentIdLogEvent:
+                State.WorkflowCoordinatorGAgentId = updateWorkflowAgentIdLogEvent.AgentId;
                 break;
         }
 
