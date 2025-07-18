@@ -81,10 +81,10 @@ public class BlackboardGAgent : GAgentBase<BlackboardState, BlackboardLogEvent>,
                     MessageType = addChatHistoryLogEvent.MessageType
                 };
 
-                State.MessageList.Add(message);
+                state.MessageList.Add(message);
                 break;
             case CleanChatHistoryLogEvent cleanChatHistoryLogEvent:
-                State.MessageList.Clear();
+                state.MessageList.Clear();
                 break;
         }
     }

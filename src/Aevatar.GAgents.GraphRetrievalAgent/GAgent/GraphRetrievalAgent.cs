@@ -150,8 +150,8 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
         switch (@event)
         {
             case SetGraphSchemaSEvent setGraphSchemaSEvent:
-                State.RetrievalSchema = setGraphSchemaSEvent.Schema;
-                State.RetrievalExample = setGraphSchemaSEvent.Example;
+                state.RetrievalSchema = setGraphSchemaSEvent.Schema;
+                state.RetrievalExample = setGraphSchemaSEvent.Example;
                 break;
         }
     }
