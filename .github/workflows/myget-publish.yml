@@ -31,7 +31,9 @@ jobs:
           Aevatar.GAgents.Router,
           Aevatar.GAgents.GraphRetrievalAgent,
           Aevatar.GAgents.GroupChat,
-          Aevatar.GAgents.MultiAIChatGAgent
+          Aevatar.GAgents.MultiAIChatGAgent,
+          Aevatar.GAgents.InputGAgent,
+          Aevatar.GAgents.GroupChat.GroupMember
         ]
     steps:
       - name: Checkout code
