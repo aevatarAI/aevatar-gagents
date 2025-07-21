@@ -6,12 +6,16 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Aevatar.Core" />
+    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
+        <PackageReference Include="Aevatar.Core" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core\Aevatar.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj" />
+        <ProjectReference Include="..\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj" />
     </ItemGroup>
 
 </Project>

@@ -7,12 +7,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aevatar.Core" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
       <ProjectReference Include="..\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
+        <PackageReference Include="Aevatar.Core" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core\Aevatar.Core.csproj" />
     </ItemGroup>
 
 </Project>

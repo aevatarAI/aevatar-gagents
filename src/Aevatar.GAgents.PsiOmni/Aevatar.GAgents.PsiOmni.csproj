@@ -21,13 +21,13 @@
         <ProjectReference Include="..\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.GroupChat\Aevatar.GAgents.GroupChat.csproj" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="Examples\" />
+
+    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
+        <PackageReference Include="Aevatar.Core.Abstractions" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Compile Remove="Examples\PsiOmniGAgentExample.cs" />
+
+    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

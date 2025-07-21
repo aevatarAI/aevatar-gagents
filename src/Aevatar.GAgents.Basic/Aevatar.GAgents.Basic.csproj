@@ -8,7 +8,16 @@
 
     <ItemGroup>
         <PackageReference Include="Volo.Abp.AutoMapper"/>
-        <PackageReference Include="Aevatar.Core"/>
-        <PackageReference Include="Aevatar.Core.Abstractions"/>
     </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
+        <PackageReference Include="Aevatar.Core" />
+        <PackageReference Include="Aevatar.Core.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core\Aevatar.Core.csproj" />
+    </ItemGroup>
+
 </Project>

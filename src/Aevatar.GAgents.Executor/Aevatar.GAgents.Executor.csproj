@@ -7,11 +7,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
         <PackageReference Include="Aevatar" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
+        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar\Aevatar.csproj" />
     </ItemGroup>
 
 </Project>
