@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Telegram.Agent.GEvents;
 using Aevatar.GAgents.Telegram.GEvents;
