@@ -11,9 +11,21 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Orleans;
 using Orleans.Providers;
+using Aevatar.GAgents.AI.Common;
 
 namespace Aevatar.GAgents.PumpFun.Agent;
 
+[AgentDescription(
+    Name = "PumpFun Platform Agent",
+    L1Description = "Specialized agent for PumpFun platform integration and automated trading operations",
+    L2Description = "Advanced trading automation agent for PumpFun platform that handles token monitoring, automated trading strategies, market analysis, and portfolio management with real-time price tracking.",
+    Category = "Trading",
+    Capabilities = new[] { "token-monitoring", "automated-trading", "market-analysis", "portfolio-management" },
+    Tags = new[] { "pumpfun", "trading", "automation", "defi" },
+    InputFormat = "json",
+    OutputFormat = "json",
+    UsageExample = "await HandleEventAsync(new PumpFunSendMessageEvent { ReplyId = 'msg123', ReplyMessage = 'Trade executed' })"
+)]
 [Description("Handle PumpFun")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]

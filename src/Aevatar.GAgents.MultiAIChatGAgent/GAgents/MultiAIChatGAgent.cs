@@ -12,6 +12,17 @@ using Orleans.Concurrency;
 
 namespace Aevatar.GAgents.MultiAIChatGAgent.GAgents;
 
+[AgentDescription(
+    Name = "Multi-AI Chat Agent",
+    L1Description = "Multi-model AI chat agent supporting multiple LLM providers with intelligent model switching",
+    L2Description = "Sophisticated chat agent that integrates multiple AI models (GPT, Claude, Gemini) with automatic model selection based on query type, load balancing, and fallback mechanisms for optimal user experience.",
+    Category = "Chat",
+    Capabilities = new[] { "multi-model-chat", "load-balancing", "fallback-mechanisms", "intelligent-switching" },
+    Tags = new[] { "chat", "multi-ai", "llm", "load-balancing" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await ChatAsync('Hello, can you help me with this question?')"
+)]
 [Reentrant]
 public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfiguration> :
     GAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IMultiAIChatGAgent
