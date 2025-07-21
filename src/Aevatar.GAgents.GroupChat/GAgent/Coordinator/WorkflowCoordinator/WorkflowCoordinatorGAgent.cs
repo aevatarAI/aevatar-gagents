@@ -284,6 +284,8 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     BlackboardId = State.BlackboardId
                 });
             }
+            
+            await UnregisterExecutionRecordAsync();
 
             var toUnregisterWorkUnit = new List<WorkUnitInfo>();
             if (State.BackupWorkUnitInfos.Count > 0)
@@ -296,7 +298,6 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             await ConfirmEvents();
             
             await UnregisterWorkUnitAsync(toUnregisterWorkUnit);
-            await UnregisterExecutionRecordAsync();
             Logger.LogDebug("[WorkflowCoordinatorGAgent] Workflow finished and work units unregistered");
         }
         Logger.LogDebug("[WorkflowCoordinatorGAgent] TryFinishWorkflowAsync end");
@@ -464,7 +465,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         }
 
         var id = Guid.NewGuid();
-        var executionRecordAgent = GrainFactory.GetGrain<IBlackboardGAgent>(id);
+        var executionRecordAgent = GrainFactory.GetGrain<IWorkflowExecutionRecordGAgent>(id);
         await RegisterAsync(executionRecordAgent);
 
         await PublishAsync(new StartExecuteWorkflowEvent
@@ -485,7 +486,7 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
             return;
         }
         
-        var executionRecordAgent = GrainFactory.GetGrain<IBlackboardGAgent>(State.CurrentExecutionRecordId);
+        var executionRecordAgent = GrainFactory.GetGrain<IWorkflowExecutionRecordGAgent>(State.CurrentExecutionRecordId);
         
         await PublishP2PAsync(executionRecordAgent.GetGrainId(), new GroupChatFinishEvent()
         {

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 
+[GAgent]
 public class WorkflowExecutionRecordGAgent :
     GAgentBase<WorkflowExecutionRecordState, WorkflowExecutionRecordLogEvent, EventBase>, IWorkflowExecutionRecordGAgent
 {
@@ -65,28 +66,36 @@ public class WorkflowExecutionRecordGAgent :
         switch (@event)
         {
             case StartExecuteWorkflowLogEvent startExecuteWorkflowLogEvent:
-                State.WorkflowId = startExecuteWorkflowLogEvent.WorkflowId;
-                State.RoundId = startExecuteWorkflowLogEvent.RoundId;
-                State.WorkUnitInfos = startExecuteWorkflowLogEvent.WorkUnitInfos;
-                State.InitContent = startExecuteWorkflowLogEvent.Content;
-                State.StartTime = DateTime.UtcNow;
-                State.Status = WorkflowExecutionStatus.Running;
+                state.WorkflowId = startExecuteWorkflowLogEvent.WorkflowId;
+                state.RoundId = startExecuteWorkflowLogEvent.RoundId;
+                state.WorkUnitInfos = startExecuteWorkflowLogEvent.WorkUnitInfos;
+                state.InitContent = startExecuteWorkflowLogEvent.Content;
+                state.StartTime = DateTime.UtcNow;
+                state.Status = WorkflowExecutionStatus.Running;
+                state.WorkUnitRecords = startExecuteWorkflowLogEvent.WorkUnitInfos.Select(o =>
+                    new WorkUnitExecutionRecord
+                    {
+                        WorkUnitGrainId = o.GrainId,
+                        Status = WorkflowExecutionStatus.Pending
+                    }).ToList();
                 break;
             case FinishExecuteWorkflowLogEvent finishExecuteWorkflowLogEvent:
-                State.EndTime = DateTime.UtcNow;
-                State.Status = WorkflowExecutionStatus.Completed;
+                state.EndTime = DateTime.UtcNow;
+                state.Status = WorkflowExecutionStatus.Completed;
                 break;
             case StartExecuteWorkUnitLogEvent startExecuteWorkUnitLogEvent:
-                State.WorkUnitRecords.Add(new WorkUnitExecutionRecord
+                var startUnit = state.WorkUnitRecords.FirstOrDefault(o =>
+                    o.WorkUnitGrainId == startExecuteWorkUnitLogEvent.WorkUnitGrainId);
+                startUnit.WorkUnitGrainId = startExecuteWorkUnitLogEvent.WorkUnitGrainId;
+                startUnit.StartTime = DateTime.UtcNow;
+                if (startUnit.Status == WorkflowExecutionStatus.Pending)
                 {
-                    WorkUnitGrainId = startExecuteWorkUnitLogEvent.WorkUnitGrainId,
-                    StartTime = DateTime.UtcNow,
-                    Status = WorkflowExecutionStatus.Running,
-                    InputData = startExecuteWorkUnitLogEvent.InputData
-                });
+                    startUnit.Status = WorkflowExecutionStatus.Running;
+                }
+                startUnit.InputData = startExecuteWorkUnitLogEvent.InputData;
                 break;
             case FinishExecuteWorkUnitLogEvent finishExecuteWorkUnitLogEvent:
-                var workUnit = State.WorkUnitRecords.FirstOrDefault(o =>
+                var workUnit = state.WorkUnitRecords.FirstOrDefault(o =>
                     o.WorkUnitGrainId == finishExecuteWorkUnitLogEvent.WorkUnitGrainId);
                 workUnit.EndTime = DateTime.UtcNow;
                 workUnit.Status = WorkflowExecutionStatus.Completed;
