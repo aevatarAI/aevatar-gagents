@@ -13,15 +13,15 @@ using Aevatar.GAgents.AI.Common;
 namespace Aevatar.GAgents.TestAgent;
 
 [AgentDescription(
-    Name = "社交聊天代理",
-    L1Description = "支持社交平台聊天交互的AI代理，具备多轮对话和情感理解能力",
-    L2Description = "这是一个专为社交场景设计的AI代理，能够处理用户的聊天请求，支持情感识别、多轮对话记忆、个性化回复等功能。适用于社交媒体平台、客服系统等需要友好交互的场景。",
+    Name = "Social Chat Agent",
+    L1Description = "AI agent for social platform chat interactions with multi-turn conversation and emotion understanding capabilities",
+    L2Description = "A specialized AI agent designed for social scenarios that handles user chat requests with emotion recognition, multi-turn conversation memory, and personalized responses. Suitable for social media platforms, customer service systems, and other scenarios requiring friendly interactions.",
     Category = "Social",
     Capabilities = new[] { "chat", "social-interaction", "emotion-understanding", "multi-turn-conversation" },
     Tags = new[] { "social", "chat", "ai", "conversation" },
     InputFormat = "text",
     OutputFormat = "text",
-    UsageExample = "await ChatAsync('你好，今天心情怎么样？')"
+    UsageExample = "await ChatAsync('Hello, how are you feeling today?')"
 )]
 [System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
