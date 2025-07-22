@@ -86,7 +86,8 @@ public class SimpleAgentScanner
         var allAgents = new List<AgentIndexInfo>();
         
         var assemblies = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.FullName?.Contains("GAgent") == true)
+            .Where(a => a.FullName?.Contains("GAgents") == true || 
+                       a.FullName?.Contains("GAgent") == true)
             .ToList();
 
         foreach (var assembly in assemblies)
