@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Aevatar.Core;
+using Aevatar.Core.Abstractions;
 using Aevatar.Extensions;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
@@ -154,6 +156,9 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     
                     services.AddSingleton<IKernelBuilderFactory, MockKernelBuilderFactory>();
                     services.AddSingleton<IBrainFactory, MockBrainFactory>();
+                    
+                    // Add IGAgentFactory registration for Orleans grain dependency injection
+                    services.AddSingleton<IGAgentFactory, GAgentFactory>();
                 })
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
