@@ -2,6 +2,7 @@ using Aevatar.Core.Abstractions;
 
 namespace Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 
+[GenerateSerializer]
 public class WorkflowExecutionRecordState : StateBase
 {
     [Id(0)] 
@@ -22,6 +23,7 @@ public class WorkflowExecutionRecordState : StateBase
     [Id(7)] public List<WorkUnitExecutionRecord> WorkUnitRecords { get; set; } = new();
 }
 
+[GenerateSerializer]
 public class WorkUnitExecutionRecord
 {
     [Id(0)]
