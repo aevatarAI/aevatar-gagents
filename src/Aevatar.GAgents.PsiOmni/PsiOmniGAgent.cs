@@ -8,12 +8,24 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
+using Aevatar.GAgents.AI.Common;
 using GroupChat.GAgent;
 
 namespace Aevatar.GAgents.PsiOmni;
 
 public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
 
+[AgentDescription(
+    Name = "PsiOmni Integration Agent",
+    L1Description = "AI agent for PsiOmni platform integration with advanced cognitive capabilities",
+    L2Description = "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.",
+    Category = "AI",
+    Capabilities = new[] { "cognitive-services", "neural-processing", "intelligent-automation", "complex-problem-solving" },
+    Tags = new[] { "psiomni", "cognitive", "ai", "automation" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await HandleUserMessageEventAsync(new UserMessageEvent { Content = 'Analyze this complex scenario' })"
+)]
 [GAgent("omni", "psi")]
 public partial class
     PsiOmniGAgent : GroupMemberGAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>, IPshOmniGAgent

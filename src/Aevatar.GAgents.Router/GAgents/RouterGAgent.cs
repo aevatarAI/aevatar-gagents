@@ -3,6 +3,7 @@ using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Router.GAgents.Features.Common;
 using Aevatar.GAgents.Router.GAgents.SEvents;
 using Aevatar.GAgents.Router.GEvents;
@@ -17,6 +18,17 @@ public interface IRouterGAgent : IAIGAgent, IGAgent
     public Task AddAgentDescription(Type agentType, List<Type> eventList);
 }
 
+[AgentDescription(
+    Name = "Intelligent Router Agent",
+    L1Description = "Intelligent routing agent responsible for workflow generation and management, capable of coordinating multiple agent collaborations",
+    L2Description = "A specialized AI agent designed for workflow orchestration that analyzes task requirements and intelligently selects and combines appropriate agents to complete complex workflows. Supports dynamic routing, agent coordination, state management, and is suitable for complex business scenarios requiring multi-agent collaboration.",
+    Category = "Workflow",
+    Capabilities = new[] { "workflow-management", "agent-coordination", "task-routing", "dynamic-orchestration" },
+    Tags = new[] { "workflow", "router", "orchestration", "coordination" },
+    InputFormat = "json",
+    OutputFormat = "json", 
+    UsageExample = "await RouteNextAsync(new RouteNextGEvent { TaskId = 'task-123', Context = context })"
+)]
 public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>, IRouterGAgent
 {
     private readonly ILogger<RouterGAgent> _logger;

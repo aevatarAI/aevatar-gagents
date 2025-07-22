@@ -10,10 +10,22 @@ using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Twitter.GEvents;
 using Aevatar.GAgents.Twitter.Grains;
 using Aevatar.GAgents.Twitter.Options;
+using Aevatar.GAgents.AI.Common;
 using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.Twitter.Agent;
 
+[AgentDescription(
+    Name = "Twitter Integration Agent",
+    L1Description = "AI agent for Twitter platform integration with tweet posting, monitoring, and interaction capabilities",
+    L2Description = "Comprehensive Twitter automation agent that handles tweet creation, timeline monitoring, user interactions, and social media analytics. Supports automated responses, content scheduling, and real-time social engagement.",
+    Category = "Social",
+    Capabilities = new[] { "tweet-posting", "timeline-monitoring", "social-interaction", "automated-responses" },
+    Tags = new[] { "twitter", "social-media", "automation", "engagement" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await HandleEventAsync(new CreateTweetGEvent { Text = 'Hello Twitter world!' })"
+)]
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]

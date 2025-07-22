@@ -16,7 +16,17 @@ public interface IGraphRetrievalAgent : IAIGAgent, IGAgent
     Task<string?> InvokeLLMWithGraphRetrievalAsync(string prompt);
 }
 
-
+[AgentDescription(
+    Name = "Graph Retrieval Agent",
+    L1Description = "Specialized AI agent for knowledge graph retrieval and semantic search operations",
+    L2Description = "Advanced graph-based knowledge retrieval agent that performs intelligent semantic searches across connected data structures. Utilizes graph traversal algorithms and AI embeddings for contextual information discovery.",
+    Category = "Retrieval",
+    Capabilities = new[] { "graph-retrieval", "semantic-search", "knowledge-discovery", "graph-traversal" },
+    Tags = new[] { "graph", "retrieval", "knowledge", "semantic" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await InvokeLLMWithGraphRetrievalAsync('Find all related concepts to artificial intelligence')"
+)]
 public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphRetrievalAgentSEvent, EventBase, GraphRetrievalConfig>, IGraphRetrievalAgent
 {
     private readonly ILogger<GraphRetrievalAgent> _logger;

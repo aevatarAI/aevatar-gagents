@@ -8,9 +8,21 @@ using Aevatar.GAgents.ChatAgent.GAgent;
 using Aevatar.GAgents.ChatAgent.GAgent.State;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.SocialAgent.GAgent.SEvent;
+using Aevatar.GAgents.AI.Common;
 
 namespace Aevatar.GAgents.TestAgent;
 
+[AgentDescription(
+    Name = "Social Chat Agent",
+    L1Description = "AI agent for social platform chat interactions with multi-turn conversation and emotion understanding capabilities",
+    L2Description = "A specialized AI agent designed for social scenarios that handles user chat requests with emotion recognition, multi-turn conversation memory, and personalized responses. Suitable for social media platforms, customer service systems, and other scenarios requiring friendly interactions.",
+    Category = "Social",
+    Capabilities = new[] { "chat", "social-interaction", "emotion-understanding", "multi-turn-conversation" },
+    Tags = new[] { "social", "chat", "ai", "conversation" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await ChatAsync('Hello, how are you feeling today?')"
+)]
 [System.ComponentModel.Description("I can chat with users.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]

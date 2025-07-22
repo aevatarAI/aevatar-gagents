@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Telegram.Agent.GEvents;
 using Aevatar.GAgents.Telegram.GEvents;
@@ -13,6 +14,17 @@ using Orleans.Providers;
 
 namespace Aevatar.GAgents.Telegram.Agent;
 
+[AgentDescription(
+    Name = "Telegram Bot Agent",
+    L1Description = "AI-powered Telegram bot agent for automated messaging and user interaction management",
+    L2Description = "Advanced Telegram bot integration agent that enables automated messaging, group management, inline queries, and custom commands. Supports rich media handling, user authentication, and seamless bot-to-user communication.",
+    Category = "Social",
+    Capabilities = new[] { "automated-messaging", "group-management", "inline-queries", "custom-commands" },
+    Tags = new[] { "telegram", "bot", "messaging", "automation" },
+    InputFormat = "text",
+    OutputFormat = "text",
+    UsageExample = "await HandleEventAsync(new SendMessageGEvent { Message = 'Hello!', ChatId = '12345' })"
+)]
 [Description("Handle telegram")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
