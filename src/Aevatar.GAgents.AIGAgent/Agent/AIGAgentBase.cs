@@ -788,18 +788,36 @@ public abstract partial class
         // Identify MCPGAgent instances in the resource context
         foreach (var grainId in context.AvailableResources)
         {
+            Logger.LogInformation("Checking resource: {GrainId}, Type: {GrainType}", grainId, grainId.Type);
             try
             {
-                var resource = await gAgentFactory.GetGAgentAsync(grainId);
-                if (resource is IMCPGAgent mcpAgent)
+                // Check if this is an MCPGAgent by examining the GrainType
+                var grainTypeString = grainId.Type.ToString();
+                if (grainTypeString.Contains("mcp", StringComparison.OrdinalIgnoreCase))
                 {
-                    mcpAgentsFound.Add(mcpAgent);
-                    Logger.LogInformation("Found MCPGAgent resource: {GrainId}", grainId);
+                    // This is an MCP agent, try to get it as IMCPGAgent
+                    try
+                    {
+                        var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(grainId);
+                        if (mcpAgent != null)
+                        {
+                            mcpAgentsFound.Add(mcpAgent);
+                            Logger.LogInformation("Found MCPGAgent resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
+                        }
+                    }
+                    catch (InvalidCastException)
+                    {
+                        Logger.LogWarning("Resource {GrainId} has MCP type but cannot be cast to IMCPGAgent", grainId);
+                    }
+                }
+                else
+                {
+                    Logger.LogDebug("Skipping non-MCP resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("Failed to resolve resource {GrainId} as MCPGAgent: {Exception}", grainId, ex.Message);
+                Logger.LogWarning("Failed to resolve resource {GrainId}: {Exception}", grainId, ex.Message);
             }
         }
 
