@@ -12,6 +12,6 @@
     <PackageReference Include="AElf.Sdk.CSharp" />
     <PackageReference Include="Microsoft.Orleans.EventSourcing" />
     <PackageReference Include="Volo.Abp.AutoMapper" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+    <PackageReference Include="Aevatar.Core" />
   </ItemGroup>
 </Project>

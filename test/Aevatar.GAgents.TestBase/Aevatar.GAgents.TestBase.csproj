@@ -23,9 +23,9 @@
     <PackageReference Include="Volo.Abp.AutoMapper" />
     <PackageReference Include="Volo.Abp.TestBase" />
     <PackageReference Include="Volo.Abp.Authorization" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar/Aevatar.csproj" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.EventSourcing.Core/Aevatar.EventSourcing.Core.csproj" />
+    <PackageReference Include="Aevatar" />
+    <PackageReference Include="Aevatar.Core" />
+    <PackageReference Include="Aevatar.EventSourcing.Core" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />

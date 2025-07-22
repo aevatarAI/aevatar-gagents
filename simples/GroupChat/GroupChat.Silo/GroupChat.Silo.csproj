@@ -9,8 +9,8 @@
     <PackageReference Include="Microsoft.Orleans.Server" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <ProjectReference Include="../../../../aevatar-station/framework/src/Aevatar.Core.Abstractions/Aevatar.Core.Abstractions.csproj" />
-    <ProjectReference Include="../../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+    <PackageReference Include="Aevatar.Core.Abstractions" />
+    <PackageReference Include="Aevatar.Core" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">

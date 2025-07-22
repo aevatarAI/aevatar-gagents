@@ -12,8 +12,8 @@
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.Orleans.Core.Abstractions" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
-    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core.Abstractions/Aevatar.Core.Abstractions.csproj" />
+    <PackageReference Include="Aevatar.Core" />
+    <PackageReference Include="Aevatar.Core.Abstractions" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aevatar.GAgents.Router\Aevatar.GAgents.Router.csproj" />

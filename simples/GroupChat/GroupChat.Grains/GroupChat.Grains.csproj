@@ -6,9 +6,9 @@
     <RootNamespace>ClassLibrary1</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../../aevatar-station/framework/src/Aevatar.Core.Abstractions/Aevatar.Core.Abstractions.csproj" />
-    <ProjectReference Include="../../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
-    <ProjectReference Include="../../../../aevatar-station/framework/src/Aevatar.EventSourcing.Core/Aevatar.EventSourcing.Core.csproj" />
+    <PackageReference Include="Aevatar.Core.Abstractions" />
+    <PackageReference Include="Aevatar.Core" />
+    <PackageReference Include="Aevatar.EventSourcing.Core" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Aevatar.GAgents.GroupChat\Aevatar.GAgents.GroupChat.csproj" />

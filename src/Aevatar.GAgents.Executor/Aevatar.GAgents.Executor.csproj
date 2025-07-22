@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar/Aevatar.csproj" />
+        <PackageReference Include="Aevatar" />
     </ItemGroup>
 
 </Project>

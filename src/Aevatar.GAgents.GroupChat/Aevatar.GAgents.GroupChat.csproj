@@ -9,6 +9,6 @@
         <ProjectReference Include="..\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+        <PackageReference Include="Aevatar.Core" />
     </ItemGroup>
 </Project>
