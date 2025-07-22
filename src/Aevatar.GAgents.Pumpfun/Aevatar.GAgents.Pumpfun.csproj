@@ -1,22 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\..\common.props" />
-
-    <PropertyGroup>
-        <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
-        <Nullable>enable</Nullable>
-        <RootNamespace>AISmart</RootNamespace>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="AElf.Sdk.CSharp" />
-        <PackageReference Include="Aevatar.Core" />
-        <PackageReference Include="Microsoft.Orleans.EventSourcing" />
-        <PackageReference Include="Volo.Abp.AutoMapper" />
-    </ItemGroup>
-
+  <Import Project="..\..\common.props" />
+  <PropertyGroup>
+    <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AISmart</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AElf.Sdk.CSharp" />
+    <PackageReference Include="Microsoft.Orleans.EventSourcing" />
+    <PackageReference Include="Volo.Abp.AutoMapper" />
+    <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+  </ItemGroup>
 </Project>

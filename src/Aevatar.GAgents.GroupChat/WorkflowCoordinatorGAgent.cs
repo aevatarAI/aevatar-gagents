@@ -183,32 +183,6 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     ExtendedData = s.ExtendedData
                 }).ToList();
 
-                // Collect capability information for all nodes
-                var allNodeGrainIds = nodeList.Select(n => GrainId.Parse(n.GrainId)).ToList();
-                var capabilitiesMap = new Dictionary<string, WorkflowUnitCapabilities>();
-
-                foreach (var node in nodeList)
-                {
-                    try
-                    {
-                        var gAgent = gAgentFactory.GetGAgentAsync(GrainId.Parse(node.GrainId)).Result;
-                        if (gAgent is IWorkflowUnit workflowUnit)
-                        {
-                            var capabilities = workflowUnit.GetCapabilitiesAsync().Result;
-                            capabilitiesMap[node.GrainId] = capabilities;
-                            Logger.LogInformation(
-                                $"Node {node.GrainId} provides: {string.Join(", ", capabilities.ProvidedCapabilities)}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogWarning($"Failed to get capabilities for {node.GrainId}: {ex.Message}");
-                    }
-                }
-
-                // Store capability mapping for later use
-                State.NodeCapabilities = capabilitiesMap;
-
                 if (State.WorkflowStatus is WorkflowCoordinatorStatus.Pending or WorkflowCoordinatorStatus.Failed)
                 {
                     State.CurrentWorkUnitInfos = nodeList;
@@ -344,26 +318,41 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
         try
         {
             var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+            var workUnitAgent = await gAgentFactory.GetGAgentAsync(GrainId.Parse(workUnitGrainId));
 
-            if (await gAgentFactory.GetGAgentAsync(GrainId.Parse(workUnitGrainId)) is IWorkflowUnit workflowUnit)
-            {
-                // Build execution context, including all workflow nodes as available resources
-                var context = new WorkflowExecutionContext
-                {
-                    WorkflowId = State.BlackboardId, // Use BlackboardId as workflow ID
-                    AvailableResources = State.GetAllWorkerUnitGrainIds()
-                        .Select(GrainId.Parse)
-                        .ToList(),
-                    SharedData = new Dictionary<string, object>
-                    {
-                        ["NodeCapabilities"] = State.NodeCapabilities,
-                        ["InitContent"] = content ?? State.Content ?? string.Empty
-                    }
-                };
+            // Prepare resource context for all workflow units (including AI agents that may need MCP tools)
+            var resourceContext = ResourceContext.Create(
+                State.GetAllWorkerUnitGrainIds().Select(GrainId.Parse),
+                $"workflow:{State.BlackboardId}"
+            )
+            .WithMetadata("WorkflowId", State.BlackboardId)
+            .WithMetadata("InitContent", content ?? State.Content ?? string.Empty);
 
-                await workflowUnit.PrepareForExecutionAsync(context);
-                Logger.LogInformation("Prepared execution context for workflow unit {WorkUnitGrainId}", workUnitGrainId);
-            }
+            // Call PrepareResourceContextAsync for automatic resource discovery (e.g., MCP tool registration)
+            await workUnitAgent.PrepareResourceContextAsync(resourceContext);
+            Logger.LogInformation("Prepared resource context for workflow unit {WorkUnitGrainId} with {ResourceCount} resources", 
+                workUnitGrainId, resourceContext.AvailableResources.Count);
+
+            // // Also call the workflow-specific preparation if the agent implements IWorkflowUnit
+            // if (workUnitAgent is IWorkflowUnit workflowUnit)
+            // {
+            //     // Build execution context, including all workflow nodes as available resources
+            //     var workflowContext = new WorkflowExecutionContext
+            //     {
+            //         WorkflowId = State.BlackboardId, // Use BlackboardId as workflow ID
+            //         AvailableResources = State.GetAllWorkerUnitGrainIds()
+            //             .Select(GrainId.Parse)
+            //             .ToList(),
+            //         SharedData = new Dictionary<string, object>
+            //         {
+            //             ["NodeCapabilities"] = State.NodeCapabilities,
+            //             ["InitContent"] = content ?? State.Content ?? string.Empty
+            //         }
+            //     };
+            //
+            //     await workflowUnit.PrepareForExecutionAsync(workflowContext);
+            //     Logger.LogInformation("Prepared workflow execution context for workflow unit {WorkUnitGrainId}", workUnitGrainId);
+            // }
         }
         catch (Exception ex)
         {

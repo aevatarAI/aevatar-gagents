@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <Nullable>enable</Nullable>
@@ -14,19 +13,11 @@
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/aevatarAI/aevatar-gagents</PackageProjectUrl>
     </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="System.Configuration.ConfigurationManager" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
-        <PackageReference Include="Aevatar.Core" />
-        <PackageReference Include="Aevatar.Core.Abstractions" />
+    <ItemGroup>
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core.Abstractions/Aevatar.Core.Abstractions.csproj" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core\Aevatar.Core.csproj" />
-    </ItemGroup>
-
 </Project>

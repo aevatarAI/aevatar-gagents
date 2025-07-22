@@ -14,6 +14,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
+using Aevatar.GAgents.MCP.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -394,36 +395,25 @@ public abstract partial class
             {
                 Logger.LogError(ex, "An unexpected ClientResultException occurred. Details:{message}",
                     clientEx.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
-                {
-                    Context = context,
-                    SerialNumber = -2,
-                    ResponseContent =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
-                    IsLastChunk = true,
-                    ChatId = context.ChatId,
-                    SessionId = context.RequestId,
-                    Response =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
-                });
             }
             else
             {
                 Logger.LogError(ex, "Ai stream response : An unexpected Exception occurred. Details:{message}",
                     ex.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
-                {
-                    Context = context,
-                    SerialNumber = -2,
-                    ResponseContent =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
-                    IsLastChunk = true,
-                    ChatId = context.ChatId,
-                    SessionId = context.RequestId,
-                    Response =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
-                });
             }
+
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = -2,
+                ResponseContent =
+                    "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId,
+                Response =
+                    "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+            });
         }
 
         chatMessage.Content = completeContent.ToString();
@@ -768,5 +758,69 @@ public abstract partial class
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Override to handle resource context and automatically register MCP tools from available MCPGAgents
+    /// </summary>
+    protected override async Task OnPrepareResourceContextAsync(ResourceContext context)
+    {
+        await base.OnPrepareResourceContextAsync(context);
+        
+        // Check if any resources are MCPGAgent instances and register their tools
+        await RegisterMCPToolsFromResourcesAsync(context);
+    }
+
+    /// <summary>
+    /// Registers MCP tools from MCPGAgent instances found in the resource context
+    /// </summary>
+    private async Task RegisterMCPToolsFromResourcesAsync(ResourceContext context)
+    {
+        if (_brain == null || context.AvailableResources.IsNullOrEmpty())
+        {
+            Logger.LogDebug("Skipping MCP tool registration: brain not initialized or no resources available");
+            return;
+        }
+
+        var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+        var mcpAgentsFound = new List<IMCPGAgent>();
+        
+        // Identify MCPGAgent instances in the resource context
+        foreach (var grainId in context.AvailableResources)
+        {
+            try
+            {
+                var resource = await gAgentFactory.GetGAgentAsync(grainId);
+                if (resource is IMCPGAgent mcpAgent)
+                {
+                    mcpAgentsFound.Add(mcpAgent);
+                    Logger.LogInformation("Found MCPGAgent resource: {GrainId}", grainId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Failed to resolve resource {GrainId} as MCPGAgent: {Exception}", grainId, ex.Message);
+            }
+        }
+
+        if (mcpAgentsFound.Any())
+        {
+            Logger.LogInformation("Registering MCP tools from {Count} MCPGAgent resources", mcpAgentsFound.Count);
+            
+            // Configure the MCP agents (this will register tools to kernel)
+            var success = await ConfigureMCPServersAsync(mcpAgentsFound);
+            if (success)
+            {
+                Logger.LogInformation("Successfully registered MCP tools from resource context");
+            }
+            else
+            {
+                Logger.LogWarning("Failed to register some MCP tools from resource context");
+            }
+        }
+        else
+        {
+            Logger.LogDebug("No MCPGAgent resources found in context");
+        }
     }
 }

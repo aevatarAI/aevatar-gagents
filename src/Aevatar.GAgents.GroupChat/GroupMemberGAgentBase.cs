@@ -12,7 +12,7 @@ namespace GroupChat.GAgent;
 
 public abstract class
     GroupMemberGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration> :
-    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>, IWorkflowUnit
+    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TState : GroupMemberState, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
@@ -132,77 +132,4 @@ public abstract class
 
         return history;
     }
-
-    #region IWorkflowUnit Implementation
-
-    public virtual async Task EstablishRelationshipAsync(GrainId relatedUnit, string relationship)
-    {
-        // Base class only records relationships, specific behavior is determined by subclasses
-        Logger.LogInformation("Establishing {Relationship} relationship with {RelatedUnit}", relationship, relatedUnit);
-
-        // Subclasses can override this method to handle specific relationship types
-        await OnRelationshipEstablishedAsync(relatedUnit, relationship);
-    }
-
-    public virtual Task<WorkflowUnitCapabilities> GetCapabilitiesAsync()
-    {
-        // Return default basic capabilities, subclasses can extend
-        return Task.FromResult(new WorkflowUnitCapabilities
-        {
-            UnitType = GetType().Name,
-            ProvidedCapabilities = ["MessageProcessing", "StateManagement"],
-            RequiredCapabilities = [],
-            Metadata = new Dictionary<string, object>
-            {
-                ["MemberName"] = State.MemberName.IsNullOrEmpty() ? "Unknown" : State.MemberName,
-                ["MemberId"] = this.GetPrimaryKey().ToString()
-            }
-        });
-    }
-
-    public virtual async Task PrepareForExecutionAsync(WorkflowExecutionContext context)
-    {
-        // Let subclasses decide how to prepare for execution
-        Logger.LogInformation("Preparing for workflow execution: {ContextWorkflowId}", context.WorkflowId);
-
-        // Store context for later use
-        State.WorkflowContext = context;
-
-        // Subclasses can perform specific preparation work here
-        await OnPrepareForExecutionAsync(context);
-    }
-
-    /// <summary>
-    /// Called when a relationship is established, subclasses can override to handle specific relationships
-    /// </summary>
-    protected virtual Task OnRelationshipEstablishedAsync(GrainId relatedUnit, string relationship)
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Called when preparing for execution, subclasses can override to perform specific preparation
-    /// </summary>
-    protected virtual async Task OnPrepareForExecutionAsync(WorkflowExecutionContext context)
-    {
-        // If this is a workflow-aware AIGAgent, call the appropriate preparation logic
-        // ReSharper disable once PatternNeverMatches
-        if (this is WorkflowAwareAIGAgentBase<TState, TStateLogEvent, TEvent> workflowAware)
-        {
-            // Call protected method via reflection (or provide public interface in WorkflowAwareAIGAgentBase)
-            var method = typeof(WorkflowAwareAIGAgentBase<TState, TStateLogEvent, TEvent>)
-                .GetMethod("OnWorkflowContextReadyAsync",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-
-            if (method != null)
-            {
-                await (Task)method.Invoke(workflowAware, [context])!;
-            }
-        }
-
-        // Subclasses can add their own preparation logic
-        await Task.CompletedTask;
-    }
-
-    #endregion
 }

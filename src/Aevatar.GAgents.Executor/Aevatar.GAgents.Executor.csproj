@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -10,12 +10,8 @@
         <ProjectReference Include="..\Aevatar.GAgents.Basic\Aevatar.GAgents.Basic.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
-        <PackageReference Include="Aevatar" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar\Aevatar.csproj" />
+    <ItemGroup>
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar/Aevatar.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
         <Nullable>enable</Nullable>
@@ -14,13 +13,10 @@
         <RepositoryType>git</RepositoryType>
         <PackageProjectUrl>https://github.com/aevatarAI/aevatar-gagents</PackageProjectUrl>
     </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="System.ClientModel" />
         <PackageReference Include="Volo.Abp.BlobStoring.Aws" />
-
     </ItemGroup>
-    
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.AIGAgent.Core\Aevatar.GAgents.AIGAgent.Core.csproj" />
@@ -28,17 +24,9 @@
         <ProjectReference Include="..\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
         <ProjectReference Include="..\Aevatar.GAgents.MCP.Core\Aevatar.GAgents.MCP.Core.csproj" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(UseLocalProjects)' != 'true'">
-        <PackageReference Include="Aevatar.Core" />
-        <PackageReference Include="Aevatar.Core.Abstractions" />
-        <PackageReference Include="Aevatar.EventSourcing.Core" />
+    <ItemGroup>
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core/Aevatar.Core.csproj" />
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.Core.Abstractions/Aevatar.Core.Abstractions.csproj" />
+        <ProjectReference Include="../../../aevatar-station/framework/src/Aevatar.EventSourcing.Core/Aevatar.EventSourcing.Core.csproj" />
     </ItemGroup>
-
-    <ItemGroup Condition="'$(UseLocalProjects)' == 'true'">
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core.Abstractions\Aevatar.Core.Abstractions.csproj" />
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.Core\Aevatar.Core.csproj" />
-        <ProjectReference Include="..\..\..\aevatar-station\framework\src\Aevatar.EventSourcing.Core\Aevatar.EventSourcing.Core.csproj" />
-    </ItemGroup>
-
 </Project>

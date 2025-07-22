@@ -19,23 +19,6 @@ public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, E
         return Task.FromResult("MCP GAgent for interacting with Model Context Protocol servers");
     }
 
-    public Task<WorkflowUnitCapabilities> GetCapabilitiesAsync()
-    {
-        var capabilities = new WorkflowUnitCapabilities
-        {
-            UnitType = "MCPToolProvider",
-            ProvidedCapabilities = new List<string> { "MCPTools" },
-            RequiredCapabilities = new List<string>(),
-            Metadata = new Dictionary<string, object>
-            {
-                ["ServerCount"] = State.ServerConfigs?.Count ?? 0,
-                ["ServerName"] = State.ServerConfigs?.FirstOrDefault()?.ServerName ?? "Unknown"
-            }
-        };
-        
-        return Task.FromResult(capabilities);
-    }
-
     protected override Task<int> GetInterestValueAsync(Guid blackboardId)
     {
         return Task.FromResult(1);
