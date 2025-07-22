@@ -160,6 +160,60 @@
 
 **验证**: 编译成功 (0 错误, 573 警告)
 
+## 🔧 架构重构记录
+
+### 关键重构：Agent扫描逻辑职责分离 
+
+**重构背景**: 用户指出 `ScanAgentsInAssembly` 等扫描实现不应该放在 GAgent 项目中，违反了单一职责原则。
+
+**问题分析**:
+```
+❌ 错误架构 - 职责混乱:
+Aevatar.GAgents.AI.Abstractions (抽象层)
+├── AgentDescriptionAttribute ✅ (应该在这里)
+├── AgentIndexInfo ✅ (应该在这里)
+├── SimpleAgentScanner ❌ (具体实现，不应该在抽象层)
+├── AgentInfoExtractor ❌ (具体实现，不应该在抽象层)
+└── AgentDescriptionGenerator ❌ (工具实现，不应该在抽象层)
+```
+
+**重构实施**:
+1. **删除的实现类**:
+   - `SimpleAgentScanner.cs` - Agent扫描器实现
+   - `AgentInfoExtractor.cs` - Agent信息提取器
+   - `AgentDescriptionGenerator.cs` - Agent描述生成器  
+   - `MockAgentInfoProvider.cs` - Mock实现
+   - `AgentScannerTests.cs` - 相关测试
+
+2. **保留的核心抽象**:
+   - `AgentDescriptionAttribute.cs` - Agent描述属性定义
+   - `AgentIndexInfo.cs` - Agent索引信息模型
+   - `IAgentInfoProvider.cs` - Agent信息提供者接口
+   - `DefaultValuesAttribute.cs` - 默认值属性定义
+   - 其他通用抽象类型
+
+**重构原则**:
+```
+✅ 正确架构 - 职责清晰:
+Aevatar.GAgents.AI.Abstractions (抽象层)
+├── 只包含接口定义和数据结构
+└── 不包含具体实现逻辑
+
+HTTP服务项目 (应用层)
+├── AgentScanner.cs (具体扫描实现)
+├── AgentInfoExtractor.cs (具体提取实现) 
+└── 负责自己的Agent发现和管理逻辑
+```
+
+**重构结果**:
+- ✅ **职责分离**: 抽象层只负责定义，应用层负责实现
+- ✅ **架构清晰**: 遵循"谁使用谁负责"原则
+- ✅ **可维护性**: 降低层间耦合，提高代码质量
+- ✅ **编译成功**: 验证重构正确性 (0 错误, 798 警告)
+
+**后续建议**:
+HTTP服务项目应该实现自己的Agent扫描逻辑，参考删除的 `SimpleAgentScanner` 实现。
+
 ---
 
 ## 💡 建议
