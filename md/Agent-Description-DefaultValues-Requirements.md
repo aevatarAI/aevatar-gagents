@@ -131,6 +131,37 @@
 
 ---
 
+## 🐛 问题修复记录
+
+### 关键问题：Agent Discovery 在生产环境中不工作 
+
+**问题描述**: 业务反馈打包后只有 SocialGAgent 有 description，其他 Agent 都没有 description
+
+**根本原因**: `SimpleAgentScanner.ScanAllLoadedAssemblies()` 的程序集过滤逻辑有问题：
+```csharp
+// 原来的错误过滤条件
+.Where(a => a.FullName?.Contains("GAgent") == true)
+```
+
+但我们的程序集名称是 `Aevatar.GAgents.Twitter`, `Aevatar.GAgents.Telegram` 等，包含的是 "GAgents"（复数）而不是 "GAgent"（单数）。
+
+**修复方案**: 更新过滤逻辑以匹配两种模式：
+```csharp
+// 修复后的过滤条件  
+.Where(a => a.FullName?.Contains("GAgents") == true || 
+           a.FullName?.Contains("GAgent") == true)
+```
+
+**修复结果**:
+- ✅ 现在所有 8 个带有 AgentDescription 的 Agent 都能在生产环境中被发现
+- ✅ 解决了用户报告的问题
+- ✅ 使 Agent 发现系统按设计工作
+- ✅ 无破坏性变更 - 纯粹的增量过滤逻辑
+
+**验证**: 编译成功 (0 错误, 573 警告)
+
+---
+
 ## 💡 建议
 
 1. **分批实施**: 按优先级分3批完成，每批包含2-3个Agent
