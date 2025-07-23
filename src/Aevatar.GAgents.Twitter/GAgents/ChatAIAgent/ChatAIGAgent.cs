@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Providers;
@@ -7,8 +9,6 @@ using Aevatar.Core.Abstractions;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Linq;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AI.Common;
 using AIChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
@@ -16,17 +16,6 @@ using WorkflowChatMessage = GroupChat.GAgent.Feature.Common.ChatMessage;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 
-[AgentDescription(
-    Name = "Twitter Chat AI Agent",
-    L1Description = "AI-powered chat agent specifically designed for Twitter social interactions and conversations",
-    L2Description = "Specialized conversational AI agent optimized for Twitter's social context, handling mentions, DMs, and public conversations with personality adaptation and engagement optimization.",
-    Category = "Social",
-    Capabilities = new[] { "twitter-conversation", "mention-handling", "dm-management", "engagement-optimization" },
-    Tags = new[] { "twitter", "chat", "ai", "conversation" },
-    InputFormat = "text",
-    OutputFormat = "text",
-    UsageExample = "await GetLastResponseAsync()"
-)]
 [Description("AI chat agent with workflow support")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
@@ -44,8 +33,17 @@ public class ChatAIGAgent :
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(
-            "Represents an AI chat agent capable of participating in workflows and handling conversations.");
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "ChatAIGAgent",
+            Name = "Twitter Chat AI Agent",
+            L1Description = "AI-powered chat agent specifically designed for Twitter social interactions and conversations",
+            L2Description = "Specialized conversational AI agent optimized for Twitter's social context, handling mentions, DMs, and public conversations with personality adaptation and engagement optimization.",
+            Category = "Social",
+            Capabilities = new List<string> { "twitter-conversation", "mention-handling", "dm-management", "engagement-optimization" },
+            Tags = new List<string> { "twitter", "chat", "ai", "conversation" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
 
     // Implementation of GroupMemberGAgentBase abstract methods

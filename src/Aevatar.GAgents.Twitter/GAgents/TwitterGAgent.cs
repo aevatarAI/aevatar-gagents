@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -15,18 +16,7 @@ using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.Twitter.Agent;
 
-[AgentDescription(
-    Name = "Twitter Integration Agent",
-    L1Description = "AI agent for Twitter platform integration with tweet posting, monitoring, and interaction capabilities",
-    L2Description = "Comprehensive Twitter automation agent that handles tweet creation, timeline monitoring, user interactions, and social media analytics. Supports automated responses, content scheduling, and real-time social engagement.",
-    Category = "Social",
-    Capabilities = new[] { "tweet-posting", "timeline-monitoring", "social-interaction", "automated-responses" },
-    Tags = new[] { "twitter", "social-media", "automation", "engagement" },
-    InputFormat = "text",
-    OutputFormat = "text",
-    UsageExample = "await HandleEventAsync(new CreateTweetGEvent { Text = 'Hello Twitter world!' })"
-)]
-[Description("Handle telegram")]
+[Description("Handle twitter")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TwitterGAgent))]
@@ -42,8 +32,17 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(
-            "Represents an agent responsible for informing other agents when a twitter thread is published.");
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "TwitterGAgent",
+            Name = "Twitter Integration Agent",
+            L1Description = "AI agent for Twitter platform integration with tweet posting, monitoring, and interaction capabilities",
+            L2Description = "Comprehensive Twitter automation agent that handles tweet creation, timeline monitoring, user interactions, and social media analytics. Supports automated responses, content scheduling, and real-time social engagement.",
+            Category = "Social",
+            Capabilities = new List<string> { "tweet-posting", "timeline-monitoring", "social-interaction", "automated-responses" },
+            Tags = new List<string> { "twitter", "social-media", "automation", "engagement" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
 
     [EventHandler]
