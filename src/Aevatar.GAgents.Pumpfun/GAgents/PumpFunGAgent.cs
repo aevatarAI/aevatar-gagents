@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -15,17 +16,6 @@ using Aevatar.GAgents.AI.Common;
 
 namespace Aevatar.GAgents.PumpFun.Agent;
 
-[AgentDescription(
-    Name = "PumpFun Platform Agent",
-    L1Description = "Specialized agent for PumpFun platform integration and automated trading operations",
-    L2Description = "Advanced trading automation agent for PumpFun platform that handles token monitoring, automated trading strategies, market analysis, and portfolio management with real-time price tracking.",
-    Category = "Trading",
-    Capabilities = new[] { "token-monitoring", "automated-trading", "market-analysis", "portfolio-management" },
-    Tags = new[] { "pumpfun", "trading", "automation", "defi" },
-    InputFormat = "json",
-    OutputFormat = "json",
-    UsageExample = "await HandleEventAsync(new PumpFunSendMessageEvent { ReplyId = 'msg123', ReplyMessage = 'Trade executed' })"
-)]
 [Description("Handle PumpFun")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
@@ -43,6 +33,20 @@ public class PumpFunGAgent : GAgentBase<PumpFunGAgentState, PumpfunSEventBase>, 
     {
         return Task.FromResult(
             "Represents an agent responsible for informing other agents when a PumpFun thread is published.");
+    }
+
+    public Task<AgentDescriptionInfo> GetDescriptionInfoAsync()
+    {
+        return Task.FromResult(new AgentDescriptionInfo
+        {
+            Id = "PumpFunGAgent",
+            Name = "PumpFun Platform Agent",
+            L1Description = "Specialized agent for PumpFun platform integration and automated trading operations",
+            L2Description = "Advanced trading automation agent for PumpFun platform that handles token monitoring, automated trading strategies, market analysis, and portfolio management with real-time price tracking.",
+            Category = "Trading",
+            Capabilities = new List<string> { "token-monitoring", "automated-trading", "market-analysis", "portfolio-management" },
+            Tags = new List<string> { "pumpfun", "trading", "automation", "defi" }
+        });
     }
 
     [EventHandler]
