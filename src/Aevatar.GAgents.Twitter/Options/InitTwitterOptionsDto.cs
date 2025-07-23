@@ -9,22 +9,17 @@ namespace Aevatar.GAgents.Twitter.Options;
 public class InitTwitterOptionsDto : ConfigurationBase
 {
     [Id(0)]
-    [DefaultValues("YOUR_TWITTER_API_KEY")]
-    public string ConsumerKey { get; set; }
+    public string ConsumerKey { get; set; } = "YOUR_TWITTER_API_KEY";
     
     [Id(1)]
-    [DefaultValues("YOUR_API_SECRET")]
-    public string ConsumerSecret { get; set; }
+    public string ConsumerSecret { get; set; } = "YOUR_API_SECRET";
     
     [Id(2)]
-    [DefaultValues("YOUR_ENCRYPTION_PASSWORD")]
-    public string EncryptionPassword { get; set; }
+    public string EncryptionPassword { get; set; } = "YOUR_ENCRYPTION_PASSWORD";
     
     [Id(3)]
-    [DefaultValues("YOUR_BEARER_TOKEN")]
-    public string BearerToken { get; set; }
+    public string BearerToken { get; set; } = "YOUR_BEARER_TOKEN";
     
     [Id(4)]
-    [DefaultValues(10, 5, 20, 50)]
-    public int ReplyLimit { get; set; }
+    public int ReplyLimit { get; set; } = 10;
 }

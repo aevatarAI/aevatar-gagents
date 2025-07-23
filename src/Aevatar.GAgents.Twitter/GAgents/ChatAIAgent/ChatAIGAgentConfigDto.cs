@@ -8,14 +8,8 @@ namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 public class ChatAIGAgentConfigDto : GroupMemberConfigDto
 {
     [Id(0)] 
-    [DefaultValues(
-        "You are a helpful AI assistant"
-    )]
-    public string Instructions { get; set; } = string.Empty;
+    public string Instructions { get; set; } = "You are a helpful AI assistant";
 
     [Id(1)] 
-    [DefaultValues(
-        "gpt-4"
-    )]
-    public string SystemLLM { get; set; }
+    public string SystemLLM { get; set; } = "gpt-4";
 }
