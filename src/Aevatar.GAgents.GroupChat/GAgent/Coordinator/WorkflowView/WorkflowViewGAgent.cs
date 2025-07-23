@@ -163,6 +163,13 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
             WorkflowNodeUnitList = configuration.WorkflowNodeUnitList,
             Name = configuration.Name
         });
+        if (configuration.WorkflowCoordinatorGAgentId != Guid.Empty)
+        {
+            RaiseEvent(new UpdateWorkflowAgentIdLogEvent()
+            {
+                AgentId = configuration.WorkflowCoordinatorGAgentId
+            });
+        }
     }
 
     protected override void GAgentTransitionState(WorkflowViewState state,
@@ -187,11 +194,13 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                         updateNode.Name = node.Name;
                         updateNode.Properties = node.Properties;
                         updateNode.ExtendedData = node.ExtendedData;
+                        updateNode.AgentId = node.AgentId;
                     }
                 }
                 state.WorkflowNodeList.AddRange(updateWorkflowViewLogEvent.AddNodeList);
                 state.WorkflowNodeUnitList = updateWorkflowViewLogEvent.WorkflowNodeUnitList;
                 state.Name = updateWorkflowViewLogEvent.Name;
+                state.AgentId = this.GetPrimaryKey();
                 break;
             case UpdateNodeAgentIdLogEvent nodeAgentIdLogEvent:
                 var updateAgentIdNode = state.WorkflowNodeList.FirstOrDefault(t => t.NodeId == nodeAgentIdLogEvent.NodeId);
