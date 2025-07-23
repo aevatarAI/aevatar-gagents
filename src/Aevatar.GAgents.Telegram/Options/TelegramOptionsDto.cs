@@ -8,18 +8,14 @@ namespace Aevatar.GAgents.Telegram.Options;
 public class TelegramOptionsDto : ConfigurationBase
 {
     [Id(0)]
-    [DefaultValues("https://your-domain.com/webhook")]
-    public string Webhook { get; set; }
+    public string Webhook { get; set; } = "https://your-domain.com/webhook";
     
     [Id(1)]
-    [DefaultValues("YOUR_ENCRYPTION_PASSWORD")]
-    public string EncryptionPassword { get; set; }
+    public string EncryptionPassword { get; set; } = "YOUR_ENCRYPTION_PASSWORD";
     
     [Id(2)]
-    [DefaultValues("YOUR_BOT_TOKEN")]
-    public string BotToken { get; set; }
+    public string BotToken { get; set; } = "YOUR_BOT_TOKEN";
     
     [Id(3)]
-    [DefaultValues(100, 50, 200)]
     public int MaxConnections { get; set; } = 100;
 }
