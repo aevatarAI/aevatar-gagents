@@ -207,9 +207,9 @@ public abstract class BrainBase : IBrain
 
             await Task.WhenAll(downloadTasks);
             
-            foreach (var image in images)
+            foreach (var key in imageKeys)
             {
-                messageContentCollection.Add(new ImageContent(new ReadOnlyMemory<byte>(image.Value), ImageHelper.GetMineType(image.Key)));
+                messageContentCollection.Add(new ImageContent(new ReadOnlyMemory<byte>(images[key]), ImageHelper.GetMineType(key)));
             }
             chatHistory.AddUserMessage(messageContentCollection);
         }
