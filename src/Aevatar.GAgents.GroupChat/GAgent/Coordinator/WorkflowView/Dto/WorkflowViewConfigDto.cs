@@ -8,6 +8,8 @@ public class WorkflowViewConfigDto : ConfigurationBase
     [Id(0)] public List<WorkflowNodeDto> WorkflowNodeList { get; set; } = new();
     [Id(1)] public List<WorkflowNodeUnitDto> WorkflowNodeUnitList { get; set; } = new();
     [Id(2)] public string Name { get; set; }
+    [Id(3)] public Guid WorkflowCoordinatorGAgentId { get; set; }
+
 }
 
 [GenerateSerializer]
