@@ -45,7 +45,17 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
 
     public async Task<string?> ChatAsync(string message, List<string>? images = null, AIChatContextDto aiChatContextDto = null)
     {
+        // Add user message to history
+        State.ChatHistory.Add(new ChatMessage { ChatRole = ChatRole.User, Content = message, ImageKeys = images });
+        
         var result = await ChatWithHistory(message, imageKeys: images, context: aiChatContextDto);
+        
+        // Add assistant response to history
+        if (result is { Count: > 0 })
+        {
+            State.ChatHistory.Add(new ChatMessage { ChatRole = ChatRole.Assistant, Content = result[0].Content });
+        }
+        
         return result?[0].Content;
     }
 
