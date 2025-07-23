@@ -132,9 +132,9 @@ public class ChatAIGAgent :
         switch (@event)
         {
             case ChatResponseEvent chatResponseEvent:
-                State.LastResponse = chatResponseEvent.Response;
-                State.LastActivityTime = chatResponseEvent.Timestamp;
-                State.TotalInteractions++;
+                state.LastResponse = chatResponseEvent.Response;
+                state.LastActivityTime = chatResponseEvent.Timestamp;
+                state.TotalInteractions++;
                 break;
         }
     }

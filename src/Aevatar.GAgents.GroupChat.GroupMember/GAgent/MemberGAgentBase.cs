@@ -95,7 +95,7 @@ public abstract partial class
         switch (@event)
         {
             case SetMemberNameLogEvent @setMemberNameLogEvent:
-                State.MemberName = @setMemberNameLogEvent.MemberName;
+                state.MemberName = @setMemberNameLogEvent.MemberName;
                 return;
         }
 

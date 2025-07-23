@@ -308,6 +308,22 @@ public abstract partial class
         return invokeResponse.ChatReponseList;
     }
 
+    private CancellationTokenSource _cancellationTokenSource;
+
+    protected async Task<bool> CancelStreamingRequestAsync()
+    {
+        try
+        {
+            _cancellationTokenSource.Cancel();
+            return await Task.FromResult(true);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "CancelStreamingRequest fail: {message}", e.Message);
+            return await Task.FromResult(false);
+        }
+    }
+
     private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null,
         List<ChatMessage>? history = null, bool ifUseKnowledge = false,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
@@ -315,13 +331,13 @@ public abstract partial class
     {
         var streamingConfig = State.StreamingConfig;
         var result = new InvokePromptResponse();
+        using var cts = new CancellationTokenSource();
         if (streamingConfig?.TimeOutInternal > 0)
         {
-            using var cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
-            cancellationToken = cts.Token;
         }
-
+        _cancellationTokenSource = cts;
+        cancellationToken = cts.Token;
 
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
@@ -342,6 +358,7 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
@@ -414,6 +431,10 @@ public abstract partial class
                 Response =
                     "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
             });
+        }
+        finally
+        {
+            _cancellationTokenSource.Dispose();
         }
 
         chatMessage.Content = completeContent.ToString();
@@ -490,38 +511,38 @@ public abstract partial class
 
     protected sealed override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
-        State.LastInputTokenUsage = 0;
-        State.LastOutTokenUsage = 0;
-        State.LastTotalTokenUsage = 0;
+        state.LastInputTokenUsage = 0;
+        state.LastOutTokenUsage = 0;
+        state.LastTotalTokenUsage = 0;
 
         switch (@event)
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
-                State.LLM = setLlmStateLogEvent.LLM;
-                State.SystemLLM = setLlmStateLogEvent.SystemLLM;
+                state.LLM = setLlmStateLogEvent.LLM;
+                state.SystemLLM = setLlmStateLogEvent.SystemLLM;
                 break;
             case SetLLMConfigKeyStateLogEvent setLlmConfigKeyStateLogEvent:
-                State.LLMConfigKey = setLlmConfigKeyStateLogEvent.LLMConfigKey;
-                State.SystemLLM = setLlmConfigKeyStateLogEvent.SystemLLM;
-                State.LLM = null; // Clear resolved config for centralized approach
+                state.LLMConfigKey = setLlmConfigKeyStateLogEvent.LLMConfigKey;
+                state.SystemLLM = setLlmConfigKeyStateLogEvent.SystemLLM;
+                state.LLM = null; // Clear resolved config for centralized approach
                 break;
             case SetPromptTemplateStateLogEvent setPromptTemplateStateLogEvent:
-                State.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
+                state.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
                 break;
             case SetUpsertKnowledgeFlag setUpsertKnowledgeFlag:
-                State.IfUpsertKnowledge = true;
+                state.IfUpsertKnowledge = true;
                 break;
             case TokenUsageStateLogEvent tokenUsageStateLogEvent:
-                State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
-                State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
-                State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
-                State.LastInputTokenUsage = tokenUsageStateLogEvent.InputToken;
-                State.LastOutTokenUsage = tokenUsageStateLogEvent.OutputToken;
-                State.LastTotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
+                state.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
+                state.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
+                state.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                state.LastInputTokenUsage = tokenUsageStateLogEvent.InputToken;
+                state.LastOutTokenUsage = tokenUsageStateLogEvent.OutputToken;
+                state.LastTotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
                 break;
             case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
-                State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
-                State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
+                state.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
+                state.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
                 break;
             case SetEnableGAgentToolsStateLogEvent setEnableGAgentToolsEvent:
                 State.EnableGAgentTools = setEnableGAgentToolsEvent.EnableGAgentTools;

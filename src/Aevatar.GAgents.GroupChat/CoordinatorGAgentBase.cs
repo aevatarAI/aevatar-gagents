@@ -305,21 +305,21 @@ public abstract class CoordinatorGAgentBase<TState, TStateLogEvent> :
         switch (eventObj)
         {
             case AddChatTermLogEvent @event:
-                State.ChatTerm += 1;
-                State.IfTriggerCoordinate = false;
-                State.IfComplete = @event.IfComplete;
+                state.ChatTerm += 1;
+                state.IfTriggerCoordinate = false;
+                state.IfComplete = @event.IfComplete;
                 break;
             case TriggerCoordinator @event:
-                State.IfTriggerCoordinate = true;
-                State.CoordinatorSpeaker = @event.MemberId;
-                State.CoordinatorTime = @event.CreateTime;
+                state.IfTriggerCoordinate = true;
+                state.CoordinatorSpeaker = @event.MemberId;
+                state.CoordinatorTime = @event.CreateTime;
                 break;
             case SetBlackboardLogEvent @event:
-                State.BlackboardId = @event.BlackboardId;
-                State.IfTriggerCoordinate = false;
-                State.IfComplete = false;
-                State.CoordinatorSpeaker = Guid.Empty;
-                State.ChatTerm = 0;
+                state.BlackboardId = @event.BlackboardId;
+                state.IfTriggerCoordinate = false;
+                state.IfComplete = false;
+                state.CoordinatorSpeaker = Guid.Empty;
+                state.ChatTerm = 0;
                 break;
         }
 

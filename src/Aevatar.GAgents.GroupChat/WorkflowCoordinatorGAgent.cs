@@ -171,7 +171,6 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
     protected override void GAgentTransitionState(WorkflowCoordinatorState state,
         StateLogEventBase<WorkflowCoordinatorLogEvent> @event)
     {
-        var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
         switch (@event)
         {
             case SetWorkflowCoordinatorLogEvent setWorkflowCoordinatorLogEvent:
@@ -183,42 +182,42 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
                     ExtendedData = s.ExtendedData
                 }).ToList();
 
-                if (State.WorkflowStatus is WorkflowCoordinatorStatus.Pending or WorkflowCoordinatorStatus.Failed)
+                if (state.WorkflowStatus is WorkflowCoordinatorStatus.Pending or WorkflowCoordinatorStatus.Failed)
                 {
-                    State.CurrentWorkUnitInfos = nodeList;
-                    State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+                    state.CurrentWorkUnitInfos = nodeList;
+                    state.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
                 }
                 else
                 {
-                    State.BackupWorkUnitInfos = nodeList;
+                    state.BackupWorkUnitInfos = nodeList;
                 }
 
-                State.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
-                State.Content = setWorkflowCoordinatorLogEvent.InitContent;
+                state.BlackboardId = setWorkflowCoordinatorLogEvent.BlackBoardId;
+                state.Content = setWorkflowCoordinatorLogEvent.InitContent;
                 break;
 
             case FinishedWorkUnitLogEvent finishedWorkUnitLogEvent:
                 var workUnitInfoList =
-                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
+                    state.CurrentWorkUnitInfos.FindAll(f => f.GrainId == finishedWorkUnitLogEvent.WorkUnitGrainId);
                 foreach (var workUnit in workUnitInfoList)
                 {
                     workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Finished;
                 }
 
-                State.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
+                state.TermToWorkUnitGrainId.Remove(finishedWorkUnitLogEvent.Term);
                 break;
 
             case WorkflowFinishLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
-                State.TermToWorkUnitGrainId = new Dictionary<long, string>();
-                if (State.BackupWorkUnitInfos.Count > 0)
+                state.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+                state.TermToWorkUnitGrainId = new Dictionary<long, string>();
+                if (state.BackupWorkUnitInfos.Count > 0)
                 {
-                    State.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s => s).ToList();
-                    State.BackupWorkUnitInfos.Clear();
+                    state.CurrentWorkUnitInfos = State.BackupWorkUnitInfos.Select(s => s).ToList();
+                    state.BackupWorkUnitInfos.Clear();
                 }
                 else
                 {
-                    foreach (var workUnit in State.CurrentWorkUnitInfos)
+                    foreach (var workUnit in state.CurrentWorkUnitInfos)
                     {
                         workUnit.UnitStatusEnum = WorkerUnitStatusEnum.Pending;
                     }
@@ -228,25 +227,25 @@ public class WorkflowCoordinatorGAgent : GAgentBase<WorkflowCoordinatorState, Wo
 
             case StartWorkUnitLogEvent workUnitLogEvent:
                 var startWorkUnitInfoList =
-                    State.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
+                    state.CurrentWorkUnitInfos.FindAll(f => f.GrainId == workUnitLogEvent.WorkUnitGrainId);
                 foreach (var startWorkUnitInfo in startWorkUnitInfoList)
                 {
                     startWorkUnitInfo.UnitStatusEnum = WorkerUnitStatusEnum.InProgress;
                 }
 
-                State.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
-                State.Term += 1;
+                state.TermToWorkUnitGrainId.Add(workUnitLogEvent.Term, workUnitLogEvent.WorkUnitGrainId);
+                state.Term += 1;
                 break;
 
             case WorkflowStartLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
-                State.LastRunningTime = DateTime.UtcNow;
+                state.WorkflowStatus = WorkflowCoordinatorStatus.InProgress;
+                state.LastRunningTime = DateTime.UtcNow;
                 break;
 
             case ResetWorkflowLogEvent:
-                State.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
-                State.CurrentWorkUnitInfos.Clear();
-                State.BackupWorkUnitInfos.Clear();
+                state.WorkflowStatus = WorkflowCoordinatorStatus.Pending;
+                state.CurrentWorkUnitInfos.Clear();
+                state.BackupWorkUnitInfos.Clear();
                 break;
 
             case WorkflowStartFailedLogEvent:

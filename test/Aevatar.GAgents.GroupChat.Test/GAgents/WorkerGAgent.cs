@@ -51,10 +51,10 @@ public class WorkerGAgentGAgent : GroupMemberGAgentBase<WorkerState, WorkerEvent
         switch (@event)
         {
             case WorkHandleMessageLogEvent workHandleMessageLogEvent:
-                State.PreWorkUnits = workHandleMessageLogEvent.PreWorkUnits;
+                state.PreWorkUnits = workHandleMessageLogEvent.PreWorkUnits;
                 return;
             case WorkerDelayLogEvent workerDelayLogEvent:
-                State.DelaySeconds = workerDelayLogEvent.DelaySeconds;
+                state.DelaySeconds = workerDelayLogEvent.DelaySeconds;
                 return;
         }
     }
