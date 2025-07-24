@@ -60,7 +60,7 @@ public abstract partial class
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        var llmConfig = GetLLMConfig(initializeDto.LLMConfig);
+        var llmConfig = await GetLLMConfigAsync(initializeDto.LLMConfig);
         if (llmConfig == null)
         {
             return false;
@@ -475,7 +475,7 @@ public abstract partial class
         if (State.LLM != null || State.SystemLLM != null || State.LLMConfigKey != null)
         {
             // Use the centralized configuration resolution
-            var config = GetCurrentLLMConfig();
+            var config = await GetCurrentLLMConfigAsync();
             if (config == null)
             {
                 Logger.LogWarning("Unable to resolve LLM configuration during grain activation for {GrainId}",
@@ -600,7 +600,7 @@ public abstract partial class
     /// </summary>
     public Task<LLMConfig?> GetLLMConfigAsync()
     {
-        return Task.FromResult(GetCurrentLLMConfig());
+        return GetCurrentLLMConfigAsync();
     }
 
     /// <summary>
@@ -708,36 +708,36 @@ public abstract partial class
         return null;
     }
 
-    private LLMConfig? GetCurrentLLMConfig()
+    private async Task<LLMConfig?> GetCurrentLLMConfigAsync()
     {
         // Priority 1: LLMConfigKey (new format)
         if (!State.LLMConfigKey.IsNullOrEmpty())
         {
-            return ResolveSystemConfig(State.LLMConfigKey);
+            return await ResolveSystemConfigAsync(State.LLMConfigKey);
         }
 
         // Priority 2: SystemLLM (existing format)
         if (!State.SystemLLM.IsNullOrEmpty())
         {
-            return ResolveSystemConfig(State.SystemLLM);
+            return await ResolveSystemConfigAsync(State.SystemLLM);
         }
 
         // Priority 3: Fallback to old resolved config (backwards compatibility)
         return State.LLM;
     }
 
-    private LLMConfig? ResolveSystemConfig(string key)
+    protected virtual Task<LLMConfig?> ResolveSystemConfigAsync(string key)
     {
         var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
         if (systemConfigs.Value.SystemLLMConfigs?.TryGetValue(key, out var config) == true)
         {
-            return config;
+            return Task.FromResult(config)!;
         }
 
         return null;
     }
 
-    private LLMConfig? GetLLMConfig(LLMConfigDto llmConfigDto)
+    protected virtual Task<LLMConfig?> GetLLMConfigAsync(LLMConfigDto llmConfigDto)
     {
         if (llmConfigDto.SystemLLM.IsNullOrWhiteSpace() &&
             llmConfigDto.SelfLLMConfig == null)
@@ -758,10 +758,10 @@ public abstract partial class
                 return null;
             }
 
-            return config;
+            return Task.FromResult(config)!;
         }
 
-        return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+        return Task.FromResult(llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig())!;
     }
 
     private T ConvertBrain<T>() where T : class, IBrain
