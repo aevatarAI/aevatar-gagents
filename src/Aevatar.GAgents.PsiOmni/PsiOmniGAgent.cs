@@ -82,6 +82,40 @@ public partial class
                                                  "Final": "The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%."
                                                }
 
+                                               """ + 
+                                               """
+                                               ## Task Management
+                                               You have access to the todo_write and todo_read tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
+                                               These tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
+                                               
+                                               It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
+                                               
+                                               Examples:
+                                               
+                                               <example>
+                                               user: Run the build and fix any type errors
+                                               assistant: I'm going to use the todo_write tool to write the following items to the todo list:
+                                               - Run the build
+                                               - Fix any type errors
+                                               
+                                               I'm now going to run the build.
+                                               
+                                               Looks like I found 10 type errors. I'm going to use the todo_write tool to write 10 items to the todo list.
+                                               ..
+                                               ..
+                                               </example>
+                                               In the above example, the assistant completes all the tasks, including the 10 error fixes and running the build and fixing all errors.
+                                               
+                                               <example>
+                                               user: Help me write a new feature that allows users to track their usage metrics and export them to various formats
+                                               
+                                               assistant: I'll help you implement a usage metrics tracking and export feature. Let me first use the todo_write tool to plan this task.
+                                               Adding the following todos to the todo list:
+                                               1. Research existing metrics tracking in the codebase
+                                               2. Design the metrics collection system
+                                               3. Implement core metrics tracking functionality
+                                               4. Create export functionality for different formats
+                                               </example>
                                                """,
             [RealizationStatus.Specialized] = "" // TODO:
         };

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Aevatar.GAgents.PsiOmni;
@@ -114,4 +116,40 @@ public class OrchestratorMessage
 
     [Id(1), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string? Final { get; set; }
+}
+
+[GenerateSerializer]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum TodoStatus
+{
+    Undefined,
+    Pending,
+    InProgress,
+    Completed
+}
+
+[GenerateSerializer]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum TodoPriority
+{
+    Undefined,
+    High,
+    Medium,
+    Low,
+}
+
+[GenerateSerializer]
+public class TodoItem
+{
+    [Id(0), Required, Description("The id of the todo item. It's required.")]
+    public string Id { get; set; } = string.Empty;
+
+    [Id(1), Required, Description("The status of the todo item. It's required.")]
+    public TodoStatus Status { get; set; } = TodoStatus.Undefined;
+
+    [Id(2), Required, Description("The description of the todo task. It's required.")]
+    public string Content { get; set; } = string.Empty;
+
+    [Id(3), Required, Description("The priority of the todo item. It's required.")]
+    public TodoPriority Priority { get; set; } = TodoPriority.Undefined;
 }
