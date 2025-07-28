@@ -7,6 +7,7 @@ using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.GEvent;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.LogEvent;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Volo.Abp;
 
@@ -130,6 +131,23 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
             {
                 throw new ArgumentException("The workflow view node has invalid value.");
             }
+
+            if (node.AgentId != Guid.Empty)
+            {
+                var grainId = GrainId.Create(node.AgentType, node.AgentId.ToString("N"));
+                var agent = GrainFactory.GetGrain<IGAgent>(grainId);
+                var agentParent = await agent.GetParentAsync();
+                if (agentParent != default && agentParent != this.GetGrainId())
+                {
+                    Logger.LogError($"[WorkflowViewGAgent] GAgent {grainId} already has a parent GAgent.");
+                    throw new ArgumentException($"GAgent {grainId} already has a parent GAgent.");
+                }
+            }
+        }
+
+        if (State.WorkflowCoordinatorGAgentId != Guid.Empty && State.WorkflowCoordinatorGAgentId != configuration.WorkflowCoordinatorGAgentId)
+        {
+            throw new ArgumentException($"WorkflowCoordinatorGAgentId not support change");
         }
 
         var nodeIdList = configuration.WorkflowNodeList.Select(t => t.NodeId).ToList();
@@ -149,6 +167,10 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
             {
                 addNodeList.Add(node);
                 continue;
+            }
+            if (stateNode.AgentId != Guid.Empty && node.AgentId != stateNode.AgentId)
+            {
+                throw new ArgumentException("The workflow node agentId not support change.");
             }
             updateNodeList.Add(node);
         }
