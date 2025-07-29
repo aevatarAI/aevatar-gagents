@@ -21,15 +21,6 @@ public partial class PsiOmniGAgent
         });
     }
 
-    private async Task PublishAsync<T>(GrainId grainId, T @event) where T : EventBase
-    {
-        var grainIdString = grainId.ToString();
-        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
-        var stream = StreamProvider.GetStream<EventWrapperBase>(streamId);
-        var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
-        await stream.OnNextAsync(eventWrapper);
-    }
-
     private static PsiOmniChatMessage ConvertOpenAiChatMessage(OpenAIChatMessageContent content)
     {
         var json = JsonSerializer.Serialize(content);

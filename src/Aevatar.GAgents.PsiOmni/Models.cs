@@ -152,4 +152,7 @@ public class TodoItem
 
     [Id(3), Required, Description("The priority of the todo item. It's required.")]
     public TodoPriority Priority { get; set; } = TodoPriority.Undefined;
+
+    [Id(4), Required, Description("The list of Id's of other todo items this item depends on. It's required.")]
+    public List<string> Dependencies { get; set; } = new();
 }

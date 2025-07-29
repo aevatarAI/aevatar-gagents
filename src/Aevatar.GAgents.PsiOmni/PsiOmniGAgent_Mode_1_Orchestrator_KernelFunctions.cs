@@ -40,19 +40,21 @@ public partial class PsiOmniGAgent
             });
             var agentId = psi.GetGrainId();
             // There's a publisher tied to each parent agent.
-            await PublishAsync(psi.GetGrainId(), new AgentConfigEvent
+            var configEvent = new AgentConfigEvent
             {
                 Configuration = agentConfig,
                 ParentAgentId = parentAgentId
-            });
+            };
+            await PublishAsyncWithTracing(agentId, configEvent);
 
-            await PublishAsync(psi.GetGrainId(), new UserMessageEvent
+            var userMessageEvent = new UserMessageEvent
             {
                 TargetAgentId = agentId.ToString(),
                 CallId = callId,
                 Content = task,
                 ReplyToAgentId = parentAgentId
-            });
+            };
+            await PublishAsyncWithTracing(agentId, userMessageEvent);
             var descriptor = new AgentDescriptor
             {
                 AgentId = agentId.ToString(),
@@ -65,6 +67,8 @@ public partial class PsiOmniGAgent
                 }
             };
 
+            LogEventInfo("Agent created successfully: AgentId={AgentId}, Depth={Depth}",
+                agentId, State.Depth + 1);
             return
                 $"Created the following agent and sent the subtask {callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
         }
@@ -72,6 +76,8 @@ public partial class PsiOmniGAgent
         {
             var errorMessage = $"❌ Error creating agent for parent {parentAgentId}: {ex.Message}";
             Logger.LogError(ex, "❌ Error creating agent for parent {Parent}", parentAgentId);
+            LogEventError(ex, "Failed to create agent: ParentAgent={ParentAgent}, CallId={CallId}",
+                parentAgentId, callId);
             return errorMessage;
         }
     }
@@ -89,19 +95,24 @@ public partial class PsiOmniGAgent
         string message
     )
     {
-        Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId, message);
+        return await TraceMethodAsync(async () =>
+        {
+            Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId, message);
+            LogEventInfo("Calling agent: ParentAgent={ParentAgent}, TargetAgent={TargetAgent}, CallId={CallId}, MessageLength={Length}",
+                parentAgentId, agentId, callId, message?.Length ?? 0);
 
         try
         {
             var targetAgent = await _gAgentFactory.GetGAgentAsync(GrainId.Parse(agentId));
 
-            await PublishAsync(targetAgent.GetGrainId(), new UserMessageEvent
+            var userMessageEvent = new UserMessageEvent
             {
                 TargetAgentId = agentId,
                 CallId = callId,
                 Content = message,
                 ReplyToAgentId = parentAgentId
-            });
+            };
+            await PublishAsyncWithTracing(GrainId.Parse(agentId), userMessageEvent);
 
             var call = new AgentCall
             {
@@ -110,13 +121,18 @@ public partial class PsiOmniGAgent
                 Message = message
             };
 
-            return $"Agent call sent: {JsonSerializer.Serialize(call)}";
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "❌ Error in generic agent proxy for {AgentId}", agentId);
-            return $"Error calling agent '{agentId}': {ex.Message}";
-        }
+                LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
+                    agentId, callId);
+                return $"Agent call sent: {JsonSerializer.Serialize(call)}";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "❌ Error in generic agent proxy for {AgentId}", agentId);
+                LogEventError(ex, "Failed to call agent: TargetAgent={TargetAgent}, CallId={CallId}",
+                    agentId, callId);
+                return $"Error calling agent '{agentId}': {ex.Message}";
+            }
+        }, new { parentAgentId, agentId, callId, messageLength = message?.Length });
     }
     
     [KernelFunction("todo_read")]
@@ -259,15 +275,50 @@ Use this tool to create and manage a structured task list for your current codin
     When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 ")
     ]
-    public async Task WriteTodosAsync(
+    public async Task<string> WriteTodosAsync(
         [Description("The updated list of todo items.")]
         List<TodoItem> updatedTodos
     )
     {
+        LogEventInfo("Updating todo list: OldCount={OldCount}, NewCount={NewCount}, Changes={Changes}",
+            State.TodoList.Count, updatedTodos.Count,
+            GetTodoChanges(State.TodoList, updatedTodos));
+            
         State.TodoList = updatedTodos;
-        RaiseEvent(new UpdateTodoList()
+        RaiseEventWithTracing(new UpdateTodoList()
         {
             Todos = updatedTodos
         });
+        // await ConfirmEventsWithTracing();
+        return "Successfully updated todo list";
+    }
+    
+    private string GetTodoChanges(List<TodoItem> oldList, List<TodoItem> newList)
+    {
+        var changes = new List<string>();
+        var newIds = newList.Select(t => t.Id).ToHashSet();
+        var oldIds = oldList.Select(t => t.Id).ToHashSet();
+        
+        // Find new todos
+        var added = newIds.Except(oldIds).Count();
+        if (added > 0) changes.Add($"{added} added");
+        
+        // Find removed todos
+        var removed = oldIds.Except(newIds).Count();
+        if (removed > 0) changes.Add($"{removed} removed");
+        
+        // Find status changes
+        var statusChanges = 0;
+        foreach (var newTodo in newList)
+        {
+            var oldTodo = oldList.FirstOrDefault(t => t.Id == newTodo.Id);
+            if (oldTodo != null && oldTodo.Status != newTodo.Status)
+            {
+                statusChanges++;
+            }
+        }
+        if (statusChanges > 0) changes.Add($"{statusChanges} status changes");
+        
+        return changes.Count > 0 ? string.Join(", ", changes) : "no changes";
     }
 }

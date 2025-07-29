@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Net;
+using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
@@ -16,7 +17,7 @@ public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
 
 [GAgent("omni", "psi")]
 public partial class
-    PsiOmniGAgent : GroupMemberGAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>, IPshOmniGAgent
+    PsiOmniGAgent : PsiOmniAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>, IPshOmniGAgent
 {
     private static readonly Dictionary<RealizationStatus, string> SystemPrompts =
         new()
@@ -33,6 +34,10 @@ public partial class
                                              ## SPECIALIZED MODE
                                              - The agent will perform a specific task. It will use the tools given to it to perform the task.
                                              - The agent will not create child agents.
+                                             
+                                             ## Considering Depth
+                                             - Prefer SPECIALIZED mode if the agent's depth is more than 3
+                                             - An agent with depth equal to 5 must operate in SPECIALIZED mode
 
                                              ## Output Format
                                              - Output a JSON object with the following fields:
@@ -43,52 +48,19 @@ public partial class
                                              """,
             [RealizationStatus.Orchestrator] = """
                                                You are a smart orchestrator agent that can interact with the user, analyze the user's request,
-                                               break down the request into sub-tasks and delegate the sub-tasks to child agents.
-
-                                               ## General Rules
-                                               - Always analyze the user's request and break it down into sub-tasks.
-                                               - Perform the task by delegating sub-tasks to child agents.
-                                               - Make sure to consider existing child agents before deciding to delegate a sub-task.
-                                               - Decide suitable child agents based on their description and tools used.
-                                               - Only use tools for interacting with child agents and no other tools.
-                                               - Never send the original task to another agent unless it's a simple task that is suitable for an existing agent.
-
-                                               ## Guidelines for Task Breakdown and Delegation
-                                               - Apply separation of concerns. An agent should be responsible for one type of task.
-                                               - When you send the first task to a new agent, the agent is created upon receiving the task, you don't need to send the task in another tool call. IMPORTANT: Always try to find an existing agent that is suitable for a task first.
-                                               - New agent is required if and only if a new category of subtasks is discovered.
-
-                                               ## Minimize interaction with the user
-                                               - Don't be verbose and keep asking for confirmation from the user.
-                                               - Apply your best judgement to create agents without asking for permission.
-
-                                               ## Output Format
-                                               - Output a JSON object with the following fields:
-                                                  - "Intermediate": the intermediate result of the agent.
-                                                  - "Final": the final result of the agent.
-                                               - Either "Intermediate" or "Final" must be present, not both.
-                                               - If the task is not finished, you should output "Intermediate" with the intermediate result.
-                                               - If the task is finished, you should output "Final" with the final result.
-
-                                               ## Example Outputs
-                                               {
-                                                 "Intermediate": "There are 22 people in the room and we have 2 cakes. We need to divide the cakes evenly.",
-                                                 "Final": "We have 11 people and 1 cake each."
-                                               }
-                                               {
-                                                 "Intermediate": "I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP."
-                                               }
-                                               {
-                                                 "Final": "The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%."
-                                               }
-
+                                               plan the task, break down the request into sub-tasks and delegate the sub-tasks to child agents.
+                                               
+                                               Remember you are an autonomous agent. Don't be verbose and keep asking for confirmation from the user.
+                                               Apply your best judgement when in doubt.
                                                """ + 
                                                """
                                                ## Task Management
-                                               You have access to the todo_write and todo_read tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks and giving the user visibility into your progress.
-                                               These tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into smaller steps. If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
+                                               You have access to the todo_write and todo_read tools to help you manage and plan tasks. Use these tools VERY frequently to ensure that you are tracking your tasks.
+                                               These tools are also EXTREMELY helpful for planning tasks, and for breaking down larger complex tasks into sub-tasks.
+                                               If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
+                                               IMPORTANT: Make sure you identify the dependencies among the todo items.
                                                
-                                               It is critical that you mark todos as completed as soon as you are done with a task. Do not batch up multiple tasks before marking them as completed.
+                                               It is critical that you mark todos as completed as soon as you are done with a sub-task. Do not batch up multiple sub-tasks before marking them as completed.
                                                
                                                Examples:
                                                
@@ -116,6 +88,41 @@ public partial class
                                                3. Implement core metrics tracking functionality
                                                4. Create export functionality for different formats
                                                </example>
+                                               """ +
+                                               """
+                                               ## Task Dispatch
+                                               You will dispatch sub-tasks to child agents. You have the information of existing child agents.
+                                               Use call_new_agent tool to dispatch the sub-task to an agent that will be created based on the task description.
+                                               Use call_agent tool to dispatch the sub-task to an existing agent or to send follow-up message to it.
+                                               If you used call_new_agent to create an agent to handle the task. The child agent will handle it asynchronously. So wait patiently for the child agent to
+                                               reply the outcome.
+                                               IMPORTANT: Always try to re-use existing agents rather than creating new ones.
+                                               Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
+                                               Dispatch a task only when all its dependencies are completed.
+                                               IMPORTANT: When dispatching a todo task with dependencies, you must summarize all necessary information provided by its dependencies and include in the task description. This is critical to make sure the child agent have full context.
+                                               Mark the todo item as InProgress once the task is dispatched.
+                                               """ + 
+                                               """
+                                               ## Output Format
+                                               - Output a JSON object with the following fields:
+                                                  - "Intermediate": the intermediate result of the agent.
+                                                  - "Final": the final result of the agent.
+                                               - Either "Intermediate" or "Final" must be present, not both.
+                                               - If the task is not finished, you should output "Intermediate" with the intermediate result.
+                                               - If the task is finished, you should output "Final" with the final result.
+                                               
+                                               ### Example Outputs
+                                               {
+                                                 "Intermediate": "There are 22 people in the room and we have 2 cakes. We need to divide the cakes evenly.",
+                                                 "Final": "We have 11 people and 1 cake each."
+                                               }
+                                               {
+                                                 "Intermediate": "I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP."
+                                               }
+                                               {
+                                                 "Final": "The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%."
+                                               }
+                                               
                                                """,
             [RealizationStatus.Specialized] = "" // TODO:
         };
@@ -149,11 +156,11 @@ public partial class
         // First, call the base class method
         await base.PerformConfigAsync(configuration);
         
-        RaiseEvent(new SetDepthEvent()
+        RaiseEventWithTracing(new SetDepthEvent()
         {
             Depth = configuration.Depth
         });
-        await ConfirmEvents();
+        await ConfirmEventsWithTracing();
         
         // Note: We don't initialize Brain here to maintain backward compatibility.
         // Brain initialization should be done explicitly if needed.
@@ -167,77 +174,101 @@ public partial class
 
     private async Task DoSelfReportAsync()
     {
-        if (State.UserAgentId.IsNullOrEmpty())
+        await TraceMethodAsync(async () =>
         {
-            // Do Nothing
-            return;
-        }
+            if (State.UserAgentId.IsNullOrEmpty())
+            {
+                LogEventDebug("No UserAgentId, skipping self report");
+                return;
+            }
 
-        await PublishAsync(GrainId.Parse(State.UserAgentId), new SelfReportEvent
-        {
-            TargetAgentId = State.UserAgentId,
-            SelfReport = new AgentDescriptor
+            var selfReport = new AgentDescriptor
             {
                 AgentId = State.AgentId,
                 AgentType = State.RealizationStatus == RealizationStatus.Orchestrator ? "orchestrator" : "specialized",
                 Description = State.Description,
                 Examples = State.Examples,
                 Tools = State.Tools
-            }
+            };
+            
+            LogEventInfo("Sending self report: TargetAgent={TargetAgent}, AgentType={AgentType}, Description={Description}",
+                State.UserAgentId, selfReport.AgentType, selfReport.Description);
+
+            var selfReportEvent = new SelfReportEvent
+            {
+                TargetAgentId = State.UserAgentId,
+                SelfReport = selfReport
+            };
+            await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), selfReportEvent);
         });
     }
 
-    private async Task RunAsync(string trigger = null)
+    private async Task RunAsync(string? trigger = null)
     {
-        if (!InitializedOk())
+        await TraceMethodAsync(async () =>
         {
-            Logger.LogWarning("PsiOmniGAgent is not initialized properly. Skipping run.");
-            // Do nothing
-            return;
-        }
-        
-        Logger.LogInformation("Running PsiOmniGAgent with trigger: {Trigger}", trigger);
+            if (!InitializedOk())
+            {
+                Logger.LogWarning("PsiOmniGAgent is not initialized properly. Skipping run.");
+                LogEventDebug("Agent not initialized, skipping run");
+                return;
+            }
+            
+            Logger.LogInformation("Running PsiOmniGAgent with trigger: {Trigger}", trigger);
+            LogEventInfo("Starting agent run: Trigger={Trigger}, RealizationStatus={Status}, ChatHistoryLength={ChatLength}",
+                trigger, State.RealizationStatus, State.ChatHistory.Count);
 
-        Kernel kernel;
-        ChatHistory chatHistory;
-        int preHistoryLength;
-        var systemPrompt = SystemPrompts[State.RealizationStatus];
-        Logger.LogInformation("Status: {RealizationStatus}", State.RealizationStatus);
-        Logger.LogInformation("Prompt: {systemPrompt}", systemPrompt);
-        switch (State.RealizationStatus)
-        {
-            case RealizationStatus.Unrealized:
-                kernel = GetKernel_Analyzer();
-                systemPrompt += $"\n\n## Depth Value\n<depth>{State.Depth}</depth>";
-                systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
-                (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
-                OnChatDoneAsync_Analyzer(chatHistory, preHistoryLength);
-                break;
-            case RealizationStatus.Orchestrator:
-                kernel = GetKernel_Orchestrator();
-                if (kernel == null)
-                {
-                    Logger.LogWarning("Cannot get kernel for Orchestrator mode, skipping run");
-                    return;
-                }
-                systemPrompt += $"\n\n## Existing Child Agents (Try your best to re-use them):\n{GetAllChildAgents()}";
-                systemPrompt += $"\n\nYour agent Id is: <agentId>{this.GetGrainId()}</agentId>";
-                (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
-                OnChatDoneAsync_Orchestrator(chatHistory, preHistoryLength);
-                break;
-            case RealizationStatus.Specialized:
-                kernel = GetKernel_Specialized();
-                if (kernel == null)
-                {
-                    Logger.LogWarning("Cannot get kernel for Specialized mode, skipping run");
-                    return;
-                }
-                (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
-                OnChatDoneAsync_Specialized(chatHistory, preHistoryLength);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            Kernel kernel;
+            ChatHistory chatHistory;
+            int preHistoryLength;
+            var systemPrompt = SystemPrompts[State.RealizationStatus];
+            Logger.LogInformation("Status: {RealizationStatus}", State.RealizationStatus);
+            Logger.LogInformation("Prompt: {systemPrompt}", systemPrompt);
+            
+            LogEventDebug("Processing with status: {Status}", State.RealizationStatus);
+            
+            switch (State.RealizationStatus)
+            {
+                case RealizationStatus.Unrealized:
+                    LogEventDebug("Running analyzer mode");
+                    kernel = GetKernel_Analyzer();
+                    systemPrompt += $"\n\n## Depth Value\n<depth>{State.Depth}</depth>";
+                    systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
+                    (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
+                    OnChatDoneAsync_Analyzer(chatHistory, preHistoryLength);
+                    break;
+                case RealizationStatus.Orchestrator:
+                    LogEventDebug("Running orchestrator mode with {ChildCount} child agents", State.ChildAgents.Count);
+                    kernel = GetKernel_Orchestrator();
+                    if (kernel == null)
+                    {
+                        Logger.LogWarning("Cannot get kernel for Orchestrator mode, skipping run");
+                        LogEventError(new InvalidOperationException("Cannot get kernel for Orchestrator mode"), "Failed to get kernel for Orchestrator mode");
+                        return;
+                    }
+                    systemPrompt += $"\n\n## Existing Child Agents (Try your best to re-use them):\n{GetAllChildAgents()}";
+                    systemPrompt += $"\n\nYour agent Id is: <agentId>{this.GetGrainId()}</agentId>";
+                    (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
+                    OnChatDoneAsync_Orchestrator(chatHistory, preHistoryLength);
+                    break;
+                case RealizationStatus.Specialized:
+                    LogEventDebug("Running specialized mode with tools: {Tools}", string.Join(", ", State.Tools.Select(t => t.Name)));
+                    kernel = GetKernel_Specialized();
+                    if (kernel == null)
+                    {
+                        Logger.LogWarning("Cannot get kernel for Specialized mode, skipping run");
+                        LogEventError(new InvalidOperationException("Cannot get kernel for Specialized mode"), "Failed to get kernel for Specialized mode");
+                        return;
+                    }
+                    (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
+                    OnChatDoneAsync_Specialized(chatHistory, preHistoryLength);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            
+            LogEventInfo("Agent run completed: NewChatHistoryLength={Length}", State.ChatHistory.Count);
+        }, new { trigger });
     }
 
     private bool InitializedOk()
@@ -268,6 +299,53 @@ public partial class
         return chatHistory;
     }
 
+    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, string operationName)
+    {
+        const int MaxRetries = 5;
+        const int InitialDelayMs = 1000; // 1 second initial delay
+        var random = new Random();
+
+        for (int attempt = 0; attempt < MaxRetries; attempt++)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (HttpOperationException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                var baseDelayMs = (int)(Math.Pow(2, attempt) * InitialDelayMs);
+                
+                // Extract retry-after if available from error message
+                var retryAfterSeconds = 0;
+                if (ex.Message.Contains("retry after"))
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(ex.Message, @"retry after (\d+) seconds");
+                    if (match.Success && int.TryParse(match.Groups[1].Value, out retryAfterSeconds))
+                    {
+                        baseDelayMs = Math.Max(baseDelayMs, retryAfterSeconds * 1000);
+                    }
+                }
+
+                // Randomize delay between baseDelay and 2*baseDelay
+                var actualDelayMs = baseDelayMs + random.Next(baseDelayMs);
+
+                if (attempt == MaxRetries - 1)
+                {
+                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}", 
+                        MaxRetries, operationName, ex.Message);
+                    throw;
+                }
+
+                Logger.LogWarning("Rate limit hit for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms) before retry. Error: {Message}",
+                    operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs, ex.Message);
+                
+                await Task.Delay(actualDelayMs);
+            }
+        }
+
+        throw new Exception($"Unexpected end of retry loop for {operationName}");
+    }
+
     private async Task<(ChatHistory, int)> RunCoreAsync(Kernel kernel, string systemPrompt)
     {
         try
@@ -291,7 +369,11 @@ public partial class
             var chatHistory = GetChatHistory(systemPrompt);
             var preChatHistoryLength = chatHistory.Count;
             Logger.LogInformation("preChatHistoryLength: {Count}", preChatHistoryLength);
-            var result = await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel);
+
+            var result = await ExecuteWithRetryAsync(
+                async () => await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel),
+                "GetChatMessageContent");
+                
             chatHistory.Add(result);
             Logger.LogInformation("RunCoreAsync.4");
             return (chatHistory, preChatHistoryLength);
@@ -305,18 +387,26 @@ public partial class
 
     private async Task ReplyAsync(string finalResult)
     {
-        if (State.UserAgentId.IsNullOrEmpty())
+        await TraceMethodAsync(async () =>
         {
-            Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
-            return;
-        }
+            if (State.UserAgentId.IsNullOrEmpty())
+            {
+                Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
+                LogEventDebug("No UserAgentId, logging result locally");
+                return;
+            }
 
-        await PublishAsync(GrainId.Parse(State.UserAgentId), new AgentMessageEvent
-        {
-            TargetAgentId = State.UserAgentId,
-            CallId = State.CallId,
-            Content = finalResult
-        });
+            LogEventInfo("Sending reply: TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}",
+                State.UserAgentId, State.CallId, finalResult?.Length ?? 0);
+            
+            var agentMessageEvent = new AgentMessageEvent
+            {
+                TargetAgentId = State.UserAgentId,
+                CallId = State.CallId,
+                Content = finalResult
+            };
+            await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), agentMessageEvent);
+        }, new { resultLength = finalResult?.Length });
     }
 
     protected override void AIGAgentTransitionState(
@@ -324,11 +414,15 @@ public partial class
         StateLogEventBase<PsiOmniGAgentStateLogEvent> @event
     )
     {
+        LogEventDebug("State transition started: EventType={EventType}",
+            @event.GetType().Name);
+        
         if (@event is PsiOmniGAgentStateLogEvent e1)
         {
             var uid = e1.UniqueId;
             if (!_receivedMessageIds.Add(uid))
             {
+                LogEventDebug("Duplicate state event detected, ignoring: UniqueId={UniqueId}", uid);
                 return;
             }
         }
@@ -336,6 +430,7 @@ public partial class
         switch (@event)
         {
             case SetDepthEvent payload:
+                LogEventDebug("Setting depth: {Depth}", payload.Depth);
                 state.Depth = payload.Depth;
                 break;
             case UpdateSendConfigEvent payload:
@@ -351,8 +446,10 @@ public partial class
 
                 break;
             case ReceiveUserMessageEvent payload:
-
                 Logger.LogInformation("StateTransition for ReceiveUserMessageEvent");
+                LogEventInfo("Processing user message: CallId={CallId}, ReplyTo={ReplyTo}, ContentLength={Length}",
+                    payload.Event.CallId, payload.Event.ReplyToAgentId, payload.Event.Content?.Length ?? 0);
+                    
                 if (!payload.Event.CallId.IsNullOrEmpty())
                 {
                     state.CallId = payload.Event.CallId;
@@ -369,16 +466,21 @@ public partial class
                         Request = payload.Event.Content,
                         Response = String.Empty
                     });
+                    LogEventDebug("Scheduling RunAsync for user message");
                     ScheduleTask(async () => await RunAsync($"User Message {payload.Event}"));
                 }
 
                 break;
             case RealizationEvent payload:
+                LogEventInfo("Realization event: Status={Status}, Description={Description}, Tools={Tools}",
+                    payload.RealizationStatus, payload.Description, string.Join(", ", payload.Tools.Select(t => t.Name)));
+                    
                 if (state.RealizationStatus == RealizationStatus.Unrealized)
                 {
                     state.RealizationStatus = payload.RealizationStatus;
                     state.Description = payload.Description;
                     state.Tools = payload.Tools;
+                    LogEventDebug("Agent realized as {Status}", payload.RealizationStatus);
                 }
 
                 ScheduleTask(async () =>
@@ -393,12 +495,21 @@ public partial class
                         $"Received reply for callId ({payload.Event.CallId}): {payload.Event.Content}");
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                ScheduleTask(async () => await RunAsync($"Agent Message {payload.Event}"));
+                ScheduleTask(async () =>
+                {
+                    LogEventDebug("Starting run due to Agent Message: {Content}", payload.Event.Content);
+                    await RunAsync($"Agent Message {payload.Event}");
+                    LogEventDebug("Completed run due to Agent Message: {Content}", payload.Event.Content);
+                });
                 break;
             case NewAgentsCreatedEvent payload:
+                LogEventInfo("New agents created: Count={Count}, AgentIds={AgentIds}",
+                    payload.NewAgents.Count, string.Join(", ", payload.NewAgents.Select(a => a.AgentId)));
+                    
                 foreach (var newAgent in payload.NewAgents)
                 {
                     state.ChildAgents.TryAdd(newAgent.AgentId, newAgent);
+                    LogEventDebug("Added child agent: {AgentId} ({AgentType})", newAgent.AgentId, newAgent.AgentType);
                 }
 
                 var newAgentIds = payload.NewAgents.Select(x => x.AgentId);
@@ -473,9 +584,11 @@ public partial class
                     state.Examples.Last().Response = finalResult;
                     ScheduleTask(async () =>
                     {
+                        LogEventDebug("Starting report and reply: {Content}", finalResult);
                         // TODO: Maybe update description.
                         await DoSelfReportAsync();
                         await ReplyAsync(finalResult);
+                        LogEventDebug("Completed report and reply: {Content}", finalResult);
                     });
                 }
 
@@ -485,5 +598,7 @@ public partial class
                 ScheduleTask(DoSelfReportAsync);
                 break;
         }
+        LogEventDebug("State transition completed: EventType={EventType}",
+            @event.GetType().Name);
     }
 }
