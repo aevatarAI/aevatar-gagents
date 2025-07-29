@@ -161,34 +161,34 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         switch (@event)
         {
             case ReceiveMessageSEvent @receiveMessageSEvent:
-                State.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
+                state.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
                 break;
             case SendMessageSEvent sendMessageSEvent:
                 if (!sendMessageSEvent.ReplyMessageId.IsNullOrEmpty())
                 {
-                    State.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
+                    state.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
                 }
 
                 break;
             case SetTelegramConfigEvent setTelegramConfigEvent:
-                State.BotName = setTelegramConfigEvent.BotName;
-                State.Token = setTelegramConfigEvent.Token;
+                state.BotName = setTelegramConfigEvent.BotName;
+                state.Token = setTelegramConfigEvent.Token;
                 break;
             case TelegramRequestSEvent @requestSEvent:
-                if (State.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
+                if (state.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
                 {
-                    State.SocialRequestList.Add(@requestSEvent.RequestId);
+                    state.SocialRequestList.Add(@requestSEvent.RequestId);
                 }
 
                 break;
             case TelegramOptionSEvent @telegramOptionSEvent:
-                State.Webhook = @telegramOptionSEvent.Webhook;
-                State.EncryptionPassword = @telegramOptionSEvent.EncryptionPassword;
+                state.Webhook = @telegramOptionSEvent.Webhook;
+                state.EncryptionPassword = @telegramOptionSEvent.EncryptionPassword;
                 break;
             case TelegramSocialResponseSEvent @telegramSocialResponseSEvent:
-                if (State.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
+                if (state.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
                 {
-                    State.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
+                    state.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
                 }
 
                 break;

@@ -67,11 +67,54 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MultiAIChat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ChatAgent.Test", "test\Aevatar.GAgents.ChatAgent.Test\Aevatar.GAgents.ChatAgent.Test.csproj", "{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Executor", "src\Aevatar.GAgents.Executor\Aevatar.GAgents.Executor.csproj", "{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{431973C0-FD6D-4030-ADBC-CE3D549B07F2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\AIGAgentBase_MCP_Type_Conversion.md = docs\AIGAgentBase_MCP_Type_Conversion.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "design", "design", "{2DE52441-A9C1-4C43-865B-310ED5E8B4FB}"
+	ProjectSection(SolutionItems) = preProject
+		docs\design\AIGAgentBase_GAgentExecutor_Integration.md = docs\design\AIGAgentBase_GAgentExecutor_Integration.md
+		docs\design\MCP_GAgent_Design.md = docs\design\MCP_GAgent_Design.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "memos", "memos", "{6B2228C7-07EF-4FE3-98F9-2B9241DE25E4}"
+	ProjectSection(SolutionItems) = preProject
+		docs\memos\AIGAgentBase_GAgentExecutor_CollapseMemo.md = docs\memos\AIGAgentBase_GAgentExecutor_CollapseMemo.md
+		docs\memos\MCP_GAgent_CollapseMemo.md = docs\memos\MCP_GAgent_CollapseMemo.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MCP", "src\Aevatar.GAgents.MCP\Aevatar.GAgents.MCP.csproj", "{791A26A8-4C41-4041-802E-993463B673BA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "implementation", "implementation", "{75377329-6BF1-4765-8774-5449F7317268}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MCP.Test", "test\Aevatar.GAgents.MCP.Test\Aevatar.GAgents.MCP.Test.csproj", "{1D6D6DB3-8308-43C3-8716-A72221EC1EE0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Pumpfun", "src\Aevatar.GAgents.Pumpfun\Aevatar.GAgents.Pumpfun.csproj", "{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni", "src\Aevatar.GAgents.PsiOmni\Aevatar.GAgents.PsiOmni.csproj", "{9E47A958-1272-4F61-A559-75A1394E515C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni.Plugins", "src\Aevatar.GAgents.PsiOmni.Plugins\Aevatar.GAgents.PsiOmni.Plugins.csproj", "{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AI.Abstractions.Test", "test\Aevatar.GAgents.AI.Abstractions.Test\Aevatar.GAgents.AI.Abstractions.Test.csproj", "{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.MCP.Core", "src\Aevatar.GAgents.MCP.Core\Aevatar.GAgents.MCP.Core.csproj", "{EFAFBD60-6B0D-4504-8915-950F587D7FA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat.Core", "src\Aevatar.GAgents.GroupChat.Core\Aevatar.GAgents.GroupChat.Core.csproj", "{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AIGAgent.Core", "src\Aevatar.GAgents.AIGAgent.Core\Aevatar.GAgents.AIGAgent.Core.csproj", "{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.GroupChat.GroupMember", "src\Aevatar.GAgents.GroupChat.GroupMember\Aevatar.GAgents.GroupChat.GroupMember.csproj", "{FF631364-5246-4867-84D5-A00E9EDA40F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.InputGAgent", "src\Aevatar.GAgents.InputGAgent\Aevatar.GAgents.InputGAgent.csproj", "{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resource", "resource", "{22441F23-5B7E-467A-A55B-FA1AC5C914B2}"
+	ProjectSection(SolutionItems) = preProject
+		resource\Directory.Build.props = Directory.Build.props
+		resource\Directory.Packages.props = Directory.Packages.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -187,6 +230,22 @@ Global
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560}.Release|Any CPU.Build.0 = Release|Any CPU
+		{791A26A8-4C41-4041-802E-993463B673BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{791A26A8-4C41-4041-802E-993463B673BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{791A26A8-4C41-4041-802E-993463B673BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{791A26A8-4C41-4041-802E-993463B673BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D6D6DB3-8308-43C3-8716-A72221EC1EE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D6D6DB3-8308-43C3-8716-A72221EC1EE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D6D6DB3-8308-43C3-8716-A72221EC1EE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D6D6DB3-8308-43C3-8716-A72221EC1EE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E47A958-1272-4F61-A559-75A1394E515C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E47A958-1272-4F61-A559-75A1394E515C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E47A958-1272-4F61-A559-75A1394E515C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -199,6 +258,26 @@ Global
 		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF631364-5246-4867-84D5-A00E9EDA40F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF631364-5246-4867-84D5-A00E9EDA40F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF631364-5246-4867-84D5-A00E9EDA40F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF631364-5246-4867-84D5-A00E9EDA40F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -233,9 +312,21 @@ Global
 		{D9BAA2DA-4B01-42A6-9A5A-0BC23CA49492} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{164C499B-F6D5-4847-907C-36FE8AC9B022} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{F16A151E-50C4-4767-AE7E-B9C9D6B4D560} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{2DE52441-A9C1-4C43-865B-310ED5E8B4FB} = {431973C0-FD6D-4030-ADBC-CE3D549B07F2}
+		{6B2228C7-07EF-4FE3-98F9-2B9241DE25E4} = {431973C0-FD6D-4030-ADBC-CE3D549B07F2}
+		{791A26A8-4C41-4041-802E-993463B673BA} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{75377329-6BF1-4765-8774-5449F7317268} = {431973C0-FD6D-4030-ADBC-CE3D549B07F2}
+		{1D6D6DB3-8308-43C3-8716-A72221EC1EE0} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{2FF3DB78-AAE5-4657-AD8E-DCD3E060199C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{9E47A958-1272-4F61-A559-75A1394E515C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{EFAFBD60-6B0D-4504-8915-950F587D7FA6} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{5BF7CAB1-FF86-4E45-BC79-AB7B2249B80A} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{FF631364-5246-4867-84D5-A00E9EDA40F0} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}

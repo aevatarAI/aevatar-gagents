@@ -13,7 +13,9 @@ namespace Aevatar.GAgents.AIGAgent.Test.GAgents.ChatGAgents;
 
 public interface IChatAIGAgent : IAIGAgent, IStateGAgent<ChatAIGStateBase>
 {
-    Task<string?> ChatAsync(string message, List<string>? images = null);
+    Task<string?> ChatAsync(string message, List<string>? images = null, AIChatContextDto aiChatContextDto = null);
+
+    Task<bool> CancelChatAsync(AIChatContextDto aiChatContextDto = null);
     Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null);
     Task<bool> PromptChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null);
 
@@ -41,10 +43,25 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
         return Task.FromResult("Agent for chatting with user.");
     }
 
-    public async Task<string?> ChatAsync(string message, List<string>? images = null)
+    public async Task<string?> ChatAsync(string message, List<string>? images = null, AIChatContextDto aiChatContextDto = null)
     {
-        var result = await ChatWithHistory(message, imageKeys: images);
+        // Add user message to history
+        State.ChatHistory.Add(new ChatMessage { ChatRole = ChatRole.User, Content = message, ImageKeys = images });
+        
+        var result = await ChatWithHistory(message, imageKeys: images, context: aiChatContextDto);
+        
+        // Add assistant response to history
+        if (result is { Count: > 0 })
+        {
+            State.ChatHistory.Add(new ChatMessage { ChatRole = ChatRole.Assistant, Content = result[0].Content });
+        }
+        
         return result?[0].Content;
+    }
+
+    public async Task<bool> CancelChatAsync(AIChatContextDto aiChatContextDto = null)
+    {
+        return await CancelStreamingRequestAsync();
     }
 
     public async Task<bool> StreamChatAsync(string message, AIChatContextDto contextDto, List<string>? images = null)

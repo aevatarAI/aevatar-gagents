@@ -131,22 +131,22 @@ public class AElfGAgent : GAgentBase<AElfAgentGState, TransactionStateLogEvent>,
         switch (@event)
         {
             case TransactionFailedStateLogEvent transactionFailedStateLogEvent:
-                State.PendingTransactions.Remove(transactionFailedStateLogEvent.CreateTransactionGEventId);
+                state.PendingTransactions.Remove(transactionFailedStateLogEvent.CreateTransactionGEventId);
                 break;
             
             case CreateTransactionStateLogEvent createTransactionStateLogEvent:
-                if (State.Id == Guid.Empty)
+                if (state.Id == Guid.Empty)
                 {
-                    State.Id = Guid.NewGuid();
+                    state.Id = Guid.NewGuid();
                 }
-                State.PendingTransactions[createTransactionStateLogEvent.Id] = createTransactionStateLogEvent;
+                state.PendingTransactions[createTransactionStateLogEvent.Id] = createTransactionStateLogEvent;
                 break;
             case SendTransactionStateLogEvent sendTransactionStateLogEvent:
-                State.PendingTransactions[sendTransactionStateLogEvent.CreateTransactionGEventId].TransactionId =
+                state.PendingTransactions[sendTransactionStateLogEvent.CreateTransactionGEventId].TransactionId =
                     sendTransactionStateLogEvent.TransactionId;
                 break;
             case TransactionSuccessStateLogEvent transactionSuccessStateLogEvent:
-                State.PendingTransactions.Remove(transactionSuccessStateLogEvent.CreateTransactionGEventId);
+                state.PendingTransactions.Remove(transactionSuccessStateLogEvent.CreateTransactionGEventId);
                 break;
         }
     }

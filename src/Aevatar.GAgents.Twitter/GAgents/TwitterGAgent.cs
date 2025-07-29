@@ -236,42 +236,42 @@ public class TwitterGAgent : GAgentBase<TwitterGAgentState, TweetSEvent, EventBa
         switch (@event)
         {
             case TwitterOptionsSEvent twitterOptionsSEvent:
-                State.ConsumerKey = twitterOptionsSEvent.ConsumerKey;
-                State.ConsumerSecret = twitterOptionsSEvent.ConsumerSecret;
-                State.EncryptionPassword = twitterOptionsSEvent.EncryptionPassword;
-                State.BearerToken = twitterOptionsSEvent.BearerToken;
-                State.ReplyLimit = twitterOptionsSEvent.ReplyLimit;
+                state.ConsumerKey = twitterOptionsSEvent.ConsumerKey;
+                state.ConsumerSecret = twitterOptionsSEvent.ConsumerSecret;
+                state.EncryptionPassword = twitterOptionsSEvent.EncryptionPassword;
+                state.BearerToken = twitterOptionsSEvent.BearerToken;
+                state.ReplyLimit = twitterOptionsSEvent.ReplyLimit;
                 break;
             case BindTwitterAccountSEvent bindTwitterAccountSEvent:
-                State.UserId = bindTwitterAccountSEvent.UserId;
-                State.Token = bindTwitterAccountSEvent.Token;
-                State.TokenSecret = bindTwitterAccountSEvent.TokenSecret;
-                State.UserName = bindTwitterAccountSEvent.UserName;
+                state.UserId = bindTwitterAccountSEvent.UserId;
+                state.Token = bindTwitterAccountSEvent.Token;
+                state.TokenSecret = bindTwitterAccountSEvent.TokenSecret;
+                state.UserName = bindTwitterAccountSEvent.UserName;
                 break;
             case UnbindTwitterAccountEvent unbindTwitterAccountEvent:
-                State.Token = "";
-                State.TokenSecret = "";
-                State.UserId = "";
-                State.UserName = "";
+                state.Token = "";
+                state.TokenSecret = "";
+                state.UserId = "";
+                state.UserName = "";
                 break;
             case ReplyTweetSEvent replyTweetSEvent:
                 if (!replyTweetSEvent.TweetId.IsNullOrEmpty())
                 {
-                    State.RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
+                    state.RepliedTweets[replyTweetSEvent.TweetId] = replyTweetSEvent.Text;
                 }
 
                 break;
             case TweetRequestSEvent tweetRequestSEvent:
-                if (State.SocialRequestList.Contains(tweetRequestSEvent.RequestId) == false)
+                if (state.SocialRequestList.Contains(tweetRequestSEvent.RequestId) == false)
                 {
-                    State.SocialRequestList.Add(tweetRequestSEvent.RequestId);
+                    state.SocialRequestList.Add(tweetRequestSEvent.RequestId);
                 }
 
                 break;
             case TweetSocialResponseSEvent tweetSocialResponseSEvent:
-                if (State.SocialRequestList.Contains(tweetSocialResponseSEvent.ResponseId))
+                if (state.SocialRequestList.Contains(tweetSocialResponseSEvent.ResponseId))
                 {
-                    State.SocialRequestList.Remove(tweetSocialResponseSEvent.ResponseId);
+                    state.SocialRequestList.Remove(tweetSocialResponseSEvent.ResponseId);
                 }
 
                 break;

@@ -1,0 +1,35 @@
+using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.State;
+using Aevatar.GAgents.MCP.Options;
+using GroupChat.GAgent.Feature.Common;
+
+namespace Aevatar.GAgents.MCP.GAgents;
+
+[GenerateSerializer]
+public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
+
+[GAgent("mcp", "aevatar")]
+public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
+    IMCPGAgent
+{
+    public override Task<string> GetDescriptionAsync()
+    {
+        return Task.FromResult("MCP GAgent for interacting with Model Context Protocol servers");
+    }
+
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId)
+    {
+        return Task.FromResult(1);
+    }
+
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages)
+    {
+        return Task.FromResult(new ChatResponse
+        {
+            Skip = true,
+            Continue = false
+        });
+    }
+}

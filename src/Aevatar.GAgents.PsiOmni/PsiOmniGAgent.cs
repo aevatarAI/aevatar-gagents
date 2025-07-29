@@ -426,13 +426,13 @@ public partial class
                     break;
                 var finalResult = string.Empty;
 
-                if (State.RealizationStatus == RealizationStatus.Specialized)
+                if (state.RealizationStatus == RealizationStatus.Specialized)
                 {
                     finalResult = State.ChatHistory.Last().Content;
                 }
-                else if (State.RealizationStatus == RealizationStatus.Orchestrator)
+                else if (state.RealizationStatus == RealizationStatus.Orchestrator)
                 {
-                    var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
+                    var lastMessage = state.ChatHistory.Last()?.Content ?? string.Empty;
                     try
                     {
                         var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);

@@ -23,7 +23,7 @@ public class UserMessageEvent : EventBase
     [Id(1)] public string TargetAgentId { get; set; } = string.Empty;
     [Id(2)] public string CallId { get; set; } = string.Empty;
     [Id(3)] public string Content { get; set; } = string.Empty;
-    [Id(4)] public string ReplyToAgentId { get; set; } = string.Empty;
+    [Id(4)] public string? ReplyToAgentId { get; set; }
 
     public override string ToString()
     {
