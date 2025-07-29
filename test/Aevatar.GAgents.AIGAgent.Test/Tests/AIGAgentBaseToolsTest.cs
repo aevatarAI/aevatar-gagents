@@ -19,41 +19,6 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
     }
 
     [Fact]
-    public async Task RegisterAllGAgentToolsAsync_Should_ReturnTrue_When_BrainInitialized()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
-        await agent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "Test GAgent tools",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" }
-        });
-
-        // Act
-        var result = await agent.RegisterAllGAgentToolsAsync();
-
-        // Assert
-        result.ShouldBeTrue();
-
-        var state = await agent.GetStateAsync();
-        state.EnableGAgentTools.ShouldBeTrue();
-    }
-
-    [Fact]
-    public async Task RegisterAllGAgentToolsAsync_Should_ReturnFalse_When_BrainNotInitialized()
-    {
-        // Arrange
-        var agent = await _agentFactory.GetGAgentAsync<ITestGAgentToolsAIGAgent>(Guid.NewGuid());
-        // Don't initialize the agent
-
-        // Act
-        var result = await agent.RegisterAllGAgentToolsAsync();
-
-        // Assert
-        result.ShouldBeFalse();
-    }
-
-    [Fact]
     public async Task ConfigureGAgentToolsAsync_Should_ReturnTrue_When_ValidGAgentsProvided()
     {
         // Arrange
@@ -78,8 +43,8 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.SelectedGAgents.ShouldNotBeEmpty();
-        state.SelectedGAgents.Count.ShouldBe(2);
+        state.ToolGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.Count.ShouldBe(2);
     }
 
     [Fact]
@@ -126,10 +91,10 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue();
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.Count.ShouldBe(3);
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/chatgagent"));
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/routergagent"));
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/telegramgagent"));
+        state.ToolGAgents.Count.ShouldBe(3);
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/chatgagent"));
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/routergagent"));
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/telegramgagent"));
     }
 
     [Fact]
@@ -157,7 +122,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue();
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.ShouldBeEmpty();
+        state.ToolGAgents.ShouldBeEmpty();
         state.RegisteredGAgentFunctions.ShouldBeEmpty();
     }
 
@@ -196,14 +161,14 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Verify they were configured
         var stateBefore = await agent.GetStateAsync();
-        stateBefore.SelectedGAgents.ShouldNotBeEmpty();
+        stateBefore.ToolGAgents.ShouldNotBeEmpty();
 
         // Act
         await agent.ClearGAgentToolsAsync();
 
         // Assert
         var stateAfter = await agent.GetStateAsync();
-        stateAfter.SelectedGAgents.ShouldBeEmpty();
+        stateAfter.ToolGAgents.ShouldBeEmpty();
         stateAfter.RegisteredGAgentFunctions.ShouldBeEmpty();
     }
 
@@ -268,7 +233,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue(); // Should handle long names gracefully
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -295,7 +260,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue(); // Should handle similar names gracefully
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.Count.ShouldBe(2);
+        state.ToolGAgents.Count.ShouldBe(2);
     }
 
     [Fact]
@@ -321,7 +286,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue(); // Should generate descriptions correctly
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -349,7 +314,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue(); // Should allow all GAgents when no restrictions
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.Count.ShouldBe(2);
+        state.ToolGAgents.Count.ShouldBe(2);
     }
 
     [Fact]
@@ -380,7 +345,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         // Verify tool configuration was successful
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.SelectedGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -409,7 +374,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Verify the configuration was successful
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/chatgagent"));
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/chatgagent"));
     }
 
     [Fact]
@@ -440,7 +405,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         // Verify plugins were registered
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.SelectedGAgents.Count.ShouldBe(2);
+        state.ToolGAgents.Count.ShouldBe(2);
     }
 
     [Fact]
@@ -478,10 +443,10 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
 
         // Verify new configuration replaced old one
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.Count.ShouldBe(2);
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/routergagent"));
-        state.SelectedGAgents.ShouldContain(GrainType.Create("test/telegramgagent"));
-        state.SelectedGAgents.ShouldNotContain(GrainType.Create("test/chatgagent"));
+        state.ToolGAgents.Count.ShouldBe(2);
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/routergagent"));
+        state.ToolGAgents.Select(t => t.Type).ShouldContain(GrainType.Create("test/telegramgagent"));
+        state.ToolGAgents.Select(t => t.Type).ShouldNotContain(GrainType.Create("test/chatgagent"));
     }
 
     [Fact]
@@ -509,7 +474,7 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         result.ShouldBeTrue(); // Should handle invalid grain types gracefully
 
         var state = await agent.GetStateAsync();
-        state.SelectedGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -539,6 +504,6 @@ public class AIGAgentBaseToolsTest : AevatarAIGAgentTestBase
         // Verify state was persisted
         var state = await agent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.SelectedGAgents.ShouldNotBeEmpty();
+        state.ToolGAgents.ShouldNotBeEmpty();
     }
 }
