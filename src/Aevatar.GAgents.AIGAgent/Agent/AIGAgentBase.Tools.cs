@@ -855,12 +855,12 @@ public abstract partial class
                     var mcpGAgent = await GetMCPGAgentAsync(serverName);
                     if (mcpGAgent != null)
                     {
-                        var toolsDict = await mcpGAgent.GetAvailableToolsAsync();
-                        if (toolsDict != null && toolsDict.Any())
+                        var tools = await mcpGAgent.GetAvailableToolsAsync();
+                        if (tools != null && tools.Any())
                         {
                             var functions = new List<KernelFunction>();
 
-                            foreach (var tool in toolsDict.Values)
+                            foreach (var tool in tools)
                             {
                                 var description = !string.IsNullOrEmpty(tool.Description)
                                     ? tool.Description

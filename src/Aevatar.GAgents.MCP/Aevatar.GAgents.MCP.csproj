@@ -8,6 +8,7 @@
         <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.EventSourcing.Core" />
+        <PackageReference Include="ModelContextProtocol.Core" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Aevatar.GAgents.GroupChat.GroupMember\Aevatar.GAgents.GroupChat.GroupMember.csproj" />

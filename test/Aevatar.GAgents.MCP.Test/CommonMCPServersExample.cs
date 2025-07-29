@@ -74,13 +74,12 @@ public static class CommonMCPServersExample
     {
         return new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
                 ServerName = "filesystem",
                 Command = "npx",
                 Args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
             },
-            EnableToolDiscovery = true,
             RequestTimeout = System.TimeSpan.FromSeconds(30)
         };
     }

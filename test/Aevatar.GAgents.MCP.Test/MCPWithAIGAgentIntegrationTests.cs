@@ -31,7 +31,7 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
     {
         var mcpConfig = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
                 ServerName = "test-integration",
                 Command = "test"

@@ -36,26 +36,25 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig()
+            ServerConfig = new MCPServerConfig()
             {
                 ServerName = "filesystem",
                 Command = "npx",
-                Args = ["-y", "@modelcontextprotocol/server-filesystem"],
+                Args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
                 Env = new Dictionary<string, string>
                 {
                     ["NODE_ENV"] = "production"
                 }
-            },
-            EnableToolDiscovery = true
+            }
         };
 
         // Act
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
 
         // Assert
-        var serverStates = await mcpGAgent.GetServerStatesAsync();
-        serverStates.Count.ShouldBe(1);
-        serverStates.Any(s => s.ServerName == "filesystem").ShouldBeTrue();
+        var state = await mcpGAgent.GetStateAsync();
+        state.MCPServerConfig.ServerName.ShouldBe("filesystem");
+        
     }
 
     [Fact]
@@ -64,7 +63,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
                 ServerName = "filesystem",
                 Command = "npx",
@@ -107,22 +106,18 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
-                ServerName = "sqlite",
+                ServerName = "filesystem2",
                 Command = "npx",
-                Args = ["-y", "@modelcontextprotocol/server-sqlite", "memory:"]
+                Args = ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
             },
-            EnableToolDiscovery = true
         };
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(config);
 
         // Act
-        var discoverEvent = new MCPDiscoverToolsEvent
-        {
-            ServerName = "sqlite"
-        };
+        var discoverEvent = new MCPDiscoverToolsEvent();
 
         var responseJson =
             await _gAgentExecutor.ExecuteGAgentEventHandler(mcpGAgent, discoverEvent, typeof(MCPToolsDiscoveredEvent));
@@ -140,7 +135,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Verify available tools
         var availableTools = await mcpGAgent.GetAvailableToolsAsync();
         availableTools.Count.ShouldBeGreaterThan(0);
-        availableTools.Keys.Any(k => k.StartsWith("sqlite.")).ShouldBeTrue();
+        availableTools.Any(k => k.ServerName.StartsWith("sqlite.")).ShouldBeTrue();
     }
 
     [Fact]
@@ -149,7 +144,7 @@ public class MCPGAgentTests : AevatarMCPTestBase
         // Arrange
         var config = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
                 ServerName = "test-server",
                 Command = "test"

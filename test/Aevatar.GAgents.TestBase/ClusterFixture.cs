@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
@@ -7,7 +10,8 @@ using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.Executor;
-using Aevatar.GAgents.MCP.Provider;
+using Aevatar.GAgents.MCP.McpClient;
+using Aevatar.GAgents.MCP.Options;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using Aevatar.Plugins;
@@ -18,6 +22,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using ModelContextProtocol.Client;
 using Moq;
 using Orleans;
 using Orleans.Hosting;
@@ -164,7 +169,31 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
                     services.AddSingleton<IGAgentManager, GAgentManager>();
                     services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
-                    services.AddSingleton<IMCPClientProvider, MockMCPClientProvider>();
+                    // 在测试环境中使用Mock MCP客户端提供者
+                    services.AddSingleton<IMcpClientProvider>(sp => 
+                    {
+                        var mockProvider = new Mock<IMcpClientProvider>();
+                        mockProvider.Setup(x => x.ClientType).Returns(McpClientType.Stdio);
+                        mockProvider.Setup(x => x.GetOrCreateClientAsync(It.IsAny<MCPServerConfig>()))
+                            .ReturnsAsync(() =>
+                            {
+                                var mockClient = new Mock<IMcpClient>();
+                                mockClient.Setup(c => c.ListToolsAsync())
+                                    .ReturnsAsync(new List<McpClientTool>());
+                                mockClient.Setup(c => c.PingAsync())
+                                    .Returns(Task.CompletedTask);
+                                mockClient.Setup(c => c.DisposeAsync())
+                                    .Returns(ValueTask.CompletedTask);
+                                return mockClient.Object;
+                            });
+                        mockProvider.Setup(x => x.DisconnectClientAsync(It.IsAny<string>()))
+                            .Returns(Task.CompletedTask);
+                        mockProvider.Setup(x => x.IsConnectedAsync(It.IsAny<string>()))
+                            .ReturnsAsync(true);
+                        return mockProvider.Object;
+                    });
+                    services.AddTransient<IMcpClientProvider, StdioMcpClientProvider>();
+                    services.AddTransient<IMcpClientProvider, SseMcpClientProvider>();
                 })
                 .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")

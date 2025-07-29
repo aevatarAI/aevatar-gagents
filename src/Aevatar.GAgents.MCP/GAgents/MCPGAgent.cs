@@ -1,5 +1,4 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.GroupChat.Core;
 using Aevatar.GAgents.MCP.Core;
 using Aevatar.GAgents.MCP.Core.State;
 using Aevatar.GAgents.MCP.Options;
@@ -7,9 +6,10 @@ using GroupChat.GAgent.Feature.Common;
 
 namespace Aevatar.GAgents.MCP.GAgents;
 
+/// <summary>
+/// MCP GAgent implementation using official SDK
+/// </summary>
 [GenerateSerializer]
-public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
-
 [GAgent("mcp", "aevatar")]
 public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
     IMCPGAgent
@@ -33,3 +33,9 @@ public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, E
         });
     }
 }
+
+/// <summary>
+/// State log event for MCPGAgent
+/// </summary>
+[GenerateSerializer]
+public class MCPGAgentStateLogEvent : StateLogEventBase<MCPGAgentStateLogEvent>;
