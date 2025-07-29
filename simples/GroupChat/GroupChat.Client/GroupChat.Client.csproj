@@ -14,7 +14,6 @@
         <PackageReference Include="Aevatar.Core.Abstractions" />
         <PackageReference Include="Aevatar.Core" />
         <PackageReference Include="Microsoft.Orleans.Core" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>
