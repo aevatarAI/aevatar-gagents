@@ -22,6 +22,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Orleans;
 using Orleans.Concurrency;
+using Orleans.Runtime;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
@@ -87,16 +88,19 @@ public abstract partial class
         var streamingConfigEventLog =
             await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
-        if (initializeDto.MCPServers != null && initializeDto.MCPServers.Count != 0)
+        if (initializeDto.MCPServers.Count != 0)
         {
             RaiseEvent(new SetEnableMCPToolsStateLogEvent { EnableMCPTools = true });
         }
 
         // Configure selected GAgents if provided
-        if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Count != 0)
+        if (initializeDto.ToolGAgentTypes.Count != 0 || initializeDto.ToolGAgents.Count != 0)
         {
             RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = initializeDto.SelectedGAgents });
+            var toolGAgents = initializeDto.ToolGAgentTypes
+                .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+            toolGAgents.AddRange(initializeDto.ToolGAgents);
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = toolGAgents });
         }
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
@@ -113,13 +117,16 @@ public abstract partial class
             var result = await InitializeBrainAsync(llmConfig, initializeDto.Instructions);
 
             // Register selected GAgent tools if any were specified
-            if (result && initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Count != 0)
+            if (result && (initializeDto.ToolGAgentTypes.Count != 0 || initializeDto.ToolGAgents.Count != 0))
             {
-                await UpdateKernelWithGAgentToolsAsync(initializeDto.SelectedGAgents);
+                var toolGAgents = initializeDto.ToolGAgentTypes
+                    .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+                toolGAgents.AddRange(initializeDto.ToolGAgents);
+                await UpdateKernelWithGAgentToolsAsync(toolGAgents);
             }
 
             // Configure MCP servers if provided in initialization
-            if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Count != 0)
+            if (result && initializeDto.MCPServers.Count != 0)
             {
                 await ConfigureMCPServersAsync(initializeDto.MCPServers);
             }
@@ -550,20 +557,14 @@ public abstract partial class
             case SetRegisteredGAgentFunctionsStateLogEvent setRegisteredFunctionsEvent:
                 State.RegisteredGAgentFunctions = setRegisteredFunctionsEvent.RegisteredFunctions;
                 break;
-            // case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
-            //     State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
-            //     break;
             case ConfigureMCPServersStateLogEvent configureMCPServersEvent:
                 State.MCPAgents = configureMCPServersEvent.MCPServers;
                 break;
             case SetEnableMCPToolsStateLogEvent setEnableMCPToolsEvent:
                 State.EnableMCPTools = setEnableMCPToolsEvent.EnableMCPTools;
                 break;
-            case SetRegisteredMCPFunctionsStateLogEvent setRegisteredMCPFunctionsEvent:
-                State.RegisteredMCPFunctions = setRegisteredMCPFunctionsEvent.RegisteredFunctions;
-                break;
-            case SetSelectedGAgentsStateLogEvent setSelectedGAgentsEvent:
-                State.SelectedGAgents = setSelectedGAgentsEvent.SelectedGAgents;
+            case SetToolGAgentsStateLogEvent setToolGAgentsEvent:
+                State.ToolGAgents = setToolGAgentsEvent.ToolGAgents;
                 break;
             case AddToolCallHistoryStateLogEvent addToolCallHistoryEvent:
                 // Add to tool call history

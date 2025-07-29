@@ -31,7 +31,8 @@ public abstract partial class
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
-    private readonly Dictionary<string, string> _toolNameMapping = new(); // Maps kernel function names to MCP tool names
+    private readonly Dictionary<string, string>
+        _toolNameMapping = new(); // Maps kernel function names to MCP tool names
 
     public virtual async Task<bool> ConfigureMCPServersAsync(List<IMCPGAgent> mcpGAgents)
     {
@@ -94,7 +95,7 @@ public abstract partial class
             return false;
         }
     }
-    
+
     /// <summary>
     /// Configure MCP servers for this agent
     /// </summary>
@@ -368,14 +369,14 @@ public abstract partial class
             string result;
             if (response.Result is MCPToolCallResult mcpResult)
             {
-                // 如果成功，返回Data内容；如果失败，返回错误信息
-                result = mcpResult.Success 
+                // If successful, return Data content; if failed, return error message
+                result = mcpResult.Success
                     ? (mcpResult.Data ?? string.Empty)
                     : (mcpResult.ErrorMessage ?? "Unknown error");
             }
             else if (response.Result != null)
             {
-                // 如果不是MCPToolCallResult，尝试序列化为JSON
+                // If not MCPToolCallResult, try to serialize as JSON
                 result = JsonSerializer.Serialize(response.Result);
             }
             else
@@ -390,10 +391,10 @@ public abstract partial class
             }
             else
             {
-                // 如果Result不为空，假设成功
+                // If Result is not null, assume success
                 toolCall.Success = response.Success && response.Result != null;
             }
-            
+
             toolCall.Result = result;
             toolCall.DurationMs = (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
             _currentToolCalls.Add(toolCall);
@@ -435,7 +436,7 @@ public abstract partial class
         {
             try
             {
-                // 对于数组类型，使用特殊处理以确保OpenAI能够正确理解
+                // For array types, use special handling to ensure OpenAI can understand correctly
                 if (paramInfo.Type == "array")
                 {
                     var arrayMetadata = CreateArrayParameterMetadata(name, paramInfo);
@@ -443,18 +444,20 @@ public abstract partial class
                 }
                 else
                 {
-                    // 使用新的MCPParameterInfo的转换方法
+                    // Use new MCPParameterInfo conversion method
                     var kernelParam = paramInfo.ToKernelParameterMetadata();
-                    
-                    // 确保返回的是正确的类型
+
+                    // Ensure the returned type is correct
                     if (kernelParam is KernelParameterMetadata metadata)
                     {
                         parameters.Add(metadata);
                     }
                     else
                     {
-                        // 回退到旧的方法作为备选
-                        Logger.LogWarning("使用备选方法创建KernelParameterMetadata for parameter: {ParameterName}", name);
+                        // Fall back to old method as alternative
+                        Logger.LogWarning(
+                            "Using fallback method to create KernelParameterMetadata for parameter: {ParameterName}",
+                            name);
                         var fallbackMetadata = CreateFallbackKernelParameterMetadata(name, paramInfo);
                         parameters.Add(fallbackMetadata);
                     }
@@ -462,7 +465,7 @@ public abstract partial class
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "转换MCP参数失败: {ParameterName}，使用备选方法", name);
+                Logger.LogError(ex, "Failed to convert MCP parameter: {ParameterName}, using fallback method", name);
                 var fallbackMetadata = CreateFallbackKernelParameterMetadata(name, paramInfo);
                 parameters.Add(fallbackMetadata);
             }
@@ -472,29 +475,29 @@ public abstract partial class
     }
 
     /// <summary>
-    /// 创建数组类型的KernelParameterMetadata，确保OpenAI能够正确理解
+    /// Create array type KernelParameterMetadata to ensure OpenAI can understand correctly
     /// </summary>
     private KernelParameterMetadata CreateArrayParameterMetadata(string name, MCPParameterInfo paramInfo)
     {
-        // 生成包含完整JSON Schema的描述
+        // Generate description containing complete JSON Schema
         var schema = GenerateSchemaForParameter(paramInfo);
-        var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema, new System.Text.Json.JsonSerializerOptions 
-        { 
-            WriteIndented = false 
+        var schemaJson = JsonSerializer.Serialize(schema, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = false
         });
-        
-        // 创建清晰的描述，说明这是一个数组参数
+
+        // Create clear description explaining this is an array parameter
         var itemType = paramInfo.ArrayItems?.Type ?? "string";
         var enhancedDescription = paramInfo.Description ?? $"Array of {itemType} values";
-        
-        // 为了解决SemanticKernel的限制，我们在描述中明确说明数组结构
+
+        // To address SemanticKernel limitations, we explicitly state the array structure in the description
         enhancedDescription = $"{enhancedDescription}. This parameter expects an array of {itemType} values.";
-        
-        // 创建参数元数据
+
+        // Create parameter metadata
         var metadata = new KernelParameterMetadata(name);
         var metadataType = metadata.GetType();
-        
-        // 设置描述（包含schema信息）
+
+        // Set description (including schema information)
         var descProp = metadataType.GetProperty("Description");
         if (descProp != null && descProp.CanWrite)
         {
@@ -507,8 +510,8 @@ public abstract partial class
                 Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
             }
         }
-        
-        // 设置必需属性
+
+        // Set required property
         var reqProp = metadataType.GetProperty("IsRequired");
         if (reqProp != null && reqProp.CanWrite)
         {
@@ -521,37 +524,39 @@ public abstract partial class
                 Logger.LogDebug(ex, "Could not set IsRequired property on KernelParameterMetadata");
             }
         }
-        
-        // 设置参数类型为JsonElement，让函数自己处理数组解析
-        // 这是一个workaround，因为SemanticKernel 1.57.0-alpha在处理数组schema时有问题
+
+        // Set parameter type to JsonElement, allowing the function to handle array parsing itself
+        // This is a workaround because SemanticKernel 1.57.0-alpha has issues with array schema handling
         var typeProp = metadataType.GetProperty("ParameterType");
         if (typeProp != null && typeProp.CanWrite)
         {
             try
             {
-                // 使用JsonElement让MCP工具函数自己处理JSON解析
+                // Use JsonElement to let MCP tool function handle JSON parsing itself
                 typeProp.SetValue(metadata, typeof(System.Text.Json.JsonElement));
                 Logger.LogDebug("Set ParameterType to JsonElement for array parameter {Name}", name);
             }
             catch (Exception ex)
             {
                 Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
-                // 如果失败，尝试设置为object类型
+                // If failed, try to set as object type
                 try
                 {
                     typeProp.SetValue(metadata, typeof(object));
                 }
-                catch { }
+                catch
+                {
+                }
             }
         }
-        
-        // 设置Schema属性（这是关键！）
+
+        // Set Schema property (this is crucial!)
         var schemaProp = metadataType.GetProperty("Schema");
         if (schemaProp != null && schemaProp.CanWrite)
         {
             try
             {
-                // Schema属性是KernelJsonSchema类型
+                // Schema property is KernelJsonSchema type
                 var kernelJsonSchemaType = schemaProp.PropertyType;
                 var ctor = kernelJsonSchemaType.GetConstructor(new Type[] { typeof(string) });
                 if (ctor != null)
@@ -566,49 +571,52 @@ public abstract partial class
                 Logger.LogDebug(ex, "Could not set Schema property on KernelParameterMetadata");
             }
         }
-        
+
         return metadata;
     }
 
     /// <summary>
-    /// 创建备选的KernelParameterMetadata（向后兼容）
+    /// Create fallback KernelParameterMetadata (backward compatible)
     /// </summary>
     private KernelParameterMetadata CreateFallbackKernelParameterMetadata(string name, MCPParameterInfo paramInfo)
     {
-        // 对于数组类型，特殊处理
+        // Special handling for array types
         if (paramInfo.Type == "array")
         {
             try
             {
-                // 尝试使用KernelJsonSchemaBuilder创建包含items的schema
-                var schemaBuilderType = Type.GetType("Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel") 
-                                     ?? Type.GetType("Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel.Abstractions");
-                
+                // Try to use KernelJsonSchemaBuilder to create schema including items
+                var schemaBuilderType =
+                    Type.GetType("Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel")
+                    ?? Type.GetType(
+                        "Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel.Abstractions");
+
                 if (schemaBuilderType != null)
                 {
-                    var buildMethod = schemaBuilderType.GetMethod("Build", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var buildMethod = schemaBuilderType.GetMethod("Build",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                     if (buildMethod != null)
                     {
                         var schema = GenerateSchemaForParameter(paramInfo);
                         var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema);
                         var kernelSchema = buildMethod.Invoke(null, new object[] { schemaJson });
-                        
-                        // 创建带schema的metadata
+
+                        // Create metadata with schema
                         var metadataCtors = typeof(KernelParameterMetadata).GetConstructors();
-                        var schemaConstructor = metadataCtors.FirstOrDefault(c => 
+                        var schemaConstructor = metadataCtors.FirstOrDefault(c =>
                         {
                             var parameters = c.GetParameters();
-                            return parameters.Length >= 2 && 
-                                   parameters[0].ParameterType == typeof(string) && 
+                            return parameters.Length >= 2 &&
+                                   parameters[0].ParameterType == typeof(string) &&
                                    parameters.Any(p => p.ParameterType.Name == "KernelJsonSchema");
                         });
-                        
+
                         if (schemaConstructor != null)
                         {
                             var ctorParams = schemaConstructor.GetParameters();
                             var args = new object[ctorParams.Length];
                             args[0] = name;
-                            
+
                             for (int i = 1; i < ctorParams.Length; i++)
                             {
                                 if (ctorParams[i].ParameterType.Name == "KernelJsonSchema")
@@ -620,7 +628,7 @@ public abstract partial class
                                     args[i] = ctorParams[i].DefaultValue;
                                 }
                             }
-                            
+
                             return (KernelParameterMetadata)schemaConstructor.Invoke(args);
                         }
                     }
@@ -631,14 +639,14 @@ public abstract partial class
                 Logger.LogDebug(ex, "Failed to create KernelParameterMetadata with schema for array parameter");
             }
         }
-        
-        // 使用基本构造函数
+
+        // Use basic constructor
         var metadata = new KernelParameterMetadata(name);
 
-        // 尝试使用反射设置属性
+        // Try to set properties using reflection
         var metadataType = metadata.GetType();
 
-        // 设置增强的描述，包含更多JsonSchema信息
+        // Set enhanced description containing more JsonSchema information
         var enhancedDescription = paramInfo.GetEnhancedDescription();
         var descProp = metadataType.GetProperty("Description");
         if (descProp != null && descProp.CanWrite)
@@ -653,7 +661,7 @@ public abstract partial class
             }
         }
 
-        // 设置Required属性
+        // Set Required property
         var reqProp = metadataType.GetProperty("IsRequired");
         if (reqProp != null && reqProp.CanWrite)
         {
@@ -667,7 +675,7 @@ public abstract partial class
             }
         }
 
-        // 尝试设置参数类型
+        // Try to set parameter type
         var typeProp = metadataType.GetProperty("ParameterType");
         if (typeProp != null && typeProp.CanWrite)
         {
@@ -681,7 +689,7 @@ public abstract partial class
             }
         }
 
-        // 尝试设置默认值
+        // Try to set default value
         if (paramInfo.DefaultValue != null)
         {
             var defaultProp = metadataType.GetProperty("DefaultValue");
@@ -698,7 +706,7 @@ public abstract partial class
             }
         }
 
-        // 尝试设置Schema属性（特别重要的是数组类型）
+        // Try to set Schema property (especially important for array types)
         var schemaProp = metadataType.GetProperty("Schema");
         if (schemaProp != null && schemaProp.CanWrite)
         {
@@ -706,14 +714,15 @@ public abstract partial class
             {
                 var schema = GenerateSchemaForParameter(paramInfo);
                 var schemaJson = JsonSerializer.Serialize(schema);
-                // Schema属性是KernelJsonSchema类型
+                // Schema property is KernelJsonSchema type
                 var kernelJsonSchemaType = schemaProp.PropertyType;
                 var ctor = kernelJsonSchemaType.GetConstructor(new Type[] { typeof(string) });
                 if (ctor != null)
                 {
                     var kernelJsonSchema = ctor.Invoke(new object[] { schemaJson });
                     schemaProp.SetValue(metadata, kernelJsonSchema);
-                    Logger.LogDebug("Successfully set Schema property for parameter {Name} with type {Type}", name, paramInfo.Type);
+                    Logger.LogDebug("Successfully set Schema property for parameter {Name} with type {Type}", name,
+                        paramInfo.Type);
                 }
             }
             catch (Exception ex)
@@ -726,7 +735,7 @@ public abstract partial class
     }
 
     /// <summary>
-    /// 生成参数的JsonSchema
+    /// Generate JsonSchema for parameter
     /// </summary>
     private object GenerateSchemaForParameter(MCPParameterInfo paramInfo)
     {
@@ -738,7 +747,7 @@ public abstract partial class
         if (!string.IsNullOrEmpty(paramInfo.Description))
             schema["description"] = paramInfo.Description;
 
-        // 对于数组类型，必须包含items属性
+        // For array types, must include items property
         if (paramInfo.Type == "array")
         {
             if (paramInfo.ArrayItems != null)
@@ -747,12 +756,12 @@ public abstract partial class
             }
             else
             {
-                // 默认items为object类型
+                // Default items as object type
                 schema["items"] = new Dictionary<string, object> { ["type"] = "object" };
             }
         }
 
-        // 对于对象类型
+        // For object types
         if (paramInfo.Type == "object" && paramInfo.ObjectProperties != null)
         {
             var properties = new Dictionary<string, object>();
@@ -760,6 +769,7 @@ public abstract partial class
             {
                 properties[propName] = GenerateSchemaForParameter(propInfo);
             }
+
             schema["properties"] = properties;
 
             if (paramInfo.RequiredProperties?.Any() == true)
@@ -768,7 +778,7 @@ public abstract partial class
             }
         }
 
-        // 添加约束
+        // Add constraints
         if (paramInfo.EnumValues?.Any() == true)
             schema["enum"] = paramInfo.EnumValues;
 
@@ -864,13 +874,13 @@ public abstract partial class
                     if (double.TryParse(strValue, out var doubleValue))
                         return doubleValue;
                     throw new InvalidOperationException($"Cannot convert string '{strValue}' to number");
-                    
+
                 case "integer":
                 case "int":
                     if (int.TryParse(strValue, out var intValue))
                         return intValue;
                     throw new InvalidOperationException($"Cannot convert string '{strValue}' to integer");
-                    
+
                 case "boolean":
                 case "bool":
                     if (bool.TryParse(strValue, out var boolValue))
@@ -879,7 +889,7 @@ public abstract partial class
                     if (strValue == "0") return false;
                     if (strValue == "1") return true;
                     throw new InvalidOperationException($"Cannot convert string '{strValue}' to boolean");
-                    
+
                 case "array":
                     // Try to parse as JSON array
                     try
@@ -891,22 +901,23 @@ public abstract partial class
                         // If not JSON, return as single-element list
                         return new List<object> { strValue };
                     }
-                    
+
                 case "object":
                     // Try to parse as JSON object
                     try
                     {
-                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ?? new Dictionary<string, object>();
+                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
+                               new Dictionary<string, object>();
                     }
                     catch
                     {
                         // If not JSON, return as-is
                         return strValue;
                     }
-                    
+
                 case "string":
                     return strValue;
-                    
+
                 default:
                     // Unknown type, return as-is
                     return strValue;
@@ -925,10 +936,10 @@ public abstract partial class
         switch (expectedType.ToLower())
         {
             case "string":
-                return element.ValueKind == JsonValueKind.String 
-                    ? element.GetString() ?? string.Empty 
+                return element.ValueKind == JsonValueKind.String
+                    ? element.GetString() ?? string.Empty
                     : element.ToString();
-                    
+
             case "number":
             case "float":
             case "double":
@@ -937,7 +948,7 @@ public abstract partial class
                 if (element.ValueKind == JsonValueKind.String && double.TryParse(element.GetString(), out var d))
                     return d;
                 throw new InvalidOperationException($"Cannot convert {element.ValueKind} to number");
-                
+
             case "integer":
             case "int":
                 if (element.ValueKind == JsonValueKind.Number)
@@ -945,7 +956,7 @@ public abstract partial class
                 if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var i))
                     return i;
                 throw new InvalidOperationException($"Cannot convert {element.ValueKind} to integer");
-                
+
             case "boolean":
             case "bool":
                 if (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
@@ -958,8 +969,9 @@ public abstract partial class
                     if (str == "0") return false;
                     if (str == "1") return true;
                 }
+
                 throw new InvalidOperationException($"Cannot convert {element.ValueKind} to boolean");
-                
+
             case "array":
                 if (element.ValueKind == JsonValueKind.Array)
                 {
@@ -968,10 +980,12 @@ public abstract partial class
                     {
                         list.Add(ConvertJsonElementToBasicType(item));
                     }
+
                     return list;
                 }
+
                 throw new InvalidOperationException($"Cannot convert {element.ValueKind} to array");
-                
+
             case "object":
                 if (element.ValueKind == JsonValueKind.Object)
                 {
@@ -980,10 +994,12 @@ public abstract partial class
                     {
                         dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
                     }
+
                     return dict;
                 }
+
                 throw new InvalidOperationException($"Cannot convert {element.ValueKind} to object");
-                
+
             default:
                 // Unknown type, use basic conversion
                 return ConvertJsonElementToBasicType(element);

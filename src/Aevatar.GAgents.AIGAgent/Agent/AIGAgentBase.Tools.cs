@@ -48,67 +48,6 @@ public abstract partial class
     }
 
     /// <summary>
-    /// Registers all available GAgents as tools in the Semantic Kernel
-    /// </summary>
-    protected virtual async Task RegisterGAgentsAsToolsAsync()
-    {
-        if (_brain == null)
-        {
-            Logger.LogWarning("Cannot register GAgent tools: Brain not initialized");
-            return;
-        }
-
-        if (!State.EnableGAgentTools)
-        {
-            Logger.LogInformation("GAgent tools are disabled");
-            return;
-        }
-
-        try
-        {
-            _gAgentService ??= ServiceProvider.GetRequiredService<IGAgentService>();
-            _gAgentExecutor ??= ServiceProvider.GetRequiredService<IGAgentExecutor>();
-
-            Logger.LogInformation("Starting GAgent tools registration");
-
-            // Create GAgent tool plugin
-            _gAgentToolPlugin = new GAgentToolPlugin(_gAgentExecutor, _gAgentService, Logger);
-
-            // Get the kernel from brain using reflection
-            var kernel = GetKernelFromBrain();
-            if (kernel == null)
-            {
-                Logger.LogWarning("Cannot access Semantic Kernel from brain");
-                return;
-            }
-
-            // Import the plugin with its built-in functions
-            ImportPluginToKernel(kernel, _gAgentToolPlugin, "GAgentTools");
-
-            // Get all available GAgents
-            var allGAgents = await _gAgentService.GetAllAvailableGAgentInformation();
-
-            // Create dynamic functions for each GAgent event
-            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, allGAgents);
-
-            Logger.LogInformation("Successfully registered {Count} GAgent functions as tools",
-                registeredFunctions.Count);
-
-            // Store registered function names in state directly
-            var functionNames = registeredFunctions.Select(f => f.Name).ToList();
-            State.RegisteredGAgentFunctions = functionNames;
-
-            // Persist state changes
-            await ConfirmEvents();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register GAgent tools");
-            throw;
-        }
-    }
-
-    /// <summary>
     /// Creates a state log event for setting registered functions
     /// </summary>
     private TStateLogEvent? CreateSetRegisteredFunctionsEvent(List<string> functionNames)
@@ -132,7 +71,7 @@ public abstract partial class
     /// Registers dynamic functions for each GAgent and their events
     /// </summary>
     private async Task<List<KernelFunction>> RegisterDynamicGAgentFunctionsAsync(Kernel kernel,
-        Dictionary<GrainType, List<Type>> allGAgents)
+        Dictionary<GrainId, List<Type>> allGAgents)
     {
         var dynamicFunctions = new List<KernelFunction>();
 
@@ -143,13 +82,14 @@ public abstract partial class
             kernel.Plugins.Remove(plugin);
         }
 
-        foreach (var (grainType, eventTypes) in allGAgents)
+        foreach (var (grainId, eventTypes) in allGAgents)
         {
             try
             {
                 // Get GAgent description
+                var grainType = grainId.Type;
                 var gAgentInfo = await _gAgentService!.GetGAgentDetailInfoAsync(grainType);
-                var gAgentDescription = gAgentInfo?.Description ?? "GAgent";
+                var gAgentDescription = gAgentInfo.Description ?? "GAgent";
                 var functions = new List<KernelFunction>();
 
                 foreach (var eventType in eventTypes)
@@ -173,7 +113,7 @@ public abstract partial class
                             try
                             {
                                 // Call the actual GAgent tool
-                                var result = await CallGAgentToolAsync(grainType, eventType, args);
+                                var result = await CallGAgentToolAsync(grainId, eventType, args);
 
                                 toolCall.Result = JsonSerializer.Serialize(result);
                                 toolCall.Success = true;
@@ -251,13 +191,11 @@ public abstract partial class
                     {
                         // Generate a more unique hash using the full grain type
                         var hashBytes = System.Text.Encoding.UTF8.GetBytes(fullGrainType);
-                        using (var sha = System.Security.Cryptography.SHA256.Create())
-                        {
-                            var hash = sha.ComputeHash(hashBytes);
-                            var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_")
-                                .Replace("+", "_");
-                            pluginName = $"GA_{shortHash}";
-                        }
+                        using var sha = System.Security.Cryptography.SHA256.Create();
+                        var hash = sha.ComputeHash(hashBytes);
+                        var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_")
+                            .Replace("+", "_");
+                        pluginName = $"GA_{shortHash}";
                     }
 
                     // Check if plugin already exists and remove it
@@ -287,7 +225,7 @@ public abstract partial class
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to register functions for GAgent {GrainType}", grainType);
+                Logger.LogWarning(ex, "Failed to register functions for GAgent {GrainId}", grainId.ToString());
             }
         }
 
@@ -533,7 +471,7 @@ public abstract partial class
             _gAgentToolPlugin = null;
 
             // Update state
-            var clearFunctionsEvent = CreateSetRegisteredFunctionsEvent(new List<string>());
+            var clearFunctionsEvent = CreateSetRegisteredFunctionsEvent([]);
             if (clearFunctionsEvent != null)
             {
                 RaiseEvent(clearFunctionsEvent);
@@ -562,7 +500,7 @@ public abstract partial class
 
         await UpdateKernelWithMCPToolsAsync();
 
-        if (State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Count > 0)
+        if (State.EnableGAgentTools && State.ToolGAgents.Count > 0)
         {
             // Only register GAgent tools if specific GAgents have been selected
             await UpdateKernelWithGAgentToolsAsync();
@@ -608,60 +546,21 @@ public abstract partial class
     {
         [Id(0)] public List<GrainType> AllowedGAgentTypes { get; set; } = [];
     }
-
+    
     /// <summary>
     /// State log event for setting selected GAgent tools
     /// </summary>
     [GenerateSerializer]
-    public class SetSelectedGAgentsStateLogEvent : StateLogEventBase<TStateLogEvent>
+    public class SetToolGAgentsStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        [Id(0)] public List<GrainType> SelectedGAgents { get; set; } = new();
+        [Id(0)] public List<GrainId> ToolGAgents { get; set; } = [];
     }
 
-    /// <summary>
-    /// Registers all available GAgent tools
-    /// </summary>
-    public virtual async Task<bool> RegisterAllGAgentToolsAsync()
+    public async Task<bool> ConfigureToolGAgentsAsync(List<GrainId> toolGAgents)
     {
         try
         {
-            if (_brain == null)
-            {
-                Logger.LogWarning("Cannot register GAgent tools: Brain not initialized");
-                return false;
-            }
-
-            Logger.LogInformation("Registering all available GAgent tools");
-
-            // Enable GAgent tools
-            State.EnableGAgentTools = true;
-
-            // Register all available GAgents
-            await RegisterGAgentsAsToolsAsync();
-
-            Logger.LogInformation("Successfully registered all available GAgent tools");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register all GAgent tools");
-            return false;
-        }
-    }
-
-    public Task<List<GrainType>> GetAvailableGAgentToolsAsync()
-    {
-        return Task.FromResult(State.SelectedGAgents);
-    }
-
-    /// <summary>
-    /// Configure selected GAgent tools
-    /// </summary>
-    public virtual async Task<bool> ConfigureGAgentToolsAsync(List<GrainType> selectedGAgents)
-    {
-        try
-        {
-            if (selectedGAgents.Count == 0)
+            if (toolGAgents.Count == 0)
             {
                 // No GAgents selected, nothing to configure
                 return false;
@@ -673,7 +572,7 @@ public abstract partial class
                 return false;
             }
 
-            Logger.LogInformation("Configuring GAgent tools: {Count} GAgents selected", selectedGAgents.Count);
+            Logger.LogInformation("Configuring GAgent tools: {Count} GAgents selected", toolGAgents.Count);
 
             // Enable GAgent tools if not already enabled
             if (!State.EnableGAgentTools)
@@ -682,15 +581,15 @@ public abstract partial class
             }
 
             // Update state with selected GAgents
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = selectedGAgents });
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = toolGAgents });
 
             // Persist state changes
             await ConfirmEvents();
 
             // Update kernel with new tools
-            await UpdateKernelWithGAgentToolsAsync();
+            await UpdateKernelWithGAgentToolsAsync(toolGAgents);
 
-            Logger.LogInformation("Successfully configured {Count} GAgent tools", selectedGAgents.Count);
+            Logger.LogInformation("Successfully configured {Count} GAgent tools", toolGAgents.Count);
             return true;
         }
         catch (Exception ex)
@@ -698,6 +597,21 @@ public abstract partial class
             Logger.LogError(ex, "Failed to configure GAgent tools");
             return false;
         }
+    }
+
+    public Task<List<GrainId>> GetToolGAgentsAsync()
+    {
+        return Task.FromResult(State.ToolGAgents);
+    }
+
+    /// <summary>
+    /// Configure selected GAgent tools
+    /// </summary>
+    public virtual async Task<bool> ConfigureGAgentToolsAsync(List<GrainType> toolGAgentTypes)
+    {
+        var toolGAgents = toolGAgentTypes
+            .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+        return await ConfigureToolGAgentsAsync(toolGAgents);
     }
 
     /// <summary>
@@ -716,7 +630,7 @@ public abstract partial class
             Logger.LogInformation("Clearing all GAgent tools");
 
             // Clear selected GAgents
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = [] });
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = [] });
 
             // Clear registered functions
             RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent { RegisteredFunctions = [] });
@@ -750,11 +664,11 @@ public abstract partial class
     /// <summary>
     /// Update kernel with selected GAgent tools
     /// </summary>
-    protected async Task UpdateKernelWithGAgentToolsAsync(List<GrainType>? selectedGAgents = null)
+    protected async Task UpdateKernelWithGAgentToolsAsync(List<GrainId>? toolGAgents = null)
     {
-        selectedGAgents ??= State.SelectedGAgents;
+        toolGAgents ??= State.ToolGAgents;
 
-        if (_brain == null || selectedGAgents.Count == 0)
+        if (_brain == null || toolGAgents.Count == 0)
         {
             Logger.LogInformation("No GAgent tools to register");
             return;
@@ -780,16 +694,17 @@ public abstract partial class
 
             // Get event types for selected GAgents
             var allGAgentInfo = await _gAgentService.GetAllAvailableGAgentInformation();
-            var selectedGAgentInfo = new Dictionary<GrainType, List<Type>>();
+            var toolGAgentsInfo = new Dictionary<GrainId, List<Type>>();
 
-            foreach (var grainType in selectedGAgents)
+            foreach (var grainId in toolGAgents)
             {
+                var grainType = grainId.Type;
                 try
                 {
                     if (allGAgentInfo.TryGetValue(grainType, out var eventTypes) && eventTypes != null &&
                         eventTypes.Count > 0)
                     {
-                        selectedGAgentInfo[grainType] = eventTypes;
+                        toolGAgentsInfo[grainId] = eventTypes;
                     }
                     else
                     {
@@ -803,7 +718,7 @@ public abstract partial class
             }
 
             // Register dynamic functions for selected GAgents
-            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, selectedGAgentInfo);
+            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, toolGAgentsInfo);
 
             Logger.LogInformation("Successfully registered {Count} GAgent functions as tools",
                 registeredFunctions.Count);
@@ -1304,7 +1219,7 @@ public abstract partial class
     /// <summary>
     /// Calls a GAgent tool by executing the event handler
     /// </summary>
-    private async Task<object> CallGAgentToolAsync(GrainType grainType, Type eventType, KernelArguments args)
+    private async Task<object> CallGAgentToolAsync(GrainId grainId, Type eventType, KernelArguments args)
     {
         try
         {
@@ -1355,12 +1270,12 @@ public abstract partial class
             }
 
             // Execute the event handler
-            var response = await _gAgentExecutor.ExecuteGAgentEventHandler(grainType, eventBase);
+            var response = await _gAgentExecutor.ExecuteGAgentEventHandler(grainId, eventBase);
             return response;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to call GAgent tool {GrainType}.{EventType}", grainType, eventType.Name);
+            Logger.LogError(ex, "Failed to call GAgent tool {GrainType}.{EventType}", grainId, eventType.Name);
             throw;
         }
     }

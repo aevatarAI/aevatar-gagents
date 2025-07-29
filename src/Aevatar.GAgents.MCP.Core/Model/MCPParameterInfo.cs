@@ -4,51 +4,51 @@ using System.Text.Json;
 namespace Aevatar.GAgents.MCP.Core.Model;
 
 /// <summary>
-/// 增强的MCP参数信息，支持完整JsonSchema到Orleans State到KernelParameterMetadata的转换
+/// Enhanced MCP parameter information supporting full JsonSchema to Orleans State to KernelParameterMetadata conversion
 /// </summary>
 [GenerateSerializer]
 public class MCPParameterInfo
 {
-    #region 基础属性（向后兼容）
+    #region Basic properties (backward compatible)
     /// <summary>
-    /// 参数名称
+    /// Parameter name
     /// </summary>
     [Id(0)] public string Name { get; set; } = string.Empty;
     
     /// <summary>
-    /// 参数类型（简化表示，保持向后兼容）
+    /// Parameter type (simplified representation, maintaining backward compatibility)
     /// </summary>
     [Id(1)] public string Type { get; set; } = string.Empty;
     
     /// <summary>
-    /// 参数描述
+    /// Parameter description
     /// </summary>
     [Id(2)] public string Description { get; set; } = string.Empty;
     
     /// <summary>
-    /// 是否必需参数
+    /// Whether the parameter is required
     /// </summary>
     [Id(3)] public bool Required { get; set; }
     
     /// <summary>
-    /// 默认值
+    /// Default value
     /// </summary>
     [Id(4)] public object? DefaultValue { get; set; }
     #endregion
 
     #region JsonSchema扩展属性
     /// <summary>
-    /// 完整的JsonSchema原始数据（序列化为字符串存储）
+    /// Complete JsonSchema raw data (serialized as string for storage)
     /// </summary>
     [Id(5)] public string? RawJsonSchema { get; set; }
     
     /// <summary>
-    /// JsonSchema格式约束（如date-time, email等）
+    /// JsonSchema format constraints (e.g. date-time, email, etc.)
     /// </summary>
     [Id(6)] public string? Format { get; set; }
     
     /// <summary>
-    /// 字符串最小长度
+    /// String minimum length
     /// </summary>
     [Id(7)] public int? MinLength { get; set; }
     

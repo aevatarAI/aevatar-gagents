@@ -87,13 +87,13 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
     }
 
     /// <summary>
-    /// 从MCP结果中提取内容文本
+    /// Extract content text from MCP result
     /// </summary>
     private string ExtractContentFromMcpResult(object result)
     {
         try
         {
-            // 使用反射获取Content属性
+            // Use reflection to get Content property
             var resultType = result?.GetType();
             if (resultType == null)
             {
@@ -112,7 +112,7 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 return string.Empty;
             }
 
-            // 尝试获取第一个内容项
+            // Try to get the first content item
             object? firstContent = null;
             if (contentValue is System.Collections.IEnumerable enumerable)
             {
