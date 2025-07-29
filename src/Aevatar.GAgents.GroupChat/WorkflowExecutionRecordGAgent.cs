@@ -85,7 +85,7 @@ public class WorkflowExecutionRecordGAgent :
                 state.Status = WorkflowExecutionStatus.Completed;
                 break;
             case StartExecuteWorkUnitLogEvent startExecuteWorkUnitLogEvent:
-                var startUnit = state.WorkUnitRecords.FirstOrDefault(o =>
+                var startUnit = state.WorkUnitRecords.First(o =>
                     o.WorkUnitGrainId == startExecuteWorkUnitLogEvent.WorkUnitGrainId);
                 startUnit.WorkUnitGrainId = startExecuteWorkUnitLogEvent.WorkUnitGrainId;
                 startUnit.StartTime = DateTime.UtcNow;
@@ -96,7 +96,7 @@ public class WorkflowExecutionRecordGAgent :
                 startUnit.InputData = startExecuteWorkUnitLogEvent.InputData;
                 break;
             case FinishExecuteWorkUnitLogEvent finishExecuteWorkUnitLogEvent:
-                var workUnit = state.WorkUnitRecords.FirstOrDefault(o =>
+                var workUnit = state.WorkUnitRecords.First(o =>
                     o.WorkUnitGrainId == finishExecuteWorkUnitLogEvent.WorkUnitGrainId);
                 workUnit.EndTime = DateTime.UtcNow;
                 workUnit.Status = WorkflowExecutionStatus.Completed;
