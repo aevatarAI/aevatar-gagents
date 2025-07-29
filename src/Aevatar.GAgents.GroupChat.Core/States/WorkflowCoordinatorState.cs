@@ -14,6 +14,9 @@ public class WorkflowCoordinatorState : StateBase
     [Id(5)] public List<WorkUnitInfo> BackupWorkUnitInfos { get; set; } = new List<WorkUnitInfo>();
     [Id(6)] public DateTime? LastRunningTime { get; set; }
     [Id(7)] public string? Content { get; set; } = null;
+    [Id(8)] public bool EnableRunRecord { get; set; }
+    [Id(9)] public Guid CurrentExecutionRecordId { get; set; }
+    [Id(10)] public long RoundId { get; set; }
 
     public WorkUnitInfo? GetWorkUnit(string workUnitGrainId)
     {
