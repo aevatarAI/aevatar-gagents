@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 using GroupChat.GAgent;
-using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
-using Microsoft.Extensions.Logging;
 
 namespace GroupChat.Grain;
 

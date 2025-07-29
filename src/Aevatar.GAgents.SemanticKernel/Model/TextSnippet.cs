@@ -9,18 +9,18 @@ namespace Aevatar.GAgents.SemanticKernel.Model;
 /// <typeparam name="TKey">The type of the data model key.</typeparam>
 internal sealed class TextSnippet<TKey>
 {
-    [VectorStoreRecordKey]
+    [VectorStoreKey]
     public required TKey Key { get; set; }
 
-    [VectorStoreRecordData]
+    [VectorStoreData]
     public string? Text { get; set; }
 
-    [VectorStoreRecordData]
+    [VectorStoreData]
     public string? ReferenceDescription { get; set; }
 
-    [VectorStoreRecordData]
+    [VectorStoreData]
     public string? ReferenceLink { get; set; }
 
-    [VectorStoreRecordVector(1536)]
+    [VectorStoreVector(Dimensions: 1536)]
     public ReadOnlyMemory<float> TextEmbedding { get; set; }
 }

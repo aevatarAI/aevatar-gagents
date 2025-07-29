@@ -5,7 +5,6 @@ using Aevatar.Core;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AIGAgent.Agent;
 using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Blackboard;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
@@ -96,7 +95,7 @@ public abstract partial class
         switch (@event)
         {
             case SetMemberNameLogEvent @setMemberNameLogEvent:
-                State.MemberName = @setMemberNameLogEvent.MemberName;
+                state.MemberName = @setMemberNameLogEvent.MemberName;
                 return;
         }
 
