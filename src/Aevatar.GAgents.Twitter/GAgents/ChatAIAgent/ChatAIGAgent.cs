@@ -117,7 +117,8 @@ public class ChatAIGAgent :
             Instructions = configuration.Instructions,
             LLMConfig = new LLMConfigDto { SystemLLM = configuration.SystemLLM },
             MCPServers = configuration.MCPServers,
-            SelectedGAgents = configuration.SelectedGAgents,
+            ToolGAgentTypes = configuration.ToolGAgentTypes,
+            ToolGAgents = configuration.ToolGAgents,
         });
 
         _logger.LogDebug("PerformConfigAsync ChatAIGAgent configuration and initialization completed");

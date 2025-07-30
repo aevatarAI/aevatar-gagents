@@ -70,7 +70,7 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         mcpState.MCPAgents.ShouldNotBeEmpty();
 
         gagentState.EnableGAgentTools.ShouldBeTrue();
-        gagentState.SelectedGAgents.ShouldNotBeEmpty();
+        gagentState.ToolGAgents.ShouldNotBeEmpty();
     }
 
     [Fact]
@@ -383,14 +383,14 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         configuredMcpState.MCPAgents.ShouldNotBeEmpty();
 
         configuredGAgentState.EnableGAgentTools.ShouldBeTrue();
-        configuredGAgentState.SelectedGAgents.ShouldNotBeEmpty();
+        configuredGAgentState.ToolGAgents.ShouldNotBeEmpty();
 
         // Clear tools
         await gagentAgent.ClearGAgentToolsAsync();
 
         // Assert - GAgent tools should be cleared
         var clearedGAgentState = await gagentAgent.GetStateAsync();
-        clearedGAgentState.SelectedGAgents.ShouldBeEmpty();
+        clearedGAgentState.ToolGAgents.ShouldBeEmpty();
         clearedGAgentState.RegisteredGAgentFunctions.ShouldBeEmpty();
     }
 
@@ -471,6 +471,6 @@ public class AIGAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         var gagentState = await gagentAgent.GetStateAsync();
 
         mcpState.MCPAgents.ShouldBeEmpty();
-        gagentState.SelectedGAgents.ShouldBeEmpty();
+        gagentState.ToolGAgents.ShouldBeEmpty();
     }
 }

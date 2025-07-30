@@ -14,5 +14,6 @@ public class ChatAIGAgentConfigDto : GroupMemberConfigDto
     [Id(1)] public string SystemLLM { get; set; }
 
     [Id(2)] public List<MCPServerConfig> MCPServers { get; set; } = [];
-    [Id(3)] public List<GrainType> SelectedGAgents { get; set; } = [];
+    [Id(3)] public List<GrainType> ToolGAgentTypes { get; set; } = [];
+    [Id(4)] public List<GrainId> ToolGAgents { get; set; } = [];
 }
