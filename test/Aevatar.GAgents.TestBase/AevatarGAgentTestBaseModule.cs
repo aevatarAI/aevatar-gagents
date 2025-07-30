@@ -3,6 +3,8 @@ using Aevatar.Core.Abstractions;
 using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.GAgents.Executor;
+using Aevatar.GAgents.MCP.McpClient;
+using Aevatar.GAgents.MCP.Test.Mocks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
@@ -40,6 +42,11 @@ public class AevatarGAgentTestBaseModule : AbpModule
         context.Services.AddSingleton<IGAgentExecutor>(sp =>
             new GAgentExecutor(context.Services.GetRequiredService<ClusterFixture>().Cluster.Client,
                 context.Services.GetRequiredService<IGAgentService>()));
+        
+        // 注册Mock MCP客户端提供者用于测试（ABP框架需要）
+        context.Services.AddSingleton<IMcpClientProvider, MockMcpClientProvider>();
+        context.Services.AddSingleton<MockMcpClientProvider>();
+        
         Configure<AbpAutoMapperOptions>(options => { options.AddMaps<AevatarGAgentTestBaseModule>(); });
     }
 }

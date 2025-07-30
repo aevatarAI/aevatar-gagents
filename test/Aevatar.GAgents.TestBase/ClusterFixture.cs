@@ -12,6 +12,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.Executor;
 using Aevatar.GAgents.MCP.McpClient;
 using Aevatar.GAgents.MCP.Options;
+using Aevatar.GAgents.MCP.Test.Mocks;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
 using Aevatar.Plugins;
@@ -169,8 +170,9 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
                     services.AddSingleton<IGAgentManager, GAgentManager>();
                     services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
-                    services.AddTransient<IMcpClientProvider, StdioMcpClientProvider>();
-                    services.AddTransient<IMcpClientProvider, SseMcpClientProvider>();
+                    // 注册Mock MCP客户端提供者用于测试（与TestBase保持一致使用Singleton）
+                    services.AddSingleton<IMcpClientProvider, MockMcpClientProvider>();
+                    services.AddSingleton<MockMcpClientProvider>();
                 })
                 .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
