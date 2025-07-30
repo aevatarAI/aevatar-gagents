@@ -7,11 +7,11 @@ namespace Aevatar.GAgents.PsiOmni;
 
 public partial class PsiOmniGAgent
 {
-    private Kernel GetKernel_Analyzer()
+    private Kernel GetKernel_Plain()
     {
         var kernel = _kernelFactory.CreateKernel(
             State.Configuration!
-        ); // Orchestrator doesn't have specialized tools.
+        );
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 

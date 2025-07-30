@@ -6,6 +6,9 @@ namespace Aevatar.GAgents.PsiOmni;
 [GenerateSerializer]
 public class PsiOmniGAgentConfig : GroupMemberConfigDto
 {
-    [Id(0)] public int Depth { get; set; } = 0;
-    [Id(1)] public LLMConfigDto? LLMConfig { get; set; }
+    [Id(0)] public string ParentId { get; set; } = string.Empty;
+    [Id(1)] public int Depth { get; set; } = 0;
+    [Id(2)] public LLMConfigDto? LLMConfig { get; set; }
+    [Id(3)] public string Description { get; set; } = string.Empty;
+    [Id(4)] public string Examples { get; set; } = string.Empty;
 }

@@ -37,9 +37,12 @@ public class PsiOmniGAgentStateLogEvent : StateLogEventBase<PsiOmniGAgentStateLo
 }
 
 [GenerateSerializer]
-public class SetDepthEvent : PsiOmniGAgentStateLogEvent
+public class InitializeEvent : PsiOmniGAgentStateLogEvent
 {
-    [Id(0)] public int Depth { get; set; } = 0;
+    [Id(0)] public string ParentId { get; set; } = string.Empty;
+    [Id(1)] public int Depth { get; set; } = 0;
+    [Id(3)] public string Description { get; set; } = string.Empty;
+    [Id(4)] public string Examples { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -90,6 +93,12 @@ public class RealizationEvent : PsiOmniGAgentStateLogEvent
 public class UpdateSelfDescription : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public string Description { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class AddNewAgent : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public AgentDescriptor NewAgent { get; set; } = new();
 }
 
 [GenerateSerializer]

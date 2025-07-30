@@ -91,11 +91,12 @@ public partial class
                                                """ +
                                                """
                                                ## Task Dispatch
-                                               You will dispatch sub-tasks to child agents. You have the information of existing child agents.
-                                               Use call_new_agent tool to dispatch the sub-task to an agent that will be created based on the task description.
-                                               Use call_agent tool to dispatch the sub-task to an existing agent or to send follow-up message to it.
-                                               If you used call_new_agent to create an agent to handle the task. The child agent will handle it asynchronously. So wait patiently for the child agent to
-                                               reply the outcome.
+                                               You will dispatch sub-tasks to child agents. Use tool query_existing_agents to find what child agents are available.
+                                               If a child agent is suitable for handling a sub-task, use call_agent tool to dispatch the sub-task to the agent.
+                                               The call_agent tool can also be used to send follow-up messages to a child agents.
+                                               Use create_agent tool to create a new agent if none of the existing child agents is able to handle the sub-task.
+                                               When creating new agents, think about a type of task that it can handle rather than your specific task.
+                                               After you create the agent, you can dispatch a sub-task to it using call_agent tool. Wait patiently for child agents to return the results.
                                                IMPORTANT: Always try to re-use existing agents rather than creating new ones.
                                                Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
                                                Dispatch a task only when all its dependencies are completed.
@@ -156,9 +157,12 @@ public partial class
         // First, call the base class method
         await base.PerformConfigAsync(configuration);
         
-        RaiseEventWithTracing(new SetDepthEvent()
+        RaiseEventWithTracing(new InitializeEvent
         {
-            Depth = configuration.Depth
+            ParentId = configuration.ParentId,
+            Depth = configuration.Depth,
+            Description = configuration.Description,
+            Examples = configuration.Examples
         });
         await ConfirmEventsWithTracing();
         
@@ -203,6 +207,88 @@ public partial class
         });
     }
 
+    private async Task InitializeAsync()
+    {
+        LogEventDebug("Start initialization");
+        var kernel = GetKernel_Plain();
+        var systemPrompt = 
+            """
+            You are an analyst helping to decide how to initialize an AI agent that will handle a type of tasks.
+
+            ## Output Format
+            - Output a JSON object with the following fields:
+              - "OperationMode": "ORCHESTRATOR" or "SPECIALIZED"
+              - "Description": a description of the agent can do. For SPECIALIZED agents: 1) Include the agent's capability derived from the selected tools. 2) DO NOT directly include the task without generalization.
+              - "Tools": a list of names of the tools the agent will use (only for SPECIALIZED mode)
+            - No other text or explanation.
+            """;
+        systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        var maxTokens = 4000; // 默认最大 token
+        var temperature = 0.1; // 默认温度
+        // 只用 OpenAI 版本（无 config.Model 判断）
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
+            MaxTokens = maxTokens,
+            Temperature = temperature
+        };
+
+        var chatHistory = new ChatHistory();
+        chatHistory.AddSystemMessage(systemPrompt);
+        var userMessage = "I'm a new agent that will handle tasks of type: " +
+        $"<description>{State.Description}</description>"+
+        // $"<exampleTasks>{State.Examples.Select(e => e.Request).Aggregate((a, b) => a + "\n" + b)}</exampleTasks>" +
+        $"<depth>{State.Depth}</depth>";
+        chatHistory.AddUserMessage(userMessage);
+
+        LogEventDebug("Executing GetChatMessageContent for initialization");
+        var chatMessage = await ExecuteWithRetryAsync(
+            async () => await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel),
+            "GetChatMessageContent for initialization");
+        LogEventDebug("GetChatMessageContent for initialization completed");
+        var result = chatMessage.Content;
+
+        if (result.Contains("ORCHESTRATOR") || result.Contains("SPECIALIZED"))
+        {
+            var jsonStartIndex = result.IndexOf('{');
+            var jsonEndIndex = result.LastIndexOf('}');
+            if (jsonStartIndex != -1 && jsonEndIndex != -1)
+            {
+                result = result.Substring(jsonStartIndex, jsonEndIndex - jsonStartIndex + 1);
+            }
+
+            var realizationResult = JsonSerializer.Deserialize<RealizationResult>(result);
+            if (realizationResult?.OperationMode == "ORCHESTRATOR")
+            {
+                RaiseEvent(new RealizationEvent
+                {
+                    RealizationStatus = RealizationStatus.Orchestrator,
+                    Description = realizationResult?.Description ?? string.Empty // Orchestrator doesn't have tools.
+                });
+            }
+            else if (realizationResult?.OperationMode == "SPECIALIZED")
+            {
+                var tools = new List<ToolDefinition>();
+                foreach (var toolName in realizationResult.Tools)
+                {
+                    var kernelFunction = _kernelFactory.FunctionRegistry?.GetToolByQualifiedName(toolName);
+                    if (kernelFunction != null)
+                    {
+                        tools.Add(kernelFunction.ToToolDefinition());
+                    }
+                }
+
+                RaiseEvent(new RealizationEvent()
+                {
+                    RealizationStatus = RealizationStatus.Specialized,
+                    Description = realizationResult?.Description ?? string.Empty,
+                    Tools = tools
+                });
+            }
+        }
+    }
+    
     private async Task RunAsync(string? trigger = null)
     {
         await TraceMethodAsync(async () =>
@@ -229,6 +315,7 @@ public partial class
             
             switch (State.RealizationStatus)
             {
+                /* Skipped
                 case RealizationStatus.Unrealized:
                     LogEventDebug("Running analyzer mode");
                     kernel = GetKernel_Analyzer();
@@ -237,6 +324,7 @@ public partial class
                     (chatHistory, preHistoryLength) = await RunCoreAsync(kernel, systemPrompt);
                     OnChatDoneAsync_Analyzer(chatHistory, preHistoryLength);
                     break;
+                */
                 case RealizationStatus.Orchestrator:
                     LogEventDebug("Running orchestrator mode with {ChildCount} child agents", State.ChildAgents.Count);
                     kernel = GetKernel_Orchestrator();
@@ -429,9 +517,20 @@ public partial class
 
         switch (@event)
         {
-            case SetDepthEvent payload:
+            case InitializeEvent payload:
                 LogEventDebug("Setting depth: {Depth}", payload.Depth);
                 state.Depth = payload.Depth;
+                state.UserAgentId = payload.ParentId;
+                state.Description = payload.Description + $"<examples>{payload.Examples}</examples>";
+                if (state.Depth == 0) // is root
+                {
+                    state.RealizationStatus = RealizationStatus.Orchestrator;
+                }
+                else if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
+                {
+                    LogEventDebug("Scheduling initialization upon InitializeEvent");
+                    ScheduleTask(InitializeAsync);
+                }
                 break;
             case UpdateSendConfigEvent payload:
                 if (state.AgentId.IsNullOrEmpty())
@@ -443,7 +542,11 @@ public partial class
                     state.Configuration = config;
                     // state.Tools = payload.Event.Tools; // Not needed here. No tools should be configured here.
                 }
-
+                if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
+                {
+                    LogEventDebug("Scheduling initialization upon UpdateSendConfigEvent");
+                    ScheduleTask(InitializeAsync);
+                }
                 break;
             case ReceiveUserMessageEvent payload:
                 Logger.LogInformation("StateTransition for ReceiveUserMessageEvent");
@@ -466,8 +569,11 @@ public partial class
                         Request = payload.Event.Content,
                         Response = String.Empty
                     });
-                    LogEventDebug("Scheduling RunAsync for user message");
-                    ScheduleTask(async () => await RunAsync($"User Message {payload.Event}"));
+                    if (state.RealizationStatus != RealizationStatus.Unrealized)
+                    {
+                        LogEventDebug("Scheduling RunAsync for user message");
+                        ScheduleTask(async () => await RunAsync($"User Message {payload.Event}"));   
+                    }
                 }
 
                 break;

@@ -11,16 +11,26 @@ public partial class PsiOmniGAgent
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
-    [KernelFunction("call_new_agent")]
-    [Description(
-        "Creates a new agent with an initial task. The result will be notified to the given parent agent. Don't use call_agent to send the task again.")]
+    [KernelFunction("query_existing_agents")]
+    [Description("Query what agents are available.")]
+    public async Task<List<AgentDescriptor>> QueryAgentsAsync()
+    {
+        return await Task.FromResult(State.ChildAgents.Values.ToList());
+    }
+
+    /// <summary>
+    /// Create a new specialized agent with custom prompt and tools
+    /// </summary>
+    [KernelFunction("create_agent")]
+    [Description("Creates a new agent.")]
     public async Task<string> CreateAgentAsync(
         [Description("The ID of the parent agent.")]
         string parentAgentId,
-        [Description("The call ID of this call.")]
-        string callId,
-        [Description("The description of the task sent to the new agent. Please provide all necessary information.")]
-        string task
+        [Description(
+            "The description of the agent. Include all necessary information such as the persona, knowledge and capabilities.")]
+        string description,
+        [Description("The example tasks that the agent can perform.")]
+        string exampleTasks
     )
     {
         try
@@ -36,6 +46,9 @@ public partial class PsiOmniGAgent
             // Create and initialize the new agent
             var psi = await _gAgentFactory.GetGAgentAsync("omni", "psi", new PsiOmniGAgentConfig()
             {
+                ParentId = parentAgentId,
+                Description = description,
+                Examples = exampleTasks,
                 Depth = State.Depth + 1
             });
             var agentId = psi.GetGrainId();
@@ -47,37 +60,25 @@ public partial class PsiOmniGAgent
             };
             await PublishAsyncWithTracing(agentId, configEvent);
 
-            var userMessageEvent = new UserMessageEvent
-            {
-                TargetAgentId = agentId.ToString(),
-                CallId = callId,
-                Content = task,
-                ReplyToAgentId = parentAgentId
-            };
-            await PublishAsyncWithTracing(agentId, userMessageEvent);
             var descriptor = new AgentDescriptor
             {
                 AgentId = agentId.ToString(),
-                Examples = new List<AgentExample>()
-                {
-                    new AgentExample
-                    {
-                        Request = task
-                    }
-                }
+                Description = description
             };
+
+            RaiseEventWithTracing(new AddNewAgent()
+            {
+                NewAgent = descriptor
+            });
 
             LogEventInfo("Agent created successfully: AgentId={AgentId}, Depth={Depth}",
                 agentId, State.Depth + 1);
-            return
-                $"Created the following agent and sent the subtask {callId} to it:\n{JsonSerializer.Serialize(descriptor)}";
+            return $"Created the following agent:\n{JsonSerializer.Serialize(descriptor)}";
         }
         catch (Exception ex)
         {
             var errorMessage = $"❌ Error creating agent for parent {parentAgentId}: {ex.Message}";
             Logger.LogError(ex, "❌ Error creating agent for parent {Parent}", parentAgentId);
-            LogEventError(ex, "Failed to create agent: ParentAgent={ParentAgent}, CallId={CallId}",
-                parentAgentId, callId);
             return errorMessage;
         }
     }
@@ -97,29 +98,31 @@ public partial class PsiOmniGAgent
     {
         return await TraceMethodAsync(async () =>
         {
-            Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId, message);
-            LogEventInfo("Calling agent: ParentAgent={ParentAgent}, TargetAgent={TargetAgent}, CallId={CallId}, MessageLength={Length}",
+            Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId,
+                message);
+            LogEventInfo(
+                "Calling agent: ParentAgent={ParentAgent}, TargetAgent={TargetAgent}, CallId={CallId}, MessageLength={Length}",
                 parentAgentId, agentId, callId, message?.Length ?? 0);
 
-        try
-        {
-            var targetAgent = await _gAgentFactory.GetGAgentAsync(GrainId.Parse(agentId));
-
-            var userMessageEvent = new UserMessageEvent
+            try
             {
-                TargetAgentId = agentId,
-                CallId = callId,
-                Content = message,
-                ReplyToAgentId = parentAgentId
-            };
-            await PublishAsyncWithTracing(GrainId.Parse(agentId), userMessageEvent);
+                var targetAgent = await _gAgentFactory.GetGAgentAsync(GrainId.Parse(agentId));
 
-            var call = new AgentCall
-            {
-                AgentId = agentId,
-                CallId = callId,
-                Message = message
-            };
+                var userMessageEvent = new UserMessageEvent
+                {
+                    TargetAgentId = agentId,
+                    CallId = callId,
+                    Content = message,
+                    ReplyToAgentId = parentAgentId
+                };
+                await PublishAsyncWithTracing(GrainId.Parse(agentId), userMessageEvent);
+
+                var call = new AgentCall
+                {
+                    AgentId = agentId,
+                    CallId = callId,
+                    Message = message
+                };
 
                 LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
                     agentId, callId);
@@ -134,10 +137,10 @@ public partial class PsiOmniGAgent
             }
         }, new { parentAgentId, agentId, callId, messageLength = message?.Length });
     }
-    
+
     [KernelFunction("todo_read")]
     [Description(
-@"Read the current todo list.
+        @"Read the current todo list.
 
 Use this tool to read the current to-do list for the session. This tool should be used proactively and frequently to ensure that you are aware of
 the status of the current task list. You should make use of this tool as often as possible, especially in the following situations:
@@ -153,7 +156,7 @@ the status of the current task list. You should make use of this tool as often a
     - Returns a list of todo items with their status, priority, and content
     - Use this information to track progress and plan next steps
     - If no todos exist yet, an empty list will be returned"
-)]
+    )]
     public async Task<IReadOnlyList<TodoItem>> ReadTodosAsync()
     {
         return await Task.FromResult(State.TodoList);
@@ -161,7 +164,7 @@ the status of the current task list. You should make use of this tool as often a
 
     [KernelFunction("todo_write")]
     [Description(
-@"Update the todo list for the current session. To be used proactively and often to track progress and pending tasks.
+        @"Update the todo list for the current session. To be used proactively and often to track progress and pending tasks.
 Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
     It also helps the user understand the progress of the task and overall progress of their requests.
 
@@ -283,7 +286,7 @@ Use this tool to create and manage a structured task list for your current codin
         LogEventInfo("Updating todo list: OldCount={OldCount}, NewCount={NewCount}, Changes={Changes}",
             State.TodoList.Count, updatedTodos.Count,
             GetTodoChanges(State.TodoList, updatedTodos));
-            
+
         State.TodoList = updatedTodos;
         RaiseEventWithTracing(new UpdateTodoList()
         {
@@ -292,21 +295,21 @@ Use this tool to create and manage a structured task list for your current codin
         // await ConfirmEventsWithTracing();
         return "Successfully updated todo list";
     }
-    
+
     private string GetTodoChanges(List<TodoItem> oldList, List<TodoItem> newList)
     {
         var changes = new List<string>();
         var newIds = newList.Select(t => t.Id).ToHashSet();
         var oldIds = oldList.Select(t => t.Id).ToHashSet();
-        
+
         // Find new todos
         var added = newIds.Except(oldIds).Count();
         if (added > 0) changes.Add($"{added} added");
-        
+
         // Find removed todos
         var removed = oldIds.Except(newIds).Count();
         if (removed > 0) changes.Add($"{removed} removed");
-        
+
         // Find status changes
         var statusChanges = 0;
         foreach (var newTodo in newList)
@@ -317,8 +320,9 @@ Use this tool to create and manage a structured task list for your current codin
                 statusChanges++;
             }
         }
+
         if (statusChanges > 0) changes.Add($"{statusChanges} status changes");
-        
+
         return changes.Count > 0 ? string.Join(", ", changes) : "no changes";
     }
 }
