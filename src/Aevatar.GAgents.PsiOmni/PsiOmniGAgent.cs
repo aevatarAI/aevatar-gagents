@@ -102,7 +102,8 @@ public partial class
                                                Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
                                                Dispatch a task only when all its dependencies are completed. Use the id of the todo item as the CallId for when using call_agent tool.
                                                IMPORTANT: When dispatching a todo task with dependencies, you must summarize all necessary information provided by its dependencies and include in the task description. This is critical to make sure the child agent have full context.
-                                               Mark the todo item as InProgress once the task is dispatched and set the AgentId to the one the sub-task is dispatched to.
+                                               Mark the todo item as InProgress once the task is dispatched and set the AssigneeAgentId to the one the sub-task is dispatched to.
+                                               For information synthesis and summarization work, you have to assign it to yourself without using call_agent tool. Mark the todo item as Complete IMMEDIATELY and output the summary in the FINAL result (make sure you follow the output format).
                                                """ +
                                                """
                                                ## Tracking of Dispatched Sub-tasks
@@ -112,22 +113,19 @@ public partial class
                                                """
                                                ## Deciding Task Done
                                                If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
-                                               Otherwise, the user may never be able to understand what's going on as "Intermediate" result may not be returned to user.
+                                               Produce a final response when the task is done. {"Final": "The final result here"}
+                                               The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
                                                """+
                                                """
                                                ## Output Format
                                                - Output a JSON object with the following fields:
                                                   - "Intermediate": the intermediate result of the agent.
                                                   - "Final": the final result of the agent.
-                                               - Either "Intermediate" or "Final" must be present, not both.
+                                               - Either "Intermediate" or "Final" must be present, not both. If you include "Final" response, DO NOT include "Intermediate" reporting.
                                                - If the task is not finished, you should output "Intermediate" with the intermediate result and specify which todo item we are waiting on.
                                                - If the task is finished, you should output "Final" with the final result.
 
                                                ### Example Outputs
-                                               {
-                                                 "Intermediate": "There are 22 people in the room and we have 2 cakes. We need to divide the cakes evenly.",
-                                                 "Final": "We have 11 people and 1 cake each."
-                                               }
                                                {
                                                  "Intermediate": "I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP."
                                                }
