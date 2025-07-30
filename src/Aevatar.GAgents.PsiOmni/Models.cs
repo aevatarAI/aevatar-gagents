@@ -112,10 +112,10 @@ public class ToolParameter
 public class OrchestratorMessage
 {
     [Id(0), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Intermediate { get; set; }
+    public string? Thought { get; set; }
 
     [Id(1), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Final { get; set; }
+    public string? Response { get; set; }
 }
 
 [GenerateSerializer]
