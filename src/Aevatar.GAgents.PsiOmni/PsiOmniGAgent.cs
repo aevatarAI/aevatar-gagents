@@ -407,10 +407,12 @@ public partial class
     private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, string operationName)
     {
         const int MaxRetries = 5;
-        const int InitialDelayMs = 1000; // 1 second initial delay
+        const int InitialDelayMs = 10000; // 10 seconds initial delay
+        const int MaxDelayMs = 300000; // Maximum delay of 300 seconds
+        const double BackoffMultiplier = 2.0; // Exponential backoff multiplier
         var random = new Random();
 
-        for (int attempt = 0; attempt < MaxRetries; attempt++)
+        for (var attempt = 0; attempt < MaxRetries; attempt++)
         {
             try
             {
@@ -418,8 +420,9 @@ public partial class
             }
             catch (HttpOperationException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
             {
-                var baseDelayMs = (int)(Math.Pow(2, attempt) * InitialDelayMs);
-
+                // Calculate base delay with exponential backoff
+                var baseDelayMs = (int)(Math.Pow(BackoffMultiplier, attempt) * InitialDelayMs);
+                
                 // Extract retry-after if available from error message
                 var retryAfterSeconds = 0;
                 if (ex.Message.Contains("retry after"))
@@ -431,19 +434,22 @@ public partial class
                     }
                 }
 
+                // Apply maximum delay cap
+                baseDelayMs = Math.Min(baseDelayMs, MaxDelayMs);
+
                 // Randomize delay between baseDelay and 2*baseDelay
                 var actualDelayMs = baseDelayMs + random.Next(baseDelayMs);
 
                 if (attempt == MaxRetries - 1)
                 {
-                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}",
+                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}", 
                         MaxRetries, operationName, ex.Message);
                     throw;
                 }
 
                 Logger.LogWarning(
-                    "Rate limit hit for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms) before retry. Error: {Message}",
-                    operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs, ex.Message);
+                    "Rate limit hit for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
+                    operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs, actualDelayMs - baseDelayMs, ex.Message);
 
                 await Task.Delay(actualDelayMs);
             }
