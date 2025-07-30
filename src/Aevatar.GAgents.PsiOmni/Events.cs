@@ -38,9 +38,10 @@ public class UserMessageEvent : EventBase
 public class AgentMessageEvent : EventBase
 {
     [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
-    [Id(1)] public string TargetAgentId { get; set; }
-    [Id(2)] public string CallId { get; set; }
-    [Id(3)] public string Content { get; set; }
+    [Id(1)] public string TargetAgentId { get; set; } = string.Empty;
+    [Id(2)] public string CallId { get; set; } = string.Empty;
+    [Id(3)] public string Content { get; set; } = string.Empty;
+    [Id(4)] public string SenderAgentId { get; set; } = string.Empty;
 
     public override string ToString()
     {

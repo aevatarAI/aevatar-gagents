@@ -155,4 +155,7 @@ public class TodoItem
 
     [Id(4), Required, Description("The list of Id's of other todo items this item depends on. It's required.")]
     public List<string> Dependencies { get; set; } = new();
+
+    [Id(5), Description("The id of the agent this task is dispatched to.")]
+    public string AssigneeAgentId { get; set; } = string.Empty;
 }

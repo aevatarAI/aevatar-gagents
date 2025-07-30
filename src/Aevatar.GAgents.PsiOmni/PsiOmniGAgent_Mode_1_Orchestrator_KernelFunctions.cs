@@ -262,24 +262,24 @@ Use this tool to create and manage a structured task list for your current codin
 
     2. **Task Management**:
        - Update task status in real-time as you work
-       - Mark tasks complete IMMEDIATELY after finishing (don't batch completions)
-       - Remove tasks that are no longer relevant from the list entirely
+       - Mark tasks complete IMMEDIATELY after receiving the result from the agent handling it even if the handling agent returns an unsuccessful result
+       - Create a new todo item for retry or rephrased tasks
+       - Retain all tasks until the main task is fully completed
 
-    3. **Task Completion Requirements**:
-       - ONLY mark a task as completed when you have FULLY accomplished it
-       - If you encounter errors, blockers, or cannot finish, keep the task as InProgress
-       - When blocked, create a new task describing what needs to be resolved
-
-    4. **Task Breakdown**:
+    3. **Task Breakdown**:
        - Create specific, actionable items
        - Break complex tasks into smaller, manageable steps
        - Use clear, descriptive task names
+
+    ## Requirements for Input Data
+    Todo items must have an id assigned to it (use a running integer as the id).
+    InProgress and Completed todo items must have the AssigneeAgentId.
 
     When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 ")
     ]
     public async Task<string> WriteTodosAsync(
-        [Description("The updated list of todo items.")]
+        [Description("The updated list of todo items. Please supply the full list as this operation overwrites all data.")]
         List<TodoItem> updatedTodos
     )
     {
