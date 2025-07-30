@@ -137,7 +137,7 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                 var grainId = GrainId.Create(node.AgentType, node.AgentId.ToString("N"));
                 var agent = GrainFactory.GetGrain<IGAgent>(grainId);
                 var agentParent = await agent.GetParentAsync();
-                if (agentParent != default && agentParent != this.GetGrainId())
+                if (agentParent != default && State.WorkflowCoordinatorGAgentId != Guid.Empty && State.WorkflowCoordinatorGAgentId != agentParent.GetGuidKey())
                 {
                     Logger.LogError($"[WorkflowViewGAgent] GAgent {grainId} already has a parent GAgent.");
                     throw new ArgumentException($"GAgent {grainId} already has a parent GAgent.");
