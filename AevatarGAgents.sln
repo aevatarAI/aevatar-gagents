@@ -71,8 +71,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.PsiOmni.Plugins", "src\Aevatar.GAgents.PsiOmni.Plugins\Aevatar.GAgents.PsiOmni.Plugins.csproj", "{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.AI.Abstractions.Test", "test\Aevatar.GAgents.AI.Abstractions.Test\Aevatar.GAgents.AI.Abstractions.Test.csproj", "{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -195,10 +193,6 @@ Global
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -235,7 +229,6 @@ Global
 		{6B93AAF9-FA8B-4261-AAAE-6627F7D4A906} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 		{9E47A958-1272-4F61-A559-75A1394E515C} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{C808041F-9CD1-4D31-85AF-1DFFB8A525CD} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
-		{D0A7A8FE-9D8A-476D-8B8A-2BA83DB6967A} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
