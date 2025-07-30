@@ -1,5 +1,5 @@
+using System.ComponentModel;
 using Aevatar.Core.Abstractions;
-using Json.Schema.Generation;
 using Orleans;
 
 namespace Aevatar.GAgents.PumpFun.EventDtos;

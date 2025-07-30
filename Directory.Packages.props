@@ -3,17 +3,15 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
-    <AevatarCoreVersion>1.5.2</AevatarCoreVersion>
+    <AevatarCoreVersion>1.5.2-tool.2</AevatarCoreVersion>
     <SkVersion>1.57.0-alpha</SkVersion>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Aevatar packages -->
     <PackageVersion Include="Aevatar" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.Core.Abstractions" Version="$(AevatarCoreVersion)" />
     <PackageVersion Include="Aevatar.EventSourcing.Core" Version="$(AevatarCoreVersion)" />
-    <!--    <PackageVersion Include="Aevatar.SignalR" Version="1.5.5-stream.2" />-->
-    <!--        <PackageVersion Include="Microsoft.Orleans.Serialization.Abstractions" Version="$(OrleansVerion)"/>-->
-    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!-- AElf packages -->
     <PackageVersion Include="AElf.Client" Version="1.1.0" />
     <PackageVersion Include="AElf.ExceptionHandler.ABP" Version="8.2.8" />
@@ -142,6 +140,9 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.33.0-preview" />
     <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.57.0-preview" />
 
+    <!-- MCP packages -->
+    <PackageVersion Include="ModelContextProtocol.Core" Version="0.3.0-preview.3" />
+
     <!-- Other packages -->
     <PackageVersion Include="Neo4j.Driver" Version="5.27.0" />
     <PackageVersion Include="OpenAI" Version="2.2.0-beta.4" />
@@ -150,5 +151,6 @@
     <PackageVersion Include="DotNetEnv" Version="3.1.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.5" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.0" />
+    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
   </ItemGroup>
 </Project>

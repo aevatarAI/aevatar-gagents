@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
@@ -8,7 +10,9 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
+using Aevatar.GAgents.AI.Common;
 using GroupChat.GAgent;
+using JsonConverter = Newtonsoft.Json.JsonConvert;
 
 namespace Aevatar.GAgents.PsiOmni;
 
@@ -128,7 +132,17 @@ public partial class
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(State.Description);
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "PsiOmniGAgent",
+            Name = "PsiOmni Integration Agent",
+            L1Description = "AI agent for PsiOmni platform integration with advanced cognitive capabilities",
+            L2Description = "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.",
+            Category = "AI",
+            Capabilities = new List<string> { "cognitive-services", "neural-processing", "intelligent-automation", "complex-problem-solving" },
+            Tags = new List<string> { "psiomni", "cognitive", "ai", "automation" }
+        };
+        return Task.FromResult(JsonConverter.SerializeObject(descriptionInfo));
     }
 
     private async Task DoSelfReportAsync()
@@ -239,13 +253,13 @@ public partial class
         try
         { 
             Logger.LogInformation("RunCoreAsync.1");
-            // 1. 获取 chat completion 服务
+            // 1. Get chat completion service
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
             Logger.LogInformation("RunCoreAsync.2");
-            // 2. 构造 PromptExecutionSettings
-            var maxTokens = 4000; // 默认最大 token
-            var temperature = 0.1; // 默认温度
-            // 只用 OpenAI 版本（无 config.Model 判断）
+            // 2. Construct PromptExecutionSettings
+            var maxTokens = 4000; // Default max tokens
+            var temperature = 0.1; // Default temperature
+            // Use OpenAI version only (no config.Model check)
             var executionSettings = new OpenAIPromptExecutionSettings
             {
                 ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
@@ -412,13 +426,13 @@ public partial class
                     break;
                 var finalResult = string.Empty;
 
-                if (State.RealizationStatus == RealizationStatus.Specialized)
+                if (state.RealizationStatus == RealizationStatus.Specialized)
                 {
                     finalResult = State.ChatHistory.Last().Content;
                 }
-                else if (State.RealizationStatus == RealizationStatus.Orchestrator)
+                else if (state.RealizationStatus == RealizationStatus.Orchestrator)
                 {
-                    var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
+                    var lastMessage = state.ChatHistory.Last()?.Content ?? string.Empty;
                     try
                     {
                         var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);

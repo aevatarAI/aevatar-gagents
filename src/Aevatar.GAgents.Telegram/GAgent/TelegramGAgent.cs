@@ -1,14 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Common.BasicGEvent.SocialGEvent;
 using Aevatar.GAgents.Telegram.Agent.GEvents;
 using Aevatar.GAgents.Telegram.GEvents;
 using Aevatar.GAgents.Telegram.Grains;
 using Aevatar.GAgents.Telegram.Options;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Orleans.Providers;
 
 namespace Aevatar.GAgents.Telegram.Agent;
@@ -26,8 +29,17 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(
-            "Represents an agent responsible for informing other agents when a Telegram thread is published.");
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "TelegramGAgent",
+            Name = "Telegram Bot Agent",
+            L1Description = "AI-powered Telegram bot agent for automated messaging and user interaction management",
+            L2Description = "Advanced Telegram bot integration agent that enables automated messaging, group management, inline queries, and custom commands. Supports rich media handling, user authentication, and seamless bot-to-user communication.",
+            Category = "Social",
+            Capabilities = new List<string> { "automated-messaging", "group-management", "inline-queries", "custom-commands" },
+            Tags = new List<string> { "telegram", "bot", "messaging", "automation" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
 
     public async Task RegisterTelegramAsync(string botName, string token)
@@ -149,34 +161,34 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
         switch (@event)
         {
             case ReceiveMessageSEvent @receiveMessageSEvent:
-                State.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
+                state.PendingMessages[receiveMessageSEvent.MessageId] = receiveMessageSEvent;
                 break;
             case SendMessageSEvent sendMessageSEvent:
                 if (!sendMessageSEvent.ReplyMessageId.IsNullOrEmpty())
                 {
-                    State.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
+                    state.PendingMessages.Remove(sendMessageSEvent.ReplyMessageId);
                 }
 
                 break;
             case SetTelegramConfigEvent setTelegramConfigEvent:
-                State.BotName = setTelegramConfigEvent.BotName;
-                State.Token = setTelegramConfigEvent.Token;
+                state.BotName = setTelegramConfigEvent.BotName;
+                state.Token = setTelegramConfigEvent.Token;
                 break;
             case TelegramRequestSEvent @requestSEvent:
-                if (State.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
+                if (state.SocialRequestList.Contains(@requestSEvent.RequestId) == false)
                 {
-                    State.SocialRequestList.Add(@requestSEvent.RequestId);
+                    state.SocialRequestList.Add(@requestSEvent.RequestId);
                 }
 
                 break;
             case TelegramOptionSEvent @telegramOptionSEvent:
-                State.Webhook = @telegramOptionSEvent.Webhook;
-                State.EncryptionPassword = @telegramOptionSEvent.EncryptionPassword;
+                state.Webhook = @telegramOptionSEvent.Webhook;
+                state.EncryptionPassword = @telegramOptionSEvent.EncryptionPassword;
                 break;
             case TelegramSocialResponseSEvent @telegramSocialResponseSEvent:
-                if (State.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
+                if (state.SocialRequestList.Contains(@telegramSocialResponseSEvent.ResponseId))
                 {
-                    State.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
+                    state.SocialRequestList.Remove(@telegramSocialResponseSEvent.ResponseId);
                 }
 
                 break;

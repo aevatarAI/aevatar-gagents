@@ -1,12 +1,23 @@
+using System;
 using System.Collections.Generic;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using System.Threading;
+using System.Threading.Tasks;
+using Aevatar.Core;
+using Aevatar.Core.Abstractions;
+using Aevatar.Core.Abstractions.Plugin;
 using Aevatar.Extensions;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.Executor;
+using Aevatar.GAgents.MCP.McpClient;
+using Aevatar.GAgents.MCP.Options;
+using Aevatar.GAgents.MCP.Test.Mocks;
 using Aevatar.GAgents.SemanticKernel.Extensions;
 using Aevatar.GAgents.SemanticKernel.KernelBuilderFactory;
+using Aevatar.Plugins;
 using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using ModelContextProtocol.Client;
 using Moq;
 using Orleans;
 using Orleans.Hosting;
@@ -156,10 +168,17 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     
                     services.AddSingleton<IKernelBuilderFactory, MockKernelBuilderFactory>();
                     services.AddSingleton<IBrainFactory, MockBrainFactory>();
-                    
                     // Add IGAgentFactory registration for Orleans grain dependency injection
                     services.AddSingleton<IGAgentFactory, GAgentFactory>();
+                    services.AddSingleton<IGAgentService, GAgentService>();
+                    services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
+                    services.AddSingleton<IGAgentManager, GAgentManager>();
+                    services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
+                    // 注册Mock MCP客户端提供者用于测试（与TestBase保持一致使用Singleton）
+                    services.AddSingleton<IMcpClientProvider, MockMcpClientProvider>();
+                    services.AddSingleton<MockMcpClientProvider>();
                 })
+                .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
                 .AddMemoryGrainStorage("PubSubStore")
                 .AddMemoryGrainStorageAsDefault()
