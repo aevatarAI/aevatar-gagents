@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.MCP.Core.GEvents;
 using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.GEvents;
@@ -10,8 +11,11 @@ namespace Aevatar.GAgents.MCP.GAgents;
 // ReSharper disable MemberCanBePrivate.Global
 public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
 {
+    [EventHandler]
     public async Task<MCPToolResponseEvent> HandleEventAsync(MCPToolCallEvent toolCallEvent)
     {
+        Logger.LogInformation($"[MCPGAgent] HandleEventAsync called - ServerName: {toolCallEvent.ServerName}, ToolName: {toolCallEvent.ToolName}, Arguments: {JsonSerializer.Serialize(toolCallEvent.Arguments)}");
+        Console.WriteLine($"[MCPGAgent] HandleEventAsync called - ServerName: {toolCallEvent.ServerName}, ToolName: {toolCallEvent.ToolName}, Arguments: {JsonSerializer.Serialize(toolCallEvent.Arguments)}");
         try
         {
             // Extract server name and actual tool name
@@ -26,20 +30,27 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
             // Set timeout
             using var cts = new CancellationTokenSource(State.RequestTimeout);
 
-            // Call tool through official SDK
+            McpClient ??= await GetOrCreateMcpClientAsync(State.MCPServerConfig);
+
+            // Call tool through the dynamically obtained client
             var arguments = toolCallEvent.Arguments.ToDictionary(kvp => kvp.Key, object? (kvp) => kvp.Value);
             var result = await McpClient.CallToolAsync(actualToolName, arguments, cancellationToken: cts.Token);
+
+            // Update LastToolCall timestamp
+            RaiseEvent(new UpdateLastToolCallLogEvent
+            {
+                LastToolCall = DateTime.UtcNow
+            });
+            await ConfirmEvents();
 
             var response = new MCPToolResponseEvent
             {
                 RequestId = toolCallEvent.RequestId,
-                Success = true,
-                Result = new MCPToolCallResult
-                {
-                    Success = true,
-                    Data = ExtractContentFromMcpResult(result),
-                    ErrorMessage = null
-                }
+                Success = !result.IsError!.Value,
+                ServerName = toolCallEvent.ServerName,
+                ToolName = toolCallEvent.ToolName,
+                ErrorMessage = result.IsError!.Value ? "Tool exection failed." : null,
+                Result = ExtractContentFromMcpResult(result)
             };
 
             return response;
@@ -52,12 +63,10 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
             {
                 RequestId = toolCallEvent.RequestId,
                 Success = false,
-                Result = new MCPToolCallResult
-                {
-                    Success = false,
-                    Data = null,
-                    ErrorMessage = ex.Message
-                }
+                ServerName = toolCallEvent.ServerName,
+                ToolName = toolCallEvent.ToolName,
+                ErrorMessage = ex.Message,
+                Result = null
             };
 
             return errorResponse;
@@ -70,6 +79,7 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
         try
         {
             var allTools = new List<MCPToolInfo>();
+            McpClient ??= await GetOrCreateMcpClientAsync(State.MCPServerConfig);
             var tools = await McpClient.ListToolsAsync();
             allTools.AddRange(tools.Select(t => ConvertToMCPToolInfo(t, State.MCPServerConfig.ServerName)));
 
@@ -128,7 +138,7 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 return string.Empty;
             }
 
-            // 尝试获取Text属性（TextContentBlock应该有这个属性）
+            // Try to get Text property (TextContentBlock should have this property)
             var contentType = firstContent.GetType();
             var textProperty = contentType.GetProperty("Text");
             if (textProperty != null)
@@ -137,7 +147,7 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 return textValue?.ToString() ?? string.Empty;
             }
 
-            // 如果没有Text属性，尝试Value属性
+            // If there's no Text property, try Value property
             var valueProperty = contentType.GetProperty("Value");
             if (valueProperty != null)
             {
@@ -145,11 +155,11 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 return value?.ToString() ?? string.Empty;
             }
 
-            // 如果都没有，尝试将整个对象序列化为JSON
+            // If neither exists, try to serialize the entire object as JSON
             var json = JsonSerializer.Serialize(firstContent);
             Logger.LogDebug("MCP content serialized as: {Json}", json);
             
-            // 尝试从JSON中提取text字段
+            // Try to extract text field from JSON
             using var doc = JsonDocument.Parse(json);
             if (doc.RootElement.TryGetProperty("text", out JsonElement textElement))
             {
@@ -160,13 +170,13 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 return TextElement.GetString() ?? string.Empty;
             }
             
-            // 如果还是找不到，返回整个JSON
+            // If still not found, return the entire JSON
             return json;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to extract content from MCP result");
-            // 降级到ToString()
+            // Fallback to ToString()
             return result?.ToString() ?? string.Empty;
         }
     }

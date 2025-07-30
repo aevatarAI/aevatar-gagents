@@ -36,7 +36,7 @@ public class MCPParameterInfo
     [Id(4)] public object? DefaultValue { get; set; }
     #endregion
 
-    #region JsonSchema扩展属性
+    #region JsonSchema Extended Properties
     /// <summary>
     /// Complete JsonSchema raw data (serialized as string for storage)
     /// </summary>
@@ -53,69 +53,69 @@ public class MCPParameterInfo
     [Id(7)] public int? MinLength { get; set; }
     
     /// <summary>
-    /// 字符串最大长度
+    /// String maximum length
     /// </summary>
     [Id(8)] public int? MaxLength { get; set; }
     
     /// <summary>
-    /// 数字最小值
+    /// Number minimum value
     /// </summary>
     [Id(9)] public double? Minimum { get; set; }
     
     /// <summary>
-    /// 数字最大值
+    /// Number maximum value
     /// </summary>
     [Id(10)] public double? Maximum { get; set; }
     
     /// <summary>
-    /// 正则表达式模式
+    /// Regular expression pattern
     /// </summary>
     [Id(11)] public string? Pattern { get; set; }
     
     /// <summary>
-    /// 枚举值列表
+    /// Enumeration value list
     /// </summary>
     [Id(12)] public List<string>? EnumValues { get; set; }
     
     /// <summary>
-    /// 数组项类型信息（用于array类型）
+    /// Array item type information (for array type)
     /// </summary>
     [Id(13)] public MCPParameterInfo? ArrayItems { get; set; }
     
     /// <summary>
-    /// 对象属性信息（用于object类型）
+    /// Object property information (for object type)
     /// </summary>
     [Id(14)] public Dictionary<string, MCPParameterInfo>? ObjectProperties { get; set; }
     
     /// <summary>
-    /// 对象必需属性列表
+    /// Object required property list
     /// </summary>
     [Id(15)] public List<string>? RequiredProperties { get; set; }
     
     /// <summary>
-    /// 是否允许额外属性（对象类型）
+    /// Whether to allow additional properties (object type)
     /// </summary>
     [Id(16)] public bool? AdditionalProperties { get; set; }
     
     /// <summary>
-    /// JsonSchema类型的详细信息（支持联合类型如["string", "null"]）
+    /// JsonSchema type details (supports union types like ["string", "null"])
     /// </summary>
     [Id(17)] public List<string>? TypeArray { get; set; }
     
     /// <summary>
-    /// 示例值列表
+    /// Example value list
     /// </summary>
     [Id(18)] public List<string>? Examples { get; set; }
     #endregion
 
-    #region 静态工厂方法
+    #region Static Factory Methods
     /// <summary>
-    /// 从官方SDK的JsonElement创建MCPParameterInfo
+    /// Create MCPParameterInfo from official SDK's JsonElement
     /// </summary>
-    /// <param name="name">参数名</param>
-    /// <param name="schema">JsonSchema元素</param>
-    /// <param name="required">是否必需</param>
-    /// <returns>MCPParameterInfo实例</returns>
+    /// <param name="name">Parameter name</param>
+    /// <param name="schema">JsonSchema element</param>
+    /// <param name="required">Whether required</param>
+    /// <returns>MCPParameterInfo instance</returns>
     public static MCPParameterInfo FromJsonSchema(string name, JsonElement schema, bool required = false)
     {
         var paramInfo = new MCPParameterInfo
@@ -125,26 +125,26 @@ public class MCPParameterInfo
             RawJsonSchema = schema.GetRawText()
         };
 
-        // 解析基本类型
+        // Parse basic type
         if (schema.TryGetProperty("type", out var typeElement))
         {
             paramInfo.Type = GetPrimaryType(typeElement);
             paramInfo.TypeArray = GetTypeArray(typeElement);
         }
 
-        // 解析描述
+        // Parse description
         if (schema.TryGetProperty("description", out var descElement))
         {
             paramInfo.Description = descElement.GetString() ?? string.Empty;
         }
 
-        // 解析格式
+        // Parse format
         if (schema.TryGetProperty("format", out var formatElement))
         {
             paramInfo.Format = formatElement.GetString();
         }
 
-        // 解析字符串约束
+        // Parse string constraints
         if (schema.TryGetProperty("minLength", out var minLengthElement))
         {
             paramInfo.MinLength = minLengthElement.GetInt32();
@@ -158,7 +158,7 @@ public class MCPParameterInfo
             paramInfo.Pattern = patternElement.GetString();
         }
 
-        // 解析数字约束
+        // Parse number constraints
         if (schema.TryGetProperty("minimum", out var minimumElement))
         {
             paramInfo.Minimum = minimumElement.GetDouble();
@@ -168,7 +168,7 @@ public class MCPParameterInfo
             paramInfo.Maximum = maximumElement.GetDouble();
         }
 
-        // 解析枚举值
+        // Parse enumeration values
         if (schema.TryGetProperty("enum", out var enumElement) && enumElement.ValueKind == JsonValueKind.Array)
         {
             paramInfo.EnumValues = enumElement.EnumerateArray()
@@ -177,13 +177,13 @@ public class MCPParameterInfo
                 .ToList();
         }
 
-        // 解析默认值
+        // Parse default value
         if (schema.TryGetProperty("default", out var defaultElement))
         {
             paramInfo.DefaultValue = ConvertJsonElementToBasicType(defaultElement);
         }
 
-        // 解析示例
+        // Parse examples
         if (schema.TryGetProperty("examples", out var examplesElement) && examplesElement.ValueKind == JsonValueKind.Array)
         {
             paramInfo.Examples = examplesElement.EnumerateArray()
@@ -191,13 +191,13 @@ public class MCPParameterInfo
                 .ToList();
         }
 
-        // 解析数组项
+        // Parse array items
         if (paramInfo.Type == "array" && schema.TryGetProperty("items", out var itemsElement))
         {
             paramInfo.ArrayItems = FromJsonSchema($"{name}_item", itemsElement);
         }
 
-        // 解析对象属性
+        // Parse object properties
         if (paramInfo.Type == "object")
         {
             if (schema.TryGetProperty("properties", out var propertiesElement))
@@ -227,10 +227,10 @@ public class MCPParameterInfo
     }
 
     /// <summary>
-    /// 从MCP工具JsonSchema的properties部分批量创建参数信息
+    /// Create parameter information in batch from MCP tool JsonSchema's properties section
     /// </summary>
-    /// <param name="inputSchema">MCP工具的输入schema</param>
-    /// <returns>参数信息字典</returns>
+    /// <param name="inputSchema">MCP tool's input schema</param>
+    /// <returns>Parameter information dictionary</returns>
     public static Dictionary<string, MCPParameterInfo> FromMCPToolSchema(JsonElement inputSchema)
     {
         var parameters = new Dictionary<string, MCPParameterInfo>();
@@ -238,7 +238,7 @@ public class MCPParameterInfo
         if (inputSchema.ValueKind != JsonValueKind.Object)
             return parameters;
 
-        // 获取必需参数列表
+        // Get required parameter list
         var requiredParams = new HashSet<string>();
         if (inputSchema.TryGetProperty("required", out var requiredElement) && 
             requiredElement.ValueKind == JsonValueKind.Array)
@@ -252,7 +252,7 @@ public class MCPParameterInfo
             }
         }
 
-        // 解析属性
+        // Parse properties
         if (inputSchema.TryGetProperty("properties", out var propertiesElement))
         {
             foreach (var prop in propertiesElement.EnumerateObject())
@@ -266,15 +266,15 @@ public class MCPParameterInfo
     }
     #endregion
 
-    #region 转换方法
+    #region Conversion Methods
     /// <summary>
-    /// 转换为Semantic Kernel的KernelParameterMetadata
+    /// Convert to Semantic Kernel's KernelParameterMetadata
     /// </summary>
-    /// <returns>KernelParameterMetadata实例</returns>
+    /// <returns>KernelParameterMetadata instance</returns>
     public object ToKernelParameterMetadata()
     {
-        // 使用反射创建KernelParameterMetadata，因为构造函数可能有不同版本
-        // 尝试不同的程序集名称（按优先级排序）
+        // Use reflection to create KernelParameterMetadata because constructor may have different versions
+        // Try different assembly names (ordered by priority)
         var possibleAssemblyNames = new[]
         {
             "Microsoft.SemanticKernel.KernelParameterMetadata, Microsoft.SemanticKernel.Abstractions",
@@ -292,10 +292,10 @@ public class MCPParameterInfo
         
         if (metadataType == null)
         {
-            throw new InvalidOperationException("无法找到KernelParameterMetadata类型，尝试过以下程序集: " + string.Join(", ", possibleAssemblyNames));
+            throw new InvalidOperationException("Cannot find KernelParameterMetadata type, tried the following assemblies: " + string.Join(", ", possibleAssemblyNames));
         }
 
-        // 尝试使用基本构造函数
+        // Try to use basic constructor
         var constructors = metadataType.GetConstructors();
         var simpleConstructor = constructors.FirstOrDefault(c => 
             c.GetParameters().Length == 1 && 
@@ -303,15 +303,15 @@ public class MCPParameterInfo
 
         if (simpleConstructor == null)
         {
-            throw new InvalidOperationException("无法找到合适的KernelParameterMetadata构造函数");
+            throw new InvalidOperationException("Cannot find suitable KernelParameterMetadata constructor");
         }
 
-        // 对于数组类型，尝试使用带schema的构造函数
+        // For array types, try to use constructor with schema
         if (Type == "array")
         {
             try
             {
-                // 查找带schema参数的构造函数
+                // Find constructor with schema parameter
                 var schemaConstructor = constructors.FirstOrDefault(c =>
                 {
                     var parameters = c.GetParameters();
@@ -322,7 +322,7 @@ public class MCPParameterInfo
 
                 if (schemaConstructor != null)
                 {
-                    // 尝试创建KernelJsonSchema
+                    // Try to create KernelJsonSchema
                     var schemaBuilderType = System.Type.GetType("Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel")
                                          ?? System.Type.GetType("Microsoft.SemanticKernel.KernelJsonSchemaBuilder, Microsoft.SemanticKernel.Abstractions");
 
@@ -353,7 +353,7 @@ public class MCPParameterInfo
 
                             var metadataWithSchema = schemaConstructor.Invoke(args);
                             
-                            // 设置其他属性
+                            // Set other properties
                             SetPropertySafely(metadataWithSchema, "Description", Description);
                             SetPropertySafely(metadataWithSchema, "IsRequired", Required);
                             if (DefaultValue != null)
@@ -368,30 +368,30 @@ public class MCPParameterInfo
             }
             catch (Exception ex)
             {
-                // 如果失败，回退到默认方式
+                // If failed, fallback to default approach
                 Console.WriteLine($"Failed to create KernelParameterMetadata with schema: {ex.Message}");
             }
         }
         
         var metadata = simpleConstructor.Invoke([Name]);
 
-        // 使用反射设置属性
+        // Use reflection to set properties
         SetPropertySafely(metadata, "Description", Description);
         SetPropertySafely(metadata, "IsRequired", Required);
         
-        // 尝试设置默认值
+        // Try to set default value
         if (DefaultValue != null)
         {
             SetPropertySafely(metadata, "DefaultValue", DefaultValue);
         }
 
-        // 如果有类型信息，尝试设置
+        // If there's type information, try to set it
         if (!string.IsNullOrEmpty(Type))
         {
             SetPropertySafely(metadata, "ParameterType", GetDotNetType());
         }
 
-        // 尝试设置Schema属性（用于支持复杂类型如数组）
+        // Try to set Schema property (for supporting complex types like arrays)
         var schemaProp = metadataType.GetProperty("Schema");
         if (schemaProp != null && schemaProp.CanWrite)
         {
@@ -400,13 +400,13 @@ public class MCPParameterInfo
                 var schema = GenerateJsonSchema();
                 var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema);
                 
-                // 尝试创建KernelJsonSchema（Schema属性的实际类型）
+                // Try to create KernelJsonSchema (the actual type of Schema property)
                 var kernelJsonSchemaType = System.Type.GetType("Microsoft.SemanticKernel.KernelJsonSchema, Microsoft.SemanticKernel.Abstractions")
                     ?? System.Type.GetType("Microsoft.SemanticKernel.KernelJsonSchema, Microsoft.SemanticKernel");
                 
                 if (kernelJsonSchemaType != null)
                 {
-                    // KernelJsonSchema有一个构造函数接受string参数
+                    // KernelJsonSchema has a constructor that accepts string parameter
                     var ctor = kernelJsonSchemaType.GetConstructor(new Type[] { typeof(string) });
                     if (ctor != null)
                     {
@@ -417,7 +417,7 @@ public class MCPParameterInfo
             }
             catch (Exception ex)
             {
-                // 忽略错误，保持向后兼容
+                // Ignore errors, maintain backward compatibility
                 System.Diagnostics.Debug.WriteLine($"Failed to set Schema: {ex.Message}");
             }
         }
@@ -426,7 +426,7 @@ public class MCPParameterInfo
     }
 
     /// <summary>
-    /// 安全地设置对象属性
+    /// Safely set object property
     /// </summary>
     private static void SetPropertySafely(object target, string propertyName, object? value)
     {
@@ -435,7 +435,7 @@ public class MCPParameterInfo
             var property = target.GetType().GetProperty(propertyName);
             if (property != null && property.CanWrite && value != null)
             {
-                // 特殊处理Schema属性（需要KernelJsonSchema类型）
+                // Special handling for Schema property (requires KernelJsonSchema type)
                 if (propertyName == "Schema" && property.PropertyType.Name == "KernelJsonSchema")
                 {
                     var jsonString = System.Text.Json.JsonSerializer.Serialize(value);
@@ -456,12 +456,12 @@ public class MCPParameterInfo
         }
         catch
         {
-            // 忽略设置失败的情况，保持向后兼容性
+            // Ignore failed settings, maintain backward compatibility
         }
     }
 
     /// <summary>
-    /// 生成完整的JsonSchema对象
+    /// Generate complete JsonSchema object
     /// </summary>
     private object GenerateJsonSchema()
     {
@@ -473,7 +473,7 @@ public class MCPParameterInfo
         if (!string.IsNullOrEmpty(Description))
             schema["description"] = Description;
 
-        // 对于数组类型，必须包含items属性
+        // For array types, must include items property
         if (Type == "array")
         {
             if (ArrayItems != null)
@@ -482,12 +482,12 @@ public class MCPParameterInfo
             }
             else
             {
-                // 默认items为object类型
+                // Default items to object type
                 schema["items"] = new Dictionary<string, object> { ["type"] = "object" };
             }
         }
 
-        // 对于对象类型
+        // For object types
         if (Type == "object" && ObjectProperties != null)
         {
             var properties = new Dictionary<string, object>();
@@ -508,7 +508,7 @@ public class MCPParameterInfo
             }
         }
 
-        // 添加约束
+        // Add constraints
         if (EnumValues?.Any() == true)
             schema["enum"] = EnumValues;
 
@@ -537,9 +537,9 @@ public class MCPParameterInfo
     }
 
     /// <summary>
-    /// 获取对应的.NET类型
+    /// Get corresponding .NET type
     /// </summary>
-    /// <returns>.NET类型</returns>
+    /// <returns>.NET type</returns>
     public System.Type GetDotNetType()
     {
         return Type switch
@@ -555,9 +555,9 @@ public class MCPParameterInfo
     }
 
     /// <summary>
-    /// 生成用于Semantic Kernel的参数描述
+    /// Generate parameter description for Semantic Kernel
     /// </summary>
-    /// <returns>增强的参数描述</returns>
+    /// <returns>Enhanced parameter description</returns>
     public string GetEnhancedDescription()
     {
         var parts = new List<string>();
@@ -567,7 +567,7 @@ public class MCPParameterInfo
             parts.Add(Description);
         }
 
-        // 对于数组类型，添加完整的JSON Schema信息
+        // For array types, add complete JSON Schema information
         if (Type == "array")
         {
             var schema = GenerateJsonSchema();
@@ -579,14 +579,14 @@ public class MCPParameterInfo
         }
         else
         {
-            // 添加类型信息
+            // Add type information
             if (!string.IsNullOrEmpty(Type))
             {
                 parts.Add($"Type: {Type}");
             }
         }
 
-        // 添加约束信息
+        // Add constraint information
         if (EnumValues?.Any() == true)
         {
             parts.Add($"Allowed values: {string.Join(", ", EnumValues)}");
@@ -618,7 +618,7 @@ public class MCPParameterInfo
     }
     #endregion
 
-    #region 辅助方法
+    #region Helper Methods
     private static string GetPrimaryType(JsonElement typeElement)
     {
         if (typeElement.ValueKind == JsonValueKind.String)
@@ -627,7 +627,7 @@ public class MCPParameterInfo
         }
         else if (typeElement.ValueKind == JsonValueKind.Array)
         {
-            // 对于联合类型，选择第一个非null类型
+            // For union types, choose the first non-null type
             foreach (var item in typeElement.EnumerateArray())
             {
                 if (item.ValueKind == JsonValueKind.String)

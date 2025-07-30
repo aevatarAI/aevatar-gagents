@@ -26,8 +26,8 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
     protected IEnumerable<IMcpClientProvider> McpClientProviders =>
         ServiceProvider.GetServices<IMcpClientProvider>();
 
-    protected IMcpClient McpClient = null!;
-    
+    protected IMcpClient? McpClient;
+
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
         McpClient = await GetOrCreateMcpClientAsync(configuration.ServerConfig);
@@ -141,6 +141,10 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
                 state.MCPServerConfig = configServerEvent.ServerConfig;
                 break;
 
+            case UpdateLastToolCallLogEvent updateEvent:
+                state.LastToolCall = updateEvent.LastToolCall;
+                break;
+
             default:
                 MCPTransitionState(state, @event);
                 break;
@@ -171,5 +175,14 @@ public abstract partial class MCPGAgentBase<TState, TStateLogEvent, TEvent, TCon
     public class ConfigMCPServerLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public MCPServerConfig ServerConfig { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Log event for updating last tool call timestamp
+    /// </summary>
+    [GenerateSerializer]
+    public class UpdateLastToolCallLogEvent : StateLogEventBase<TStateLogEvent>
+    {
+        [Id(0)] public DateTime LastToolCall { get; set; }
     }
 }
