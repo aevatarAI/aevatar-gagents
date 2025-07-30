@@ -1,6 +1,8 @@
-using GroupChat.GAgent.Dto;
+using System.Collections.Generic;
+using Aevatar.GAgents.GroupChat.Core.Dto;
+using Aevatar.GAgents.MCP.Options;
 using Orleans;
-using Aevatar.GAgents.AI.Common;
+using Orleans.Runtime;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
 
@@ -10,6 +12,8 @@ public class ChatAIGAgentConfigDto : GroupMemberConfigDto
     [Id(0)] 
     public string Instructions { get; set; } = "You are a helpful AI assistant";
 
-    [Id(1)] 
-    public string SystemLLM { get; set; } = "gpt-4";
+    [Id(1)] public string SystemLLM { get; set; }
+
+    [Id(2)] public List<MCPServerConfig> MCPServers { get; set; } = [];
+    [Id(3)] public List<GrainType> SelectedGAgents { get; set; } = [];
 }

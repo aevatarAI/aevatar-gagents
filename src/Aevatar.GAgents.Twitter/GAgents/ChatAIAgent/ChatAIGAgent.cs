@@ -10,8 +10,6 @@ using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.AI.Common;
-using AIChatMessage = Aevatar.GAgents.AI.Common.ChatMessage;
 using WorkflowChatMessage = GroupChat.GAgent.Feature.Common.ChatMessage;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
@@ -66,8 +64,8 @@ public class ChatAIGAgent :
             // Use Instructions as base context and let AI say something
             var promptWithInstructions =
                 $"{State.PromptTemplate ?? ""} Please say something to start the conversation.";
-            var defaultAiMessages = await ChatWithHistory(promptWithInstructions);
-            var defaultResponse = defaultAiMessages?.FirstOrDefault()?.Content;
+            var chatWithDetails = await ChatWithHistoryAndToolsAsync(promptWithInstructions);
+            var defaultResponse = chatWithDetails.Response;
 
             // Save conversation to state
             RaiseEvent(new ChatResponseEvent()
@@ -87,9 +85,10 @@ public class ChatAIGAgent :
         _logger.LogInformation($"{State.MemberName} processing workflow message: {userMessage}");
 
         // Use real AI through ChatWithHistory method
-        var aiMessages = await ChatWithHistory(userMessage);
-        var aiResponse = aiMessages?.FirstOrDefault()?.Content ??
-                         $"{State.MemberName}: I'm having trouble processing your request.";
+        var aiMessages = await ChatWithHistoryAndToolsAsync(userMessage);
+        var aiResponse = !aiMessages.Response.IsNullOrEmpty()
+            ? aiMessages.Response
+            : $"{State.MemberName}: I'm having trouble processing your request.";
 
         // Save conversation to state
         RaiseEvent(new ChatResponseEvent()
@@ -122,10 +121,12 @@ public class ChatAIGAgent :
         await base.PerformConfigAsync(configuration);
 
         // Initialize the AI agent with the provided configuration
-        await InitializeAsync(new InitializeDto()
+        await InitializeAsync(new InitializeDto
         {
             Instructions = configuration.Instructions,
-            LLMConfig = new() { SystemLLM = configuration.SystemLLM }
+            LLMConfig = new LLMConfigDto { SystemLLM = configuration.SystemLLM },
+            MCPServers = configuration.MCPServers,
+            SelectedGAgents = configuration.SelectedGAgents,
         });
 
         _logger.LogDebug("PerformConfigAsync ChatAIGAgent configuration and initialization completed");
@@ -140,9 +141,9 @@ public class ChatAIGAgent :
         switch (@event)
         {
             case ChatResponseEvent chatResponseEvent:
-                State.LastResponse = chatResponseEvent.Response;
-                State.LastActivityTime = chatResponseEvent.Timestamp;
-                State.TotalInteractions++;
+                state.LastResponse = chatResponseEvent.Response;
+                state.LastActivityTime = chatResponseEvent.Timestamp;
+                state.TotalInteractions++;
                 break;
         }
     }

@@ -44,13 +44,13 @@ public class AIStreamingGAgent : GAgentBase<AIStreamingState, AIStreamingStateLo
         switch (@event)
         {
             case AIStreamingStateLogEvent aiStreamingStateLogEvent:
-                if (!State.ChatMessageMap.TryGetValue(aiStreamingStateLogEvent.RequestId, out var value))
+                if (!state.ChatMessageMap.TryGetValue(aiStreamingStateLogEvent.RequestId, out var value))
                 {
-                    State.ChatMessageMap[aiStreamingStateLogEvent.RequestId] = aiStreamingStateLogEvent.Content;
+                    state.ChatMessageMap[aiStreamingStateLogEvent.RequestId] = aiStreamingStateLogEvent.Content;
                 }
                 else
                 {
-                    State.ChatMessageMap[aiStreamingStateLogEvent.RequestId] = value + aiStreamingStateLogEvent.Content;
+                    state.ChatMessageMap[aiStreamingStateLogEvent.RequestId] = value + aiStreamingStateLogEvent.Content;
                 }
                 break;
         }
