@@ -10,6 +10,7 @@ using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
 using Newtonsoft.Json;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AI.Common;
 using WorkflowChatMessage = GroupChat.GAgent.Feature.Common.ChatMessage;
 
 namespace Aevatar.GAgents.Twitter.GAgents.ChatAIAgent;
