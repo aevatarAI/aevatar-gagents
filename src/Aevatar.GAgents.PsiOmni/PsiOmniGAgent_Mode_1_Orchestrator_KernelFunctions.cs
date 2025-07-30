@@ -86,8 +86,6 @@ public partial class PsiOmniGAgent
     [KernelFunction("call_agent")]
     [Description("Calls any ConfigurableAgentGrain by its ID with a natural language query")]
     public async Task<string> CallAgentAsync(
-        [Description("The unique ID of the parent agent making the call.")]
-        string parentAgentId,
         [Description("The unique ID of the agent to call."), Required]
         string agentId,
         [Description("The call ID of this call.")]
@@ -96,6 +94,11 @@ public partial class PsiOmniGAgent
         string message
     )
     {
+        var parentAgentId = this.GetGrainId().ToString();
+        if (parentAgentId == agentId)
+        {
+            return "Failed to call agent: Calling self is disallowed.";
+        }
         return await TraceMethodAsync(async () =>
         {
             Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId,
