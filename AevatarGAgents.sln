@@ -74,6 +74,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "design", "design", "{2DE524
 	ProjectSection(SolutionItems) = preProject
 		docs\design\AIGAgentBase_GAgentExecutor_Integration.md = docs\design\AIGAgentBase_GAgentExecutor_Integration.md
 		docs\design\MCP_GAgent_Design.md = docs\design\MCP_GAgent_Design.md
+		docs\design\PrepareResourceContextAsync.html = docs\design\PrepareResourceContextAsync.html
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "memos", "memos", "{6B2228C7-07EF-4FE3-98F9-2B9241DE25E4}"
