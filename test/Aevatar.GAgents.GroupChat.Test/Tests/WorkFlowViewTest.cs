@@ -1,11 +1,7 @@
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.Dto;
-using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.GEvent;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
-using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
-using GroupChat.GAgent.Dto;
 using Shouldly;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;
@@ -92,17 +88,6 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         viewState = await workflowViewAgent.GetStateAsync();
         viewState.WorkflowNodeList.Count.ShouldBe(3);
         viewState.WorkflowNodeList[2].NodeId.ShouldBe(nodeId3);
-
-        var group = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
-        await workflowViewAgent.RegisterAsync(group);
-        await group.PublishEventAsync(new CreateWorkflowGEvent());
-        await Task.Delay(3000);
-        
-        viewState = await workflowViewAgent.GetStateAsync();
-
-        var workflowGAgent = await _agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(viewState.WorkflowCoordinatorGAgentId);
-        var workflowState = await workflowGAgent.GetStateAsync();
-        workflowState.CurrentWorkUnitInfos.Count.ShouldBe(3);
     }
 
     [Fact]

@@ -1,15 +1,8 @@
-using System.Configuration;
-using System.Reflection;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.Dto;
-using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.GEvent;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.LogEvent;
-using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
-using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Volo.Abp;
 
 namespace Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView;
 
@@ -29,90 +22,6 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
         return Task.FromResult("Workflow View GAgent");
     }
 
-    [EventHandler]
-    private async Task HandlerEventAsync(CreateWorkflowGEvent @event)
-    {
-        foreach (var workflowNode in State.WorkflowNodeList)
-        {
-            var agentId = workflowNode.AgentId == Guid.Empty ? Guid.NewGuid() : workflowNode.AgentId;
-            var agentProperties =
-                workflowNode.Properties.IsNullOrEmpty() ? string.Empty : JsonConvert.SerializeObject(workflowNode.Properties);
-            await CreateOrUpdateBusinessAgent(agentId, workflowNode.AgentType, agentProperties);
-            
-            RaiseEvent(new UpdateNodeAgentIdLogEvent()
-            {
-                NodeId = workflowNode.NodeId,
-                AgentId = agentId
-            });
-        }
-
-        await ConfirmEvents();
-        var workflowGAgentId = State.WorkflowCoordinatorGAgentId == Guid.Empty ? Guid.NewGuid() : State.WorkflowCoordinatorGAgentId;
-        var workflowCoordinatorGAgent = GrainFactory.GetGrain<IWorkflowCoordinatorGAgent>(workflowGAgentId);
-        var workflowConfig = new WorkflowCoordinatorConfigDto();
-        var nodeMap = State.WorkflowNodeList.ToDictionary(r => r.NodeId, r => r);
-        foreach (var node in State.WorkflowNodeList)
-        {
-            var nodeUnitList = State.WorkflowNodeUnitList.Where(t => t.NodeId == node.NodeId).ToList();
-            if (nodeUnitList.IsNullOrEmpty())
-            {
-                workflowConfig.WorkflowUnitList.Add(new WorkflowUnitDto()
-                {
-                    ExtendedData = node.ExtendedData,
-                    GrainId = GrainId.Create(node.AgentType, GuidToGrainKey(node.AgentId)).ToString(),
-                    NextGrainId = ""
-                });
-                continue;
-            }
-            foreach (var nodeUnit in nodeUnitList)
-            {
-                var nextNode = nodeMap[nodeUnit.NextNodeId];
-                workflowConfig.WorkflowUnitList.Add(new WorkflowUnitDto()
-                {
-                    ExtendedData = node.ExtendedData,
-                    GrainId = GrainId.Create(node.AgentType, GuidToGrainKey(node.AgentId)).ToString(),
-                    NextGrainId = GrainId.Create(nextNode.AgentType, GuidToGrainKey(nextNode.AgentId)).ToString()
-                });
-            }
-        }
-        await workflowCoordinatorGAgent.ConfigAsync(workflowConfig);
-        RaiseEvent(new UpdateWorkflowAgentIdLogEvent()
-        {
-            AgentId = workflowGAgentId
-        });
-    }
-    
-    private static string GuidToGrainKey(Guid primaryKey)
-    {
-        return primaryKey.ToString("N");
-    }
-
-    private async Task CreateOrUpdateBusinessAgent(Guid primaryKey, string agentType,
-        string agentProperties)
-    {
-        var grainId = GrainId.Create(agentType, primaryKey.ToString("N"));
-        var businessAgent = await _gAgentFactory.GetGAgentAsync(grainId);
-        
-        var configurationType = await businessAgent.GetConfigurationTypeAsync();
-        if (configurationType == null || configurationType.IsAbstract)
-        {
-            return;
-        }
-
-        if (agentProperties.IsNullOrEmpty())
-        {
-            return;
-        }
-
-        var config = JsonConvert.DeserializeObject(agentProperties, configurationType) as ConfigurationBase;
-        if (config == null )
-        {
-            return;
-        }
-
-        await businessAgent.ConfigAsync(config);
-    }
-    
     protected override async Task PerformConfigAsync(WorkflowViewConfigDto configuration)
     {
         await TrySaveWorkflowViewAsync(configuration);
