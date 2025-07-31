@@ -3,10 +3,10 @@
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.BasicGAgents.GroupGAgent;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 using Aevatar.GAgents.GroupChat.Feature.Extension;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
-using GroupChat.GAgent.Dto;
 using GroupChat.Grain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

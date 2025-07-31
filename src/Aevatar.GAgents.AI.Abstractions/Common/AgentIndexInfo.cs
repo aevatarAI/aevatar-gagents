@@ -42,29 +42,4 @@ public class AgentIndexInfo
     /// 标签
     /// </summary>
     public List<string> Tags { get; set; } = new();
-    
-    /// <summary>
-    /// 输入格式
-    /// </summary>
-    public string InputFormat { get; set; } = "text";
-    
-    /// <summary>
-    /// 输出格式
-    /// </summary>
-    public string OutputFormat { get; set; } = "text";
-    
-    /// <summary>
-    /// 使用示例
-    /// </summary>
-    public string UsageExample { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Agent类型信息
-    /// </summary>
-    public string AgentType { get; set; } = string.Empty;
-    
-    /// <summary>
-    /// Agent接口类型
-    /// </summary>
-    public string InterfaceType { get; set; } = string.Empty;
 } 
