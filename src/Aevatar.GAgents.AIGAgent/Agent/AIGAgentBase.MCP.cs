@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
-
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
@@ -24,152 +23,66 @@ namespace Aevatar.GAgents.AIGAgent.Agent;
 /// <summary>
 /// Partial class for AIGAgentBase that adds MCP (Model Context Protocol) tool capabilities
 /// </summary>
-public abstract partial class
-    AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
+public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConfiguration>
     where TState : AIGAgentStateBase, new()
     where TStateLogEvent : StateLogEventBase<TStateLogEvent>
     where TEvent : EventBase
     where TConfiguration : ConfigurationBase
 {
-    private readonly Dictionary<string, string>
-        _toolNameMapping = new(); // Maps kernel function names to MCP tool names
+    #region Private Fields
 
+    /// <summary>
+    /// Maps kernel function names to MCP tool names for tool call resolution
+    /// </summary>
+    private readonly Dictionary<string, string> _toolNameMapping = new();
+
+    #endregion
+
+    #region Properties
+
+    /// <summary>
+    /// Gets the GAgent factory for creating agent instances
+    /// </summary>
+    protected IGAgentFactory GAgentFactory => ServiceProvider.GetRequiredService<IGAgentFactory>();
+
+    #endregion
+
+    #region MCP Configuration Methods
+
+    /// <summary>
+    /// Configure MCP servers using existing MCP agent instances
+    /// </summary>
+    /// <param name="mcpGAgents">List of existing MCP GAgent instances</param>
+    /// <returns>True if configuration was successful, false otherwise</returns>
     public virtual async Task<bool> ConfigureMCPServersAsync(List<IMCPGAgent> mcpGAgents)
     {
         try
         {
-            var mcpAgents = new Dictionary<string, MCPGAgentReference>();
-
-            foreach (var mcpAgent in mcpGAgents)
-            {
-                var mcpAgentId = mcpAgent.GetPrimaryKey();
-                var server = (await mcpAgent.GetStateAsync()).MCPServerConfig;
-
-                mcpAgents[server.ServerName] = new MCPGAgentReference
-                {
-                    AgentId = mcpAgentId,
-                    ServerName = server.ServerName,
-                    Description = server.Description
-                };
-
-                // Log available tools from this server
-                var serverTools = await mcpAgent.GetAvailableToolsAsync();
-                foreach (var tool in serverTools)
-                {
-                    Logger.LogInformation($"Registered MCP tool: {server.ServerName}.{tool.Name} - {tool.Description}");
-                }
-            }
-
-            if (!mcpAgents.Any())
-            {
-                // No valid MCP servers configured
-                return false;
-            }
-
-            // Update state
-            var configureServersEvent = new ConfigureMCPServersStateLogEvent
-            {
-                MCPServers = mcpAgents
-            };
-
-            var enableMCPToolsEvent = new SetEnableMCPToolsStateLogEvent
-            {
-                EnableMCPTools = true
-            };
-
-            RaiseEvent(configureServersEvent);
-            RaiseEvent(enableMCPToolsEvent);
-            await ConfirmEvents();
-
-            // Update kernel tools if brain is initialized
-            if (_brain != null)
-            {
-                await UpdateKernelWithMCPToolsAsync();
-            }
-
-            return true;
+            var mcpAgents = await ProcessMCPAgentsAsync(mcpGAgents);
+            return await CompleteMCPConfigurationAsync(mcpAgents);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to configure MCP servers 1");
+            Logger.LogError(ex, "Failed to configure MCP servers from existing agents");
             return false;
         }
     }
 
     /// <summary>
-    /// Configure MCP servers for this agent
+    /// Configure MCP servers using server configuration objects
     /// </summary>
+    /// <param name="servers">List of MCP server configurations</param>
+    /// <returns>True if configuration was successful, false otherwise</returns>
     public virtual async Task<bool> ConfigureMCPServersAsync(List<MCPServerConfig> servers)
     {
         try
         {
-            var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
-            var mcpAgents = new Dictionary<string, MCPGAgentReference>();
-
-            foreach (var server in servers)
-            {
-                if (!server.IsValid())
-                {
-                    Logger.LogWarning("Skipping invalid MCP server configuration");
-                    continue;
-                }
-
-                // Create config for the MCP agent
-                var mcpConfig = new MCPGAgentConfig
-                {
-                    ServerConfig = server
-                };
-
-                var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);
-                var mcpAgentId = mcpAgent.GetPrimaryKey();
-
-                mcpAgents[server.ServerName] = new MCPGAgentReference
-                {
-                    AgentId = mcpAgentId,
-                    ServerName = server.ServerName,
-                    Description = server.Description
-                };
-
-                // Log available tools from this server
-                var serverTools = await mcpAgent.GetAvailableToolsAsync();
-                foreach (var tool in serverTools)
-                {
-                    Logger.LogInformation($"Registered MCP tool: {server.ServerName}.{tool.Name} - {tool.Description}");
-                }
-            }
-
-            if (!mcpAgents.Any())
-            {
-                // No valid MCP servers configured
-                return false;
-            }
-
-            // Update state
-            var configureServersEvent = new ConfigureMCPServersStateLogEvent
-            {
-                MCPServers = mcpAgents
-            };
-
-            var enableMCPToolsEvent = new SetEnableMCPToolsStateLogEvent
-            {
-                EnableMCPTools = true
-            };
-
-            RaiseEvent(configureServersEvent);
-            RaiseEvent(enableMCPToolsEvent);
-            await ConfirmEvents();
-
-            // Update kernel tools if brain is initialized
-            if (_brain != null)
-            {
-                await UpdateKernelWithMCPToolsAsync();
-            }
-
-            return true;
+            var mcpAgents = await ProcessMCPServerConfigsAsync(servers);
+            return await CompleteMCPConfigurationAsync(mcpAgents);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to configure MCP servers 2");
+            Logger.LogError(ex, "Failed to configure MCP servers from configurations");
             return false;
         }
     }
@@ -1006,6 +919,132 @@ public abstract partial class
         }
     }
 
+    #endregion
+
+    #region Private Helper Methods
+
+    /// <summary>
+    /// Process existing MCP agents and extract server information
+    /// </summary>
+    private async Task<Dictionary<string, MCPGAgentReference>> ProcessMCPAgentsAsync(List<IMCPGAgent> mcpGAgents)
+    {
+        var mcpAgents = new Dictionary<string, MCPGAgentReference>();
+
+        foreach (var mcpAgent in mcpGAgents)
+        {
+            var mcpAgentId = mcpAgent.GetPrimaryKey();
+            var server = (await mcpAgent.GetStateAsync()).MCPServerConfig;
+
+            mcpAgents[server.ServerName] = new MCPGAgentReference
+            {
+                AgentId = mcpAgentId,
+                ServerName = server.ServerName,
+                Description = server.Description
+            };
+
+            await LogServerToolsAsync(mcpAgent, server.ServerName);
+        }
+
+        return mcpAgents;
+    }
+
+    /// <summary>
+    /// Process MCP server configurations and create agents
+    /// </summary>
+    private async Task<Dictionary<string, MCPGAgentReference>> ProcessMCPServerConfigsAsync(
+        List<MCPServerConfig> servers)
+    {
+        var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+        var mcpAgents = new Dictionary<string, MCPGAgentReference>();
+
+        foreach (var server in servers)
+        {
+            if (!server.IsValid())
+            {
+                Logger.LogWarning("Skipping invalid MCP server configuration for {ServerName}", server.ServerName);
+                continue;
+            }
+
+            var mcpConfig = new MCPGAgentConfig
+            {
+                ServerConfig = server
+            };
+
+            var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);
+            var mcpAgentId = mcpAgent.GetPrimaryKey();
+
+            mcpAgents[server.ServerName] = new MCPGAgentReference
+            {
+                AgentId = mcpAgentId,
+                ServerName = server.ServerName,
+                Description = server.Description
+            };
+
+            await LogServerToolsAsync(mcpAgent, server.ServerName);
+        }
+
+        return mcpAgents;
+    }
+
+    /// <summary>
+    /// Complete MCP configuration by updating state and kernel
+    /// </summary>
+    private async Task<bool> CompleteMCPConfigurationAsync(Dictionary<string, MCPGAgentReference> mcpAgents)
+    {
+        if (!mcpAgents.Any())
+        {
+            Logger.LogWarning("No valid MCP servers configured");
+            return false;
+        }
+
+        // Update state
+        var configureServersEvent = new ConfigureMCPServersStateLogEvent
+        {
+            MCPServers = mcpAgents
+        };
+
+        var enableMCPToolsEvent = new SetEnableMCPToolsStateLogEvent
+        {
+            EnableMCPTools = true
+        };
+
+        RaiseEvent(configureServersEvent);
+        RaiseEvent(enableMCPToolsEvent);
+        await ConfirmEvents();
+
+        // Update kernel tools if brain is initialized
+        if (_brain != null)
+        {
+            await UpdateKernelWithMCPToolsAsync();
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Log available tools from MCP server
+    /// </summary>
+    private async Task LogServerToolsAsync(IMCPGAgent mcpAgent, string serverName)
+    {
+        try
+        {
+            var serverTools = await mcpAgent.GetAvailableToolsAsync();
+            foreach (var tool in serverTools)
+            {
+                Logger.LogInformation("Registered MCP tool: {ServerName}.{ToolName} - {Description}",
+                    serverName, tool.Name, tool.Description);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to log tools for MCP server {ServerName}", serverName);
+        }
+    }
+
+    #endregion
+
+    #region State Event Classes
+
     /// <summary>
     /// State log event for configuring MCP servers
     /// </summary>
@@ -1032,4 +1071,6 @@ public abstract partial class
     {
         [Id(0)] public List<string> RegisteredFunctions { get; set; } = new();
     }
+
+    #endregion
 }
