@@ -1,16 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.Basic.BasicGEvent;
 using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.Extensions;
 using Aevatar.GAgents.MCP.Core.Model;
+using Aevatar.GAgents.MCP.Core.Options;
 using Aevatar.GAgents.MCP.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,15 +35,6 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     /// Maps kernel function names to MCP tool names for tool call resolution
     /// </summary>
     private readonly Dictionary<string, string> _toolNameMapping = new();
-
-    #endregion
-
-    #region Properties
-
-    /// <summary>
-    /// Gets the GAgent factory for creating agent instances
-    /// </summary>
-    protected IGAgentFactory GAgentFactory => ServiceProvider.GetRequiredService<IGAgentFactory>();
 
     #endregion
 
@@ -77,6 +68,15 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     {
         try
         {
+            // Validate against whitelist
+            var whitelistValidationResult = await ValidateAgainstWhitelistAsync(servers);
+            if (!whitelistValidationResult.IsValid)
+            {
+                Logger.LogError("MCP server configuration validation failed: {Error}",
+                    whitelistValidationResult.ErrorMessage);
+                return false;
+            }
+
             var mcpAgents = await ProcessMCPServerConfigsAsync(servers);
             return await CompleteMCPConfigurationAsync(mcpAgents);
         }
@@ -85,6 +85,215 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
             Logger.LogError(ex, "Failed to configure MCP servers from configurations");
             return false;
         }
+    }
+
+    /// <summary>
+    /// Get MCP server whitelist from configuration manager
+    /// </summary>
+    /// <returns>Dictionary of whitelisted MCP server configurations</returns>
+    public virtual async Task<Dictionary<string, MCPServerConfig>?> GetMCPServerWhitelistAsync()
+    {
+        try
+        {
+            Logger.LogInformation("Attempting to retrieve MCP server whitelist from configuration manager");
+            
+            var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+            var configManager = await gAgentFactory.GetMCPServerConfigGAgent();
+            
+            Logger.LogInformation("Configuration manager obtained, requesting MCP server options");
+
+            var requestEvent = new ConfigRequestEvent
+            {
+                ConfigType = typeof(MCPServerOptions).FullName!
+            };
+
+            var response = await configManager.RequestConfigAsync(requestEvent);
+            
+            Logger.LogInformation("Config request completed. Success: {Success}, ConfigJson null/empty: {IsEmpty}, Error: {Error}", 
+                response.Success, string.IsNullOrEmpty(response.ConfigJson), response.ErrorMessage);
+
+            if (!response.Success || string.IsNullOrEmpty(response.ConfigJson))
+            {
+                Logger.LogWarning("Failed to retrieve MCP server whitelist: {Error}", response.ErrorMessage);
+                return null;
+            }
+
+            var serverOptions = Newtonsoft.Json.JsonConvert.DeserializeObject<MCPServerOptions>(response.ConfigJson);
+            var whitelist = serverOptions?.MCPServers;
+            
+            Logger.LogInformation("Successfully parsed MCP server whitelist. Server count: {Count}", 
+                whitelist?.Count ?? 0);
+                
+            if (whitelist != null)
+            {
+                foreach (var kvp in whitelist)
+                {
+                    Logger.LogInformation("Whitelist entry: {ServerName} -> {Type}, Command: {Command}", 
+                        kvp.Key, kvp.Value.Type, kvp.Value.Command);
+                }
+            }
+            
+            return whitelist;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error retrieving MCP server whitelist");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Validate MCP server configurations against whitelist
+    /// </summary>
+    /// <param name="servers">List of MCP server configurations to validate</param>
+    /// <returns>Validation result</returns>
+    protected virtual async Task<MCPWhitelistValidationResult> ValidateAgainstWhitelistAsync(List<MCPServerConfig> servers)
+    {
+        try
+        {
+            var whitelist = await GetMCPServerWhitelistAsync();
+            Logger.LogInformation("MCP Whitelist validation: whitelist is null = {IsNull}, count = {Count}", 
+                whitelist == null, whitelist?.Count ?? 0);
+            
+            if (whitelist == null)
+            {
+                Logger.LogWarning("No MCP server whitelist found, allowing all servers");
+                return new MCPWhitelistValidationResult { IsValid = true };
+            }
+
+            foreach (var server in servers)
+            {
+                Logger.LogInformation("Validating MCP server: {ServerName}, Type: {Type}, Command: {Command}", 
+                    server.ServerName, server.Type, server.Command);
+                
+                var validationResult = ValidateServerAgainstWhitelist(server, whitelist);
+                Logger.LogInformation("Validation result for {ServerName}: {IsValid}, Error: {Error}", 
+                    server.ServerName, validationResult.IsValid, validationResult.ErrorMessage);
+                
+                if (!validationResult.IsValid)
+                {
+                    return validationResult;
+                }
+            }
+
+            Logger.LogInformation("All MCP servers passed whitelist validation");
+            return new MCPWhitelistValidationResult { IsValid = true };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error validating MCP servers against whitelist");
+            return new MCPWhitelistValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Validation error: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Validate a single MCP server configuration against whitelist
+    /// </summary>
+    /// <param name="server">MCP server configuration to validate</param>
+    /// <param name="whitelist">Whitelist of allowed MCP servers</param>
+    /// <returns>Validation result</returns>
+    protected virtual MCPWhitelistValidationResult ValidateServerAgainstWhitelist(
+        MCPServerConfig server,
+        Dictionary<string, MCPServerConfig> whitelist)
+    {
+        // Check if server exists in whitelist
+        if (!whitelist.TryGetValue(server.ServerName, out var whitelistServer))
+        {
+            return new MCPWhitelistValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"MCP server '{server.ServerName}' is not in the whitelist"
+            };
+        }
+
+        // For SSE (StreamableHttp) transport, allow without strict validation
+        if (server.Type == MCPServerType.StreamableHttp)
+        {
+            Logger.LogInformation("MCP server '{ServerName}' uses SSE transport, allowing without strict validation",
+                server.ServerName);
+            return new MCPWhitelistValidationResult { IsValid = true };
+        }
+
+        // For Stdio transport, require exact match of servername, command, and args
+        if (server.Type == MCPServerType.Stdio)
+        {
+            return ValidateStdioServerConfiguration(server, whitelistServer);
+        }
+
+        // Default validation for unknown transport types
+        Logger.LogWarning("Unknown MCP transport type '{Type}' for server '{ServerName}', applying strict validation",
+            server.Type, server.ServerName);
+        return ValidateStdioServerConfiguration(server, whitelistServer);
+    }
+
+    /// <summary>
+    /// Validate Stdio MCP server configuration with strict matching
+    /// </summary>
+    /// <param name="server">MCP server configuration to validate</param>
+    /// <param name="whitelistServer">Whitelisted MCP server configuration</param>
+    /// <returns>Validation result</returns>
+    protected virtual MCPWhitelistValidationResult ValidateStdioServerConfiguration(
+        MCPServerConfig server,
+        MCPServerConfig whitelistServer)
+    {
+        // Check server name (should already match from dictionary lookup, but double-check)
+        if (!string.Equals(server.ServerName, whitelistServer.ServerName, StringComparison.OrdinalIgnoreCase))
+        {
+            return new MCPWhitelistValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Server name mismatch: '{server.ServerName}' != '{whitelistServer.ServerName}'"
+            };
+        }
+
+        // Check command
+        if (!string.Equals(server.Command, whitelistServer.Command, StringComparison.Ordinal))
+        {
+            return new MCPWhitelistValidationResult
+            {
+                IsValid = false,
+                ErrorMessage =
+                    $"Command mismatch for server '{server.ServerName}': '{server.Command}' != '{whitelistServer.Command}'"
+            };
+        }
+
+        // Check args (must be exactly the same)
+        if (!ArgsMatch(server.Args, whitelistServer.Args))
+        {
+            return new MCPWhitelistValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Arguments mismatch for server '{server.ServerName}': " +
+                               $"[{string.Join(", ", server.Args)}] != [{string.Join(", ", whitelistServer.Args)}]"
+            };
+        }
+
+        Logger.LogInformation("MCP server '{ServerName}' validated successfully against whitelist", server.ServerName);
+        return new MCPWhitelistValidationResult { IsValid = true };
+    }
+
+    /// <summary>
+    /// Check if two argument lists match exactly
+    /// </summary>
+    /// <param name="args1">First argument list</param>
+    /// <param name="args2">Second argument list</param>
+    /// <returns>True if arguments match exactly</returns>
+    protected virtual bool ArgsMatch(List<string> args1, List<string> args2)
+    {
+        if (args1.Count != args2.Count)
+            return false;
+
+        for (int i = 0; i < args1.Count; i++)
+        {
+            if (!string.Equals(args1[i], args2[i], StringComparison.Ordinal))
+                return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -290,7 +499,7 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
             else if (response.Result != null)
             {
                 // If not MCPToolCallResult, try to serialize as JSON
-                result = JsonSerializer.Serialize(response.Result);
+                result = System.Text.Json.JsonSerializer.Serialize(response.Result);
             }
             else
             {
@@ -393,11 +602,11 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     private KernelParameterMetadata CreateArrayParameterMetadata(string name, MCPParameterInfo paramInfo)
     {
         // Generate description containing complete JSON Schema
-        var schema = GenerateSchemaForParameter(paramInfo);
-        var schemaJson = JsonSerializer.Serialize(schema, new System.Text.Json.JsonSerializerOptions
-        {
-            WriteIndented = false
-        });
+                        var schema = GenerateSchemaForParameter(paramInfo);
+                var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema, new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = false
+                });
 
         // Create clear description explaining this is an array parameter
         var itemType = paramInfo.ArrayItems?.Type ?? "string";
@@ -625,8 +834,8 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
         {
             try
             {
-                var schema = GenerateSchemaForParameter(paramInfo);
-                var schemaJson = JsonSerializer.Serialize(schema);
+                                        var schema = GenerateSchemaForParameter(paramInfo);
+                        var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema);
                 // Schema property is KernelJsonSchema type
                 var kernelJsonSchemaType = schemaProp.PropertyType;
                 var ctor = kernelJsonSchemaType.GetConstructor(new Type[] { typeof(string) });
@@ -807,7 +1016,7 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
                     // Try to parse as JSON array
                     try
                     {
-                        return JsonSerializer.Deserialize<List<object>>(strValue) ?? new List<object>();
+                        return System.Text.Json.JsonSerializer.Deserialize<List<object>>(strValue) ?? new List<object>();
                     }
                     catch
                     {
@@ -819,7 +1028,7 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
                     // Try to parse as JSON object
                     try
                     {
-                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
+                        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
                                new Dictionary<string, object>();
                     }
                     catch
@@ -1070,6 +1279,26 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     public class SetRegisteredMCPFunctionsStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public List<string> RegisteredFunctions { get; set; } = new();
+    }
+
+    #endregion
+
+    #region MCP Whitelist Validation Classes
+
+    /// <summary>
+    /// Result of MCP server whitelist validation
+    /// </summary>
+    public class MCPWhitelistValidationResult
+    {
+        /// <summary>
+        /// Whether the validation passed
+        /// </summary>
+        public bool IsValid { get; set; }
+
+        /// <summary>
+        /// Error message if validation failed
+        /// </summary>
+        public string? ErrorMessage { get; set; }
     }
 
     #endregion

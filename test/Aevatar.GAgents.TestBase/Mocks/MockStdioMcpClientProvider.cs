@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Aevatar.GAgents.MCP.McpClient;
 using Aevatar.GAgents.MCP.Options;
 using ModelContextProtocol.Client;
@@ -10,16 +6,15 @@ namespace Aevatar.GAgents.MCP.Test.Mocks;
 
 /// <summary>
 /// Mock MCP client provider for testing without real MCP servers
-/// 模拟MCP客户端提供者，用于测试而无需真实的MCP服务器
 /// </summary>
-public class MockMcpClientProvider : IMcpClientProvider
+public class MockStdioMcpClientProvider : IMcpClientProvider
 {
     private readonly Dictionary<string, MockMcpClient> _clients = new();
     private readonly Dictionary<string, List<MockTool>> _serverTools = new();
 
     public McpClientType ClientType => McpClientType.Stdio;
 
-    public MockMcpClientProvider()
+    public MockStdioMcpClientProvider()
     {
         InitializeMockServerTools();
     }

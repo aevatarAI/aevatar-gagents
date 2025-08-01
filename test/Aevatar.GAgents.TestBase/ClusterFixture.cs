@@ -171,8 +171,8 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     services.AddSingleton<IGAgentManager, GAgentManager>();
                     services.AddSingleton<IPluginGAgentManager, PluginGAgentManager>();
                     // 注册Mock MCP客户端提供者用于测试（与TestBase保持一致使用Singleton）
-                    services.AddSingleton<IMcpClientProvider, MockMcpClientProvider>();
-                    services.AddSingleton<MockMcpClientProvider>();
+                    services.AddSingleton<IMcpClientProvider, MockStdioMcpClientProvider>();
+                    services.AddSingleton<MockStdioMcpClientProvider>();
                 })
                 .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
