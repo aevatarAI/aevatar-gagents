@@ -2,6 +2,7 @@ using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView;
 using Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView.Dto;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
+using Newtonsoft.Json;
 using Shouldly;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;
@@ -29,20 +30,20 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         {
             NodeId = nodeId1,
             AgentType = fread.GetGrainId().Type.ToString(),
-            Properties = new Dictionary<string, object>()
+            JsonProperties =  JsonConvert.SerializeObject( new Dictionary<string, object>()
             {
                 {"MemberName","fread"}
-            },
+            }),
             Name = "fread"
         });
         workflowViewConfig.WorkflowNodeList.Add(new WorkflowNodeDto()
         {
             NodeId = nodeId2,
             AgentType = moni.GetGrainId().Type.ToString(),
-            Properties = new Dictionary<string, object>()
+            JsonProperties =  JsonConvert.SerializeObject( new Dictionary<string, object>()
             {
                 {"MemberName","moni"}
-            },
+            }),
             Name = "moni"
         });
         workflowViewConfig.WorkflowNodeUnitList.Add(new WorkflowNodeUnitDto()
@@ -57,16 +58,16 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         viewState.WorkflowNodeList.Count.ShouldBe(2);
         viewState.WorkflowNodeList[0].NodeId.ShouldBe(nodeId1);
         viewState.WorkflowNodeList[0].AgentType.ShouldBe(fread.GetGrainId().Type.ToString());
-        viewState.WorkflowNodeList[0].Properties.ShouldBe(new Dictionary<string, object>()
+        viewState.WorkflowNodeList[0].JsonProperties.ShouldBe(JsonConvert.SerializeObject( new Dictionary<string, object>()
         {
             {"MemberName","fread"}
-        });
+        }));
         viewState.WorkflowNodeList[1].NodeId.ShouldBe(nodeId2);
         viewState.WorkflowNodeList[1].AgentType.ShouldBe(moni.GetGrainId().Type.ToString());
-        viewState.WorkflowNodeList[1].Properties.ShouldBe(new Dictionary<string, object>()
+        viewState.WorkflowNodeList[1].JsonProperties.ShouldBe(JsonConvert.SerializeObject( new Dictionary<string, object>()
         {
             {"MemberName","moni"}
-        });
+        }));
         
         viewState.WorkflowNodeUnitList.Count.ShouldBe(1);
         viewState.WorkflowNodeUnitList[0].NodeId.ShouldBe(nodeId1);
@@ -77,10 +78,10 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         {
             NodeId = nodeId3,
             AgentType = fread.GetGrainId().Type.ToString(),
-            Properties = new Dictionary<string, object>()
+            JsonProperties =  JsonConvert.SerializeObject( new Dictionary<string, object>()
             {
                 {"MemberName","fread"}
-            },
+            }),
             Name = "fread1"
         });
         await workflowViewAgent.ConfigAsync(workflowViewConfig);
@@ -104,10 +105,10 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         {
             NodeId = nodeId1,
             AgentType = fread.GetGrainId().Type.ToString(),
-            Properties = new Dictionary<string, object>()
+            JsonProperties =  JsonConvert.SerializeObject( new Dictionary<string, object>()
             {
                 {"MemberName","fread"}
-            },
+            }),
             Name = "fread",
             AgentId = fread.GetPrimaryKey()
         });
@@ -115,10 +116,10 @@ public sealed class WorkFlowViewTest : AevatarGroupChatTestBase
         {
             NodeId = nodeId2,
             AgentType = moni.GetGrainId().Type.ToString(),
-            Properties = new Dictionary<string, object>()
+            JsonProperties =  JsonConvert.SerializeObject( new Dictionary<string, object>()
             {
                 {"MemberName","moni"}
-            },
+            }),
             Name = "moni",
             AgentId = moni.GetPrimaryKey()
         });

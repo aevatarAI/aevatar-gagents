@@ -10,11 +10,8 @@ namespace Aevatar.GAgents.GroupChat.GAgent.Coordinator.WorkflowView;
 public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogEvent, EventBase,
     WorkflowViewConfigDto>, IWorkflowViewGAgent
 {
-    private readonly IGAgentFactory _gAgentFactory;
-
-    public WorkflowViewGAgent(IGAgentFactory agentFactory)
+    public WorkflowViewGAgent()
     {
-        _gAgentFactory = agentFactory;
     }
 
     public override Task<string> GetDescriptionAsync()
@@ -123,9 +120,9 @@ public class WorkflowViewGAgent : GAgentBase<WorkflowViewState, WorkflowViewLogE
                     if (updateNode != null)
                     {
                         updateNode.Name = node.Name;
-                        updateNode.Properties = node.Properties;
                         updateNode.ExtendedData = node.ExtendedData;
                         updateNode.AgentId = node.AgentId;
+                        updateNode.JsonProperties = node.JsonProperties;
                     }
                 }
                 state.WorkflowNodeList.AddRange(updateWorkflowViewLogEvent.AddNodeList);
