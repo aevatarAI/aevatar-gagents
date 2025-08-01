@@ -18,6 +18,7 @@
     <File Path="md\aevatar-gagents-aigagent.md" />
     <File Path="md\aevatar-gagents-semantickernel.md" />
     <File Path="md\aevatar-groupchat-analysis.md" />
+    <File Path="docs\GAgentDemo.ipynb" />
   </Folder>
   <Folder Name="/samples/" />
   <Folder Name="/samples/AIGAgent/">

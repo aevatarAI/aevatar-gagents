@@ -32,7 +32,7 @@
       "Bash(/usr/local/share/dotnet/dotnet test test/Aevatar.GAgents.AIGAgent.Test/ --verbosity normal)",
       "Bash(exec zsh)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
     ],
     "deny": []
   }
