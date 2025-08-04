@@ -74,6 +74,11 @@ public partial class PsiOmniGAgent
                     $"❌ Error: AgentConfiguration not set.";
             }
 
+            if (State.Depth >= 5)
+            {
+                return "❌ Error: Can't create agent with depth > 5.";
+            }
+
             // Create and initialize the new agent
             var psi = await _gAgentFactory.GetGAgentAsync("omni", "psi", new PsiOmniGAgentConfig()
             {
