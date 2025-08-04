@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
@@ -53,6 +54,10 @@ public partial class
 
                                                Remember you are an autonomous agent. Don't be verbose and keep asking for confirmation from the user.
                                                Apply your best judgement when in doubt.
+                                               ## How to stay on track
+                                               Before breaking down that task, understand the intention of the user, rewrite the task in a format that
+                                               clearly defines the object, scope and intention of the task. Use the write_task tool to record this task
+                                               in re-written format. Use read_task tool FREQUENTLY to remind you the task.
                                                """ +
                                                """
                                                ## Task Management
@@ -101,9 +106,11 @@ public partial class
                                                IMPORTANT: Always try to re-use existing agents rather than creating new ones.
                                                Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
                                                Dispatch a task only when all its dependencies are completed. Use the id of the todo item as the CallId for when using call_agent tool.
-                                               IMPORTANT: When dispatching a todo task with dependencies, you must summarize all necessary information provided by its dependencies and include in the task description. This is critical to make sure the child agent have full context.
-                                               Mark the todo item as InProgress once the task is dispatched and set the AssigneeAgentId to the one the sub-task is dispatched to.
-                                               For information synthesis and summarization work, you have to assign it to yourself without using call_agent tool. Mark the todo item as Complete before outputing the summary in the FINAL result (make sure you follow the output format).
+                                               IMPORTANT: When invoking call_agent, you must provide the information that is self-sufficient and include all required information from dependency tasks into the knowledge field.
+                                               ### Sub-tasks for Self
+                                               For information synthesis and summarization work, you have to assign it to yourself.
+                                               NEVER use call_agent to call self. Do the work directly instead.
+                                               Mark the todo item as Complete before giving the final response.
                                                """ +
                                                """
                                                ## Tracking of Dispatched Sub-tasks
@@ -115,28 +122,27 @@ public partial class
                                                If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
                                                Produce a final response when the task is done. {"Response": "The final result here"}
                                                The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
-                                               """+
+                                               """ +
                                                """
                                                ## Output Format
-                                               - Output a JSON object with the following fields:
-                                                  - "Thought": the intermediate result of the agent. This is only used for internal tracking and won't be sent to user.
-                                                  - "Response": the final result of the agent. This will be sent back to user.
-                                               - If the task is not finished, you should output "Thought" with the intermediate result and specify the AgentId we are waiting for.
-                                               - If the task is finished, you should output "Response" with the final result.
-                                               - You may omit or leave one of the two fields empty.
-                                               - Only one JSON object in the output. No extra text or explanation.
+                                               <thought>
+                                               Provide progress and status update here.
+                                               </thought>
+                                               <response>
+                                               Final response to user. This part is optional only when the task is complete.
+                                               </response>
 
                                                ### Example Outputs
-                                               <example>
-                                               {
-                                                 "Thought": "I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP."
-                                               }
-                                               </example>
-                                               <example>
-                                               {
-                                                 "Response": "The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%."
-                                               }
-                                               </example>
+                                               <example1>
+                                               <thought>
+                                               I received the GDP of the United States for 2024 which is $x trillion. Awaiting the GDP of New York state for 2024 before I can calculate the percentage contribution of New York state to the US GDP.
+                                               </thought>
+                                               </example1>
+                                               <example2>
+                                               <response>
+                                               The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%.
+                                               </response>
+                                               </example2>
 
                                                """,
             [RealizationStatus.Specialized] = "" // TODO:
@@ -411,10 +417,11 @@ public partial class
 
     private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, string operationName)
     {
-        const int MaxRetries = 5;
-        const int InitialDelayMs = 10000; // 10 seconds initial delay
+        const int MaxRetries = 1000;
+        const int InitialDelayMs = 1; // 2 seconds initial delay
         const int MaxDelayMs = 300000; // Maximum delay of 300 seconds
         const double BackoffMultiplier = 2.0; // Exponential backoff multiplier
+        const int MaxBackoff = 59;
         var random = new Random();
 
         for (var attempt = 0; attempt < MaxRetries; attempt++)
@@ -423,14 +430,19 @@ public partial class
             {
                 return await operation();
             }
-            catch (HttpOperationException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+            catch (Exception ex) when (
+                ex is HttpOperationException httpEx && httpEx.StatusCode == HttpStatusCode.TooManyRequests ||
+                ex is TaskCanceledException ||
+                ex is TimeoutException ||
+                (ex is IOException ioEx && ioEx.InnerException is SocketException) ||
+                (ex.Message?.Contains("timeout", StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 // Calculate base delay with exponential backoff
-                var baseDelayMs = (int)(Math.Pow(BackoffMultiplier, attempt) * InitialDelayMs);
-                
-                // Extract retry-after if available from error message
+                var baseDelayMs = (int)Math.Min(Math.Pow(BackoffMultiplier, attempt) * InitialDelayMs, MaxBackoff);
+
+                // Extract retry-after if available from error message for rate limit errors
                 var retryAfterSeconds = 0;
-                if (ex.Message.Contains("retry after"))
+                if (ex is HttpOperationException && ex.Message.Contains("retry after"))
                 {
                     var match = System.Text.RegularExpressions.Regex.Match(ex.Message, @"retry after (\d+) seconds");
                     if (match.Success && int.TryParse(match.Groups[1].Value, out retryAfterSeconds))
@@ -447,14 +459,16 @@ public partial class
 
                 if (attempt == MaxRetries - 1)
                 {
-                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}", 
+                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}",
                         MaxRetries, operationName, ex.Message);
                     throw;
                 }
 
+                var errorType = ex is HttpOperationException ? "Rate limit" : "Timeout";
                 Logger.LogWarning(
-                    "Rate limit hit for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
-                    operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs, actualDelayMs - baseDelayMs, ex.Message);
+                    "{ErrorType} error for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
+                    errorType, operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs,
+                    actualDelayMs - baseDelayMs, ex.Message);
 
                 await Task.Delay(actualDelayMs);
             }
@@ -693,6 +707,14 @@ public partial class
                 break;
             case GrowChatHistoryEvent payload:
                 state.ChatHistory.AddRange(payload.NewMessages);
+                foreach (var psiOmniChatMessage in payload.NewMessages)
+                {
+                    if (psiOmniChatMessage.TokenUsage == null) continue;
+                    state.InputTokenUsage += psiOmniChatMessage.TokenUsage.PromptTokens;
+                    state.OutTokenUsage += psiOmniChatMessage.TokenUsage.CompletionTokens;
+                    state.TotalTokenUsage += psiOmniChatMessage.TokenUsage.TotalTokens;
+                }
+
                 if (state.ChatHistory.Count <= 1)
                     break;
                 var finalResult = string.Empty;
@@ -706,11 +728,30 @@ public partial class
                     var lastMessage = State.ChatHistory.Last()?.Content ?? string.Empty;
                     try
                     {
-                        var lastOrchestratorMessage = JsonSerializer.Deserialize<OrchestratorMessage>(lastMessage);
-                        if (lastOrchestratorMessage != null && !lastOrchestratorMessage.Response.IsNullOrEmpty())
+                        var thought = string.Empty;
+                        var response = string.Empty;
+
+                        // Extract thought if present
+                        if (lastMessage.Contains("<thought>") && lastMessage.Contains("</thought>"))
                         {
-                            finalResult = lastOrchestratorMessage.Response;
+                            var thoughtParts = lastMessage.Split("<thought>");
+                            if (thoughtParts.Length > 1)
+                            {
+                                thought = thoughtParts[1].Split("</thought>")[0].Trim();
+                            }
                         }
+
+                        // Extract response if present
+                        if (lastMessage.Contains("<response>") && lastMessage.Contains("</response>"))
+                        {
+                            var responseParts = lastMessage.Split("<response>");
+                            if (responseParts.Length > 1)
+                            {
+                                response = responseParts[1].Split("</response>")[0].Trim();
+                            }
+                        }
+
+                        finalResult = response;
                     }
                     catch (Exception ex)
                     {
@@ -736,6 +777,9 @@ public partial class
             case UpdateSelfDescription payload:
                 state.Description = payload.Description;
                 ScheduleTask(DoSelfReportAsync);
+                break;
+            case WriteTask payload:
+                state.CurrentTask = payload.Task;
                 break;
         }
 

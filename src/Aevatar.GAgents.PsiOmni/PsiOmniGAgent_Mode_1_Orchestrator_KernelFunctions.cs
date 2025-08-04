@@ -18,6 +18,28 @@ public partial class PsiOmniGAgent
         return await Task.FromResult(State.ChildAgents.Values.ToList());
     }
 
+    [KernelFunction("write_task")]
+    [Description("Rewrite the current task.")]
+    public async Task<string> WriteTaskAsync(
+        [Description("The comprehensive description of the task."), Required]
+        string task
+    )
+    {
+        RaiseEventWithTracing(new WriteTask()
+        {
+            Task = task
+        });
+        return await Task.FromResult("Written task.");
+    }
+
+    [KernelFunction("read_task")]
+    [Description("Read the current task.")]
+    public async Task<string> ReadTaskAsync(
+    )
+    {
+        return await Task.FromResult(State.CurrentTask);
+    }
+    
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
@@ -90,10 +112,16 @@ public partial class PsiOmniGAgent
         string agentId,
         [Description("The call ID of this call.")]
         string callId,
-        [Description("Natural language message to be sent to the agent")]
-        string message
+        [Description("The task to be sent.")]
+        TaskDispatch task
     )
     {
+        var message = $"Task: {task.Task}\n\nBackground: {task.Background}";
+        if (!task.Knowledge.IsNullOrEmpty())
+        {
+            var knowledge = task.Knowledge.Select(x => $"<knowledge>{x}</knowledge>").JoinAsString("\n");
+            message += $"\n\nKnowledge:\n{knowledge}";
+        }
         var parentAgentId = this.GetGrainId().ToString();
         if (parentAgentId == agentId)
         {
@@ -189,71 +217,11 @@ Use this tool to create and manage a structured task list for your current codin
     ## Examples of When to Use the Todo List
 
     <example>
-    User: I want to add a dark mode toggle to the application settings. Make sure you run the tests and build when you're done!
-    Assistant: I'll help add a dark mode toggle to your application settings. Let me create a todo list to track this implementation.
+    User: Research on machine learning techniques and prepare an html format cheatsheet for me
+    Assistant: Let me create a todo list.
     *Creates todo list with the following items:*
-    1. Create dark mode toggle component in Settings page
-    2. Add dark mode state management (context/store)
-    3. Implement CSS-in-JS styles for dark theme
-    4. Update existing components to support theme switching
-    5. Run tests and build process, addressing any failures or errors that occur
-    *Begins working on the first task*
-
-    <reasoning>
-    The assistant used the todo list because:
-    1. Adding dark mode is a multi-step feature requiring UI, state management, and styling changes
-    2. The user explicitly requested tests and build be run afterward
-    3. The assistant inferred that tests and build need to pass by adding ""Ensure tests and build succeed"" as the final task
-    </reasoning>
-    </example>
-
-    <example>
-    User: Help me rename the function getCwd to getCurrentWorkingDirectory across my project
-    Assistant: Let me first search through your codebase to find all occurrences of 'getCwd'.
-    *Uses grep or search tools to locate all instances of getCwd in the codebase*
-    Assistant: I've found 15 instances of 'getCwd' across 8 different files. Let me create a todo list to track these changes.
-    *Creates todo list with specific items for each file that needs updating*
-
-    <reasoning>
-    The assistant used the todo list because:
-    1. First, the assistant searched to understand the scope of the task
-    2. Upon finding multiple occurrences across different files, it determined this was a complex task with multiple steps
-    3. The todo list helps ensure every instance is tracked and updated systematically
-    4. This approach prevents missing any occurrences and maintains code consistency
-    </reasoning>
-    </example>
-
-
-    <example>
-    User: I need to implement these features for my e-commerce site: user registration, product catalog, shopping cart, and checkout flow.
-    Assistant: I'll help implement these features. First, let's add all the features to the todo list.
-    *Creates a todo list breaking down each feature into specific tasks based on the project architecture*
-    Assistant: Let's start with user registration. This will involve creating database models, API endpoints, and frontend forms that integrate with your existing authentication system.
-
-    <reasoning>
-    The assistant used the todo list because:
-    1. The user provided multiple complex features to implement in a comma separated list
-    2. The todo list helps organize these large features into manageable tasks
-    3. This approach allows for tracking progress across the entire implementation
-    </reasoning>
-    </example>
-
-    <example>
-    User: Can you help optimize my React application? It's rendering slowly and has performance issues.</user>
-    Assistant: I'll help optimize your React application. First, let me examine your codebase to identify potential performance bottlenecks.
-    *Reviews component structure, render patterns, state management, and data fetching*
-    Assistant: After analyzing your codebase, I've identified several performance issues. Let me create a todo list to track our optimization efforts.
-    *Creates todo list with items like: 1) Implement memoization for expensive calculations in ProductList, 2) Add virtualization for long lists in Dashboard, 3) Optimize image loading in Gallery component, 4) Fix state update loops in ShoppingCart, 5) Review bundle size and implement code splitting*
-    Let's start by implementing memoization for the expensive calculations in your ProductList component.</assistant>
-
-    <reasoning>
-    The assistant used the todo list because:
-    1. First, the assistant examined the codebase to identify specific performance issues
-    2. Based on this analysis, it identified multiple optimization opportunities
-    3. Performance optimization is a non-trivial task requiring multiple steps
-    4. The todo list helps methodically track improvements across different components
-    5. This systematic approach ensures all performance bottlenecks are addressed
-    </reasoning>
+    1. Research on popular and useful machine learning techniques
+    2. Use the research result from todo item 1 and create an html (dependency on todo item 1)
     </example>
 
     ## Task States and Management

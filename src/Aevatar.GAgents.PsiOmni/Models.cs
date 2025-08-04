@@ -159,3 +159,18 @@ public class TodoItem
     [Id(5), Description("The id of the agent this task is dispatched to.")]
     public string AssigneeAgentId { get; set; } = string.Empty;
 }
+
+[GenerateSerializer, Description("Contains all information the child agent to perform the task.")]
+public class TaskDispatch
+{
+    [Id(1), Description("The description of the task to be performed.")]
+    public string Task { get; set; } = string.Empty;
+
+    [Id(2),
+     Description(
+         "Provide the background of the task explaining why we need to do it in the context of the parent task.")]
+    public string Background { get; set; } = string.Empty;
+
+    [Id(3), Description("Provides all known information that is needed to perform the task.")]
+    public List<string> Knowledge { get; set; } = new();
+}
