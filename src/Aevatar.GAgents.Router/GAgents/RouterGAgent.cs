@@ -20,6 +20,7 @@ public interface IRouterGAgent : IAIGAgent, IGAgent
     public Task AddAgentDescription(Type agentType, List<Type> eventList);
 }
 
+[Description("A specialized AI agent designed for workflow orchestration that analyzes task requirements and intelligently selects and combines appropriate agents to complete complex workflows. Supports dynamic routing, agent coordination, state management, and is suitable for complex business scenarios requiring multi-agent collaboration.")]
 public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>, IRouterGAgent
 {
     private readonly ILogger<RouterGAgent> _logger;
@@ -32,17 +33,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
     public override Task<string> GetDescriptionAsync()
     {
-        var descriptionInfo = new AIAgentDescriptionInfo
-        {
-            Id = "RouterGAgent",
-            Name = "Intelligent Router Agent",
-            L1Description = "Intelligent routing agent responsible for workflow generation and management, capable of coordinating multiple agent collaborations",
-            L2Description = "A specialized AI agent designed for workflow orchestration that analyzes task requirements and intelligently selects and combines appropriate agents to complete complex workflows. Supports dynamic routing, agent coordination, state management, and is suitable for complex business scenarios requiring multi-agent collaboration.",
-            Category = "Workflow",
-            Capabilities = new List<string> { "workflow-management", "agent-coordination", "task-routing", "dynamic-orchestration" },
-            Tags = new List<string> { "workflow", "router", "orchestration", "coordination" }
-        };
-        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
+        return Task.FromResult("Intelligent Router Agent");
     }
 
     public async Task<RouterGAgentState> GetStateAsync()

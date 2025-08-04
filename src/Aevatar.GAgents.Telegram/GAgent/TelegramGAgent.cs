@@ -16,7 +16,7 @@ using Orleans.Providers;
 
 namespace Aevatar.GAgents.Telegram.Agent;
 
-[Description("Handle telegram")]
+[Description("Advanced Telegram bot integration agent that enables automated messaging, group management, inline queries, and custom commands. Supports rich media handling, user authentication, and seamless bot-to-user communication.")]
 [StorageProvider(ProviderName = "PubSubStore")]
 [LogConsistencyProvider(ProviderName = "LogStorage")]
 [GAgent(nameof(TelegramGAgent))]
@@ -29,17 +29,7 @@ public class TelegramGAgent : GAgentBase<TelegramGAgentState, MessageSEvent, Eve
 
     public override Task<string> GetDescriptionAsync()
     {
-        var descriptionInfo = new AgentDescriptionInfo
-        {
-            Id = "TelegramGAgent",
-            Name = "Telegram Bot Agent",
-            L1Description = "AI-powered Telegram bot agent for automated messaging and user interaction management",
-            L2Description = "Advanced Telegram bot integration agent that enables automated messaging, group management, inline queries, and custom commands. Supports rich media handling, user authentication, and seamless bot-to-user communication.",
-            Category = "Social",
-            Capabilities = new List<string> { "automated-messaging", "group-management", "inline-queries", "custom-commands" },
-            Tags = new List<string> { "telegram", "bot", "messaging", "automation" }
-        };
-        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
+        return Task.FromResult("Telegram Bot Agent");
     }
 
     public async Task RegisterTelegramAsync(string botName, string token)
