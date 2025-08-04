@@ -3,8 +3,11 @@ using System.Reflection;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
+using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.Router.GAgents.Features.Common;
 using Aevatar.GAgents.Router.GAgents.SEvents;
+using AIAgentDescriptionInfo = Aevatar.GAgents.AI.Common.AgentDescriptionInfo;
+using RouterAgentDescriptionInfo = Aevatar.GAgents.Router.GAgents.Features.Common.AgentDescriptionInfo;
 using Aevatar.GAgents.Router.GEvents;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -29,8 +32,17 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(
-            "This agent is responsible for generating and managing workflow.");
+        var descriptionInfo = new AIAgentDescriptionInfo
+        {
+            Id = "RouterGAgent",
+            Name = "Intelligent Router Agent",
+            L1Description = "Intelligent routing agent responsible for workflow generation and management, capable of coordinating multiple agent collaborations",
+            L2Description = "A specialized AI agent designed for workflow orchestration that analyzes task requirements and intelligently selects and combines appropriate agents to complete complex workflows. Supports dynamic routing, agent coordination, state management, and is suitable for complex business scenarios requiring multi-agent collaboration.",
+            Category = "Workflow",
+            Capabilities = new List<string> { "workflow-management", "agent-coordination", "task-routing", "dynamic-orchestration" },
+            Tags = new List<string> { "workflow", "router", "orchestration", "coordination" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
 
     public async Task<RouterGAgentState> GetStateAsync()
@@ -274,7 +286,7 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
             return;
         }
 
-        var agentDescriptionDict = new Dictionary<string, AgentDescriptionInfo>();
+        var agentDescriptionDict = new Dictionary<string, RouterAgentDescriptionInfo>();
         foreach (var item in eventData.Value)
         {
             if (!agentDescriptionDict.ContainsKey(item.Key.Name))
@@ -291,9 +303,9 @@ public class RouterGAgent : AIGAgentBase<RouterGAgentState, RouterGAgentSEvent>,
         await ConfirmEvents();
     }
 
-    private AgentDescriptionInfo GetAgentDescriptionAsync(Type agentType, List<Type> eventTypes)
+    private RouterAgentDescriptionInfo GetAgentDescriptionAsync(Type agentType, List<Type> eventTypes)
     {
-        var agentDescription = new AgentDescriptionInfo();
+        var agentDescription = new RouterAgentDescriptionInfo();
         agentDescription.AgentName = agentType.Name;
         var description = agentType.GetCustomAttribute<DescriptionAttribute>();
         if (description == null)

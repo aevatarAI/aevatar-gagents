@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AIGAgent.Agent;
@@ -8,6 +10,7 @@ using Aevatar.GAgents.GraphRetrievalAgent.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Neo4j.Driver;
+using Newtonsoft.Json;
 
 namespace Aevatar.GAgents.GraphRetrievalAgent.GAgent;
 
@@ -15,7 +18,6 @@ public interface IGraphRetrievalAgent : IAIGAgent, IGAgent
 {
     Task<string?> InvokeLLMWithGraphRetrievalAsync(string prompt);
 }
-
 
 public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphRetrievalAgentSEvent, EventBase, GraphRetrievalConfig>, IGraphRetrievalAgent
 {
@@ -31,8 +33,17 @@ public class GraphRetrievalAgent : AIGAgentBase<GraphRetrievalAgentState, GraphR
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(
-            "This agent enhance llm prompt with graph rag retrieval.");
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "GraphRetrievalAgent",
+            Name = "Graph Retrieval Agent",
+            L1Description = "Specialized AI agent for knowledge graph retrieval and semantic search operations",
+            L2Description = "Advanced graph-based knowledge retrieval agent that performs intelligent semantic searches across connected data structures. Utilizes graph traversal algorithms and AI embeddings for contextual information discovery.",
+            Category = "AI",
+            Capabilities = new List<string> { "graph-retrieval", "semantic-search", "knowledge-discovery", "graph-traversal" },
+            Tags = new List<string> { "graph", "retrieval", "knowledge", "semantic" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
     
     protected override async Task PerformConfigAsync(GraphRetrievalConfig initializationConfig)

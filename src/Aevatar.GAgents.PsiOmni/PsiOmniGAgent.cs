@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
 using Aevatar.GAgents.AIGAgent.Dtos;
@@ -8,7 +10,9 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
+using Aevatar.GAgents.AI.Common;
 using GroupChat.GAgent;
+using JsonConverter = Newtonsoft.Json.JsonConvert;
 
 namespace Aevatar.GAgents.PsiOmni;
 
@@ -128,7 +132,17 @@ public partial class
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(State.Description);
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "PsiOmniGAgent",
+            Name = "PsiOmni Integration Agent",
+            L1Description = "AI agent for PsiOmni platform integration with advanced cognitive capabilities",
+            L2Description = "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.",
+            Category = "AI",
+            Capabilities = new List<string> { "cognitive-services", "neural-processing", "intelligent-automation", "complex-problem-solving" },
+            Tags = new List<string> { "psiomni", "cognitive", "ai", "automation" }
+        };
+        return Task.FromResult(JsonConverter.SerializeObject(descriptionInfo));
     }
 
     private async Task DoSelfReportAsync()

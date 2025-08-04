@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Aevatar.Core;
+using Aevatar.Core.Abstractions;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
@@ -166,6 +168,8 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     
                     services.AddSingleton<IKernelBuilderFactory, MockKernelBuilderFactory>();
                     services.AddSingleton<IBrainFactory, MockBrainFactory>();
+                    // Add IGAgentFactory registration for Orleans grain dependency injection
+                    services.AddSingleton<IGAgentFactory, GAgentFactory>();
                     services.AddSingleton<IGAgentService, GAgentService>();
                     services.AddSingleton<IGAgentExecutor, GAgentExecutor>();
                     services.AddSingleton<IGAgentManager, GAgentManager>();
