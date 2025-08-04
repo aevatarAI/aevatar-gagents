@@ -11,4 +11,6 @@ public class MCPServerOptions
     /// Dictionary of MCP server configurations, keyed by server name
     /// </summary>
     public Dictionary<string, MCPServerConfig> MCPServers { get; set; } = new();
+
+    public bool EnableAllMCPServers { get; set; } = false;
 }

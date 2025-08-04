@@ -12,8 +12,17 @@ public class ConfigUpdateEvent : EventWithResponseBase<ConfigResponseEvent>
 [GenerateSerializer]
 public class ConfigRequestEvent : EventWithResponseBase<ConfigResponseEvent>
 {
-    [Id(0)] public string ConfigType { get; set; } = string.Empty; // e.g., "SystemLLMConfigs", "MCPServerOptions"
-    [Id(1)] public string? ConfigKey { get; set; } // Optional: specific key within the config
+    /// <summary>
+    /// e.g., "Aevatar.GAgents.AI.Options.SystemLLMConfigOptions", "Aevatar.GAgents.MCP.Core.Options.MCPServerOptions"
+    /// </summary>
+    [Id(0)] public string ConfigType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional: specific key within the config.
+    /// Note: RequestConfigAsync won't return dictionary if this parameter is assigned.
+    /// </summary>
+    [Id(1)]
+    public string? ConfigKey { get; set; }
 }
 
 [GenerateSerializer]

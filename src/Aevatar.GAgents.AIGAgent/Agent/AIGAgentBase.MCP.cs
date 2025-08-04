@@ -14,6 +14,7 @@ using Aevatar.GAgents.MCP.Core.Options;
 using Aevatar.GAgents.MCP.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Orleans;
 
@@ -88,96 +89,23 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     }
 
     /// <summary>
-    /// Get MCP server whitelist from configuration manager
-    /// </summary>
-    /// <returns>Dictionary of whitelisted MCP server configurations</returns>
-    public virtual async Task<Dictionary<string, MCPServerConfig>?> GetMCPServerWhitelistAsync()
-    {
-        try
-        {
-            Logger.LogInformation("Attempting to retrieve MCP server whitelist from configuration manager");
-            
-            var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
-            var configManager = await gAgentFactory.GetMCPServerConfigGAgent();
-            
-            Logger.LogInformation("Configuration manager obtained, requesting MCP server options");
-
-            var requestEvent = new ConfigRequestEvent
-            {
-                ConfigType = typeof(MCPServerOptions).FullName!
-            };
-
-            var response = await configManager.RequestConfigAsync(requestEvent);
-            
-            Logger.LogInformation("Config request completed. Success: {Success}, ConfigJson null/empty: {IsEmpty}, Error: {Error}", 
-                response.Success, string.IsNullOrEmpty(response.ConfigJson), response.ErrorMessage);
-
-            if (!response.Success || string.IsNullOrEmpty(response.ConfigJson))
-            {
-                Logger.LogWarning("Failed to retrieve MCP server whitelist: {Error}", response.ErrorMessage);
-                return null;
-            }
-
-            var serverOptions = Newtonsoft.Json.JsonConvert.DeserializeObject<MCPServerOptions>(response.ConfigJson);
-            var whitelist = serverOptions?.MCPServers;
-            
-            Logger.LogInformation("Successfully parsed MCP server whitelist. Server count: {Count}", 
-                whitelist?.Count ?? 0);
-                
-            if (whitelist != null)
-            {
-                foreach (var kvp in whitelist)
-                {
-                    Logger.LogInformation("Whitelist entry: {ServerName} -> {Type}, Command: {Command}", 
-                        kvp.Key, kvp.Value.Type, kvp.Value.Command);
-                }
-            }
-            
-            return whitelist;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error retrieving MCP server whitelist");
-            return null;
-        }
-    }
-
-    /// <summary>
     /// Validate MCP server configurations against whitelist
     /// </summary>
     /// <param name="servers">List of MCP server configurations to validate</param>
     /// <returns>Validation result</returns>
-    protected virtual async Task<MCPWhitelistValidationResult> ValidateAgainstWhitelistAsync(List<MCPServerConfig> servers)
+    protected virtual async Task<MCPWhitelistValidationResult> ValidateAgainstWhitelistAsync(
+        List<MCPServerConfig> servers)
     {
         try
         {
-            var whitelist = await GetMCPServerWhitelistAsync();
-            Logger.LogInformation("MCP Whitelist validation: whitelist is null = {IsNull}, count = {Count}", 
-                whitelist == null, whitelist?.Count ?? 0);
-            
-            if (whitelist == null)
+            var mcpServerOptions = ServiceProvider.GetRequiredService<IOptions<MCPServerOptions>>();
+            if (mcpServerOptions.Value.EnableAllMCPServers)
             {
-                Logger.LogWarning("No MCP server whitelist found, allowing all servers");
                 return new MCPWhitelistValidationResult { IsValid = true };
             }
 
-            foreach (var server in servers)
-            {
-                Logger.LogInformation("Validating MCP server: {ServerName}, Type: {Type}, Command: {Command}", 
-                    server.ServerName, server.Type, server.Command);
-                
-                var validationResult = ValidateServerAgainstWhitelist(server, whitelist);
-                Logger.LogInformation("Validation result for {ServerName}: {IsValid}, Error: {Error}", 
-                    server.ServerName, validationResult.IsValid, validationResult.ErrorMessage);
-                
-                if (!validationResult.IsValid)
-                {
-                    return validationResult;
-                }
-            }
-
-            Logger.LogInformation("All MCP servers passed whitelist validation");
-            return new MCPWhitelistValidationResult { IsValid = true };
+            var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+            return await gAgentFactory.ValidateServerAgainstWhitelistAsync(servers);
         }
         catch (Exception ex)
         {
@@ -188,112 +116,6 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
                 ErrorMessage = $"Validation error: {ex.Message}"
             };
         }
-    }
-
-    /// <summary>
-    /// Validate a single MCP server configuration against whitelist
-    /// </summary>
-    /// <param name="server">MCP server configuration to validate</param>
-    /// <param name="whitelist">Whitelist of allowed MCP servers</param>
-    /// <returns>Validation result</returns>
-    protected virtual MCPWhitelistValidationResult ValidateServerAgainstWhitelist(
-        MCPServerConfig server,
-        Dictionary<string, MCPServerConfig> whitelist)
-    {
-        // Check if server exists in whitelist
-        if (!whitelist.TryGetValue(server.ServerName, out var whitelistServer))
-        {
-            return new MCPWhitelistValidationResult
-            {
-                IsValid = false,
-                ErrorMessage = $"MCP server '{server.ServerName}' is not in the whitelist"
-            };
-        }
-
-        // For SSE (StreamableHttp) transport, allow without strict validation
-        if (server.Type == MCPServerType.StreamableHttp)
-        {
-            Logger.LogInformation("MCP server '{ServerName}' uses SSE transport, allowing without strict validation",
-                server.ServerName);
-            return new MCPWhitelistValidationResult { IsValid = true };
-        }
-
-        // For Stdio transport, require exact match of servername, command, and args
-        if (server.Type == MCPServerType.Stdio)
-        {
-            return ValidateStdioServerConfiguration(server, whitelistServer);
-        }
-
-        // Default validation for unknown transport types
-        Logger.LogWarning("Unknown MCP transport type '{Type}' for server '{ServerName}', applying strict validation",
-            server.Type, server.ServerName);
-        return ValidateStdioServerConfiguration(server, whitelistServer);
-    }
-
-    /// <summary>
-    /// Validate Stdio MCP server configuration with strict matching
-    /// </summary>
-    /// <param name="server">MCP server configuration to validate</param>
-    /// <param name="whitelistServer">Whitelisted MCP server configuration</param>
-    /// <returns>Validation result</returns>
-    protected virtual MCPWhitelistValidationResult ValidateStdioServerConfiguration(
-        MCPServerConfig server,
-        MCPServerConfig whitelistServer)
-    {
-        // Check server name (should already match from dictionary lookup, but double-check)
-        if (!string.Equals(server.ServerName, whitelistServer.ServerName, StringComparison.OrdinalIgnoreCase))
-        {
-            return new MCPWhitelistValidationResult
-            {
-                IsValid = false,
-                ErrorMessage = $"Server name mismatch: '{server.ServerName}' != '{whitelistServer.ServerName}'"
-            };
-        }
-
-        // Check command
-        if (!string.Equals(server.Command, whitelistServer.Command, StringComparison.Ordinal))
-        {
-            return new MCPWhitelistValidationResult
-            {
-                IsValid = false,
-                ErrorMessage =
-                    $"Command mismatch for server '{server.ServerName}': '{server.Command}' != '{whitelistServer.Command}'"
-            };
-        }
-
-        // Check args (must be exactly the same)
-        if (!ArgsMatch(server.Args, whitelistServer.Args))
-        {
-            return new MCPWhitelistValidationResult
-            {
-                IsValid = false,
-                ErrorMessage = $"Arguments mismatch for server '{server.ServerName}': " +
-                               $"[{string.Join(", ", server.Args)}] != [{string.Join(", ", whitelistServer.Args)}]"
-            };
-        }
-
-        Logger.LogInformation("MCP server '{ServerName}' validated successfully against whitelist", server.ServerName);
-        return new MCPWhitelistValidationResult { IsValid = true };
-    }
-
-    /// <summary>
-    /// Check if two argument lists match exactly
-    /// </summary>
-    /// <param name="args1">First argument list</param>
-    /// <param name="args2">Second argument list</param>
-    /// <returns>True if arguments match exactly</returns>
-    protected virtual bool ArgsMatch(List<string> args1, List<string> args2)
-    {
-        if (args1.Count != args2.Count)
-            return false;
-
-        for (int i = 0; i < args1.Count; i++)
-        {
-            if (!string.Equals(args1[i], args2[i], StringComparison.Ordinal))
-                return false;
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -469,12 +291,19 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
                     // Check if we have type information for this parameter
                     if (toolInfo?.Parameters.TryGetValue(key, out var paramInfo) == true)
                     {
-                        parameters[key] = ConvertToExpectedType(value, paramInfo.Type);
+                        parameters[key] = JsonConversionHelper.ConvertToExpectedType(value, paramInfo.Type, Logger);
                     }
                     else
                     {
                         // No type info, use basic conversion
-                        parameters[key] = ConvertJsonElementToBasicType(value);
+                        if (value is JsonElement jsonElement)
+                        {
+                            parameters[key] = JsonConversionHelper.ConvertJsonElementToBasicType(jsonElement);
+                        }
+                        else
+                        {
+                            parameters[key] = value;
+                        }
                     }
                 }
             }
@@ -602,11 +431,11 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     private KernelParameterMetadata CreateArrayParameterMetadata(string name, MCPParameterInfo paramInfo)
     {
         // Generate description containing complete JSON Schema
-                        var schema = GenerateSchemaForParameter(paramInfo);
-                var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema, new System.Text.Json.JsonSerializerOptions
-                {
-                    WriteIndented = false
-                });
+        var schema = GenerateSchemaForParameter(paramInfo);
+        var schemaJson = JsonSerializer.Serialize(schema, new JsonSerializerOptions
+        {
+            WriteIndented = false
+        });
 
         // Create clear description explaining this is an array parameter
         var itemType = paramInfo.ArrayItems?.Type ?? "string";
@@ -834,8 +663,8 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
         {
             try
             {
-                                        var schema = GenerateSchemaForParameter(paramInfo);
-                        var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema);
+                var schema = GenerateSchemaForParameter(paramInfo);
+                var schemaJson = System.Text.Json.JsonSerializer.Serialize(schema);
                 // Schema property is KernelJsonSchema type
                 var kernelJsonSchemaType = schemaProp.PropertyType;
                 var ctor = kernelJsonSchemaType.GetConstructor(new Type[] { typeof(string) });
@@ -923,209 +752,6 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
             schema["format"] = paramInfo.Format;
 
         return schema;
-    }
-
-    /// <summary>
-    /// Convert JsonElement to basic types for Orleans serialization
-    /// </summary>
-    protected object ConvertJsonElementToBasicType(object value)
-    {
-        if (value is JsonElement element)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.String:
-                    return element.GetString() ?? string.Empty;
-                case JsonValueKind.Number:
-                    if (element.TryGetInt32(out int intValue))
-                        return intValue;
-                    if (element.TryGetInt64(out long longValue))
-                        return longValue;
-                    if (element.TryGetDouble(out double doubleValue))
-                        return doubleValue;
-                    return element.GetDecimal();
-                case JsonValueKind.True:
-                    return true;
-                case JsonValueKind.False:
-                    return false;
-                case JsonValueKind.Null:
-                    return null!;
-                case JsonValueKind.Array:
-                    var list = new List<object>();
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        list.Add(ConvertJsonElementToBasicType(item));
-                    }
-
-                    return list;
-                case JsonValueKind.Object:
-                    var dict = new Dictionary<string, object>();
-                    foreach (var prop in element.EnumerateObject())
-                    {
-                        dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
-                    }
-
-                    return dict;
-                default:
-                    return value.ToString() ?? string.Empty;
-            }
-        }
-
-        return value;
-    }
-
-    /// <summary>
-    /// Convert a value to the expected type based on MCP parameter type definition
-    /// </summary>
-    private object ConvertToExpectedType(object value, string expectedType)
-    {
-        // Handle JsonElement conversion first
-        if (value is JsonElement element)
-        {
-            return ConvertJsonElementToExpectedType(element, expectedType);
-        }
-
-        // Handle string to other types conversion
-        if (value is string strValue)
-        {
-            switch (expectedType.ToLower())
-            {
-                case "number":
-                case "float":
-                case "double":
-                    if (double.TryParse(strValue, out var doubleValue))
-                        return doubleValue;
-                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to number");
-
-                case "integer":
-                case "int":
-                    if (int.TryParse(strValue, out var intValue))
-                        return intValue;
-                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to integer");
-
-                case "boolean":
-                case "bool":
-                    if (bool.TryParse(strValue, out var boolValue))
-                        return boolValue;
-                    // Handle "0"/"1" as boolean
-                    if (strValue == "0") return false;
-                    if (strValue == "1") return true;
-                    throw new InvalidOperationException($"Cannot convert string '{strValue}' to boolean");
-
-                case "array":
-                    // Try to parse as JSON array
-                    try
-                    {
-                        return System.Text.Json.JsonSerializer.Deserialize<List<object>>(strValue) ?? new List<object>();
-                    }
-                    catch
-                    {
-                        // If not JSON, return as single-element list
-                        return new List<object> { strValue };
-                    }
-
-                case "object":
-                    // Try to parse as JSON object
-                    try
-                    {
-                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
-                               new Dictionary<string, object>();
-                    }
-                    catch
-                    {
-                        // If not JSON, return as-is
-                        return strValue;
-                    }
-
-                case "string":
-                    return strValue;
-
-                default:
-                    // Unknown type, return as-is
-                    return strValue;
-            }
-        }
-
-        // For non-string values, use the existing conversion logic
-        return ConvertJsonElementToBasicType(value);
-    }
-
-    /// <summary>
-    /// Convert JsonElement to expected type based on MCP parameter type definition
-    /// </summary>
-    private object ConvertJsonElementToExpectedType(JsonElement element, string expectedType)
-    {
-        switch (expectedType.ToLower())
-        {
-            case "string":
-                return element.ValueKind == JsonValueKind.String
-                    ? element.GetString() ?? string.Empty
-                    : element.ToString();
-
-            case "number":
-            case "float":
-            case "double":
-                if (element.ValueKind == JsonValueKind.Number)
-                    return element.GetDouble();
-                if (element.ValueKind == JsonValueKind.String && double.TryParse(element.GetString(), out var d))
-                    return d;
-                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to number");
-
-            case "integer":
-            case "int":
-                if (element.ValueKind == JsonValueKind.Number)
-                    return element.GetInt32();
-                if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var i))
-                    return i;
-                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to integer");
-
-            case "boolean":
-            case "bool":
-                if (element.ValueKind == JsonValueKind.True || element.ValueKind == JsonValueKind.False)
-                    return element.GetBoolean();
-                if (element.ValueKind == JsonValueKind.String)
-                {
-                    var str = element.GetString();
-                    if (bool.TryParse(str, out var b))
-                        return b;
-                    if (str == "0") return false;
-                    if (str == "1") return true;
-                }
-
-                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to boolean");
-
-            case "array":
-                if (element.ValueKind == JsonValueKind.Array)
-                {
-                    var list = new List<object>();
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        list.Add(ConvertJsonElementToBasicType(item));
-                    }
-
-                    return list;
-                }
-
-                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to array");
-
-            case "object":
-                if (element.ValueKind == JsonValueKind.Object)
-                {
-                    var dict = new Dictionary<string, object>();
-                    foreach (var prop in element.EnumerateObject())
-                    {
-                        dict[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
-                    }
-
-                    return dict;
-                }
-
-                throw new InvalidOperationException($"Cannot convert {element.ValueKind} to object");
-
-            default:
-                // Unknown type, use basic conversion
-                return ConvertJsonElementToBasicType(element);
-        }
     }
 
     #endregion
@@ -1279,26 +905,6 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
     public class SetRegisteredMCPFunctionsStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
         [Id(0)] public List<string> RegisteredFunctions { get; set; } = new();
-    }
-
-    #endregion
-
-    #region MCP Whitelist Validation Classes
-
-    /// <summary>
-    /// Result of MCP server whitelist validation
-    /// </summary>
-    public class MCPWhitelistValidationResult
-    {
-        /// <summary>
-        /// Whether the validation passed
-        /// </summary>
-        public bool IsValid { get; set; }
-
-        /// <summary>
-        /// Error message if validation failed
-        /// </summary>
-        public string? ErrorMessage { get; set; }
     }
 
     #endregion

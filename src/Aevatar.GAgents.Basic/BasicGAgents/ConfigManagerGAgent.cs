@@ -2,7 +2,7 @@ using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.Basic.BasicGEvent;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Text.Json;
 using Orleans.Concurrency;
 
 namespace Aevatar.GAgents.Basic.BasicGAgents;
@@ -106,7 +106,7 @@ public class ConfigManagerGAgent : GAgentBase<ConfigManagerGAgentState, ConfigMa
             // Validate JSON format
             try
             {
-                JsonConvert.DeserializeObject(updateEvent.ConfigJson);
+                JsonDocument.Parse(updateEvent.ConfigJson);
             }
             catch (JsonException ex)
             {
@@ -209,10 +209,10 @@ public class ConfigManagerGAgent : GAgentBase<ConfigManagerGAgentState, ConfigMa
             {
                 try
                 {
-                    var configObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(State.ConfigJson);
+                    var configObject = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(State.ConfigJson);
                     if (configObject != null && configObject.TryGetValue(requestEvent.ConfigKey, out var value))
                     {
-                        var valueJson = JsonConvert.SerializeObject(value);
+                        var valueJson = JsonSerializer.Serialize(value);
                         Logger.LogInformation($"Successfully extracted configuration key: {requestEvent.ConfigKey}");
                         return new ConfigResponseEvent
                         {

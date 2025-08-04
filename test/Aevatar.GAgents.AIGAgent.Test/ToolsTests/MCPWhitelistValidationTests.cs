@@ -247,8 +247,7 @@ public sealed class MCPWhitelistValidationTests : AevatarAIGAgentTestBase
         var configResult = await aiAgent.ConfigureMCPServersAsync(anyServers);
 
         // Assert
-        configResult.ShouldBeTrue("No whitelist should allow all servers");
-        _testOutputHelper.WriteLine("✅ No whitelist correctly allowed all servers");
+        configResult.ShouldBeFalse("No whitelist should not all any server");
     }
 
     [Fact]
@@ -304,26 +303,7 @@ public sealed class MCPWhitelistValidationTests : AevatarAIGAgentTestBase
     /// </summary>
     private async Task SetupWhitelistAsync(Dictionary<string, MCPServerConfig> whitelist)
     {
-        var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
-
-        var serverOptions = new MCPServerOptions
-        {
-            MCPServers = whitelist
-        };
-
-        var updateEvent = new ConfigUpdateEvent
-        {
-            ConfigType = typeof(MCPServerOptions).FullName!,
-            ConfigJson = JsonConvert.SerializeObject(serverOptions)
-        };
-
-        await configManager.UpdateConfigAsync(updateEvent);
-
-        _testOutputHelper.WriteLine($"Setup whitelist with {whitelist.Count} servers:");
-        foreach (var server in whitelist)
-        {
-            _testOutputHelper.WriteLine($"  - {server.Key}: {server.Value.Type} ({server.Value.Command})");
-        }
+        await _gAgentFactory.ConfigMCPWhitelistAsync(whitelist);
     }
 
     /// <summary>
