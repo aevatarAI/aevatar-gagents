@@ -29,6 +29,7 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(10)] public List<PsiOmniChatMessage> ChatHistory { get; set; } = new();
     [Id(11)] public List<TodoItem> TodoList { get; set; } = new();
     [Id(12)] public string CurrentTask { get; set; } = string.Empty;
+    [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
 }
 
 [GenerateSerializer]
@@ -100,6 +101,12 @@ public class UpdateSelfDescription : PsiOmniGAgentStateLogEvent
 public class AddNewAgent : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public AgentDescriptor NewAgent { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class CallAgent : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public AgentCall AgentCall { get; set; } = new();
 }
 
 [GenerateSerializer]

@@ -54,6 +54,14 @@ public partial class
 
                                                Remember you are an autonomous agent. Don't be verbose and keep asking for confirmation from the user.
                                                Apply your best judgement when in doubt.
+
+                                               ## Perform Work step by step
+                                               1. Analyze the task and note down the important information about the task
+                                               2. Plan the todo items
+                                               3. Dispatch sub-tasks that are ready (all dependency tasks have completed). (Some tasks may need to wait if their assigned agents are busy.)
+                                               4. Once you receive the response from a sub-task, decide if you need to revise the plan (amend todo list)
+                                               5. Repeat 3 and 4 until the main tasks is done
+
                                                ## How to stay on track
                                                Before breaking down that task, understand the intention of the user, rewrite the task in a format that
                                                clearly defines the object, scope and intention of the task. Use the write_task tool to record this task
@@ -649,6 +657,7 @@ public partial class
                         $"Received reply from agent ({payload.Event.SenderAgentId}): {payload.Event.Content}");
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
+                state.AgentUsage.Remove(payload.Event.SenderAgentId);
                 ScheduleTask(async () =>
                 {
                     LogEventDebug("Starting run due to Agent Message: {Content}", payload.Event.Content);
@@ -780,6 +789,13 @@ public partial class
                 break;
             case WriteTask payload:
                 state.CurrentTask = payload.Task;
+                break;
+            case CallAgent payload:
+                if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentId))
+                {
+                    state.AgentUsage.Add(payload.AgentCall.AgentId, payload.AgentCall.CallId);
+                }
+
                 break;
         }
 

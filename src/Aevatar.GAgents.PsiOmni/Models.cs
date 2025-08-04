@@ -76,6 +76,12 @@ public class AgentDescriptor : IEquatable<AgentDescriptor>
 }
 
 [GenerateSerializer]
+public class AgentWithUsage: AgentDescriptor
+{
+    [Id(1)] public string HandlingTask { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
 public class RealizationResult
 {
     [Id(0)] public string OperationMode { get; set; } = "UNKNOWN";

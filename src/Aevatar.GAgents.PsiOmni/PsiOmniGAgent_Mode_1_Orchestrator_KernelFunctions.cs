@@ -13,9 +13,18 @@ public partial class PsiOmniGAgent
     /// </summary>
     [KernelFunction("query_existing_agents")]
     [Description("Query what agents are available.")]
-    public async Task<List<AgentDescriptor>> QueryAgentsAsync()
+    public async Task<List<AgentWithUsage>> QueryAgentsAsync()
     {
-        return await Task.FromResult(State.ChildAgents.Values.ToList());
+        var result = State.ChildAgents.Values.Select(x => new AgentWithUsage
+        {
+            AgentId = x.AgentId,
+            AgentType = x.AgentType,
+            Description = x.Description,
+            Examples = x.Examples,
+            Tools = x.Tools,
+            HandlingTask = State.AgentUsage.GetOrDefault(x.AgentId) ?? string.Empty
+        }).ToList();
+        return await Task.FromResult(result);
     }
 
     [KernelFunction("write_task")]
@@ -39,7 +48,7 @@ public partial class PsiOmniGAgent
     {
         return await Task.FromResult(State.CurrentTask);
     }
-    
+
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
@@ -112,8 +121,7 @@ public partial class PsiOmniGAgent
         string agentId,
         [Description("The call ID of this call.")]
         string callId,
-        [Description("The task to be sent.")]
-        TaskDispatch task
+        [Description("The task to be sent.")] TaskDispatch task
     )
     {
         var message = $"Task: {task.Task}\n\nBackground: {task.Background}";
@@ -122,13 +130,20 @@ public partial class PsiOmniGAgent
             var knowledge = task.Knowledge.Select(x => $"<knowledge>{x}</knowledge>").JoinAsString("\n");
             message += $"\n\nKnowledge:\n{knowledge}";
         }
+
         var parentAgentId = this.GetGrainId().ToString();
         if (parentAgentId == agentId)
         {
             return "Failed to call agent: Calling self is disallowed.";
         }
+
         return await TraceMethodAsync(async () =>
         {
+            if (State.AgentUsage.TryGetValue(agentId, out var anotherCallId))
+            {
+                Logger.LogWarning("Agent {AgentId} is in use. Hanlding another call: {CallId}", agentId, anotherCallId);
+                return "Failed to call agent. Agent is handling another call.";
+            }
             Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId,
                 message);
             LogEventInfo(
@@ -157,6 +172,11 @@ public partial class PsiOmniGAgent
 
                 LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
                     agentId, callId);
+                State.AgentUsage.TryAdd(agentId, callId);
+                RaiseEventWithTracing(new CallAgent()
+                {
+                    AgentCall = call
+                });
                 return $"Agent call sent: {JsonSerializer.Serialize(call)}";
             }
             catch (Exception ex)
@@ -250,7 +270,8 @@ Use this tool to create and manage a structured task list for your current codin
 ")
     ]
     public async Task<string> WriteTodosAsync(
-        [Description("The updated list of todo items. Please supply the full list as this operation overwrites all data.")]
+        [Description(
+            "The updated list of todo items. Please supply the full list as this operation overwrites all data.")]
         List<TodoItem> updatedTodos
     )
     {
