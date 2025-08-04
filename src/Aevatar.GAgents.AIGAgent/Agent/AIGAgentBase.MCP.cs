@@ -1028,7 +1028,7 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
                     // Try to parse as JSON object
                     try
                     {
-                        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
+                        return JsonSerializer.Deserialize<Dictionary<string, object>>(strValue) ??
                                new Dictionary<string, object>();
                     }
                     catch
