@@ -41,7 +41,7 @@ public class ConfigStorageInfo
 public interface IConfigStorageService
 {
     Task<string> StoreConfigAsync(string configJson, string configType);
-    Task<string> RetrieveConfigAsync(string storageKey);
+    Task<string?> RetrieveConfigAsync(string storageKey);
     Task<bool> DeleteConfigAsync(string storageKey);
     Task<byte[]> CompressConfigAsync(string configJson);
     Task<string> DecompressConfigAsync(byte[] compressedData);
@@ -132,9 +132,9 @@ public class BasicConfigStorageService : IConfigStorageService
         return Task.FromResult(key);
     }
     
-    public Task<string> RetrieveConfigAsync(string storageKey)
+    public Task<string?> RetrieveConfigAsync(string storageKey)
     {
-        return Task.FromResult(_externalStorage.TryGetValue(storageKey, out var config) ? config : string.Empty);
+        return Task.FromResult(_externalStorage.TryGetValue(storageKey, out var config) ? config : null);
     }
     
     public Task<bool> DeleteConfigAsync(string storageKey)

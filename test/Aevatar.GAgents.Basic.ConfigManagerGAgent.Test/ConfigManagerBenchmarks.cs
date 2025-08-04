@@ -3,8 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Aevatar.GAgents.Basic.BasicGAgents;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Aevatar.GAgents.Basic.Test;

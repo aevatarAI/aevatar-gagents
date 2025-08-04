@@ -2,8 +2,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Aevatar.GAgents.Basic.BasicGAgents;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Shouldly;
 using Xunit.Abstractions;
 
