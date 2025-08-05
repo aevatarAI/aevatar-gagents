@@ -26,6 +26,9 @@ public partial class PsiOmniGAgent
 
     private void OnChatDoneAsync_Orchestrator(ChatHistory chatHistory, int preChatHistoryLength)
     {
+        LogEventDebug("Processing orchestrator chat messages for AgentId={AgentId}, NewMessages={Count}", 
+            AgentId, chatHistory.Count - preChatHistoryLength);
+            
         List<AgentDescriptor> FishAgentCreationEvents(IList<PsiOmniChatMessage> newMessages)
         {
             bool IsAgentCreation(PsiOmniChatMessage message)
@@ -63,6 +66,7 @@ public partial class PsiOmniGAgent
         var newAgents = FishAgentCreationEvents(newMessages);
         if (newAgents.Count > 0)
         {
+            LogEventInfo("Found {Count} new agent creation events for AgentId={AgentId}", newAgents.Count, AgentId);
             RaiseEvent(new NewAgentsCreatedEvent
             {
                 NewAgents = newAgents

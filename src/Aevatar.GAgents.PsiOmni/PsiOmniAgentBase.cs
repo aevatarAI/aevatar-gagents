@@ -37,34 +37,47 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     
     protected void InitializeTracing()
     {
-        // Only initialize once
-        if (_eventLogger != null) return;
-        
         try
         {
-            // Simple setup - use the Logger property from the base class
-            _eventTracingLoggerName = $"PsiOmni.EventTracing.{GetType().Name}";
-            _eventLogger = Logger; // Use the logger from the Orleans grain base class
-            
-            Console.WriteLine($"[DEBUG] PsiOmni EventTracing - Enabled: {_enableEventTracing}, Logger: {_eventTracingLoggerName}");
+            // Initialize logger if not already done
+            if (_eventLogger == null)
+            {
+                _eventTracingLoggerName = $"PsiOmni.EventTracing.{GetType().Name}";
+                _eventLogger = Logger; // Use the logger from the Orleans grain base class
+                
+                Console.WriteLine($"[DEBUG] PsiOmni EventTracing - Enabled: {_enableEventTracing}, Logger: {_eventTracingLoggerName}");
+            }
             
             if (_enableEventTracing && _eventLogger != null)
             {
-                AgentId = this.GetPrimaryKeyString();
-                SessionId = Guid.NewGuid().ToString("N").Substring(0, 8);
-                
-                // Create logging scope for all logs from this grain instance
-                _loggingScope = _eventLogger.BeginScope(new Dictionary<string, object>
+                // Get the agent ID from the primary key or grain ID as fallback
+                if (string.IsNullOrEmpty(AgentId))
                 {
-                    ["AgentId"] = AgentId,
-                    ["AgentType"] = AgentType,
-                    ["SessionId"] = SessionId,
-                    ["ActivationId"] = this.GetGrainId().ToString()
-                });
+                    AgentId = this.GetGrainId().ToString();
+                    Console.WriteLine($"[DEBUG] Setting AgentId: {AgentId}");
+                }
                 
-                // Force a test log to verify logger is working
-                _eventLogger.LogInformation("TEST: PsiOmni event tracing is enabled and working! AgentId={AgentId}", AgentId);
-                Console.WriteLine($"[DEBUG] Test log sent to event logger for agent {AgentId}");
+                // Initialize SessionId if not already set
+                if (string.IsNullOrEmpty(SessionId))
+                {
+                    SessionId = Guid.NewGuid().ToString("N").Substring(0, 8);
+                }
+                
+                // Create or recreate logging scope if needed
+                if (_loggingScope == null)
+                {
+                    _loggingScope = _eventLogger.BeginScope(new Dictionary<string, object>
+                    {
+                        ["AgentId"] = AgentId,
+                        ["AgentType"] = AgentType,
+                        ["SessionId"] = SessionId,
+                        ["ActivationId"] = this.GetGrainId().ToString()
+                    });
+                    
+                    // Force a test log to verify logger is working
+                    _eventLogger.LogInformation("TEST: PsiOmni event tracing is enabled and working! AgentId={AgentId}", AgentId);
+                    Console.WriteLine($"[DEBUG] Test log sent to event logger for agent {AgentId}");
+                }
             }
         }
         catch (Exception ex)
@@ -89,6 +102,9 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and scope exists
+            InitializeTracing();
+            
             var eventId = GetEventId(@event);
             var correlationId = GetOrCreateCorrelationId();
             
@@ -114,6 +130,9 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and scope exists
+            InitializeTracing();
+            
             var pendingCount = GetPendingEventCount();
             LogEventDebug(
                 "ConfirmEvents called: PendingEvents={PendingCount}",
@@ -143,6 +162,9 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
         {
             return await handler();
         }
+        
+        // Make sure tracing is initialized and scope exists
+        InitializeTracing();
         
         var eventId = GetEventId(@event);
         var correlationId = GetOrCreateCorrelationId();
@@ -236,6 +258,9 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
             return await method();
         }
         
+        // Make sure tracing is initialized and scope exists
+        InitializeTracing();
+        
         var stopwatch = Stopwatch.StartNew();
         var methodId = Guid.NewGuid().ToString("N").Substring(0, 8);
         
@@ -271,7 +296,19 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and agent ID is available
             InitializeTracing();
+            
+            // Ensure AgentId is included in the log context
+            if (string.IsNullOrEmpty(AgentId))
+            {
+                AgentId = this.GetGrainId().ToString();
+            }
+            
+            // Recreate the scope if it's been lost
+            EnsureLoggingScopeExists();
+            
+            // Let the scope handle AgentId and AgentType
             _eventLogger?.LogInformation(message, args);
         }
     }
@@ -280,8 +317,36 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and agent ID is available
             InitializeTracing();
+            
+            // Ensure AgentId is included in the log context
+            if (string.IsNullOrEmpty(AgentId))
+            {
+                AgentId = this.GetGrainId().ToString();
+            }
+            
+            // Recreate the scope if it's been lost
+            EnsureLoggingScopeExists();
+            
+            // Let the scope handle AgentId and AgentType
             _eventLogger?.LogInformation(message, args);
+        }
+    }
+    
+    private void EnsureLoggingScopeExists()
+    {
+        if (_loggingScope == null && !string.IsNullOrEmpty(AgentId) && _eventLogger != null)
+        {
+            _loggingScope = _eventLogger.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentId"] = AgentId,
+                ["AgentType"] = AgentType,
+                ["SessionId"] = SessionId ?? Guid.NewGuid().ToString("N").Substring(0, 8),
+                ["ActivationId"] = this.GetGrainId().ToString()
+            });
+            
+            Console.WriteLine($"[DEBUG] Recreated logging scope for agent {AgentId}");
         }
     }
     
@@ -289,7 +354,19 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and agent ID is available
             InitializeTracing();
+            
+            // Ensure AgentId is included in the log context
+            if (string.IsNullOrEmpty(AgentId))
+            {
+                AgentId = this.GetGrainId().ToString();
+            }
+            
+            // Recreate the scope if it's been lost
+            EnsureLoggingScopeExists();
+            
+            // Let the scope handle AgentId and AgentType
             _eventLogger?.LogDebug(message, args);
         }
     }
@@ -298,7 +375,19 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and agent ID is available
             InitializeTracing();
+            
+            // Ensure AgentId is included in the log context
+            if (string.IsNullOrEmpty(AgentId))
+            {
+                AgentId = this.GetGrainId().ToString();
+            }
+            
+            // Recreate the scope if it's been lost
+            EnsureLoggingScopeExists();
+            
+            // Let the scope handle AgentId and AgentType
             _eventLogger?.LogError(ex, message, args);
         }
     }
@@ -307,7 +396,21 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
     {
         if (_enableEventTracing)
         {
+            // Make sure tracing is initialized and agent ID is available
             InitializeTracing();
+            
+            // Ensure AgentId is included in the scope data
+            if (!string.IsNullOrEmpty(AgentId) && !scopeData.ContainsKey("AgentId"))
+            {
+                scopeData["AgentId"] = AgentId;
+            }
+            
+            // Ensure AgentType is included in the scope data
+            if (!string.IsNullOrEmpty(AgentType) && !scopeData.ContainsKey("AgentType"))
+            {
+                scopeData["AgentType"] = AgentType;
+            }
+            
             return _eventLogger?.BeginScope(scopeData);
         }
         return null;

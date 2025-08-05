@@ -180,17 +180,22 @@ public partial class
 
     public PsiOmniGAgent(
         IKernelFactory kernelFactory,
-        IGAgentFactory gAgentFactory
+        IGAgentFactory gAgentFactory,
+        ILogger<PsiOmniGAgent> logger
     )
     {
         _kernelFactory = kernelFactory;
         _gAgentFactory = gAgentFactory;
+        Logger = logger;
     }
 
     protected override async Task PerformConfigAsync(PsiOmniGAgentConfig configuration)
     {
         // First, call the base class method
         await base.PerformConfigAsync(configuration);
+        
+        // Initialize tracing after the grain is activated to ensure agent ID is available
+        InitializeTracing();
 
         RaiseEventWithTracing(new InitializeEvent
         {
@@ -245,7 +250,7 @@ public partial class
 
     private async Task InitializeAsync()
     {
-        LogEventDebug("Start initialization");
+        LogEventDebug("Starting agent initialization for AgentId={AgentId}", AgentId);
         var kernel = GetKernel_Plain();
         var systemPrompt =
             """
@@ -278,11 +283,11 @@ public partial class
                           $"<depth>{State.Depth}</depth>";
         chatHistory.AddUserMessage(userMessage);
 
-        LogEventDebug("Executing GetChatMessageContent for initialization");
+        LogEventDebug("Executing GetChatMessageContent for initialization of AgentId={AgentId}", AgentId);
         var chatMessage = await ExecuteWithRetryAsync(
             async () => await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel),
             "GetChatMessageContent for initialization");
-        LogEventDebug("GetChatMessageContent for initialization completed");
+        LogEventDebug("GetChatMessageContent for initialization completed for AgentId={AgentId}", AgentId);
         var result = chatMessage.Content;
 
         if (result.Contains("ORCHESTRATOR") || result.Contains("SPECIALIZED"))
@@ -331,12 +336,10 @@ public partial class
         {
             if (!InitializedOk())
             {
-                Logger.LogWarning("PsiOmniGAgent is not initialized properly. Skipping run.");
                 LogEventDebug("Agent not initialized, skipping run");
                 return;
             }
 
-            Logger.LogInformation("Running PsiOmniGAgent with trigger: {Trigger}", trigger);
             LogEventInfo(
                 "Starting agent run: Trigger={Trigger}, RealizationStatus={Status}, ChatHistoryLength={ChatLength}",
                 trigger, State.RealizationStatus, State.ChatHistory.Count);
@@ -345,9 +348,8 @@ public partial class
             ChatHistory chatHistory;
             int preHistoryLength;
             var systemPrompt = SystemPrompts[State.RealizationStatus];
-            Logger.LogInformation("Status: {RealizationStatus}", State.RealizationStatus);
-            Logger.LogInformation("Prompt: {systemPrompt}", systemPrompt);
-
+            LogEventInfo("Status: {RealizationStatus}", State.RealizationStatus);
+            LogEventDebug("Prompt: {SystemPrompt}", systemPrompt.Substring(0, Math.Min(100, systemPrompt.Length)) + "...");
             LogEventDebug("Processing with status: {Status}", State.RealizationStatus);
 
             switch (State.RealizationStatus)
@@ -367,7 +369,6 @@ public partial class
                     kernel = GetKernel_Orchestrator();
                     if (kernel == null)
                     {
-                        Logger.LogWarning("Cannot get kernel for Orchestrator mode, skipping run");
                         LogEventError(new InvalidOperationException("Cannot get kernel for Orchestrator mode"),
                             "Failed to get kernel for Orchestrator mode");
                         return;
@@ -385,7 +386,6 @@ public partial class
                     kernel = GetKernel_Specialized();
                     if (kernel == null)
                     {
-                        Logger.LogWarning("Cannot get kernel for Specialized mode, skipping run");
                         LogEventError(new InvalidOperationException("Cannot get kernel for Specialized mode"),
                             "Failed to get kernel for Specialized mode");
                         return;
@@ -406,13 +406,13 @@ public partial class
     {
         if (State.ChatHistory.IsNullOrEmpty())
         {
-            Logger.LogInformation("ChatHistory is empty.");
+            LogEventInfo("ChatHistory is empty.");
             return false;
         }
 
         if (State.Configuration == null)
         {
-            Logger.LogInformation("Configuration is empty.");
+            LogEventInfo("Configuration is empty.");
             return false;
         }
 
@@ -474,13 +474,13 @@ public partial class
 
                 if (attempt == MaxRetries - 1)
                 {
-                    Logger.LogError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}",
+                    LogEventError(ex, "Max retries ({MaxRetries}) reached for {Operation}. Last error: {Message}",
                         MaxRetries, operationName, ex.Message);
                     throw;
                 }
 
                 var errorType = ex is HttpOperationException ? "Rate limit" : "Timeout";
-                Logger.LogWarning(
+                LogEventInfo(
                     "{ErrorType} error for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
                     errorType, operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs,
                     actualDelayMs - baseDelayMs, ex.Message);
@@ -496,10 +496,10 @@ public partial class
     {
         try
         {
-            Logger.LogInformation("RunCoreAsync.1");
+            LogEventDebug("RunCoreAsync - Getting chat completion service");
             // 1. 获取 chat completion 服务
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
-            Logger.LogInformation("RunCoreAsync.2");
+            
             // 2. 构造 PromptExecutionSettings
             var maxTokens = 4000; // 默认最大 token
             var temperature = 0.1; // 默认温度
@@ -510,23 +510,23 @@ public partial class
                 MaxTokens = maxTokens,
                 Temperature = temperature
             };
-            Logger.LogInformation("RunCoreAsync.3");
+            LogEventDebug("RunCoreAsync - Execution settings configured");
 
             var chatHistory = GetChatHistory(systemPrompt);
             var preChatHistoryLength = chatHistory.Count;
-            Logger.LogInformation("preChatHistoryLength: {Count}", preChatHistoryLength);
+            LogEventDebug("Chat history prepared: Length={Count}", preChatHistoryLength);
 
             var result = await ExecuteWithRetryAsync(
                 async () => await chatService.GetChatMessageContentAsync(chatHistory, executionSettings, kernel),
                 "GetChatMessageContent");
 
             chatHistory.Add(result);
-            Logger.LogInformation("RunCoreAsync.4");
+            LogEventDebug("RunCoreAsync completed successfully");
             return (chatHistory, preChatHistoryLength);
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "Error during RunCoreAsync: {Message}", e.Message);
+            LogEventError(e, "Error during RunCoreAsync: {Message}", e.Message);
             throw;
         }
     }
@@ -537,7 +537,7 @@ public partial class
         {
             if (State.UserAgentId.IsNullOrEmpty())
             {
-                Logger.LogInformation("Result:\n{Result}", State.ChatHistory.Last()?.Content);
+                LogEventInfo("Result:\n{Result}", State.ChatHistory.Last()?.Content?.Substring(0, Math.Min(200, State.ChatHistory.Last()?.Content?.Length ?? 0)) + "...");
                 LogEventDebug("No UserAgentId, logging result locally");
                 return;
             }
@@ -565,7 +565,7 @@ public partial class
                         }
                         else
                         {
-                            Logger.LogWarning("Referenced artifact not found: {ArtifactName}", artifactName);
+                            LogEventDebug("Referenced artifact not found: {ArtifactName}", artifactName);
                         }
                     }
                 }
@@ -591,6 +591,9 @@ public partial class
         StateLogEventBase<PsiOmniGAgentStateLogEvent> @event
     )
     {
+        // Ensure tracing is initialized and scope exists
+        InitializeTracing();
+        
         LogEventDebug("State transition started: EventType={EventType}",
             @event.GetType().Name);
 
@@ -812,7 +815,7 @@ public partial class
                     catch (Exception ex)
                     {
                         finalResult = lastMessage;
-                        Logger.LogError(ex, "Failed to deserialize OrchestratorMessage: {Message}", lastMessage);
+                        LogEventError(ex, "Failed to deserialize OrchestratorMessage: {Message}", lastMessage);
                     }
                 }
 

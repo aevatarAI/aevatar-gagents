@@ -20,8 +20,13 @@ public partial class PsiOmniGAgent
 
     private void OnChatDoneAsync_Analyzer(ChatHistory chatHistory, int preChatHistoryLength)
     {
+        LogEventDebug("Processing analyzer chat messages for AgentId={AgentId}, NewMessages={Count}", 
+            AgentId, chatHistory.Count - preChatHistoryLength);
+            
         var result = chatHistory.Last().Content ?? string.Empty;
-        Logger.LogInformation("OnChatDoneAsync_Analyzer Result: {Result}", result);
+        LogEventInfo("OnChatDoneAsync_Analyzer Result for AgentId={AgentId}: {Result}", 
+            AgentId, result.Substring(0, Math.Min(200, result.Length)) + "...");
+            
         if (result.Contains("ORCHESTRATOR") || result.Contains("SPECIALIZED"))
         {
             var jsonStartIndex = result.IndexOf('{');

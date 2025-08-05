@@ -21,6 +21,9 @@ public partial class PsiOmniGAgent
 
     private void OnChatDoneAsync_Specialized(ChatHistory chatHistory, int preChatHistoryLength)
     {
+        LogEventDebug("Processing specialized chat messages for AgentId={AgentId}, NewMessages={Count}", 
+            AgentId, chatHistory.Count - preChatHistoryLength);
+            
         var newMessages = chatHistory.Skip(preChatHistoryLength)
             .Select(m =>
             {
