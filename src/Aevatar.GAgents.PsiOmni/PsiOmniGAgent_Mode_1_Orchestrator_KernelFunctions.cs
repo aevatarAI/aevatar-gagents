@@ -27,6 +27,29 @@ public partial class PsiOmniGAgent
         return await Task.FromResult(result);
     }
 
+    [KernelFunction("write_artifact")]
+    [Description("Write an artifact.")]
+    public async Task<string> WriteArtifactAsync(
+        [Description("The name of the artifact. It has to be unique and contains only alphabet, numbers and underscores."), Required]
+        string name,
+        [Description("The content of the artifact."), Required]
+        string content
+    )
+    {
+        if (State.Artifacts.ContainsKey(name))
+        {
+            return await Task.FromResult<string>("Failed to write artifact: name {name} exits. Pick another name.");
+        }
+
+        State.Artifacts.TryAdd(name, content);
+        RaiseEventWithTracing(new WriteArtifact
+        {
+            Name = name,
+            Content = content
+        });
+        return await Task.FromResult("Written artifact.");
+    }
+    
     [KernelFunction("write_task")]
     [Description("Rewrite the current task.")]
     public async Task<string> WriteTaskAsync(

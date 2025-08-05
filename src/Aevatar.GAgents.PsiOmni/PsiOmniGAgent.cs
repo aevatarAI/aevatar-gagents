@@ -128,7 +128,8 @@ public partial class
                                                """
                                                ## Deciding Task Done
                                                If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
-                                               Produce a final response when the task is done. {"Response": "The final result here"}
+                                               Produce a final response when the task is done.
+                                               If an artifact needs to be returned, please include it in the result.
                                                The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
                                                """ +
                                                """
@@ -151,7 +152,13 @@ public partial class
                                                The GDP of the United States for 2024 is $x trillion, and the GDP of New York state for 2024 is $y trillion. The percentage contribution of New York state to the US GDP is approximately z%.
                                                </response>
                                                </example2>
+                                               <example3>
+                                               <response>
+                                               I have completed the research report for AI techniques and please find the report in <artifact>The unique artifact name here</artifact>.
+                                               </response>
+                                               </example3>
 
+                                               Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
                                                """,
             [RealizationStatus.Specialized] = "" // TODO:
         };
@@ -535,15 +542,45 @@ public partial class
                 return;
             }
 
-            LogEventInfo("Sending reply: TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}",
-                State.UserAgentId, State.CallId, finalResult?.Length ?? 0);
+            // Extract artifacts if present
+            var artifacts = new Dictionary<string, string>();
+            if (finalResult != null && finalResult.Contains("<artifact>") && finalResult.Contains("</artifact>"))
+            {
+                var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
+                    finalResult,
+                    @"<artifact>(.*?)</artifact>");
+                    
+                foreach (System.Text.RegularExpressions.Match match in artifactMatches)
+                {
+                    if (match.Success && match.Groups.Count > 1)
+                    {
+                        var artifactName = match.Groups[1].Value.Trim();
+                        if (State.Artifacts.TryGetValue(artifactName, out var content))
+                        {
+                            artifacts[artifactName] = State.Artifacts[artifactName];
+                            // Replace the artifact tag with a reference
+                            finalResult = finalResult.Replace(
+                                $"<artifact>{artifactName}</artifact>",
+                                $"<artifact name=\"{artifactName}\">{content}</artifact>");
+                        }
+                        else
+                        {
+                            Logger.LogWarning("Referenced artifact not found: {ArtifactName}", artifactName);
+                        }
+                    }
+                }
+            }
+
+            LogEventInfo("Sending reply: TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}, ArtifactCount={ArtifactCount}",
+                State.UserAgentId, State.CallId, finalResult?.Length ?? 0, artifacts.Count);
 
             var agentMessageEvent = new AgentMessageEvent
             {
                 TargetAgentId = State.UserAgentId,
                 CallId = State.CallId,
                 Content = finalResult,
-                SenderAgentId = this.GetGrainId().ToString()
+                SenderAgentId = this.GetGrainId().ToString(),
+                // Artifacts = artifacts
             };
             await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), agentMessageEvent);
         }, new { resultLength = finalResult?.Length });
@@ -652,9 +689,19 @@ public partial class
                 });
                 break;
             case ReceiveAgentMessageEvent payload:
-                var amessage =
-                    PsiOmniChatMessage.CreateAssistantMessage(
-                        $"Received reply from agent ({payload.Event.SenderAgentId}): {payload.Event.Content}");
+                var content = $"Received reply from agent ({payload.Event.SenderAgentId}): {payload.Event.Content}";
+                if (!payload.Event.Artifacts.IsNullOrEmpty())
+                {
+                    var artifacts = payload.Event.Artifacts.Select(
+                        a => "<artifact>\n" +
+                             $"<name>{a.Key}</name>\n" +
+                             $"<content>{a.Value}</content>\n" +
+                             "</artifact>"
+                    ).JoinAsString("\n");
+                    content += artifacts;
+                }
+
+                var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
                 state.AgentUsage.Remove(payload.Event.SenderAgentId);
@@ -794,6 +841,13 @@ public partial class
                 if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentId))
                 {
                     state.AgentUsage.Add(payload.AgentCall.AgentId, payload.AgentCall.CallId);
+                }
+
+                break;
+            case WriteArtifact payload:
+                if (!state.Artifacts.ContainsKey(payload.Name))
+                {
+                    state.Artifacts.Add(payload.Name, payload.Content);
                 }
 
                 break;

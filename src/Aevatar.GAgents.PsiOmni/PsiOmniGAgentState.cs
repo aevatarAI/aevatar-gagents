@@ -30,6 +30,7 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(11)] public List<TodoItem> TodoList { get; set; } = new();
     [Id(12)] public string CurrentTask { get; set; } = string.Empty;
     [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
+    [Id(14)] public Dictionary<string, string> Artifacts { get; set; } = new();
 }
 
 [GenerateSerializer]
@@ -107,6 +108,13 @@ public class AddNewAgent : PsiOmniGAgentStateLogEvent
 public class CallAgent : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public AgentCall AgentCall { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class WriteArtifact : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string Content { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
