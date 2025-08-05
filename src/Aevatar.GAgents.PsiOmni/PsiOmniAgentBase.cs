@@ -305,11 +305,16 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
                 AgentId = this.GetGrainId().ToString();
             }
             
-            // Recreate the scope if it's been lost
-            EnsureLoggingScopeExists();
-            
-            // Let the scope handle AgentId and AgentType
-            _eventLogger?.LogInformation(message, args);
+            // Create a new temporary scope for this log call instead of using the existing one
+            using (var tempScope = _eventLogger?.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentId"] = AgentId,
+                ["AgentType"] = AgentType
+            }))
+            {
+                // Let the scope handle AgentId and AgentType
+                _eventLogger?.LogInformation(message, args);
+            }
         }
     }
     
@@ -326,11 +331,16 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
                 AgentId = this.GetGrainId().ToString();
             }
             
-            // Recreate the scope if it's been lost
-            EnsureLoggingScopeExists();
-            
-            // Let the scope handle AgentId and AgentType
-            _eventLogger?.LogInformation(message, args);
+            // Create a new temporary scope for this log call instead of using the existing one
+            using (var tempScope = _eventLogger?.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentId"] = AgentId,
+                ["AgentType"] = AgentType
+            }))
+            {
+                // Let the scope handle AgentId and AgentType
+                _eventLogger?.LogInformation(message, args);
+            }
         }
     }
     
@@ -363,11 +373,16 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
                 AgentId = this.GetGrainId().ToString();
             }
             
-            // Recreate the scope if it's been lost
-            EnsureLoggingScopeExists();
-            
-            // Let the scope handle AgentId and AgentType
-            _eventLogger?.LogDebug(message, args);
+            // Create a new temporary scope for this log call instead of using the existing one
+            using (var tempScope = _eventLogger?.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentId"] = AgentId,
+                ["AgentType"] = AgentType
+            }))
+            {
+                // Let the scope handle AgentId and AgentType
+                _eventLogger?.LogDebug(message, args);
+            }
         }
     }
     
@@ -384,11 +399,16 @@ public abstract class PsiOmniAgentBase<TState, TStateLogEvent, TEvent, TConfigur
                 AgentId = this.GetGrainId().ToString();
             }
             
-            // Recreate the scope if it's been lost
-            EnsureLoggingScopeExists();
-            
-            // Let the scope handle AgentId and AgentType
-            _eventLogger?.LogError(ex, message, args);
+            // Create a new temporary scope for this log call instead of using the existing one
+            using (var tempScope = _eventLogger?.BeginScope(new Dictionary<string, object>
+            {
+                ["AgentId"] = AgentId,
+                ["AgentType"] = AgentType
+            }))
+            {
+                // Let the scope handle AgentId and AgentType
+                _eventLogger?.LogError(ex, message, args);
+            }
         }
     }
     
