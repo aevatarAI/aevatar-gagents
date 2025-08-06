@@ -126,21 +126,19 @@ public partial class
                                                All todo items should be retained until the main task is fully completed.
                                                """ +
                                                """
-                                               ## Iterate to improve the response
-                                               Before you produce a final response, you must draft a response and evaluate the response before you produce the final response.
-                                               Evaluate the response on relevance, accuracy, and comprehensiveness
-                                               If the response is not satisfactory, iterate the plan and adjust the todo list accordingly.
-                                               You can use the write_draft_response tool to write a draft response and read_task tool to read the task.
-                                               """ +
-                                               """
-                                               ## Final Response
-                                               If the draft response is satisfactory, produce a final response.
+                                               ## Deciding Task Done
+                                               If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
                                                Produce a final response when the task is done.
-                                               Make sure the final response is properly framed in a self contained format that's presentable to the user.
-                                               If an artifact is required to be returned, please include it in the result.
+                                               If an artifact needs to be returned, please include it in the result.
+                                               The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
                                                """ +
                                                """
                                                ## Output Format
+                                               Your output must contain the following three tags.
+                                               1. When the task is not completed (pending more todo items), add progress in a <thought> tag
+                                               2. When the task is completed, provide your final response to user in a <repsonse> tag
+                                               3. Optionally, if artifacts need to be returned to user. Include one or more <artifact> tag
+                                               You MUST follow this format. An output without any of the tags is not valid.
                                                <thought>
                                                Provide progress and status update here.
                                                </thought>
