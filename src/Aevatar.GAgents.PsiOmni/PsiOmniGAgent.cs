@@ -547,9 +547,21 @@ public partial class
         {
             if (State.UserAgentId.IsNullOrEmpty())
             {
-                LogEventInfo("Result:\n{Result}",
-                    State.ChatHistory.Last()?.Content
-                        ?.Substring(0, Math.Min(200, State.ChatHistory.Last()?.Content?.Length ?? 0)) + "...");
+                var content = State.ChatHistory.Last()?.Content;
+                if (content != null)
+                {
+                    if (content.Length <= 400)
+                    {
+                        LogEventInfo("Result:\n{Result}", content);
+                    }
+                    else
+                    {
+                        var firstPart = content.Substring(0, 200);
+                        var lastPart = content.Substring(content.Length - 200);
+                        LogEventInfo("Result (first 200 chars):\n{FirstPart}\n...\nResult (last 200 chars):\n{LastPart}", 
+                            firstPart, lastPart);
+                    }
+                }
                 LogEventDebug("No UserAgentId, logging result locally");
                 return;
             }
