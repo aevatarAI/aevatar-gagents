@@ -235,15 +235,16 @@ public partial class
                 Tools = State.Tools
             };
 
-            LogEventInfo(
-                "Sending self report: TargetAgent={TargetAgent}, AgentType={AgentType}, Description={Description}",
-                State.UserAgentId, selfReport.AgentType, selfReport.Description);
-
             var selfReportEvent = new SelfReportEvent
             {
                 TargetAgentId = State.UserAgentId,
                 SelfReport = selfReport
             };
+
+            LogEventInfo(
+                "Sending self report: UniqueId={UniqueId}, TargetAgent={TargetAgent}, AgentType={AgentType}, Description={Description}",
+                selfReportEvent.UniqueId, State.UserAgentId, selfReport.AgentType, selfReport.Description);
+
             await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), selfReportEvent);
         });
     }
@@ -421,6 +422,7 @@ public partial class
 
     private ChatHistory GetChatHistory(string systemPrompt)
     {
+        LogEventDebug("Building chat history with {MessageCount} messages", State.ChatHistory.Count);
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage(systemPrompt);
         var messages =
@@ -571,9 +573,6 @@ public partial class
                 }
             }
 
-            LogEventInfo("Sending reply: TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}, ArtifactCount={ArtifactCount}",
-                State.UserAgentId, State.CallId, finalResult?.Length ?? 0, artifacts.Count);
-
             var agentMessageEvent = new AgentMessageEvent
             {
                 TargetAgentId = State.UserAgentId,
@@ -582,6 +581,10 @@ public partial class
                 SenderAgentId = this.GetGrainId().ToString(),
                 // Artifacts = artifacts
             };
+
+            LogEventInfo("Sending reply: UniqueId={UniqueId}, TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}, ArtifactCount={ArtifactCount}",
+                agentMessageEvent.UniqueId, State.UserAgentId, State.CallId, finalResult?.Length ?? 0, artifacts.Count);
+
             await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), agentMessageEvent);
         }, new { resultLength = finalResult?.Length });
     }
@@ -626,6 +629,8 @@ public partial class
 
                 break;
             case UpdateSendConfigEvent payload:
+                LogEventDebug("Updating agent configuration: AgentId={AgentId}, ParentAgentId={ParentAgentId}", 
+                    state.AgentId, payload.Event.ParentAgentId);
                 if (state.AgentId.IsNullOrEmpty())
                 {
                     var grainId = this.GetGrainId().ToString();
@@ -738,6 +743,8 @@ public partial class
 
                 break;
             case UpdateChildEvent payload:
+                LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}", 
+                    payload.LastChildDescriptor.AgentId, payload.LastChildDescriptor.AgentType);
                 AgentDescriptor? oldObj;
                 // Child may proceed first and we receive this event before we process our own NewAgentsCreatedEvent event
                 if (!state.ChildAgents.TryGetValue(payload.LastChildDescriptor.AgentId, out oldObj))
@@ -755,6 +762,7 @@ public partial class
                 newObjClone.Examples = new List<AgentExample>();
                 var refreshDescription = !oldObjClone.Equals(newObjClone);
 
+                LogEventDebug("Child agent update: RefreshDescription={RefreshDescription}", refreshDescription);
                 state.ChildAgents[payload.LastChildDescriptor.AgentId] = payload.LastChildDescriptor;
                 ScheduleTask(async () =>
                 {
@@ -834,13 +842,17 @@ public partial class
 
                 break;
             case UpdateSelfDescription payload:
+                LogEventInfo("Updating self description: NewDescription={Description}", payload.Description);
                 state.Description = payload.Description;
                 ScheduleTask(DoSelfReportAsync);
                 break;
             case WriteTask payload:
+                LogEventInfo("Writing task: Task={Task}", payload.Task);
                 state.CurrentTask = payload.Task;
                 break;
             case CallAgent payload:
+                LogEventInfo("Calling agent: TargetAgentId={TargetAgentId}, CallId={CallId}", 
+                    payload.AgentCall.AgentId, payload.AgentCall.CallId);
                 if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentId))
                 {
                     state.AgentUsage.Add(payload.AgentCall.AgentId, payload.AgentCall.CallId);
@@ -848,6 +860,8 @@ public partial class
 
                 break;
             case WriteArtifact payload:
+                LogEventInfo("Writing artifact: Name={ArtifactName}, ContentLength={ContentLength}", 
+                    payload.Name, payload.Content?.Length ?? 0);
                 if (!state.Artifacts.ContainsKey(payload.Name))
                 {
                     state.Artifacts.Add(payload.Name, payload.Content);

@@ -10,7 +10,15 @@ public partial class PsiOmniGAgent
     {
         await TraceEventHandlerAsync(@event, async () =>
         {
-            Logger.LogInformation("SendConfigEvent: {Task}", @event.Configuration.Model.ModelId);
+            LogEventInfo("SendConfigEvent received: UniqueId={UniqueId}, ModelId={ModelId}", 
+                @event.UniqueId, @event.Configuration.Model.ModelId);
+            
+            if (!_receivedMessageIds.Add(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate config event detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
+            
             RaiseEventWithTracing(new UpdateSendConfigEvent()
             {
                 Event = @event
@@ -26,8 +34,8 @@ public partial class PsiOmniGAgent
         {
             Logger.LogInformation("{Message}", @event);
             
-            LogEventDebug("UserMessageEvent received: TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content}",
-                @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)));
+            LogEventDebug("UserMessageEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content}",
+                @event.UniqueId, @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)));
             
             if (@event.TargetAgentId != this.GetGrainId().ToString())
             {
@@ -54,8 +62,8 @@ public partial class PsiOmniGAgent
     {
         await TraceEventHandlerAsync(@event, async () =>
         {
-            LogEventDebug("AgentMessageEvent received: TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content}",
-                @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)));
+            LogEventDebug("AgentMessageEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content}",
+                @event.UniqueId, @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)));
             
             if (@event.TargetAgentId != this.GetGrainId().ToString())
             {
@@ -84,8 +92,8 @@ public partial class PsiOmniGAgent
     {
         await TraceEventHandlerAsync(@event, async () =>
         {
-            LogEventDebug("SelfReportEvent received: TargetAgentId={TargetAgentId}, ReportingAgent={ReportingAgent}, AgentType={AgentType}",
-                @event.TargetAgentId, @event.SelfReport.AgentId, @event.SelfReport.AgentType);
+            LogEventDebug("SelfReportEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, ReportingAgent={ReportingAgent}, AgentType={AgentType}",
+                @event.UniqueId, @event.TargetAgentId, @event.SelfReport.AgentId, @event.SelfReport.AgentType);
             
             if (@event.TargetAgentId != this.GetGrainId().ToString())
             {

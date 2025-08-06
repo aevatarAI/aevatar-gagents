@@ -6,10 +6,11 @@ namespace Aevatar.GAgents.PsiOmni;
 [GenerateSerializer]
 public class AgentConfigEvent : EventBase
 {
-    [Id(0)] public AgentConfiguration Configuration { get; set; } = new();
-    [Id(1)] public string ParentAgentId { get; set; } = string.Empty;
+    [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
+    [Id(1)] public AgentConfiguration Configuration { get; set; } = new();
+    [Id(2)] public string ParentAgentId { get; set; } = string.Empty;
 
-    [Id(2)]
+    [Id(3)]
     public List<string> Tools { get; set; } = new(); //TODO: Kept here to cater to old code. Need to be delelted.
 }
 
