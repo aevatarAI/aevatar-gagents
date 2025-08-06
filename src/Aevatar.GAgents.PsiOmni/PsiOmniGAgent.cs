@@ -126,11 +126,17 @@ public partial class
                                                All todo items should be retained until the main task is fully completed.
                                                """ +
                                                """
-                                               ## Deciding Task Done
-                                               If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
+                                               ## Iterate to improve the response
+                                               Before you produce a final response, you must draft a response and evaluate the response before you produce the final response.
+                                               Evaluate the response on relevance, accuracy, and comprehensiveness
+                                               If the response is not satisfactory, iterate the plan and adjust the todo list accordingly.
+                                               You can use the write_draft_response tool to write a draft response and read_task tool to read the task.
+                                               """ +
+                                               """
+                                               ## Final Response
+                                               If the draft response is satisfactory, produce a final response.
                                                Produce a final response when the task is done.
-                                               If an artifact needs to be returned, please include it in the result.
-                                               The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
+                                               Make sure the final response is properly framed in a self contained format that's presentable to the user.
                                                """ +
                                                """
                                                ## Output Format
@@ -849,6 +855,10 @@ public partial class
             case WriteTask payload:
                 LogEventInfo("Writing task: Task={Task}", payload.Task);
                 state.CurrentTask = payload.Task;
+                break;
+            case WriteDraftResponse payload:
+                LogEventInfo("Writing draft response: Response={Response}", payload.DraftResponse);
+                state.DraftResponse = payload.DraftResponse;
                 break;
             case CallAgent payload:
                 LogEventInfo("Calling agent: TargetAgentId={TargetAgentId}, CallId={CallId}", 

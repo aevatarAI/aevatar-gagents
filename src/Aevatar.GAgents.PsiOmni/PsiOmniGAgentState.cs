@@ -31,6 +31,7 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(12)] public string CurrentTask { get; set; } = string.Empty;
     [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
     [Id(14)] public Dictionary<string, string> Artifacts { get; set; } = new();
+    [Id(15)] public string DraftResponse { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -121,6 +122,12 @@ public class WriteArtifact : PsiOmniGAgentStateLogEvent
 public class WriteTask : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public string Task { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class WriteDraftResponse : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string DraftResponse { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]

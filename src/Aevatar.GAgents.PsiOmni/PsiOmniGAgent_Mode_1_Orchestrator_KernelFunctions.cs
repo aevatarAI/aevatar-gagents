@@ -72,6 +72,20 @@ public partial class PsiOmniGAgent
         return await Task.FromResult(State.CurrentTask);
     }
 
+    [KernelFunction("response_draft_write")]
+    [Description("Write the draft response.")]
+    public async Task<string> WriteResponseProposalAsync(
+        [Description("The draft response."), Required]
+        string draftResponse
+    )
+    {
+        RaiseEventWithTracing(new WriteDraftResponse()
+        {
+            DraftResponse = draftResponse
+        });
+        return await Task.FromResult("Written draft response.");
+    }
+    
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
