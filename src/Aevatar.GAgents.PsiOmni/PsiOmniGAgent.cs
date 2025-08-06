@@ -460,7 +460,7 @@ public partial class
                 return await operation();
             }
             catch (Exception ex) when (
-                ex is HttpOperationException httpEx && httpEx.StatusCode == HttpStatusCode.TooManyRequests ||
+                ex is HttpOperationException ||
                 ex is TaskCanceledException ||
                 ex is TimeoutException ||
                 (ex is IOException ioEx && ioEx.InnerException is SocketException) ||
@@ -493,7 +493,13 @@ public partial class
                     throw;
                 }
 
-                var errorType = ex is HttpOperationException ? "Rate limit" : "Timeout";
+                var errorType = "Timeout";
+                if (ex is HttpOperationException httpEx)
+                {
+                    errorType = httpEx.StatusCode == HttpStatusCode.TooManyRequests
+                        ? "Rate limit"
+                        : "Other Http Operation Issue";
+                }
                 LogEventInfo(
                     "{ErrorType} error for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
                     errorType, operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs,
