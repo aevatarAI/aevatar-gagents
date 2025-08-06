@@ -270,6 +270,10 @@ public partial class
               - "Description": a description of the agent can do. For SPECIALIZED agents: 1) Include the agent's capability derived from the selected tools. 2) DO NOT directly include the task without generalization.
               - "Tools": a list of names of the tools the agent will use (only for SPECIALIZED mode)
             - No other text or explanation.
+            
+            ## When deciding between "ORCHESTRATOR" and "SPECIALIZED"
+            - Prefer SPECIALIZED mode if the agent's depth is more than 3
+            - An agent with depth equal to 5 must operate in SPECIALIZED mode
             """;
         systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
