@@ -105,7 +105,8 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
             }
 
             var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
-            return await gAgentFactory.ValidateServerAgainstWhitelistAsync(servers);
+            var mcpServerConfigGAgent = await gAgentFactory.GetMCPServerConfigGAgent();
+            return await mcpServerConfigGAgent.ValidateServerAgainstWhitelistAsync(servers);
         }
         catch (Exception ex)
         {
