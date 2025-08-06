@@ -43,7 +43,7 @@ public class AgentMessageEvent : EventBase
     [Id(2)] public string CallId { get; set; } = string.Empty;
     [Id(3)] public string Content { get; set; } = string.Empty;
     [Id(4)] public string SenderAgentId { get; set; } = string.Empty;
-    [Id(5)] public Dictionary<string, string> Artifacts { get; set; } = new();
+    [Id(5)] public List<Artifact> Artifacts { get; set; } = new();
 
     public override string ToString()
     {

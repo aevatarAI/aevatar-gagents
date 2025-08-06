@@ -137,6 +137,7 @@ public partial class
                                                If the draft response is satisfactory, produce a final response.
                                                Produce a final response when the task is done.
                                                Make sure the final response is properly framed in a self contained format that's presentable to the user.
+                                               If an artifact is required to be returned, please include it in the result.
                                                """ +
                                                """
                                                ## Output Format
@@ -146,6 +147,7 @@ public partial class
                                                <response>
                                                Final response to user. This part is optional only when the task is complete.
                                                </response>
+                                               <artifact name="artifact_name.md" format="markdown" />
 
                                                ### Example Outputs
                                                <example1>
@@ -160,8 +162,9 @@ public partial class
                                                </example2>
                                                <example3>
                                                <response>
-                                               I have completed the research report for AI techniques and please find the report in <artifact>The unique artifact name here</artifact>.
+                                               I have completed the research report for AI techniques and please find the report in the research_report.md file.
                                                </response>
+                                               <artifact name="research_report.md" format="markdown" />
                                                </example3>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
@@ -199,7 +202,7 @@ public partial class
     {
         // First, call the base class method
         await base.PerformConfigAsync(configuration);
-        
+
         // Initialize tracing after the grain is activated to ensure agent ID is available
         InitializeTracing();
 
@@ -356,7 +359,8 @@ public partial class
             int preHistoryLength;
             var systemPrompt = SystemPrompts[State.RealizationStatus];
             LogEventInfo("Status: {RealizationStatus}", State.RealizationStatus);
-            LogEventDebug("Prompt: {SystemPrompt}", systemPrompt.Substring(0, Math.Min(100, systemPrompt.Length)) + "...");
+            LogEventDebug("Prompt: {SystemPrompt}",
+                systemPrompt.Substring(0, Math.Min(100, systemPrompt.Length)) + "...");
             LogEventDebug("Processing with status: {Status}", State.RealizationStatus);
 
             switch (State.RealizationStatus)
@@ -507,7 +511,7 @@ public partial class
             LogEventDebug("RunCoreAsync - Getting chat completion service");
             // 1. 获取 chat completion 服务
             var chatService = kernel.GetRequiredService<IChatCompletionService>();
-            
+
             // 2. 构造 PromptExecutionSettings
             var maxTokens = 4000; // 默认最大 token
             var temperature = 0.1; // 默认温度
@@ -539,60 +543,35 @@ public partial class
         }
     }
 
-    private async Task ReplyAsync(string finalResult)
+    private async Task ReplyAsync(FinalResponse finalResult)
     {
         await TraceMethodAsync(async () =>
         {
             if (State.UserAgentId.IsNullOrEmpty())
             {
-                LogEventInfo("Result:\n{Result}", State.ChatHistory.Last()?.Content?.Substring(0, Math.Min(200, State.ChatHistory.Last()?.Content?.Length ?? 0)) + "...");
+                LogEventInfo("Result:\n{Result}",
+                    State.ChatHistory.Last()?.Content
+                        ?.Substring(0, Math.Min(200, State.ChatHistory.Last()?.Content?.Length ?? 0)) + "...");
                 LogEventDebug("No UserAgentId, logging result locally");
                 return;
-            }
-
-            // Extract artifacts if present
-            var artifacts = new Dictionary<string, string>();
-            if (finalResult != null && finalResult.Contains("<artifact>") && finalResult.Contains("</artifact>"))
-            {
-                var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
-                    finalResult,
-                    @"<artifact>(.*?)</artifact>");
-                    
-                foreach (System.Text.RegularExpressions.Match match in artifactMatches)
-                {
-                    if (match.Success && match.Groups.Count > 1)
-                    {
-                        var artifactName = match.Groups[1].Value.Trim();
-                        if (State.Artifacts.TryGetValue(artifactName, out var content))
-                        {
-                            artifacts[artifactName] = State.Artifacts[artifactName];
-                            // Replace the artifact tag with a reference
-                            finalResult = finalResult.Replace(
-                                $"<artifact>{artifactName}</artifact>",
-                                $"<artifact name=\"{artifactName}\">{content}</artifact>");
-                        }
-                        else
-                        {
-                            LogEventDebug("Referenced artifact not found: {ArtifactName}", artifactName);
-                        }
-                    }
-                }
             }
 
             var agentMessageEvent = new AgentMessageEvent
             {
                 TargetAgentId = State.UserAgentId,
                 CallId = State.CallId,
-                Content = finalResult,
+                Content = finalResult.Response,
+                Artifacts = finalResult.Artifacts,
                 SenderAgentId = this.GetGrainId().ToString(),
-                // Artifacts = artifacts
             };
 
-            LogEventInfo("Sending reply: UniqueId={UniqueId}, TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}, ArtifactCount={ArtifactCount}",
-                agentMessageEvent.UniqueId, State.UserAgentId, State.CallId, finalResult?.Length ?? 0, artifacts.Count);
+            LogEventInfo(
+                "Sending reply: UniqueId={UniqueId}, TargetAgent={TargetAgent}, CallId={CallId}, ContentLength={Length}, ArtifactCount={ArtifactCount}",
+                agentMessageEvent.UniqueId, State.UserAgentId, State.CallId, finalResult.Response?.Length ?? 0,
+                finalResult.Artifacts.Count);
 
             await PublishAsyncWithTracing(GrainId.Parse(State.UserAgentId), agentMessageEvent);
-        }, new { resultLength = finalResult?.Length });
+        }, new { resultLength = finalResult.Response?.Length ?? 0 });
     }
 
     protected override void AIGAgentTransitionState(
@@ -602,7 +581,7 @@ public partial class
     {
         // Ensure tracing is initialized and scope exists
         InitializeTracing();
-        
+
         LogEventDebug("State transition started: EventType={EventType}",
             @event.GetType().Name);
 
@@ -635,7 +614,7 @@ public partial class
 
                 break;
             case UpdateSendConfigEvent payload:
-                LogEventDebug("Updating agent configuration: AgentId={AgentId}, ParentAgentId={ParentAgentId}", 
+                LogEventDebug("Updating agent configuration: AgentId={AgentId}, ParentAgentId={ParentAgentId}",
                     state.AgentId, payload.Event.ParentAgentId);
                 if (state.AgentId.IsNullOrEmpty())
                 {
@@ -703,16 +682,14 @@ public partial class
                 });
                 break;
             case ReceiveAgentMessageEvent payload:
-                var content = $"Received reply from agent ({payload.Event.SenderAgentId}): {payload.Event.Content}";
+            {
+                var content = $"Received reply from agent ({payload.Event.SenderAgentId}):\n\n{payload.Event.Content}";
                 if (!payload.Event.Artifacts.IsNullOrEmpty())
                 {
                     var artifacts = payload.Event.Artifacts.Select(
-                        a => "<artifact>\n" +
-                             $"<name>{a.Key}</name>\n" +
-                             $"<content>{a.Value}</content>\n" +
-                             "</artifact>"
+                        a => $"<artifact name=\"{a.Name}\" format=\"{a.Format}\">{a.Content}</artifact>"
                     ).JoinAsString("\n");
-                    content += artifacts;
+                    content += $"\n\n{artifacts}";
                 }
 
                 var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
@@ -721,11 +698,13 @@ public partial class
                 state.AgentUsage.Remove(payload.Event.SenderAgentId);
                 ScheduleTask(async () =>
                 {
-                    LogEventDebug("Starting run due to Agent Message: {Content}", payload.Event.Content);
+                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
                     await RunAsync($"Agent Message {payload.Event}");
-                    LogEventDebug("Completed run due to Agent Message: {Content}", payload.Event.Content);
+                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
                 });
                 break;
+            }
+
             case NewAgentsCreatedEvent payload:
                 LogEventInfo("New agents created: Count={Count}, AgentIds={AgentIds}",
                     payload.NewAgents.Count, string.Join(", ", payload.NewAgents.Select(a => a.AgentId)));
@@ -749,7 +728,7 @@ public partial class
 
                 break;
             case UpdateChildEvent payload:
-                LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}", 
+                LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}",
                     payload.LastChildDescriptor.AgentId, payload.LastChildDescriptor.AgentType);
                 AgentDescriptor? oldObj;
                 // Child may proceed first and we receive this event before we process our own NewAgentsCreatedEvent event
@@ -790,11 +769,11 @@ public partial class
 
                 if (state.ChatHistory.Count <= 1)
                     break;
-                var finalResult = string.Empty;
+                var finalResult = new FinalResponse();
 
                 if (State.RealizationStatus == RealizationStatus.Specialized)
                 {
-                    finalResult = State.ChatHistory.Last().Content;
+                    finalResult.Response = State.ChatHistory.Last().Content;
                 }
                 else if (State.RealizationStatus == RealizationStatus.Orchestrator)
                 {
@@ -824,25 +803,48 @@ public partial class
                             }
                         }
 
-                        finalResult = response;
+                        // Extract artifacts if present
+                        if (lastMessage.Contains("<artifact>"))
+                        {
+                            var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
+                                lastMessage,
+                                @"<artifact name=""(.*?)"" format=""(.*?)"" />");
+
+                            foreach (System.Text.RegularExpressions.Match match in artifactMatches)
+                            {
+                                var artifactName = match.Groups[1].Value.Trim();
+                                var artifactFormat = match.Groups[2].Value.Trim();
+                                if (State.Artifacts.TryGetValue(artifactName, out var artifact))
+                                {
+                                    finalResult.Artifacts.Add(new Artifact
+                                    {
+                                        Name = artifactName,
+                                        Format = artifactFormat,
+                                        Content = artifact.Content
+                                    });
+                                }
+                            }
+                        }
+
+                        finalResult.Response = response;
                     }
                     catch (Exception ex)
                     {
-                        finalResult = lastMessage;
+                        finalResult.Response = lastMessage;
                         LogEventError(ex, "Failed to deserialize OrchestratorMessage: {Message}", lastMessage);
                     }
                 }
 
-                if (!finalResult.IsNullOrEmpty())
+                if (!finalResult.Response.IsNullOrEmpty())
                 {
-                    state.Examples.Last().Response = finalResult;
+                    state.Examples.Last().Response = finalResult.Response;
                     ScheduleTask(async () =>
                     {
-                        LogEventDebug("Starting report and reply: {Content}", finalResult);
+                        LogEventDebug("Starting report and reply: {Content}", finalResult.Response);
                         // TODO: Maybe update description.
                         await DoSelfReportAsync();
                         await ReplyAsync(finalResult);
-                        LogEventDebug("Completed report and reply: {Content}", finalResult);
+                        LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
                     });
                 }
 
@@ -861,7 +863,7 @@ public partial class
                 state.DraftResponse = payload.DraftResponse;
                 break;
             case CallAgent payload:
-                LogEventInfo("Calling agent: TargetAgentId={TargetAgentId}, CallId={CallId}", 
+                LogEventInfo("Calling agent: TargetAgentId={TargetAgentId}, CallId={CallId}",
                     payload.AgentCall.AgentId, payload.AgentCall.CallId);
                 if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentId))
                 {
@@ -870,11 +872,16 @@ public partial class
 
                 break;
             case WriteArtifact payload:
-                LogEventInfo("Writing artifact: Name={ArtifactName}, ContentLength={ContentLength}", 
-                    payload.Name, payload.Content?.Length ?? 0);
+                LogEventInfo("Writing artifact: Name={ArtifactName}, Format={Format}, ContentLength={ContentLength}",
+                    payload.Name, payload.Format, payload.Content?.Length ?? 0);
                 if (!state.Artifacts.ContainsKey(payload.Name))
                 {
-                    state.Artifacts.Add(payload.Name, payload.Content);
+                    state.Artifacts.Add(payload.Name, new Artifact
+                    {
+                        Name = payload.Name,
+                        Format = payload.Format,
+                        Content = payload.Content
+                    });
                 }
 
                 break;

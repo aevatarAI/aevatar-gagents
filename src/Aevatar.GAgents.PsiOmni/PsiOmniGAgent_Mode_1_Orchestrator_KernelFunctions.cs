@@ -30,8 +30,10 @@ public partial class PsiOmniGAgent
     [KernelFunction("write_artifact")]
     [Description("Write an artifact.")]
     public async Task<string> WriteArtifactAsync(
-        [Description("The name of the artifact. It has to be unique and contains only alphabet, numbers and underscores."), Required]
+        [Description("The name of the artifact. It has to be unique and must be a valid file name with a valid extension."), Required]
         string name,
+        [Description("The format of the artifact. It has to be a valid file extension."), Required]
+        string format,
         [Description("The content of the artifact."), Required]
         string content
     )
@@ -41,10 +43,16 @@ public partial class PsiOmniGAgent
             return await Task.FromResult<string>("Failed to write artifact: name {name} exits. Pick another name.");
         }
 
-        State.Artifacts.TryAdd(name, content);
+        State.Artifacts.TryAdd(name, new Artifact
+        {
+            Name = name,
+            Format = format,
+            Content = content
+        });
         RaiseEventWithTracing(new WriteArtifact
         {
             Name = name,
+            Format = format,
             Content = content
         });
         return await Task.FromResult("Written artifact.");

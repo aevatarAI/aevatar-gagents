@@ -180,3 +180,19 @@ public class TaskDispatch
     [Id(3), Description("Provides all known information that is needed to perform the task.")]
     public List<string> Knowledge { get; set; } = new();
 }
+
+[GenerateSerializer]
+public class Artifact
+{
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string Format { get; set; } = string.Empty;
+    [Id(2)] public string Content { get; set; } = string.Empty;
+}
+
+
+[GenerateSerializer]
+public class FinalResponse
+{
+    [Id(0)] public string Response { get; set; } = string.Empty;
+    [Id(1)] public List<Artifact> Artifacts { get; set; } = new();
+}  
