@@ -804,7 +804,7 @@ public partial class
                         }
 
                         // Extract artifacts if present
-                        if (lastMessage.Contains("<artifact>"))
+                        if (lastMessage.Contains("<artifact"))
                         {
                             var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
                                 lastMessage,
