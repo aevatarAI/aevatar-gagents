@@ -1,38 +1,16 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Aevatar.GAgents.MCP.Options;
 
 // ReSharper disable InconsistentNaming
 [GenerateSerializer]
 public class MCPServerConfig
 {
-    [Id(0)] 
-    [Required(ErrorMessage = "Server Name is required")]
-    [StringLength(100, MinimumLength = 1, ErrorMessage = "Server Name must be between 1 and 100 characters")]
-    [RegularExpression(@"^[a-zA-Z0-9\-\_\.]+$", ErrorMessage = "Server Name can only contain letters, numbers, hyphens, underscores and dots")]
-    public string ServerName { get; set; } = string.Empty;
-    
-    [Id(1)] 
-    [Required(ErrorMessage = "Command is required")]
-    [StringLength(500, MinimumLength = 1, ErrorMessage = "Command must be between 1 and 500 characters")]
-    public string Command { get; set; } = string.Empty;
-    
-    [Id(2)] 
-    public List<string> Args { get; set; } = [];
-    
-    [Id(3)] 
-    public Dictionary<string, string> Env { get; set; } = new();
-    
-    [Id(4)] 
-    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
-    public string Description { get; set; } = string.Empty;
-    
-    [Id(5)] 
-    [RegularExpression(@"^https?://[^\s/$.?#].[^\s]*$", ErrorMessage = "URL must start with http:// or https://")]
-    public string? Url { get; set; }
-    
-    [Id(6)] 
-    public MCPServerType Type { get; set; }
+    [Id(0)] public string ServerName { get; set; } = string.Empty;
+    [Id(1)] public string Command { get; set; } = string.Empty;
+    [Id(2)] public List<string> Args { get; set; } = [];
+    [Id(3)] public Dictionary<string, string> Env { get; set; } = new();
+    [Id(4)] public string Description { get; set; } = string.Empty;
+    [Id(5)] public string? Url { get; set; }
+    [Id(6)] public MCPServerType Type { get; set; }
 }
 
 /// <summary>
