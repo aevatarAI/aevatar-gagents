@@ -9,12 +9,12 @@ public class GraphRetrievalConfig : ConfigurationBase
 {
     [Id(0)]
     [Required(ErrorMessage = "Schema is required")]
-    [StringLength(5000, MinimumLength = 10, ErrorMessage = "Schema must be between 10 and 5000 characters")]
+    [StringLength(5000, MinimumLength = 1, ErrorMessage = "Schema must be between 1 and 5000 characters")]
     public string Schema { get; set; } = string.Empty;
     
     [Id(1)]
     [Required(ErrorMessage = "Example is required")]
-    [StringLength(2000, MinimumLength = 10, ErrorMessage = "Example must be between 10 and 2000 characters")]
+    [StringLength(2000, MinimumLength = 1, ErrorMessage = "Example must be between 1 and 2000 characters")]
     public string Example { get; set; } = string.Empty;
     
     [Id(2)]

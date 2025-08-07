@@ -11,7 +11,7 @@ public class ChatConfigDto : ConfigurationBase
 {
     [Id(0)]
     [Required(ErrorMessage = "Instructions are required")]
-    [StringLength(2000, MinimumLength = 10, ErrorMessage = "Instructions must be between 10 and 2000 characters")]
+    [StringLength(2000, MinimumLength = 1, ErrorMessage = "Instructions must be between 1 and 2000 characters")]
     public string Instructions { get; set; } = "You are a helpful AI assistant";
 
     [Id(1)] 
