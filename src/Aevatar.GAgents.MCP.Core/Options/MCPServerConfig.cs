@@ -28,7 +28,7 @@ public class MCPServerConfig
     public string Description { get; set; } = string.Empty;
     
     [Id(5)] 
-    [Url(ErrorMessage = "Invalid URL format")]
+    [RegularExpression(@"^https?://[^\s/$.?#].[^\s]*$", ErrorMessage = "URL must start with http:// or https://")]
     public string? Url { get; set; }
     
     [Id(6)] 
