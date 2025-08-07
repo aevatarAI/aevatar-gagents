@@ -2,21 +2,19 @@ using System;
 using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.AI.Exceptions;
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
 using Aevatar.GAgents.AI.BrainFactory;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
-using Aevatar.GAgents.AIGAgent.State;
-using Azure;
+using Aevatar.GAgents.MCP.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,6 +22,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Orleans;
 using Orleans.Concurrency;
+using Orleans.Runtime;
 
 namespace Aevatar.GAgents.AIGAgent.Agent;
 
@@ -54,9 +53,15 @@ public abstract partial class
         _brainFactory = ServiceProvider.GetRequiredService<IBrainFactory>();
     }
 
+    protected override async Task PerformConfigAsync(TConfiguration configuration)
+    {
+        await base.PerformConfigAsync(configuration);
+        
+    }
+
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
     {
-        var llmConfig = GetLLMConfig(initializeDto.LLMConfig);
+        var llmConfig = await GetLLMConfigAsync(initializeDto.LLMConfig);
         if (llmConfig == null)
         {
             return false;
@@ -83,35 +88,19 @@ public abstract partial class
         var streamingConfigEventLog =
             await SetStreamingConfigAsync(initializeDto.StreamingModeEnabled, initializeDto.StreamingConfig);
 
-        // Handle GAgent tools configuration
-        if (initializeDto.EnableGAgentTools)
-        {
-            RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
-        }
-
-        if (initializeDto.AllowedGAgentTypes != null)
-        {
-            RaiseEvent(new SetAllowedGAgentTypesStateLogEvent
-                { AllowedGAgentTypes = initializeDto.AllowedGAgentTypes });
-        }
-
-        // Handle MCP tools configuration
-        if (initializeDto.EnableMCPTools)
+        if (initializeDto.MCPServers.Count != 0)
         {
             RaiseEvent(new SetEnableMCPToolsStateLogEvent { EnableMCPTools = true });
         }
 
-        // Configure MCP servers if provided
-        if (initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
-        {
-            // This will be handled after brain initialization
-            State.EnableMCPTools = true;
-        }
-
         // Configure selected GAgents if provided
-        if (initializeDto.SelectedGAgents != null && initializeDto.SelectedGAgents.Any())
+        if (initializeDto.ToolGAgentTypes.Count != 0 || initializeDto.ToolGAgents.Count != 0)
         {
-            State.SelectedGAgents = initializeDto.SelectedGAgents;
+            RaiseEvent(new SetEnableGAgentToolsStateLogEvent { EnableGAgentTools = true });
+            var toolGAgents = initializeDto.ToolGAgentTypes
+                .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+            toolGAgents.AddRange(initializeDto.ToolGAgents);
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = toolGAgents });
         }
 
         var events = new List<StateLogEventBase<TStateLogEvent>>
@@ -125,16 +114,19 @@ public abstract partial class
 
         try
         {
-            var result = await InitializeBrainAsync(llmConfig!, initializeDto.Instructions);
+            var result = await InitializeBrainAsync(llmConfig, initializeDto.Instructions);
 
             // Register selected GAgent tools if any were specified
-            if (result && State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Any())
+            if (result && (initializeDto.ToolGAgentTypes.Count != 0 || initializeDto.ToolGAgents.Count != 0))
             {
-                await UpdateKernelWithGAgentToolsAsync();
+                var toolGAgents = initializeDto.ToolGAgentTypes
+                    .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+                toolGAgents.AddRange(initializeDto.ToolGAgents);
+                await UpdateKernelWithGAgentToolsAsync(toolGAgents);
             }
 
             // Configure MCP servers if provided in initialization
-            if (result && initializeDto.MCPServers != null && initializeDto.MCPServers.Any())
+            if (result && initializeDto.MCPServers.Count != 0)
             {
                 await ConfigureMCPServersAsync(initializeDto.MCPServers);
             }
@@ -323,6 +315,22 @@ public abstract partial class
         return invokeResponse.ChatReponseList;
     }
 
+    private CancellationTokenSource _cancellationTokenSource;
+
+    protected async Task<bool> CancelStreamingRequestAsync()
+    {
+        try
+        {
+            _cancellationTokenSource.Cancel();
+            return await Task.FromResult(true);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "CancelStreamingRequest fail: {message}", e.Message);
+            return await Task.FromResult(false);
+        }
+    }
+
     private async Task<InvokePromptResponse?> InvokePromptStreamingAsync(string content, List<string>? imageKeys = null,
         List<ChatMessage>? history = null, bool ifUseKnowledge = false,
         ExecutionPromptSettings? promptSettings = null, CancellationToken cancellationToken = default,
@@ -330,13 +338,13 @@ public abstract partial class
     {
         var streamingConfig = State.StreamingConfig;
         var result = new InvokePromptResponse();
+        using var cts = new CancellationTokenSource();
         if (streamingConfig?.TimeOutInternal > 0)
         {
-            using var cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
-            cancellationToken = cts.Token;
         }
-
+        _cancellationTokenSource = cts;
+        cancellationToken = cts.Token;
 
         var chatList = new List<ChatMessage>();
         var chatMessage = new ChatMessage();
@@ -357,6 +365,7 @@ public abstract partial class
             {
                 if (messageContent is StreamingChatMessageContent streamingChatMessageContent)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     streamingMessageContentList.Add(streamingChatMessageContent);
                     stringBuilder.Append(streamingChatMessageContent.Content);
                     if (stringBuilder.Length >= bufferingSize)
@@ -410,36 +419,29 @@ public abstract partial class
             {
                 Logger.LogError(ex, "An unexpected ClientResultException occurred. Details:{message}",
                     clientEx.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
-                {
-                    Context = context,
-                    SerialNumber = -2,
-                    ResponseContent =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
-                    IsLastChunk = true,
-                    ChatId = context.ChatId,
-                    SessionId = context.RequestId,
-                    Response =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
-                });
             }
             else
             {
                 Logger.LogError(ex, "Ai stream response : An unexpected Exception occurred. Details:{message}",
                     ex.ToString());
-                await PublishAsync(new AIStreamingResponseGEvent
-                {
-                    Context = context,
-                    SerialNumber = -2,
-                    ResponseContent =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
-                    IsLastChunk = true,
-                    ChatId = context.ChatId,
-                    SessionId = context.RequestId,
-                    Response =
-                        "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
-                });
             }
+
+            await PublishAsync(new AIStreamingResponseGEvent
+            {
+                Context = context,
+                SerialNumber = -2,
+                ResponseContent =
+                    "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak.",
+                IsLastChunk = true,
+                ChatId = context.ChatId,
+                SessionId = context.RequestId,
+                Response =
+                    "Your prompt triggered the Silence Directive—activated when universal harmonics or content ethics are at risk. Please modify your prompt and retry — tune its intent, refine its form, and the Oracle may speak."
+            });
+        }
+        finally
+        {
+            _cancellationTokenSource.Dispose();
         }
 
         chatMessage.Content = completeContent.ToString();
@@ -480,7 +482,7 @@ public abstract partial class
         if (State.LLM != null || State.SystemLLM != null || State.LLMConfigKey != null)
         {
             // Use the centralized configuration resolution
-            var config = GetCurrentLLMConfig();
+            var config = await GetCurrentLLMConfigAsync();
             if (config == null)
             {
                 Logger.LogWarning("Unable to resolve LLM configuration during grain activation for {GrainId}",
@@ -516,38 +518,38 @@ public abstract partial class
 
     protected sealed override void GAgentTransitionState(TState state, StateLogEventBase<TStateLogEvent> @event)
     {
-        State.LastInputTokenUsage = 0;
-        State.LastOutTokenUsage = 0;
-        State.LastTotalTokenUsage = 0;
+        state.LastInputTokenUsage = 0;
+        state.LastOutTokenUsage = 0;
+        state.LastTotalTokenUsage = 0;
 
         switch (@event)
         {
             case SetLLMStateLogEvent setLlmStateLogEvent:
-                State.LLM = setLlmStateLogEvent.LLM;
-                State.SystemLLM = setLlmStateLogEvent.SystemLLM;
+                state.LLM = setLlmStateLogEvent.LLM;
+                state.SystemLLM = setLlmStateLogEvent.SystemLLM;
                 break;
             case SetLLMConfigKeyStateLogEvent setLlmConfigKeyStateLogEvent:
-                State.LLMConfigKey = setLlmConfigKeyStateLogEvent.LLMConfigKey;
-                State.SystemLLM = setLlmConfigKeyStateLogEvent.SystemLLM;
-                State.LLM = null; // Clear resolved config for centralized approach
+                state.LLMConfigKey = setLlmConfigKeyStateLogEvent.LLMConfigKey;
+                state.SystemLLM = setLlmConfigKeyStateLogEvent.SystemLLM;
+                state.LLM = null; // Clear resolved config for centralized approach
                 break;
             case SetPromptTemplateStateLogEvent setPromptTemplateStateLogEvent:
-                State.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
+                state.PromptTemplate = setPromptTemplateStateLogEvent.PromptTemplate;
                 break;
             case SetUpsertKnowledgeFlag setUpsertKnowledgeFlag:
-                State.IfUpsertKnowledge = true;
+                state.IfUpsertKnowledge = true;
                 break;
             case TokenUsageStateLogEvent tokenUsageStateLogEvent:
-                State.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
-                State.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
-                State.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
-                State.LastInputTokenUsage = tokenUsageStateLogEvent.InputToken;
-                State.LastOutTokenUsage = tokenUsageStateLogEvent.OutputToken;
-                State.LastTotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
+                state.InputTokenUsage += tokenUsageStateLogEvent.InputToken;
+                state.OutTokenUsage += tokenUsageStateLogEvent.OutputToken;
+                state.TotalTokenUsage += tokenUsageStateLogEvent.TotalUsageToken;
+                state.LastInputTokenUsage = tokenUsageStateLogEvent.InputToken;
+                state.LastOutTokenUsage = tokenUsageStateLogEvent.OutputToken;
+                state.LastTotalTokenUsage = tokenUsageStateLogEvent.TotalUsageToken;
                 break;
             case SetStreamingConfigStateLogEvent streamingConfigStateLogEvent:
-                State.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
-                State.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
+                state.StreamingModeEnabled = streamingConfigStateLogEvent.StreamingModeEnabled;
+                state.StreamingConfig = streamingConfigStateLogEvent.StreamingConfig;
                 break;
             case SetEnableGAgentToolsStateLogEvent setEnableGAgentToolsEvent:
                 State.EnableGAgentTools = setEnableGAgentToolsEvent.EnableGAgentTools;
@@ -555,20 +557,31 @@ public abstract partial class
             case SetRegisteredGAgentFunctionsStateLogEvent setRegisteredFunctionsEvent:
                 State.RegisteredGAgentFunctions = setRegisteredFunctionsEvent.RegisteredFunctions;
                 break;
-            case SetAllowedGAgentTypesStateLogEvent setAllowedTypesEvent:
-                State.AllowedGAgentTypes = setAllowedTypesEvent.AllowedGAgentTypes;
-                break;
             case ConfigureMCPServersStateLogEvent configureMCPServersEvent:
                 State.MCPAgents = configureMCPServersEvent.MCPServers;
                 break;
             case SetEnableMCPToolsStateLogEvent setEnableMCPToolsEvent:
                 State.EnableMCPTools = setEnableMCPToolsEvent.EnableMCPTools;
                 break;
-            case SetRegisteredMCPFunctionsStateLogEvent setRegisteredMCPFunctionsEvent:
-                State.RegisteredMCPFunctions = setRegisteredMCPFunctionsEvent.RegisteredFunctions;
+            case SetToolGAgentsStateLogEvent setToolGAgentsEvent:
+                State.ToolGAgents = setToolGAgentsEvent.ToolGAgents;
                 break;
-            case SetSelectedGAgentsStateLogEvent setSelectedGAgentsEvent:
-                State.SelectedGAgents = setSelectedGAgentsEvent.SelectedGAgents;
+            case AddToolCallHistoryStateLogEvent addToolCallHistoryEvent:
+                // Add to tool call history
+                State.ToolCallHistory.Add(new ToolCallHistoryEntry
+                {
+                    ToolCalls = addToolCallHistoryEvent.ToolCalls,
+                    Timestamp = addToolCallHistoryEvent.Timestamp,
+                    RequestId = Guid.NewGuid().ToString()
+                });
+                // Keep only recent history (e.g., last 100 entries)
+                if (State.ToolCallHistory.Count > 100)
+                {
+                    State.ToolCallHistory = State.ToolCallHistory.TakeLast(100).ToList();
+                }
+                break;
+            case ClearToolCallHistoryStateLogEvent _:
+                State.ToolCallHistory.Clear();
                 break;
         }
 
@@ -588,7 +601,7 @@ public abstract partial class
     /// </summary>
     public Task<LLMConfig?> GetLLMConfigAsync()
     {
-        return Task.FromResult(GetCurrentLLMConfig());
+        return GetCurrentLLMConfigAsync();
     }
 
     /// <summary>
@@ -696,36 +709,36 @@ public abstract partial class
         return null;
     }
 
-    private LLMConfig? GetCurrentLLMConfig()
+    private async Task<LLMConfig?> GetCurrentLLMConfigAsync()
     {
         // Priority 1: LLMConfigKey (new format)
         if (!State.LLMConfigKey.IsNullOrEmpty())
         {
-            return ResolveSystemConfig(State.LLMConfigKey);
+            return await ResolveSystemConfigAsync(State.LLMConfigKey);
         }
 
         // Priority 2: SystemLLM (existing format)
         if (!State.SystemLLM.IsNullOrEmpty())
         {
-            return ResolveSystemConfig(State.SystemLLM);
+            return await ResolveSystemConfigAsync(State.SystemLLM);
         }
 
         // Priority 3: Fallback to old resolved config (backwards compatibility)
         return State.LLM;
     }
 
-    private LLMConfig? ResolveSystemConfig(string key)
+    protected virtual Task<LLMConfig?> ResolveSystemConfigAsync(string key)
     {
         var systemConfigs = ServiceProvider.GetRequiredService<IOptions<SystemLLMConfigOptions>>();
         if (systemConfigs.Value.SystemLLMConfigs?.TryGetValue(key, out var config) == true)
         {
-            return config;
+            return Task.FromResult(config)!;
         }
 
         return null;
     }
 
-    private LLMConfig? GetLLMConfig(LLMConfigDto llmConfigDto)
+    protected virtual Task<LLMConfig?> GetLLMConfigAsync(LLMConfigDto llmConfigDto)
     {
         if (llmConfigDto.SystemLLM.IsNullOrWhiteSpace() &&
             llmConfigDto.SelfLLMConfig == null)
@@ -746,10 +759,10 @@ public abstract partial class
                 return null;
             }
 
-            return config;
+            return Task.FromResult(config)!;
         }
 
-        return llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig();
+        return Task.FromResult(llmConfigDto.SelfLLMConfig!.ConvertToLLMConfig())!;
     }
 
     private T ConvertBrain<T>() where T : class, IBrain
@@ -767,5 +780,87 @@ public abstract partial class
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Override to handle resource context and automatically register MCP tools from available MCPGAgents
+    /// </summary>
+    protected override async Task OnPrepareResourceContextAsync(ResourceContext context)
+    {
+        await base.OnPrepareResourceContextAsync(context);
+        
+        // Check if any resources are MCPGAgent instances and register their tools
+        await RegisterMCPToolsFromResourcesAsync(context);
+    }
+
+    /// <summary>
+    /// Registers MCP tools from MCPGAgent instances found in the resource context
+    /// </summary>
+    private async Task RegisterMCPToolsFromResourcesAsync(ResourceContext context)
+    {
+        if (_brain == null || context.AvailableResources.IsNullOrEmpty())
+        {
+            Logger.LogDebug("Skipping MCP tool registration: brain not initialized or no resources available");
+            return;
+        }
+
+        var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
+        var mcpAgentsFound = new List<IMCPGAgent>();
+        
+        // Identify MCPGAgent instances in the resource context
+        foreach (var grainId in context.AvailableResources)
+        {
+            Logger.LogInformation("Checking resource: {GrainId}, Type: {GrainType}", grainId, grainId.Type);
+            try
+            {
+                // Check if this is an MCPGAgent by examining the GrainType
+                var grainTypeString = grainId.Type.ToString();
+                if (grainTypeString.Contains("mcp", StringComparison.OrdinalIgnoreCase))
+                {
+                    // This is an MCP agent, try to get it as IMCPGAgent
+                    try
+                    {
+                        var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(grainId);
+                        if (mcpAgent != null)
+                        {
+                            mcpAgentsFound.Add(mcpAgent);
+                            Logger.LogInformation("Found MCPGAgent resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
+                        }
+                    }
+                    catch (InvalidCastException)
+                    {
+                        Logger.LogWarning("Resource {GrainId} has MCP type but cannot be cast to IMCPGAgent", grainId);
+                    }
+                }
+                else
+                {
+                    Logger.LogDebug("Skipping non-MCP resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Failed to resolve resource {GrainId}: {Exception}", grainId, ex.Message);
+            }
+        }
+
+        if (mcpAgentsFound.Any())
+        {
+            Logger.LogInformation("Registering MCP tools from {Count} MCPGAgent resources", mcpAgentsFound.Count);
+            
+            // Configure the MCP agents (this will register tools to kernel)
+            var success = await ConfigureMCPServersAsync(mcpAgentsFound);
+            if (success)
+            {
+                Logger.LogInformation("Successfully registered MCP tools from resource context");
+            }
+            else
+            {
+                Logger.LogWarning("Failed to register some MCP tools from resource context");
+            }
+        }
+        else
+        {
+            Logger.LogDebug("No MCPGAgent resources found in context");
+        }
     }
 }

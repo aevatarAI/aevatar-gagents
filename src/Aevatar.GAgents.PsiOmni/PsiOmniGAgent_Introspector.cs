@@ -26,12 +26,12 @@ public partial class PsiOmniGAgent
         chatHistory.AddSystemMessage(IntrospectorSystemPrompt);
         chatHistory.AddUserMessage(
             $"Prepare a description for the agent with the following child agents:\n{GetChildrenDescriptions()}");
-        // 1. 获取 chat completion 服务
+        // 1. Get chat completion service
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
-        // 2. 构造 PromptExecutionSettings
-        var maxTokens = 4000; // 默认最大 token
-        var temperature = 0.1; // 默认温度
-        // 只用 OpenAI 版本（无 config.Model 判断）
+        // 2. Construct PromptExecutionSettings
+        var maxTokens = 4000; // Default max tokens
+        var temperature = 0.1; // Default temperature
+        // Use OpenAI version only (no config.Model check)
         var executionSettings = new OpenAIPromptExecutionSettings
         {
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,

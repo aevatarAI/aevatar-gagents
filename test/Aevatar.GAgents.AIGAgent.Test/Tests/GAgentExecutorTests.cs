@@ -373,4 +373,22 @@ public sealed class GAgentExecutorTests : AevatarAIGAgentTestBase
                 typeof(MockExecutorTestResponseEvent));
         });
     }
+    
+    [Fact]
+    public async Task TestEventHandlerExecutorGAgent()
+    {
+        var executorGAgent = await _gAgentFactory.GetGAgentAsync<IEventHandlerExecutorGAgent>();
+        // Arrange
+        var mockExecutorGAgent = await _gAgentFactory.GetGAgentAsync<IMockExecutorGAgent>();
+        var grainId = mockExecutorGAgent.GetGrainId();
+        var grainType = grainId.Type;
+        var testEvent = new MockExecutorTestEvent { Message = "Test Message 3" };
+
+        // Act
+        var result = await executorGAgent.ExecuteGAgentEventHandler(grainType, testEvent);
+
+        // Assert
+        result.ShouldNotBeNullOrEmpty();
+        result.ShouldContain("Processed: Test Message 3");
+    }
 }

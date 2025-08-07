@@ -44,36 +44,11 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant with GAgent tools",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Assert
         var state = await chatAgent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-    }
-
-    [Fact]
-    public async Task Should_Store_Allowed_GAgent_Types_When_Configured()
-    {
-        // Arrange
-        var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
-        var allowedTypes = new List<GrainType> { GrainType.Create("ChatAIGAgent"), GrainType.Create("GroupGAgent") };
-        
-        // Act
-        await chatAgent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "You are an AI assistant with restricted GAgent access",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
-            AllowedGAgentTypes = allowedTypes
-        });
-        
-        // Assert
-        var state = await chatAgent.GetStateAsync();
-        state.AllowedGAgentTypes.ShouldNotBeNull();
-        state.AllowedGAgentTypes.Count.ShouldBe(2);
-        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("ChatAIGAgent"));
-        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("GroupGAgent"));
     }
 
     [Fact]
@@ -87,7 +62,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant that can use other agents",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Wait a bit for async registration
@@ -189,7 +163,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are a basic AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = false // Explicitly disabled
         });
         
         // Assert
@@ -209,7 +182,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI with limited agent access",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
             AllowedGAgentTypes = [GrainType.Create("NonExistentType")]
         });
         
@@ -219,7 +191,6 @@ public sealed class GAgentToolsTest : AevatarAIGAgentTestBase
         // Assert
         var state = await chatAgent.GetStateAsync();
         state.EnableGAgentTools.ShouldBeTrue();
-        state.AllowedGAgentTypes.ShouldContain(GrainType.Create("NonExistentType"));
         // With a non-existent type filter, no functions should be registered
         // (or registration might fail due to reflection issues in test)
     }

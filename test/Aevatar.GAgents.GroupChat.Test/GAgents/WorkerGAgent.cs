@@ -1,9 +1,8 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.GroupChat.Core.Dto;
 using GroupChat.GAgent;
-using GroupChat.GAgent.Dto;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.GEvent;
-using Orleans;
 
 namespace Aevatar.GAgents.GroupChat.Test.GAgents;
 
@@ -52,10 +51,10 @@ public class WorkerGAgentGAgent : GroupMemberGAgentBase<WorkerState, WorkerEvent
         switch (@event)
         {
             case WorkHandleMessageLogEvent workHandleMessageLogEvent:
-                State.PreWorkUnits = workHandleMessageLogEvent.PreWorkUnits;
+                state.PreWorkUnits = workHandleMessageLogEvent.PreWorkUnits;
                 return;
             case WorkerDelayLogEvent workerDelayLogEvent:
-                State.DelaySeconds = workerDelayLogEvent.DelaySeconds;
+                state.DelaySeconds = workerDelayLogEvent.DelaySeconds;
                 return;
         }
     }

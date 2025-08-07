@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,7 +6,6 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -29,19 +27,16 @@
     <PackageReference Include="Aevatar.Core" />
     <PackageReference Include="Aevatar.EventSourcing.Core" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aevatar.GAgents.AI.Abstractions\Aevatar.GAgents.AI.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Aevatar.GAgents.AIGAgent\Aevatar.GAgents.AIGAgent.csproj" />
     <ProjectReference Include="..\..\src\Aevatar.GAgents.MCP\Aevatar.GAgents.MCP.csproj" />
     <ProjectReference Include="..\..\src\Aevatar.GAgents.SemanticKernel\Aevatar.GAgents.SemanticKernel.csproj" />
   </ItemGroup>
-  
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Using Include="Xunit" />
   </ItemGroup>
-
 </Project>

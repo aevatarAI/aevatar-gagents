@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.Dtos;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core.Model;
 using Aevatar.GAgents.MCP.Options;
 using Orleans.Runtime;
 
@@ -55,23 +55,23 @@ public interface IAIGAgent
     /// </summary>
     Task<List<MCPToolInfo>> GetAvailableMCPToolsAsync();
 
-    // GAgent tool methods
-
     /// <summary>
     /// Configure selected GAgent tools
     /// </summary>
-    Task<bool> ConfigureGAgentToolsAsync(List<GrainType> selectedGAgents);
+    Task<bool> ConfigureGAgentToolsAsync(List<GrainType> toolGAgentTypes);
 
     /// <summary>
-    /// Registers all available GAgent tools
+    /// Configure selected GAgent as GAgent tools
     /// </summary>
-    Task<bool> RegisterAllGAgentToolsAsync();
+    /// <param name="toolGAgents"></param>
+    /// <returns></returns>
+    Task<bool> ConfigureToolGAgentsAsync(List<GrainId> toolGAgents);
 
     /// <summary>
-    /// Get available GAgent tools from all registered GAgentTypes
+    /// Get configured tool GAgents
     /// </summary>
     /// <returns></returns>
-    Task<List<GrainType>> GetAvailableGAgentToolsAsync();
+    Task<List<GrainId>> GetToolGAgentsAsync();
 
     /// <summary>
     /// Clears all registered GAgent tools

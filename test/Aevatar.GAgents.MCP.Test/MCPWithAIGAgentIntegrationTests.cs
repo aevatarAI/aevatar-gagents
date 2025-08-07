@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.GEvents;
 using Aevatar.GAgents.MCP.GAgents;
 using Aevatar.GAgents.MCP.GEvents;
 using Aevatar.GAgents.MCP.Options;
@@ -13,7 +15,7 @@ using Xunit;
 namespace Aevatar.GAgents.MCP.Test;
 
 /// <summary>
-/// 测试MCP GAgent与AI Agent的集成场景
+/// Test MCP GAgent integration scenarios with AI Agent
 /// </summary>
 public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
 {
@@ -29,7 +31,7 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
     {
         var mcpConfig = new MCPGAgentConfig
         {
-            Server = new MCPServerConfig
+            ServerConfig = new MCPServerConfig
             {
                 ServerName = "test-integration",
                 Command = "test"
@@ -38,17 +40,17 @@ public class MCPWithAIGAgentIntegrationTests : AevatarMCPTestBase
 
         var mcpGAgent = await _gAgentFactory.GetGAgentAsync<IMCPGAgent>(mcpConfig);
 
-        // 创建一个简单的订阅者GAgent
+        // Create a simple subscriber GAgent
         var subscriberGAgent = await _gAgentFactory.GetGAgentAsync<ITestSubscriberGAgent>();
         
-        // 建立双向订阅关系
+        // Establish bidirectional subscription relationship
         await mcpGAgent.RegisterAsync(subscriberGAgent);
         await subscriberGAgent.RegisterAsync(mcpGAgent);
 
-        // Act - 通过订阅者发布工具调用事件
+        // Act - Publish tool call event through subscriber
         await subscriberGAgent.CallMCPToolAsync();
         
-        // 等待事件处理完成
+        // Wait for event processing to complete
         await Task.Delay(1000);
 
         // Assert

@@ -40,7 +40,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are an AI assistant that can coordinate with other agents",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
 
         // Act - Verify tools are enabled
@@ -60,31 +59,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
     }
 
     [Fact]
-    public async Task Should_Filter_GAgents_Based_On_Allowed_Types()
-    {
-        // Arrange
-        var chatAgent = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
-        var allowedTypes = new List<GrainType> { chatAgent.GetGrainId().Type };
-        
-        await chatAgent.InitializeAsync(new InitializeDto
-        {
-            Instructions = "You are an AI with limited agent access",
-            LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
-            AllowedGAgentTypes = allowedTypes
-        });
-        
-        // Act
-        var state = await chatAgent.GetStateAsync();
-        
-        // Assert
-        state.EnableGAgentTools.ShouldBeTrue();
-        state.AllowedGAgentTypes.ShouldNotBeNull();
-        state.AllowedGAgentTypes.Count.ShouldBe(1);
-        state.AllowedGAgentTypes[0].ToString().ShouldBe("ChatAIGAgent");
-    }
-
-    [Fact]
     public async Task Should_Handle_Multiple_Agents_With_Tools()
     {
         // Test multiple agents can be created with tools enabled
@@ -95,7 +69,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "First AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         var agent2 = await _agentFactory.GetGAgentAsync<IChatAIGAgent>(Guid.NewGuid());
@@ -103,7 +76,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "Second AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true,
             AllowedGAgentTypes = [GrainType.Create("GroupGAgent")]
         });
         
@@ -113,14 +85,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         
         state1.EnableGAgentTools.ShouldBeTrue();
         state2.EnableGAgentTools.ShouldBeTrue();
-        
-        // Agent 1 has no restrictions
-        state1.AllowedGAgentTypes.ShouldBeNull();
-        
-        // Agent 2 has restrictions
-        state2.AllowedGAgentTypes.ShouldNotBeNull();
-        state2.AllowedGAgentTypes.Count.ShouldBe(1);
-        state2.AllowedGAgentTypes[0].ToString().ShouldBe("GroupGAgent");
     }
 
     [Fact]
@@ -136,7 +100,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
         {
             Instructions = "You are a helpful AI assistant",
             LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-            EnableGAgentTools = true
         });
         
         // Add some chat history
@@ -172,7 +135,6 @@ public sealed class GAgentToolsIntegrationTest : AevatarAIGAgentTestBase
                 {
                     Instructions = $"AI Assistant #{index}",
                     LLMConfig = new LLMConfigDto { SystemLLM = "OpenAI" },
-                    EnableGAgentTools = index % 2 == 0 // Even indices have tools enabled
                 });
                 return agent;
             }));

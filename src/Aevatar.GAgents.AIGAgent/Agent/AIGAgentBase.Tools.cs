@@ -6,12 +6,12 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.Plugin;
-using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.Executor;
-using Aevatar.GAgents.MCP.GAgents;
-using Aevatar.GAgents.MCP.Model;
+using Aevatar.GAgents.MCP.Core;
+using Aevatar.GAgents.MCP.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
@@ -32,7 +32,7 @@ public abstract partial class
     private IGAgentService? _gAgentService;
     private IGAgentExecutor? _gAgentExecutor;
     private GAgentToolPlugin? _gAgentToolPlugin;
-    private List<ToolCallDetail> _currentToolCalls = new(); // Track tool calls for current request
+    private readonly List<ToolCallDetail> _currentToolCalls = new(); // Track tool calls for current request
 
     /// <summary>
     /// Gets the current tool calls for tracking
@@ -45,67 +45,6 @@ public abstract partial class
     protected void ClearToolCalls()
     {
         _currentToolCalls.Clear();
-    }
-
-    /// <summary>
-    /// Registers all available GAgents as tools in the Semantic Kernel
-    /// </summary>
-    protected virtual async Task RegisterGAgentsAsToolsAsync()
-    {
-        if (_brain == null)
-        {
-            Logger.LogWarning("Cannot register GAgent tools: Brain not initialized");
-            return;
-        }
-
-        if (!State.EnableGAgentTools)
-        {
-            Logger.LogInformation("GAgent tools are disabled");
-            return;
-        }
-
-        try
-        {
-            _gAgentService ??= ServiceProvider.GetRequiredService<IGAgentService>();
-            _gAgentExecutor ??= ServiceProvider.GetRequiredService<IGAgentExecutor>();
-
-            Logger.LogInformation("Starting GAgent tools registration");
-
-            // Create GAgent tool plugin
-            _gAgentToolPlugin = new GAgentToolPlugin(_gAgentExecutor, _gAgentService, Logger);
-
-            // Get the kernel from brain using reflection
-            var kernel = GetKernelFromBrain();
-            if (kernel == null)
-            {
-                Logger.LogWarning("Cannot access Semantic Kernel from brain");
-                return;
-            }
-
-            // Import the plugin with its built-in functions
-            ImportPluginToKernel(kernel, _gAgentToolPlugin, "GAgentTools");
-
-            // Get all available GAgents
-            var allGAgents = await _gAgentService.GetAllAvailableGAgentInformation();
-
-            // Create dynamic functions for each GAgent event
-            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, allGAgents);
-
-            Logger.LogInformation("Successfully registered {Count} GAgent functions as tools",
-                registeredFunctions.Count);
-
-            // Store registered function names in state directly
-            var functionNames = registeredFunctions.Select(f => f.Name).ToList();
-            State.RegisteredGAgentFunctions = functionNames;
-
-            // Persist state changes
-            await ConfirmEvents();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register GAgent tools");
-            throw;
-        }
     }
 
     /// <summary>
@@ -132,7 +71,7 @@ public abstract partial class
     /// Registers dynamic functions for each GAgent and their events
     /// </summary>
     private async Task<List<KernelFunction>> RegisterDynamicGAgentFunctionsAsync(Kernel kernel,
-        Dictionary<GrainType, List<Type>> allGAgents)
+        Dictionary<GrainId, List<Type>> allGAgents)
     {
         var dynamicFunctions = new List<KernelFunction>();
 
@@ -143,13 +82,14 @@ public abstract partial class
             kernel.Plugins.Remove(plugin);
         }
 
-        foreach (var (grainType, eventTypes) in allGAgents)
+        foreach (var (grainId, eventTypes) in allGAgents)
         {
             try
             {
                 // Get GAgent description
+                var grainType = grainId.Type;
                 var gAgentInfo = await _gAgentService!.GetGAgentDetailInfoAsync(grainType);
-                var gAgentDescription = gAgentInfo?.Description ?? "GAgent";
+                var gAgentDescription = gAgentInfo.Description ?? "GAgent";
                 var functions = new List<KernelFunction>();
 
                 foreach (var eventType in eventTypes)
@@ -173,7 +113,7 @@ public abstract partial class
                             try
                             {
                                 // Call the actual GAgent tool
-                                var result = await CallGAgentToolAsync(grainType, eventType, args);
+                                var result = await CallGAgentToolAsync(grainId, eventType, args);
 
                                 toolCall.Result = JsonSerializer.Serialize(result);
                                 toolCall.Success = true;
@@ -251,13 +191,11 @@ public abstract partial class
                     {
                         // Generate a more unique hash using the full grain type
                         var hashBytes = System.Text.Encoding.UTF8.GetBytes(fullGrainType);
-                        using (var sha = System.Security.Cryptography.SHA256.Create())
-                        {
-                            var hash = sha.ComputeHash(hashBytes);
-                            var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_")
-                                .Replace("+", "_");
-                            pluginName = $"GA_{shortHash}";
-                        }
+                        using var sha = System.Security.Cryptography.SHA256.Create();
+                        var hash = sha.ComputeHash(hashBytes);
+                        var shortHash = Convert.ToBase64String(hash).Substring(0, 8).Replace("/", "_")
+                            .Replace("+", "_");
+                        pluginName = $"GA_{shortHash}";
                     }
 
                     // Check if plugin already exists and remove it
@@ -287,7 +225,7 @@ public abstract partial class
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to register functions for GAgent {GrainType}", grainType);
+                Logger.LogWarning(ex, "Failed to register functions for GAgent {GrainId}", grainId.ToString());
             }
         }
 
@@ -351,23 +289,6 @@ public abstract partial class
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error importing plugin to kernel");
-        }
-    }
-
-    /// <summary>
-    /// Imports plugin functions to the kernel using reflection
-    /// </summary>
-    private void ImportPluginFunctionsToKernel(Kernel kernel, string pluginName, IEnumerable<KernelFunction> functions)
-    {
-        try
-        {
-            // Use the modern API directly
-            kernel.Plugins.AddFromFunctions(pluginName, functions);
-            Logger.LogInformation("Successfully imported plugin functions '{PluginName}' to kernel", pluginName);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error importing plugin functions to kernel");
         }
     }
 
@@ -540,20 +461,6 @@ public abstract partial class
     }
 
     /// <summary>
-    /// Checks if a GAgent type is allowed based on configuration
-    /// </summary>
-    private bool IsGAgentAllowed(GrainType grainType)
-    {
-        if (State.AllowedGAgentTypes.Count == 0)
-        {
-            // No restrictions, all GAgents are allowed
-            return true;
-        }
-
-        return State.AllowedGAgentTypes.Contains(grainType);
-    }
-
-    /// <summary>
     /// Unregisters all GAgent tools
     /// </summary>
     protected virtual async Task UnregisterGAgentToolsAsync()
@@ -564,7 +471,7 @@ public abstract partial class
             _gAgentToolPlugin = null;
 
             // Update state
-            var clearFunctionsEvent = CreateSetRegisteredFunctionsEvent(new List<string>());
+            var clearFunctionsEvent = CreateSetRegisteredFunctionsEvent([]);
             if (clearFunctionsEvent != null)
             {
                 RaiseEvent(clearFunctionsEvent);
@@ -593,7 +500,7 @@ public abstract partial class
 
         await UpdateKernelWithMCPToolsAsync();
 
-        if (State.EnableGAgentTools && State.SelectedGAgents != null && State.SelectedGAgents.Count > 0)
+        if (State.EnableGAgentTools && State.ToolGAgents.Count > 0)
         {
             // Only register GAgent tools if specific GAgents have been selected
             await UpdateKernelWithGAgentToolsAsync();
@@ -639,60 +546,21 @@ public abstract partial class
     {
         [Id(0)] public List<GrainType> AllowedGAgentTypes { get; set; } = [];
     }
-
+    
     /// <summary>
     /// State log event for setting selected GAgent tools
     /// </summary>
     [GenerateSerializer]
-    public class SetSelectedGAgentsStateLogEvent : StateLogEventBase<TStateLogEvent>
+    public class SetToolGAgentsStateLogEvent : StateLogEventBase<TStateLogEvent>
     {
-        [Id(0)] public List<GrainType> SelectedGAgents { get; set; } = new();
+        [Id(0)] public List<GrainId> ToolGAgents { get; set; } = [];
     }
 
-    /// <summary>
-    /// Registers all available GAgent tools
-    /// </summary>
-    public virtual async Task<bool> RegisterAllGAgentToolsAsync()
+    public async Task<bool> ConfigureToolGAgentsAsync(List<GrainId> toolGAgents)
     {
         try
         {
-            if (_brain == null)
-            {
-                Logger.LogWarning("Cannot register GAgent tools: Brain not initialized");
-                return false;
-            }
-
-            Logger.LogInformation("Registering all available GAgent tools");
-
-            // Enable GAgent tools
-            State.EnableGAgentTools = true;
-
-            // Register all available GAgents
-            await RegisterGAgentsAsToolsAsync();
-
-            Logger.LogInformation("Successfully registered all available GAgent tools");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register all GAgent tools");
-            return false;
-        }
-    }
-
-    public Task<List<GrainType>> GetAvailableGAgentToolsAsync()
-    {
-        return Task.FromResult(State.AllowedGAgentTypes);
-    }
-
-    /// <summary>
-    /// Configure selected GAgent tools
-    /// </summary>
-    public virtual async Task<bool> ConfigureGAgentToolsAsync(List<GrainType> selectedGAgents)
-    {
-        try
-        {
-            if (selectedGAgents.Count == 0)
+            if (toolGAgents.Count == 0)
             {
                 // No GAgents selected, nothing to configure
                 return false;
@@ -704,7 +572,7 @@ public abstract partial class
                 return false;
             }
 
-            Logger.LogInformation("Configuring GAgent tools: {Count} GAgents selected", selectedGAgents.Count);
+            Logger.LogInformation("Configuring GAgent tools: {Count} GAgents selected", toolGAgents.Count);
 
             // Enable GAgent tools if not already enabled
             if (!State.EnableGAgentTools)
@@ -713,15 +581,15 @@ public abstract partial class
             }
 
             // Update state with selected GAgents
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = selectedGAgents });
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = toolGAgents });
 
             // Persist state changes
             await ConfirmEvents();
 
             // Update kernel with new tools
-            await UpdateKernelWithGAgentToolsAsync();
+            await UpdateKernelWithGAgentToolsAsync(toolGAgents);
 
-            Logger.LogInformation("Successfully configured {Count} GAgent tools", selectedGAgents.Count);
+            Logger.LogInformation("Successfully configured {Count} GAgent tools", toolGAgents.Count);
             return true;
         }
         catch (Exception ex)
@@ -729,6 +597,21 @@ public abstract partial class
             Logger.LogError(ex, "Failed to configure GAgent tools");
             return false;
         }
+    }
+
+    public Task<List<GrainId>> GetToolGAgentsAsync()
+    {
+        return Task.FromResult(State.ToolGAgents);
+    }
+
+    /// <summary>
+    /// Configure selected GAgent tools
+    /// </summary>
+    public virtual async Task<bool> ConfigureGAgentToolsAsync(List<GrainType> toolGAgentTypes)
+    {
+        var toolGAgents = toolGAgentTypes
+            .Select(grainType => GrainId.Create(grainType.ToString()!, Guid.NewGuid().ToString("N"))).ToList();
+        return await ConfigureToolGAgentsAsync(toolGAgents);
     }
 
     /// <summary>
@@ -747,7 +630,7 @@ public abstract partial class
             Logger.LogInformation("Clearing all GAgent tools");
 
             // Clear selected GAgents
-            RaiseEvent(new SetSelectedGAgentsStateLogEvent { SelectedGAgents = [] });
+            RaiseEvent(new SetToolGAgentsStateLogEvent { ToolGAgents = [] });
 
             // Clear registered functions
             RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent { RegisteredFunctions = [] });
@@ -781,9 +664,11 @@ public abstract partial class
     /// <summary>
     /// Update kernel with selected GAgent tools
     /// </summary>
-    protected async Task UpdateKernelWithGAgentToolsAsync()
+    protected async Task UpdateKernelWithGAgentToolsAsync(List<GrainId>? toolGAgents = null)
     {
-        if (_brain == null || State.SelectedGAgents == null || State.SelectedGAgents.Count == 0)
+        toolGAgents ??= State.ToolGAgents;
+
+        if (_brain == null || toolGAgents.Count == 0)
         {
             Logger.LogInformation("No GAgent tools to register");
             return;
@@ -809,16 +694,17 @@ public abstract partial class
 
             // Get event types for selected GAgents
             var allGAgentInfo = await _gAgentService.GetAllAvailableGAgentInformation();
-            var selectedGAgentInfo = new Dictionary<GrainType, List<Type>>();
+            var toolGAgentsInfo = new Dictionary<GrainId, List<Type>>();
 
-            foreach (var grainType in State.SelectedGAgents)
+            foreach (var grainId in toolGAgents)
             {
+                var grainType = grainId.Type;
                 try
                 {
                     if (allGAgentInfo.TryGetValue(grainType, out var eventTypes) && eventTypes != null &&
                         eventTypes.Count > 0)
                     {
-                        selectedGAgentInfo[grainType] = eventTypes;
+                        toolGAgentsInfo[grainId] = eventTypes;
                     }
                     else
                     {
@@ -832,14 +718,17 @@ public abstract partial class
             }
 
             // Register dynamic functions for selected GAgents
-            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, selectedGAgentInfo);
+            var registeredFunctions = await RegisterDynamicGAgentFunctionsAsync(kernel, toolGAgentsInfo);
 
             Logger.LogInformation("Successfully registered {Count} GAgent functions as tools",
                 registeredFunctions.Count);
 
             // Store registered function names in state directly
             var functionNames = registeredFunctions.Select(f => f.Name).ToList();
-            State.RegisteredGAgentFunctions = functionNames;
+            RaiseEvent(new SetRegisteredGAgentFunctionsStateLogEvent
+            {
+                RegisteredFunctions = functionNames
+            });
 
             // Persist state changes
             await ConfirmEvents();
@@ -848,389 +737,6 @@ public abstract partial class
         {
             Logger.LogError(ex, "Failed to update kernel with GAgent tools");
             throw;
-        }
-    }
-
-    private async Task RegisterMCPToolsAsync(Kernel kernel)
-    {
-        // Cast state to AIGAgentStateBase to access MCP properties
-        var baseState = State as AIGAgentStateBase;
-        if (baseState == null || !baseState.EnableMCPTools)
-        {
-            Logger.LogDebug("MCP tools are disabled");
-            return;
-        }
-
-        // For now, we need to get MCP servers from somewhere else
-        // This is a placeholder - the actual implementation should get servers from configuration
-        var mcpServers = new List<string> { "filesystem" }; // Example server
-
-        try
-        {
-            // Remove existing MCP plugins to avoid duplicates
-            var existingMCPPlugins = kernel.Plugins.Where(p => p.Name.StartsWith("MCP_")).ToList();
-            foreach (var plugin in existingMCPPlugins)
-            {
-                kernel.Plugins.Remove(plugin);
-            }
-
-            foreach (var serverName in mcpServers)
-            {
-                try
-                {
-                    var mcpGAgent = await GetMCPGAgentAsync(serverName);
-                    if (mcpGAgent != null)
-                    {
-                        var toolsDict = await mcpGAgent.GetAvailableToolsAsync();
-                        if (toolsDict != null && toolsDict.Any())
-                        {
-                            var functions = new List<KernelFunction>();
-
-                            foreach (var tool in toolsDict.Values)
-                            {
-                                var description = !string.IsNullOrEmpty(tool.Description)
-                                    ? tool.Description
-                                    : $"Tool {tool.Name} from MCP server {serverName}";
-
-                                // Generate a safe function name that won't exceed 64 characters
-                                var safeFunctionName = GenerateMCPFunctionName(serverName, tool.Name);
-                                Logger.LogInformation("MCP function name: {FunctionName} (length: {Length})",
-                                    safeFunctionName, safeFunctionName.Length);
-
-                                // Create the kernel function with tracking wrapper
-                                var function = KernelFunctionFactory.CreateFromMethod(
-                                    async (KernelArguments args) =>
-                                    {
-                                        var toolStartTime = DateTime.UtcNow;
-                                        var toolCall = new ToolCallDetail
-                                        {
-                                            ToolName = tool.Name,
-                                            ServerName = serverName,
-                                            Arguments = args.ToDictionary(),
-                                            Timestamp = toolStartTime.ToString("yyyy-MM-dd HH:mm:ss.fff UTC")
-                                        };
-
-                                        try
-                                        {
-                                            // Call the actual MCP tool
-                                            var parameters = ConvertKernelArgumentsToJson(args);
-                                            var result = await CallMCPToolAsync(serverName, tool.Name, parameters);
-
-                                            toolCall.Result = JsonSerializer.Serialize(result);
-                                            toolCall.Success = true;
-                                            toolCall.DurationMs =
-                                                (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
-
-                                            // Add to tracking
-                                            _currentToolCalls.Add(toolCall);
-
-                                            Logger.LogInformation(
-                                                "[MCP Tool Call] {ServerName}.{ToolName} completed in {Duration}ms",
-                                                serverName, tool.Name, toolCall.DurationMs);
-
-                                            return result;
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            toolCall.Success = false;
-                                            toolCall.Result = $"Error: {ex.Message}";
-                                            toolCall.DurationMs =
-                                                (long)(DateTime.UtcNow - toolStartTime).TotalMilliseconds;
-
-                                            // Add to tracking even if failed
-                                            _currentToolCalls.Add(toolCall);
-
-                                            Logger.LogError(ex,
-                                                "[MCP Tool Call] {ServerName}.{ToolName} failed after {Duration}ms",
-                                                serverName, tool.Name, toolCall.DurationMs);
-                                            throw;
-                                        }
-                                    },
-                                    safeFunctionName,
-                                    description);
-
-                                // Set parameters metadata
-                                SetKernelFunctionParametersFromMCPParameters(function, tool.Parameters);
-                                functions.Add(function);
-                            }
-
-                            // Create plugin for this MCP server
-                            // Clean server name to be a valid plugin name (only ASCII letters, digits, and underscores)
-                            var pluginName = $"MCP_{serverName.Replace("-", "_").Replace(".", "_").Replace(" ", "_")}";
-                            kernel.Plugins.AddFromFunctions(pluginName, functions);
-
-                            Logger.LogInformation("Registered MCP plugin '{PluginName}' with {ToolCount} tools",
-                                pluginName, functions.Count);
-                        }
-                        else
-                        {
-                            Logger.LogWarning("No tools found for MCP server: {ServerName}", serverName);
-                        }
-                    }
-                    else
-                    {
-                        Logger.LogWarning("Failed to get MCP GAgent for server: {ServerName}", serverName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Failed to register tools for MCP server: {ServerName}", serverName);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register MCP tools");
-        }
-    }
-
-    /// <summary>
-    /// Converts KernelArguments to a JSON object for MCP tool calls
-    /// </summary>
-    private static JsonElement ConvertKernelArgumentsToJson(KernelArguments args)
-    {
-        var dict = new Dictionary<string, object>();
-        foreach (var kvp in args)
-        {
-            dict[kvp.Key] = kvp.Value ?? new object();
-        }
-
-        var json = JsonSerializer.Serialize(dict);
-        return JsonSerializer.Deserialize<JsonElement>(json);
-    }
-
-    /// <summary>
-    /// Sets the parameter metadata for a kernel function based on the input schema
-    /// </summary>
-    private void SetKernelFunctionParameters(KernelFunction function, JsonElement? inputSchema)
-    {
-        if (inputSchema == null || inputSchema.Value.ValueKind != JsonValueKind.Object)
-            return;
-
-        try
-        {
-            var parameters = new List<KernelParameterMetadata>();
-
-            if (inputSchema.Value.TryGetProperty("properties", out var properties) &&
-                properties.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var prop in properties.EnumerateObject())
-                {
-                    var paramName = prop.Name;
-                    var paramSchema = prop.Value;
-
-                    // Get description
-                    string? description = null;
-                    if (paramSchema.TryGetProperty("description", out var descJsonElement))
-                    {
-                        description = descJsonElement.GetString();
-                    }
-
-                    // Get type
-                    Type paramType = typeof(object);
-                    if (paramSchema.TryGetProperty("type", out var typeJsonElement))
-                    {
-                        var typeStr = typeJsonElement.GetString();
-                        if (typeStr != null)
-                        {
-                            paramType = typeStr switch
-                            {
-                                "string" => typeof(string),
-                                "number" => typeof(double),
-                                "integer" => typeof(int),
-                                "boolean" => typeof(bool),
-                                "array" => typeof(List<object>),
-                                "object" => typeof(Dictionary<string, object>),
-                                _ => typeof(object)
-                            };
-                        }
-                    }
-
-                    // Check if required
-                    bool isRequired = false;
-                    if (inputSchema.Value.TryGetProperty("required", out var required) &&
-                        required.ValueKind == JsonValueKind.Array)
-                    {
-                        isRequired = required.EnumerateArray().Any(r => r.GetString() == paramName);
-                    }
-
-                    // Create parameter metadata with only the name constructor
-                    var metadata = new KernelParameterMetadata(paramName);
-
-                    // Use reflection to set properties to handle API changes
-                    var metadataType = metadata.GetType();
-
-                    // Try to set Description property if it exists
-                    var descriptionProperty = metadataType.GetProperty("Description");
-                    if (descriptionProperty != null && descriptionProperty.CanWrite)
-                    {
-                        try
-                        {
-                            descriptionProperty.SetValue(metadata, description);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
-                        }
-                    }
-
-                    // Try to set ParameterType property if it exists
-                    var typeProperty = metadataType.GetProperty("ParameterType");
-                    if (typeProperty != null && typeProperty.CanWrite)
-                    {
-                        try
-                        {
-                            typeProperty.SetValue(metadata, paramType);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
-                        }
-                    }
-
-                    // Try to set IsRequired property if it exists
-                    var reqProp = metadataType.GetProperty("IsRequired");
-                    if (reqProp != null && reqProp.CanWrite)
-                    {
-                        try
-                        {
-                            reqProp.SetValue(metadata, isRequired);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogDebug(ex, "Could not set IsRequired property on KernelParameterMetadata");
-                        }
-                    }
-
-                    parameters.Add(metadata);
-                }
-            }
-
-            // Use reflection to set the parameters
-            var metadataProperty =
-                typeof(KernelFunction).GetProperty("Metadata", BindingFlags.Public | BindingFlags.Instance);
-            if (metadataProperty != null)
-            {
-                var metadata = metadataProperty.GetValue(function);
-                if (metadata != null)
-                {
-                    var parametersProperty = metadata.GetType()
-                        .GetProperty("Parameters", BindingFlags.Public | BindingFlags.Instance);
-                    if (parametersProperty != null && parametersProperty.CanWrite)
-                    {
-                        parametersProperty.SetValue(metadata, parameters.AsReadOnly());
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to set kernel function parameters from schema");
-        }
-    }
-
-    /// <summary>
-    /// Sets the parameter metadata for a kernel function based on MCP parameters
-    /// </summary>
-    private void SetKernelFunctionParametersFromMCPParameters(KernelFunction function,
-        Dictionary<string, MCPParameterInfo> mcpParameters)
-    {
-        try
-        {
-            var parameters = new List<KernelParameterMetadata>();
-
-            foreach (var kvp in mcpParameters)
-            {
-                var paramName = kvp.Key;
-                var paramInfo = kvp.Value;
-
-                // Get type from MCP parameter info
-                Type paramType = typeof(object);
-                if (!string.IsNullOrEmpty(paramInfo.Type))
-                {
-                    paramType = paramInfo.Type switch
-                    {
-                        "string" => typeof(string),
-                        "number" => typeof(double),
-                        "integer" => typeof(int),
-                        "boolean" => typeof(bool),
-                        "array" => typeof(List<object>),
-                        "object" => typeof(Dictionary<string, object>),
-                        _ => typeof(object)
-                    };
-                }
-
-                // Create parameter metadata with only the name constructor
-                var metadata = new KernelParameterMetadata(paramName);
-
-                // Use reflection to set properties to handle API changes
-                var metadataType = metadata.GetType();
-
-                // Try to set Description property if it exists
-                var descriptionProperty = metadataType.GetProperty("Description");
-                if (descriptionProperty != null && descriptionProperty.CanWrite)
-                {
-                    try
-                    {
-                        descriptionProperty.SetValue(metadata, paramInfo.Description);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogDebug(ex, "Could not set Description property on KernelParameterMetadata");
-                    }
-                }
-
-                // Try to set ParameterType property if it exists
-                var typeProperty = metadataType.GetProperty("ParameterType");
-                if (typeProperty != null && typeProperty.CanWrite)
-                {
-                    try
-                    {
-                        typeProperty.SetValue(metadata, paramType);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogDebug(ex, "Could not set ParameterType property on KernelParameterMetadata");
-                    }
-                }
-
-                // Try to set IsRequired property if it exists
-                var reqProp = metadataType.GetProperty("IsRequired");
-                if (reqProp != null && reqProp.CanWrite)
-                {
-                    try
-                    {
-                        reqProp.SetValue(metadata, paramInfo.Required);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogDebug(ex, "Could not set IsRequired property on KernelParameterMetadata");
-                    }
-                }
-
-                parameters.Add(metadata);
-            }
-
-            // Use reflection to set the parameters
-            var metadataProperty =
-                typeof(KernelFunction).GetProperty("Metadata", BindingFlags.Public | BindingFlags.Instance);
-            if (metadataProperty != null)
-            {
-                var metadata = metadataProperty.GetValue(function);
-                if (metadata != null)
-                {
-                    var parametersProperty = metadata.GetType()
-                        .GetProperty("Parameters", BindingFlags.Public | BindingFlags.Instance);
-                    if (parametersProperty != null && parametersProperty.CanWrite)
-                    {
-                        parametersProperty.SetValue(metadata, parameters.AsReadOnly());
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to set kernel function parameters from MCP parameters");
         }
     }
 
@@ -1330,7 +836,7 @@ public abstract partial class
     /// <summary>
     /// Calls a GAgent tool by executing the event handler
     /// </summary>
-    private async Task<object> CallGAgentToolAsync(GrainType grainType, Type eventType, KernelArguments args)
+    private async Task<object> CallGAgentToolAsync(GrainId grainId, Type eventType, KernelArguments args)
     {
         try
         {
@@ -1346,32 +852,7 @@ public abstract partial class
             // Map KernelArguments to event properties
             foreach (var kvp in args)
             {
-                var property = eventType.GetProperty(kvp.Key,
-                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (property != null && property.CanWrite)
-                {
-                    try
-                    {
-                        var value = kvp.Value;
-                        if (value != null)
-                        {
-                            // Convert JsonElement to appropriate type if needed
-                            if (value is JsonElement jsonElement)
-                            {
-                                value = ConvertJsonElementToPropertyType(jsonElement, property.PropertyType);
-                            }
-
-                            // Convert value to property type
-                            var convertedValue = Convert.ChangeType(value, property.PropertyType);
-                            property.SetValue(eventInstance, convertedValue);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogWarning(ex, "Failed to set property {PropertyName} on event {EventType}",
-                            property.Name, eventType.Name);
-                    }
-                }
+                JsonConversionHelper.TrySetPropertyValue(eventInstance, kvp.Key, kvp.Value);
             }
 
             // Cast to EventBase for the executor
@@ -1381,156 +862,13 @@ public abstract partial class
             }
 
             // Execute the event handler
-            var response = await _gAgentExecutor.ExecuteGAgentEventHandler(grainType, eventBase);
+            var response = await _gAgentExecutor.ExecuteGAgentEventHandler(grainId, eventBase);
             return response;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to call GAgent tool {GrainType}.{EventType}", grainType, eventType.Name);
+            Logger.LogError(ex, "Failed to call GAgent tool {GrainType}.{EventType}", grainId, eventType.Name);
             throw;
-        }
-    }
-
-    /// <summary>
-    /// Converts a JsonElement to the specified property type
-    /// </summary>
-    private object? ConvertJsonElementToPropertyType(JsonElement jsonElement, Type targetType)
-    {
-        if (targetType == typeof(string))
-            return jsonElement.GetString();
-
-        if (targetType == typeof(int) || targetType == typeof(int?))
-            return jsonElement.TryGetInt32(out var intValue) ? intValue : null;
-
-        if (targetType == typeof(long) || targetType == typeof(long?))
-            return jsonElement.TryGetInt64(out var longValue) ? longValue : null;
-
-        if (targetType == typeof(double) || targetType == typeof(double?))
-            return jsonElement.TryGetDouble(out var doubleValue) ? doubleValue : null;
-
-        if (targetType == typeof(bool) || targetType == typeof(bool?))
-            return jsonElement.ValueKind == JsonValueKind.True || jsonElement.ValueKind == JsonValueKind.False
-                ? jsonElement.GetBoolean()
-                : null;
-
-        if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
-            return jsonElement.TryGetDateTime(out var dateValue) ? dateValue : null;
-
-        if (targetType == typeof(Guid) || targetType == typeof(Guid?))
-            return jsonElement.TryGetGuid(out var guidValue) ? guidValue : null;
-
-        // For complex types, deserialize the JSON
-        try
-        {
-            var json = jsonElement.GetRawText();
-            return JsonSerializer.Deserialize(json, targetType);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Gets an MCP GAgent by server name
-    /// </summary>
-    private async Task<IMCPGAgent?> GetMCPGAgentAsync(string serverName)
-    {
-        try
-        {
-            var grainType = GrainType.Create($"mcpgagent/{serverName}");
-            var agentId = Guid.NewGuid();
-            var grain = GrainFactory.GetGrain<IMCPGAgent>(agentId, grainType.ToString());
-
-            return grain;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to get MCP GAgent for server: {ServerName}", serverName);
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Calls an MCP tool
-    /// </summary>
-    private async Task<object> CallMCPToolAsync(string serverName, string toolName, JsonElement parameters)
-    {
-        try
-        {
-            var mcpGAgent = await GetMCPGAgentAsync(serverName);
-            if (mcpGAgent == null)
-            {
-                throw new InvalidOperationException($"Failed to get MCP GAgent for server: {serverName}");
-            }
-
-            // Convert JsonElement parameters to dictionary
-            var arguments = new Dictionary<string, object>();
-            if (parameters.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var prop in parameters.EnumerateObject())
-                {
-                    arguments[prop.Name] = ConvertJsonElementToBasicType(prop.Value);
-                }
-            }
-
-            var toolResponse = await mcpGAgent.CallToolAsync(serverName, toolName, arguments);
-            var result = toolResponse?.Result;
-
-            // Convert JsonElement to basic types for Orleans serialization
-            if (result is JsonElement jsonResult)
-            {
-                return ConvertJsonElementToBasicType(jsonResult);
-            }
-
-            return result ?? new Dictionary<string, object> { ["result"] = "Success" };
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to call MCP tool {ServerName}.{ToolName}", serverName, toolName);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Converts a JsonElement to basic types for Orleans serialization
-    /// </summary>
-    private object ConvertJsonElementToBasicType(JsonElement element)
-    {
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.String:
-                return element.GetString() ?? string.Empty;
-            case JsonValueKind.Number:
-                if (element.TryGetInt32(out var intValue))
-                    return intValue;
-                if (element.TryGetInt64(out var longValue))
-                    return longValue;
-                return element.GetDouble();
-            case JsonValueKind.True:
-                return true;
-            case JsonValueKind.False:
-                return false;
-            case JsonValueKind.Null:
-                return null!;
-            case JsonValueKind.Array:
-                var list = new List<object>();
-                foreach (var item in element.EnumerateArray())
-                {
-                    list.Add(ConvertJsonElementToBasicType(item));
-                }
-
-                return list;
-            case JsonValueKind.Object:
-                var dict = new Dictionary<string, object>();
-                foreach (var property in element.EnumerateObject())
-                {
-                    dict[property.Name] = ConvertJsonElementToBasicType(property.Value);
-                }
-
-                return dict;
-            default:
-                return element.ToString();
         }
     }
 }

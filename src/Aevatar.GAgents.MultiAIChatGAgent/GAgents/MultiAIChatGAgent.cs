@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Common;
@@ -24,7 +26,17 @@ public abstract class MultiAIChatGAgent<TState, TStateLogEvent, TEvent, TConfigu
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult("Chat Agent");
+        var descriptionInfo = new AgentDescriptionInfo
+        {
+            Id = "MultiAIChatGAgent",
+            Name = "Multi-AI Chat Agent",
+            L1Description = "Multi-model AI chat agent supporting multiple LLM providers with intelligent model switching",
+            L2Description = "Sophisticated chat agent that integrates multiple AI models (GPT, Claude, Gemini) with automatic model selection based on query type, load balancing, and fallback mechanisms for optimal user experience.",
+            Category = "Chat",
+            Capabilities = new List<string> { "multi-model-chat", "load-balancing", "fallback-mechanisms", "intelligent-switching" },
+            Tags = new List<string> { "chat", "multi-ai", "llm", "load-balancing" }
+        };
+        return Task.FromResult(JsonConvert.SerializeObject(descriptionInfo));
     }
 
     protected override async Task PerformConfigAsync(TConfiguration configuration)
