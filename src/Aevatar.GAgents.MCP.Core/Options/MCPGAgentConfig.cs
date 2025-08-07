@@ -11,6 +11,5 @@ public class MCPGAgentConfig : MemberConfigDto
     public MCPServerConfig ServerConfig { get; set; } = new();
     
     [Id(1)] 
-    [Range(typeof(TimeSpan), "00:00:01", "00:10:00", ErrorMessage = "Request Timeout must be between 1 second and 10 minutes")]
     public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
 }
