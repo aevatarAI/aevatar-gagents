@@ -27,13 +27,11 @@ public class SelfLLMConfig
     [Id(1)] public ModelIdEnum ModelId { get; set; }
     
     [Id(2)] 
-    [Required(ErrorMessage = "Model Name is required")]
-    [StringLength(200, MinimumLength = 1, ErrorMessage = "Model Name must be between 1 and 200 characters")]
+    [StringLength(200, ErrorMessage = "Model Name must not exceed 200 characters")]
     public string ModelName { get; set; }
     
     [Id(4)] 
-    [Required(ErrorMessage = "API Key is required")]
-    [StringLength(500, MinimumLength = 1, ErrorMessage = "API Key must be between 1 and 500 characters")]
+    [StringLength(500, ErrorMessage = "API Key must not exceed 500 characters")]
     public string ApiKey { get; set; }
     
     [Id(3)] 
