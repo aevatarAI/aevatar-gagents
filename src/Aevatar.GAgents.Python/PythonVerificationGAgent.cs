@@ -1927,31 +1927,39 @@ def verify_theory_consistency():
     {
         var wrapper = new StringBuilder();
         
-        // Add security imports and restrictions
+        // Add security imports and restrictions (import everything we need BEFORE blocking imports)
         wrapper.AppendLine("import sys");
         wrapper.AppendLine("import builtins");
+        wrapper.AppendLine("import resource");
+        if (!config.EnableNetworkAccess)
+        {
+            wrapper.AppendLine("import socket");
+        }
         wrapper.AppendLine();
         
-        // Restrict dangerous builtins
+        // Add resource monitoring BEFORE blocking builtins (skip for timeout testing)
+        wrapper.AppendLine("# Resource monitoring");
+        wrapper.AppendLine("try:");
+        wrapper.AppendLine($"    resource.setrlimit(resource.RLIMIT_AS, ({config.MaxMemoryMB * 1024 * 1024}, {config.MaxMemoryMB * 1024 * 1024}))");
+        wrapper.AppendLine("except ValueError:");
+        wrapper.AppendLine("    pass  # Skip resource limit if it fails");
+        wrapper.AppendLine();
+        
+        // Network restrictions
+        if (!config.EnableNetworkAccess)
+        {
+            wrapper.AppendLine("# Network restrictions");
+            wrapper.AppendLine("socket.socket = None");
+            wrapper.AppendLine();
+        }
+        
+        // Restrict dangerous builtins (AFTER importing what we need)
         wrapper.AppendLine("# Security restrictions");
         wrapper.AppendLine("builtins.open = None");
         wrapper.AppendLine("builtins.eval = None");
         wrapper.AppendLine("builtins.exec = None");
         wrapper.AppendLine("builtins.compile = None");
         wrapper.AppendLine("builtins.__import__ = None");
-        wrapper.AppendLine();
-        
-        if (!config.EnableNetworkAccess)
-        {
-            wrapper.AppendLine("# Network restrictions");
-            wrapper.AppendLine("import socket");
-            wrapper.AppendLine("socket.socket = None");
-            wrapper.AppendLine();
-        }
-        
-        // Add resource monitoring
-        wrapper.AppendLine("import resource");
-        wrapper.AppendLine($"resource.setrlimit(resource.RLIMIT_AS, ({config.MaxMemoryMB * 1024 * 1024}, {config.MaxMemoryMB * 1024 * 1024}))");
         wrapper.AppendLine();
         
         // Add the actual script

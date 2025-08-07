@@ -485,10 +485,15 @@ import math
         await pythonAgent.InitializeAsync();
 
         var longRunningScript = @"
-import time
 print('Starting long operation...')
-time.sleep(10)  # This should timeout after 3 seconds
+# CPU intensive loop instead of time.sleep (which requires import)
+count = 0
+for i in range(100000000):  # Large range to create long-running operation
+    count += i
+    if i % 10000000 == 0:
+        print(f'Progress: {i}')
 print('This should never be printed')
+print(f'Final count: {count}')
 ";
 
         var timeoutConfig = new PythonEnvironmentConfig
