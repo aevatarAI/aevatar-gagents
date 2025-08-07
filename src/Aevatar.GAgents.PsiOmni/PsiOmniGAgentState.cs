@@ -32,6 +32,7 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
     [Id(14)] public Dictionary<string, Artifact> Artifacts { get; set; } = new();
     [Id(15)] public string DraftResponse { get; set; } = string.Empty;
+    [Id(16)] public string Name { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -44,7 +45,8 @@ public class PsiOmniGAgentStateLogEvent : StateLogEventBase<PsiOmniGAgentStateLo
 public class InitializeEvent : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public string ParentId { get; set; } = string.Empty;
-    [Id(1)] public int Depth { get; set; } = 0;
+    [Id(1)] public string Name { get; set; } = string.Empty;
+    [Id(2)] public int Depth { get; set; } = 0;
     [Id(3)] public string Description { get; set; } = string.Empty;
     [Id(4)] public string Examples { get; set; } = string.Empty;
 }

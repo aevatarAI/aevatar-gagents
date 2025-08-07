@@ -38,17 +38,19 @@ public class AgentExample : IEquatable<AgentExample>
 [GenerateSerializer]
 public class AgentDescriptor : IEquatable<AgentDescriptor>
 {
-    [Id(0)] public string AgentId { get; set; } = string.Empty;
-    [Id(1)] public string AgentType { get; set; } = string.Empty; // Orchestrator, Specialized
-    [Id(2)] public string Description { get; set; } = string.Empty;
-    [Id(3)] public List<AgentExample> Examples { get; set; } = new();
-    [Id(4)] public List<ToolDefinition> Tools { get; set; } = new();
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string AgentId { get; set; } = string.Empty;
+    [Id(2)] public string AgentType { get; set; } = string.Empty; // Orchestrator, Specialized
+    [Id(3)] public string Description { get; set; } = string.Empty;
+    [Id(4)] public List<AgentExample> Examples { get; set; } = new();
+    [Id(5)] public List<ToolDefinition> Tools { get; set; } = new();
 
     public bool Equals(AgentDescriptor? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return AgentId == other.AgentId &&
+        return Name == other.Name &&
+            AgentId == other.AgentId &&
                AgentType == other.AgentType &&
                Description == other.Description &&
                Examples.SequenceEqual(other.Examples) &&
@@ -92,9 +94,10 @@ public class RealizationResult
 [GenerateSerializer]
 public class AgentCall
 {
-    [Id(0)] public string AgentId { get; set; } = string.Empty;
-    [Id(1)] public string CallId { get; set; } = string.Empty;
-    [Id(2)] public string Message { get; set; } = string.Empty;
+    [Id(0)] public string AgentName { get; set; } = string.Empty;
+    [Id(1)] public string AgentId { get; set; } = string.Empty;
+    [Id(2)] public string CallId { get; set; } = string.Empty;
+    [Id(3)] public string Message { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]

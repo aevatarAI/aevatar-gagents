@@ -115,6 +115,10 @@ public partial class
                                                Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
                                                Dispatch a task only when all its dependencies are completed. Use the id of the todo item as the CallId for when using call_agent tool.
                                                IMPORTANT: When invoking call_agent, you must provide the information that is self-sufficient and include all required information from dependency tasks into the knowledge field.
+                                               DO NOT dispatch multiple sub-tasks to the same agent. Instead, wait until the agent to reply with the result before dispatching the next sub-task.
+                                               If you are not sure whether the agents are busy, use the query_existing_agents tool to find the information.
+                                               If you falsely dispatch multiple sub-tasks to the same agent, the call_agent tool will return an error. In this case, you can dispatch the sub-task again after the agent has replied.
+
                                                ### Sub-tasks for Self
                                                For information synthesis and summarization work, you have to assign it to yourself.
                                                NEVER use call_agent to call self. Do the work directly instead.
@@ -203,9 +207,11 @@ public partial class
 
         // Initialize tracing after the grain is activated to ensure agent ID is available
         InitializeTracing();
+        State.Name = configuration.Name;
 
         RaiseEventWithTracing(new InitializeEvent
         {
+            Name = configuration.Name,
             ParentId = configuration.ParentId,
             Depth = configuration.Depth,
             Description = configuration.Description,
@@ -235,6 +241,7 @@ public partial class
 
             var selfReport = new AgentDescriptor
             {
+                Name = State.Name,
                 AgentId = State.AgentId,
                 AgentType = State.RealizationStatus == RealizationStatus.Orchestrator ? "orchestrator" : "specialized",
                 Description = State.Description,
@@ -619,6 +626,7 @@ public partial class
         {
             case InitializeEvent payload:
                 LogEventDebug("Setting depth: {Depth}", payload.Depth);
+                state.Name = payload.Name;
                 state.Depth = payload.Depth;
                 state.UserAgentId = payload.ParentId;
                 state.Description = payload.Description + $"<examples>{payload.Examples}</examples>";
@@ -715,7 +723,9 @@ public partial class
                 var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                state.AgentUsage.Remove(payload.Event.SenderAgentId);
+                var agentDescriptor = state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
+                if(agentDescriptor != null)
+                    state.AgentUsage.Remove(agentDescriptor.Name);
                 ScheduleTask(async () =>
                 {
                     LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
@@ -731,7 +741,7 @@ public partial class
 
                 foreach (var newAgent in payload.NewAgents)
                 {
-                    state.ChildAgents.TryAdd(newAgent.AgentId, newAgent);
+                    state.ChildAgents.TryAdd(newAgent.Name, newAgent);
                     LogEventDebug("Added child agent: {AgentId} ({AgentType})", newAgent.AgentId, newAgent.AgentType);
                 }
 
@@ -748,17 +758,22 @@ public partial class
 
                 break;
             case UpdateChildEvent payload:
+            {
+                if (payload.LastChildDescriptor.Name.IsNullOrEmpty())
+                    break;
+                    
                 LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}",
                     payload.LastChildDescriptor.AgentId, payload.LastChildDescriptor.AgentType);
                 AgentDescriptor? oldObj;
                 // Child may proceed first and we receive this event before we process our own NewAgentsCreatedEvent event
-                if (!state.ChildAgents.TryGetValue(payload.LastChildDescriptor.AgentId, out oldObj))
+                if (!state.ChildAgents.TryGetValue(payload.LastChildDescriptor.Name, out oldObj))
                 {
                     oldObj = new AgentDescriptor()
                     {
+                        Name = payload.LastChildDescriptor.Name,
                         AgentId = payload.LastChildDescriptor.AgentId
                     };
-                    state.ChildAgents[payload.LastChildDescriptor.AgentId] = oldObj;
+                    state.ChildAgents[payload.LastChildDescriptor.Name] = oldObj;
                 }
 
                 var oldObjClone = oldObj.DeepClone();
@@ -768,7 +783,7 @@ public partial class
                 var refreshDescription = !oldObjClone.Equals(newObjClone);
 
                 LogEventDebug("Child agent update: RefreshDescription={RefreshDescription}", refreshDescription);
-                state.ChildAgents[payload.LastChildDescriptor.AgentId] = payload.LastChildDescriptor;
+                state.ChildAgents[payload.LastChildDescriptor.Name] = payload.LastChildDescriptor;
                 ScheduleTask(async () =>
                 {
                     if (refreshDescription)
@@ -777,6 +792,7 @@ public partial class
                     }
                 });
                 break;
+            }
             case GrowChatHistoryEvent payload:
                 state.ChatHistory.AddRange(payload.NewMessages);
                 foreach (var psiOmniChatMessage in payload.NewMessages)
@@ -883,11 +899,12 @@ public partial class
                 state.DraftResponse = payload.DraftResponse;
                 break;
             case CallAgent payload:
-                LogEventInfo("Calling agent: TargetAgentId={TargetAgentId}, CallId={CallId}",
+                LogEventInfo("Calling agent: AgentName={}, TargetAgentId={TargetAgentId}, CallId={CallId}",
+                    payload.AgentCall.AgentName,
                     payload.AgentCall.AgentId, payload.AgentCall.CallId);
-                if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentId))
+                if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentName))
                 {
-                    state.AgentUsage.Add(payload.AgentCall.AgentId, payload.AgentCall.CallId);
+                    state.AgentUsage.Add(payload.AgentCall.AgentName, payload.AgentCall.CallId);
                 }
 
                 break;

@@ -17,12 +17,13 @@ public partial class PsiOmniGAgent
     {
         var result = State.ChildAgents.Values.Select(x => new AgentWithUsage
         {
+            Name = x.Name,
             AgentId = x.AgentId,
             AgentType = x.AgentType,
             Description = x.Description,
             Examples = x.Examples,
             Tools = x.Tools,
-            HandlingTask = State.AgentUsage.GetOrDefault(x.AgentId) ?? string.Empty
+            HandlingTask = State.AgentUsage.GetOrDefault(x.Name) ?? string.Empty
         }).ToList();
         return await Task.FromResult(result);
     }
@@ -100,8 +101,8 @@ public partial class PsiOmniGAgent
     [KernelFunction("create_agent")]
     [Description("Creates a new agent.")]
     public async Task<string> CreateAgentAsync(
-        [Description("The ID of the parent agent.")]
-        string parentAgentId,
+        [Description("A unique name of this agent.")]
+        string name,
         [Description(
             "The description of the agent. Include all necessary information such as the persona, knowledge and capabilities.")]
         string description,
@@ -109,6 +110,11 @@ public partial class PsiOmniGAgent
         string exampleTasks
     )
     {
+        if (State.ChildAgents.ContainsKey(name))
+        {
+            return $"Failed. Agent with name {name} already exists. Please pick another name.";
+        }
+        var parentAgentId = this.GetGrainId().ToString();
         try
         {
             // Create agent configuration with custom prompt
@@ -143,9 +149,12 @@ public partial class PsiOmniGAgent
 
             var descriptor = new AgentDescriptor
             {
+                Name = name,
                 AgentId = agentId.ToString(),
                 Description = description
             };
+            
+            State.ChildAgents.Add(name, descriptor);
 
             RaiseEventWithTracing(new AddNewAgent()
             {
@@ -167,13 +176,19 @@ public partial class PsiOmniGAgent
     [KernelFunction("call_agent")]
     [Description("Calls any ConfigurableAgentGrain by its ID with a natural language query")]
     public async Task<string> CallAgentAsync(
-        [Description("The unique ID of the agent to call."), Required]
-        string agentId,
+        [Description("The unique name of the agent to call."), Required]
+        string name,
         [Description("The call ID of this call.")]
         string callId,
         [Description("The task to be sent.")] TaskDispatch task
     )
     {
+        if (!State.ChildAgents.TryGetValue(name, out var agentDescriptor))
+        {
+            return $"Failed to call agent with name {name}: agent is not found.";
+        }
+
+        var agentId = agentDescriptor.AgentId;
         var message = $"Task: {task.Task}\n\nBackground: {task.Background}";
         if (!task.Knowledge.IsNullOrEmpty())
         {
@@ -189,10 +204,10 @@ public partial class PsiOmniGAgent
 
         return await TraceMethodAsync(async () =>
         {
-            if (State.AgentUsage.TryGetValue(agentId, out var anotherCallId))
+            if (State.AgentUsage.TryGetValue(name, out var anotherCallId))
             {
                 Logger.LogWarning("Agent {AgentId} is in use. Hanlding another call: {CallId}", agentId, anotherCallId);
-                return "Failed to call agent. Agent is handling another call.";
+                return $"Failed to call agent {name}. Agent is handling another call.";
             }
             Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId,
                 message);
@@ -215,6 +230,7 @@ public partial class PsiOmniGAgent
 
                 var call = new AgentCall
                 {
+                    AgentName = name,
                     AgentId = agentId,
                     CallId = callId,
                     Message = message
@@ -222,12 +238,12 @@ public partial class PsiOmniGAgent
 
                 LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
                     agentId, callId);
-                State.AgentUsage.TryAdd(agentId, callId);
+                State.AgentUsage.TryAdd(name, callId);
                 RaiseEventWithTracing(new CallAgent()
                 {
                     AgentCall = call
                 });
-                return $"Agent call sent: {JsonSerializer.Serialize(call)}";
+                return $"Made a call to agent {name}: {JsonSerializer.Serialize(call)}";
             }
             catch (Exception ex)
             {
