@@ -170,6 +170,11 @@ public partial class
                                                </example3>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
+                                               """ + 
+                                               """
+                                               ## ALWAYS Progress
+                                               Once you plan to do something, progress with the plan immediately.
+                                               DO NOT return a <tought> without any tool calls when the task is not complete and you are not awaiting any child agent's response.
                                                """,
             [RealizationStatus.Specialized] = "" // TODO:
         };
