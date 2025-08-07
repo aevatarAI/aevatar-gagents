@@ -176,14 +176,16 @@ public partial class PsiOmniGAgent
     [KernelFunction("call_agent")]
     [Description("Calls any ConfigurableAgentGrain by its ID with a natural language query")]
     public async Task<string> CallAgentAsync(
-        [Description("The unique name of the agent to call."), Required]
+        [Description("The name of the agent to call. Don't use agentId here."), Required]
         string name,
         [Description("The call ID of this call.")]
         string callId,
         [Description("The task to be sent.")] TaskDispatch task
     )
     {
-        if (!State.ChildAgents.TryGetValue(name, out var agentDescriptor))
+        // We match both agent id and name just in case the LLM confuses (we observed this)
+        var agentDescriptor = State.ChildAgents.Values.FirstOrDefault(a => a.AgentId == name || a.Name == name);
+        if (agentDescriptor == null)
         {
             return $"Failed to call agent with name {name}: agent is not found.";
         }

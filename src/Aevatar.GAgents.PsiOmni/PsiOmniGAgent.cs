@@ -595,6 +595,7 @@ public partial class
                 Content = finalResult.Response,
                 Artifacts = finalResult.Artifacts,
                 SenderAgentId = this.GetGrainId().ToString(),
+                SenderAgentName = State.Name
             };
 
             LogEventInfo(
@@ -716,7 +717,7 @@ public partial class
                 break;
             case ReceiveAgentMessageEvent payload:
             {
-                var content = $"Received reply from agent ({payload.Event.SenderAgentId}):\n\n{payload.Event.Content}";
+                var content = $"Received reply from agent ({payload.Event.SenderAgentName}):\n\n{payload.Event.Content}";
                 if (!payload.Event.Artifacts.IsNullOrEmpty())
                 {
                     var artifacts = payload.Event.Artifacts.Select(
