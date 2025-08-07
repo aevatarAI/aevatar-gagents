@@ -24,7 +24,7 @@ public class PythonEnvironmentConfig
     [Id(9)] public bool IsSandboxed { get; set; } = true;
     [Id(10)] public string PythonCommand { get; set; } = string.Empty; // Auto-detect if empty
     [Id(11)] public bool AutoDetectPython { get; set; } = true;
-    [Id(12)] public List<string> PreferredPythonCommands { get; set; } = new() { "python3", "python", "python3.9", "python3.8", "python3.10", "python3.11", "python3.12" };
+    [Id(12)] public List<string> PreferredPythonCommands { get; set; } = new() { "python3", "python" };
 }
 
 /// <summary>
@@ -656,27 +656,23 @@ public class PythonVerificationGAgent : GAgentBase<PythonVerificationState, Pyth
                             };
                         }
 
-                        using (var process = Process.Start(processInfo))
+                        using var process = Process.Start(processInfo);
+                        if (process != null)
                         {
-                            if (process != null)
-                            {
-                                await process.WaitForExitAsync();
-                                var stdout = await process.StandardOutput.ReadToEndAsync();
-                                var stderr = await process.StandardError.ReadToEndAsync();
+                            await process.WaitForExitAsync();
+                            var stdout = await process.StandardOutput.ReadToEndAsync();
+                            var stderr = await process.StandardError.ReadToEndAsync();
                                 
-                                if (process.ExitCode == 0)
-                                {
-                                    Logger.LogInformation("Successfully installed package {Package} using {Strategy}", package, strategy.Name);
-                                    packageInstalled = true;
-                                    installationResults.Add((package, true, string.Empty));
-                                    break; // Exit the strategy loop on success
-                                }
-                                else
-                                {
-                                    lastError = !string.IsNullOrEmpty(stderr) ? stderr : stdout;
-                                    Logger.LogDebug("Strategy {Strategy} failed for package {Package}: {Error}", strategy.Name, package, lastError);
-                                }
+                            if (process.ExitCode == 0)
+                            {
+                                Logger.LogInformation("Successfully installed package {Package} using {Strategy}", package, strategy.Name);
+                                packageInstalled = true;
+                                installationResults.Add((package, true, string.Empty));
+                                break; // Exit the strategy loop on success
                             }
+
+                            lastError = !string.IsNullOrEmpty(stderr) ? stderr : stdout;
+                            Logger.LogDebug("Strategy {Strategy} failed for package {Package}: {Error}", strategy.Name, package, lastError);
                         }
                     }
                     catch (Exception ex)
@@ -731,16 +727,14 @@ public class PythonVerificationGAgent : GAgentBase<PythonVerificationState, Pyth
                     CreateNoWindow = true
                 };
 
-                using (var process = Process.Start(processInfo))
+                using var process = Process.Start(processInfo);
+                if (process != null)
                 {
-                    if (process != null)
+                    await process.WaitForExitAsync();
+                    if (process.ExitCode == 0)
                     {
-                        await process.WaitForExitAsync();
-                        if (process.ExitCode == 0)
-                        {
-                            Logger.LogDebug("Found working pip command: {Command}", command);
-                            return command;
-                        }
+                        Logger.LogDebug("Found working pip command: {Command}", command);
+                        return command;
                     }
                 }
             }
@@ -794,17 +788,15 @@ public class PythonVerificationGAgent : GAgentBase<PythonVerificationState, Pyth
                         UseShellExecute = false,
                         CreateNoWindow = true
                     };
-                    
-                    using (var process = Process.Start(testProcess))
+
+                    using var process = Process.Start(testProcess);
+                    if (process != null)
                     {
-                        if (process != null)
+                        await process.WaitForExitAsync();
+                        if (process.ExitCode == 0)
                         {
-                            await process.WaitForExitAsync();
-                            if (process.ExitCode == 0)
-                            {
-                                workingPythonCommand = cmd;
-                                break;
-                            }
+                            workingPythonCommand = cmd;
+                            break;
                         }
                     }
                 }
@@ -910,14 +902,12 @@ public class PythonVerificationGAgent : GAgentBase<PythonVerificationState, Pyth
                 CreateNoWindow = true
             };
 
-            using (var process = Process.Start(processInfo))
+            using var process = Process.Start(processInfo);
+            if (process != null)
             {
-                if (process != null)
-                {
-                    await process.WaitForExitAsync();
-                    var output = await process.StandardOutput.ReadToEndAsync();
-                    return output.Trim();
-                }
+                await process.WaitForExitAsync();
+                var output = await process.StandardOutput.ReadToEndAsync();
+                return output.Trim();
             }
         }
         catch (Exception ex)
