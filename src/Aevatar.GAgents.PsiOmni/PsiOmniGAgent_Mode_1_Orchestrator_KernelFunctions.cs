@@ -133,6 +133,7 @@ public partial class PsiOmniGAgent
             // Create and initialize the new agent
             var psi = await _gAgentFactory.GetGAgentAsync("omni", "psi", new PsiOmniGAgentConfig()
             {
+                Name = name,
                 ParentId = parentAgentId,
                 Description = description,
                 Examples = exampleTasks,
