@@ -24,14 +24,11 @@ public class SelfLLMConfig
     
     [Required] [Id(1)] public ModelIdEnum ModelId { get; set; }
     
-    [Id(2)] 
-    public string ModelName { get; set; }
+    [Id(2)] public string ModelName { get; set; }
     
-    [Id(4)] 
-    public string ApiKey { get; set; }
+    [Id(4)] public string ApiKey { get; set; }
     
-    [Id(3)] 
-    public string Endpoint { get; set; }
+    [Id(3)] public string Endpoint { get; set; }
     
     [Id(5)] public Dictionary<string, object>? Memo { get; set; } = null;
 
