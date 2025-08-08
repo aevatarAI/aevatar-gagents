@@ -12,6 +12,5 @@ public class MemberConfigDto:ConfigurationBase
     [Id(0)] 
     [Required(ErrorMessage = "Member Name is required")]
     [StringLength(100, MinimumLength = 1, ErrorMessage = "Member Name must be between 1 and 100 characters")]
-    [RegularExpression(@"^[a-zA-Z0-9\s\-\_\.]+$", ErrorMessage = "Member Name can only contain letters, numbers, spaces, hyphens, underscores and dots")]
     public string MemberName { get; set; }
 }
