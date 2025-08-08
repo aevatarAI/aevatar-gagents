@@ -9,11 +9,11 @@ namespace Aevatar.GAgents.AIGAgent.Dtos;
 [GenerateSerializer]
 public class LLMConfigDto
 {
-    [Id(0)] 
+    [Id(0)]
     [StringLength(100, MinimumLength = 1, ErrorMessage = "System LLM must be between 1 and 100 characters")]
-    public string? SystemLLM { get; set; }
+    public string? SystemLLM { get; set; } = "OpenAI";
     
-    [Id(1)] 
+    [Id(1)]
     public SelfLLMConfig? SelfLLMConfig { get; set; } = null;
 }
 
