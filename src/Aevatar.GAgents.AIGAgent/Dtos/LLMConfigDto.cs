@@ -20,10 +20,8 @@ public class LLMConfigDto
 [GenerateSerializer]
 public class SelfLLMConfig
 {
-    [Required(ErrorMessage = "LLM Provider is required")] 
     [Id(0)] public LLMProviderEnum ProviderEnum { get; set; }
     
-    [Required(ErrorMessage = "Model ID is required")] 
     [Id(1)] public ModelIdEnum ModelId { get; set; }
     
     [Id(2)] 
