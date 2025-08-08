@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Collections.Generic;
-using System.Text.Json;
+using System.Linq;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
@@ -144,13 +144,19 @@ public partial class
                                                """
                                                ## Output Format
                                                Your output must contain the following three tags.
-                                               1. When the task is not completed (pending more todo items), add progress in a <thought> tag
+                                               1. When the task is not completed (pending more todo items), add progress in a <thought> tag.
+                                                  If you are handling a sub-task by yourself, use write_artifact tool to output the step wise result.
+                                                  Alternatively, for short result, you can directly output the step wise result using a <step_wise_result> tag.
                                                2. When the task is completed, provide your final response to user in a <repsonse> tag
                                                3. Optionally, if artifacts need to be returned to user. Include one or more <artifact> tag
+
                                                You MUST follow this format. An output without any of the tags is not valid.
                                                <thought>
                                                Provide progress and status update here.
                                                </thought>
+                                               <step_wise_result>
+                                               Step wise result here.
+                                               </step_wise_result>
                                                <response>
                                                Final response to user. This part is optional only when the task is complete.
                                                </response>
@@ -173,6 +179,14 @@ public partial class
                                                </response>
                                                <artifact name="research_report.md" format="markdown" />
                                                </example3>
+                                               <example4>
+                                               <thought>
+                                               I have all the information. Let me synthesis the information.
+                                               </thought>
+                                               <step_wise_result>
+                                               The skills required for a software engineer include ......
+                                               </step_wise_result>
+                                               </example4>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
                                                """ + 
@@ -903,6 +917,37 @@ public partial class
                         await ReplyAsync(finalResult);
                         LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
                     });
+                }
+                else
+                {
+                    // Check for stuck state: agent returned thought without tool calls and no InProgress tasks
+                    var lastMessage = state.ChatHistory.LastOrDefault();
+                    var hasToolCalls = lastMessage?.ToolCalls?.Count > 0;
+                    // Check if there are any InProgress tasks that are not assigned to this agent
+                    var hasInProgressTasks = state.TodoList.Any(x => x.Status == TodoStatus.InProgress && x.AssigneeAgentId != this.GetGrainId().ToString());
+                    var hasPendingTasks = state.TodoList.Any(x => x.Status == TodoStatus.Pending || (x.Status == TodoStatus.InProgress && x.AssigneeAgentId == this.GetGrainId().ToString()));
+                    
+                    // Extract thought to check if agent was thinking
+                    var hasThought = false;
+                    if (state.RealizationStatus == RealizationStatus.Orchestrator && lastMessage != null)
+                    {
+                        var content = lastMessage.Content ?? string.Empty;
+                        hasThought = content.Contains("<thought>") && content.Contains("</thought>");
+                    }
+                    
+                    // If the agent returned thought without tool calls, no InProgress tasks but has pending tasks, inject a <crank> message to continue processing.
+                    if (hasThought && !hasToolCalls && !hasInProgressTasks && hasPendingTasks)
+                    {
+                        LogEventInfo("Detected stuck state: agent returned thought without tool calls, no InProgress tasks but has pending tasks. Injecting <crank> message to continue processing.");
+                        
+                        // Append crank message and schedule task run later
+                        var crankMessage = PsiOmniChatMessage.CreateUserMessage("<crank>Continue processing the pending tasks.</crank>");
+                        crankMessage.Metadata["IsCrank"] = "true";
+                        state.ChatHistory.Add(crankMessage);
+                        
+                        // Schedule task run later
+                        ScheduleTask(async () => await RunAsync("crank message continuation"));
+                    }
                 }
 
                 break;
