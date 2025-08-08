@@ -24,11 +24,18 @@ public class SelfLLMConfig
     
     [Required] [Id(1)] public ModelIdEnum ModelId { get; set; }
     
-    [Id(2)] public string ModelName { get; set; }
+    [Id(2)] 
+    [StringLength(200, ErrorMessage = "Model Name must not exceed 200 characters")]
+    public string ModelName { get; set; }
     
-    [Id(4)] public string ApiKey { get; set; }
+    [Id(4)] 
+    [StringLength(500, ErrorMessage = "API Key must not exceed 500 characters")]
+    public string ApiKey { get; set; }
     
-    [Id(3)] public string Endpoint { get; set; }
+    [Id(3)] 
+    [StringLength(500, ErrorMessage = "Endpoint must not exceed 500 characters")]
+    [Url(ErrorMessage = "Endpoint must be a valid URL")]
+    public string Endpoint { get; set; }
     
     [Id(5)] public Dictionary<string, object>? Memo { get; set; } = null;
 
