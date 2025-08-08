@@ -20,9 +20,9 @@ public class LLMConfigDto
 [GenerateSerializer]
 public class SelfLLMConfig
 {
-    [Id(0)] public LLMProviderEnum ProviderEnum { get; set; }
+    [Required] [Id(0)] public LLMProviderEnum ProviderEnum { get; set; }
     
-    [Id(1)] public ModelIdEnum ModelId { get; set; }
+    [Required] [Id(1)] public ModelIdEnum ModelId { get; set; }
     
     [Id(2)] 
     public string ModelName { get; set; }
