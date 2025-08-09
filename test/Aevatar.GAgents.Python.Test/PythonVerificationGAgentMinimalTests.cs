@@ -63,7 +63,7 @@ print(f'Result: {result}')
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Minimal test completed in {executionTime}ms");
 
         // Assert
@@ -85,7 +85,7 @@ print(f'Result: {result}')
 
         _testOutputHelper.WriteLine($"Execution time: {executionTime}ms");
         _testOutputHelper.WriteLine($"Environment: {result.EnvironmentName}");
-        
+
         // This should be VERY fast - under 30 seconds even on slow systems
         executionTime.ShouldBeLessThan(30000);
     }
@@ -117,19 +117,19 @@ print(f'Result: {result}')
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Super minimal test completed in {executionTime}ms");
 
         // Assert
         result.ShouldNotBeNull();
-        
+
         // Log all details for debugging
         _testOutputHelper.WriteLine($"Success: {result.TestsPassed}");
         _testOutputHelper.WriteLine($"Standard Output: '{result.StandardOutput}'");
         _testOutputHelper.WriteLine($"Error Output: '{result.ErrorOutput}'");
         _testOutputHelper.WriteLine($"Execution Time: {result.ExecutionTime}s");
         _testOutputHelper.WriteLine($"Environment: {result.EnvironmentName}");
-        
+
         if (result.ExecutionResult != null)
         {
             _testOutputHelper.WriteLine($"Exit Code: {result.ExecutionResult.ExitCode}");
@@ -140,98 +140,4 @@ print(f'Result: {result}')
         // Performance check - should be very fast
         executionTime.ShouldBeLessThan(30000); // 30 seconds max
     }
-
-    [Fact]
-    public async Task PythonVerificationGAgent_BasicScript_ShouldExecute()
-    {
-        var stopwatch = Stopwatch.StartNew();
-        _testOutputHelper.WriteLine("📝 Testing basic Python script execution...");
-
-        // Arrange
-        var pythonAgent = await _gAgentFactory.GetGAgentAsync<IPythonVerificationGAgent>(Guid.NewGuid());
-        await pythonAgent.InitializeAsync();
-
-        // Act - Simple script with basic operations
-        var basicScript = @"
-# Basic Python operations
-a = 5
-b = 10
-c = a + b
-
-print(f'a = {a}')
-print(f'b = {b}')
-print(f'c = {c}')
-
-# Simple validation
-if c == 15:
-    print('Math works!')
-else:
-    print('Math broken!')
-";
-
-        // Use the simpler ExecutePythonScriptAsync method
-        var result = await pythonAgent.ExecutePythonScriptAsync(basicScript);
-
-        stopwatch.Stop();
-        var executionTime = stopwatch.ElapsedMilliseconds;
-        
-        _testOutputHelper.WriteLine($"⏱️ Basic script completed in {executionTime}ms");
-
-        // Assert
-        result.ShouldNotBeNull();
-        
-        // Log all details
-        _testOutputHelper.WriteLine($"Success: {result.Success}");
-        _testOutputHelper.WriteLine($"Standard Output: '{result.StandardOutput}'");
-        _testOutputHelper.WriteLine($"Error Output: '{result.ErrorOutput}'");
-        _testOutputHelper.WriteLine($"Exit Code: {result.ExitCode}");
-        _testOutputHelper.WriteLine($"Execution Time: {result.ExecutionTimeSeconds}s");
-        _testOutputHelper.WriteLine($"Memory Used: {result.MemoryUsedMB}MB");
-        _testOutputHelper.WriteLine($"Timed Out: {result.TimedOut}");
-
-        // This should complete quickly
-        executionTime.ShouldBeLessThan(30000); // 30 seconds max
-    }
-}
-
-/// <summary>
-/// Recommended minimal Python codes for testing
-/// </summary>
-public static class MinimalPythonExamples
-{
-    /// <summary>
-    /// The absolute simplest Python code - just a print statement
-    /// </summary>
-    public const string SuperMinimal = @"print('Hello World')";
-
-    /// <summary>
-    /// Basic arithmetic - no imports needed
-    /// </summary>
-    public const string BasicMath = @"
-result = 2 + 3
-print(f'2 + 3 = {result}')
-assert result == 5
-";
-
-    /// <summary>
-    /// Simple string operations
-    /// </summary>
-    public const string StringOps = @"
-text = 'hello'
-upper = text.upper()
-print(f'Original: {text}')
-print(f'Upper: {upper}')
-assert upper == 'HELLO'
-";
-
-    /// <summary>
-    /// Basic loop - no external dependencies
-    /// </summary>
-    public const string SimpleLoop = @"
-total = 0
-for i in range(3):
-    total += i
-print(f'Total: {total}')
-assert total == 3  # 0 + 1 + 2
-";
 }

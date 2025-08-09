@@ -20,7 +20,7 @@ public sealed class PythonVerificationGAgentPerformanceTests : AevatarPythonGAge
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly IGAgentFactory _gAgentFactory;
-    
+
     // Cache agent instances to avoid repeated initialization overhead
     private static readonly Dictionary<string, IPythonVerificationGAgent> _agentCache = new();
     private static readonly Lock CacheLock = new();
@@ -51,10 +51,10 @@ public sealed class PythonVerificationGAgentPerformanceTests : AevatarPythonGAge
             // Create new agent with predictable GUID for caching
             var guidBytes = System.Text.Encoding.UTF8.GetBytes(cacheKey.PadRight(16));
             var agentGuid = new Guid(guidBytes.Take(16).ToArray());
-            
+
             var agent = _gAgentFactory.GetGAgentAsync<IPythonVerificationGAgent>(agentGuid).Result;
             agent.InitializeAsync().Wait();
-            
+
             _agentCache[cacheKey] = agent;
             return agent;
         }
@@ -104,7 +104,7 @@ def quick_fibonacci_test():
             },
             new TestCase
             {
-                TestName = "test_fib_quick", 
+                TestName = "test_fib_quick",
                 TestDescription = "Quick Fibonacci test",
                 TestCode = "assert quick_fibonacci_test() == True"
             }
@@ -115,7 +115,7 @@ def quick_fibonacci_test():
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Fast math test completed in {executionTime}ms");
 
         // Assert
@@ -124,7 +124,7 @@ def quick_fibonacci_test():
 
         // Performance assertion - should be much faster than the original complex test
         executionTime.ShouldBeLessThan(15000); // Max 15 seconds (down from minutes)
-        
+
         if (result.TestsPassed)
         {
             _testOutputHelper.WriteLine("✅ Fast mathematical verification passed");
@@ -185,15 +185,15 @@ def string_test():
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Pure Python test completed in {executionTime}ms");
 
         // Assert
         result.ShouldNotBeNull();
-        
+
         // This should be very fast (under 8 seconds)
         executionTime.ShouldBeLessThan(8000);
-        
+
         if (result.TestsPassed)
         {
             _testOutputHelper.WriteLine("✅ Pure Python test passed");
@@ -236,15 +236,15 @@ def immediate_error():
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Error test completed in {executionTime}ms");
 
         // Assert
         result.ShouldNotBeNull();
-        
+
         // Should fail fast
         executionTime.ShouldBeLessThan(5000); // Under 5 seconds
-        
+
         if (!result.TestsPassed)
         {
             _testOutputHelper.WriteLine($"✅ Error correctly detected fast: {result.ErrorOutput}");
@@ -266,27 +266,27 @@ def immediate_error():
         for (int i = 0; i < 3; i++)
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             // This should reuse the cached agent after the first call
             var agent = await GetCachedAgentAsync("cache-test-agent");
-            
+
             stopwatch.Stop();
             timings.Add(stopwatch.ElapsedMilliseconds);
-            
+
             _testOutputHelper.WriteLine($"Agent retrieval {i + 1}: {stopwatch.ElapsedMilliseconds}ms");
-            
+
             agent.ShouldNotBeNull();
         }
 
         // First call might be slower due to initialization, but subsequent calls should be much faster
         var firstCall = timings[0];
         var lastCall = timings[^1];
-        
+
         _testOutputHelper.WriteLine($"First call: {firstCall}ms, Last call: {lastCall}ms");
-        
+
         // The last call should be significantly faster due to caching
         lastCall.ShouldBeLessThan(Math.Max(100, firstCall / 2)); // At least 50% faster or under 100ms
-        
+
         _testOutputHelper.WriteLine("✅ Agent caching is working effectively");
     }
 
@@ -331,15 +331,15 @@ def test_5():
 
         stopwatch.Stop();
         var executionTime = stopwatch.ElapsedMilliseconds;
-        
+
         _testOutputHelper.WriteLine($"⏱️ Batch execution completed in {executionTime}ms");
 
         // Assert
         result.ShouldNotBeNull();
-        
+
         // Batch execution should still be reasonably fast
         executionTime.ShouldBeLessThan(12000); // Under 12 seconds for 5 tests
-        
+
         if (result.TestsPassed)
         {
             _testOutputHelper.WriteLine($"✅ Batch execution passed all {result.PassedTests} tests");
@@ -351,16 +351,4 @@ def test_5():
         _testOutputHelper.WriteLine($"📊 Average time per test: {avgTimePerTest}ms");
         _testOutputHelper.WriteLine($"🚀 Batch performance target met: {executionTime}ms < 12000ms");
     }
-}
-
-/// <summary>
-/// Performance benchmark results for comparison
-/// </summary>
-public static class PerformanceBenchmarks
-{
-    public const int FastMathTestMaxMs = 15000;      // Down from 60000+
-    public const int PurePythonTestMaxMs = 8000;     // Down from 30000+
-    public const int ErrorTestMaxMs = 5000;          // Down from 15000+
-    public const int BatchTestMaxMs = 12000;         // For 5 tests
-    public const int AgentCacheMaxMs = 100;          // Cached retrieval
 }
