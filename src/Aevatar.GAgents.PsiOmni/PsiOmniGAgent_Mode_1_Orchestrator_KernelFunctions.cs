@@ -56,7 +56,29 @@ public partial class PsiOmniGAgent
             Format = format,
             Content = content
         });
-        return await Task.FromResult("Written artifact.");
+        return await Task.FromResult($"Written artifact {name}.");
+    }
+    
+    [KernelFunction("read_artifact")]
+    [Description("Read an artifact.")]
+    public async Task<Artifact?> ReadArtifactAsync(
+        [Description("The name of the artifact. It has to be unique and must be a valid file name with a valid extension."), Required]
+        string name
+    )
+    {
+        if (!State.Artifacts.TryGetValue(name, out var artifact))
+        {
+            return null;
+        }
+
+        return await Task.FromResult(artifact);
+    }
+
+    [KernelFunction("list_artifacts")]
+    [Description("List all artifacts.")]
+    public async Task<List<string>> ListArtifactsAsync()
+    {
+        return await Task.FromResult(State.Artifacts.Keys.OrderBy(x => x).ToList());
     }
     
     [KernelFunction("write_task")]
@@ -333,7 +355,7 @@ Use this tool to create and manage a structured task list for your current codin
 
     ## Requirements for Input Data
     Todo items must have an id assigned to it (use a running integer as the id).
-    InProgress and Completed todo items must have the AssigneeAgentId.
+    InProgress and Completed todo items must have the AssigneeAgentName.
 
     When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 ")

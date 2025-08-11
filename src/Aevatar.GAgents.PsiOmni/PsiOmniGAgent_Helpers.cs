@@ -41,7 +41,7 @@ public partial class PsiOmniGAgent
                 TotalTokens = cc.Usage.TotalTokenCount
             };
         }
-        
+
         return new PsiOmniChatMessage(content.Role.ToString(), content.Content)
         {
             Serialized = serialized,

@@ -131,7 +131,7 @@ public partial class
                                                """ +
                                                """
                                                ## Tracking of Dispatched Sub-tasks
-                                               When you mark the todo items as InProgress, you must set the AssigneeAgentId to track which agent is handling it.
+                                               When you mark the todo items as InProgress, you must set the AssigneeAgentName to track which agent is handling it.
                                                All todo items should be retained until the main task is fully completed.
                                                """ +
                                                """
@@ -877,11 +877,14 @@ public partial class
                         // Extract artifacts if present
                         if (lastMessage.Contains("<artifact"))
                         {
-                            var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
+                            // Support both self-closing and content-containing artifact tags
+                            
+                            // 1. Handle self-closing artifacts: <artifact name="..." format="..." />
+                            var selfClosingMatches = System.Text.RegularExpressions.Regex.Matches(
                                 lastMessage,
                                 @"<artifact name=""(.*?)"" format=""(.*?)"" />");
 
-                            foreach (System.Text.RegularExpressions.Match match in artifactMatches)
+                            foreach (System.Text.RegularExpressions.Match match in selfClosingMatches)
                             {
                                 var artifactName = match.Groups[1].Value.Trim();
                                 var artifactFormat = match.Groups[2].Value.Trim();
@@ -894,6 +897,26 @@ public partial class
                                         Content = artifact.Content
                                     });
                                 }
+                            }
+                            
+                            // 2. Handle content-containing artifacts: <artifact name="..." format="...">content</artifact>
+                            var contentMatches = System.Text.RegularExpressions.Regex.Matches(
+                                lastMessage,
+                                @"<artifact name=""(.*?)"" format=""(.*?)"">(.*?)</artifact>",
+                                System.Text.RegularExpressions.RegexOptions.Singleline);
+
+                            foreach (System.Text.RegularExpressions.Match match in contentMatches)
+                            {
+                                var artifactName = match.Groups[1].Value.Trim();
+                                var artifactFormat = match.Groups[2].Value.Trim();
+                                var artifactContent = match.Groups[3].Value.Trim();
+                                
+                                finalResult.Artifacts.Add(new Artifact
+                                {
+                                    Name = artifactName,
+                                    Format = artifactFormat,
+                                    Content = artifactContent
+                                });
                             }
                         }
 
