@@ -4,12 +4,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
-using Aevatar.Core.Abstractions.Extensions;
-using Aevatar.GAgents.Basic.BasicGAgents;
 using Aevatar.GAgents.Basic.BasicGEvent;
 using Aevatar.GAgents.MCP.Core;
 using Aevatar.GAgents.MCP.Core.Extensions;
-using Aevatar.GAgents.MCP.Core.Options;
 using Aevatar.GAgents.MCP.Options;
 using Shouldly;
 using Xunit;
@@ -20,11 +17,11 @@ namespace Aevatar.GAgents.MCP.Test;
 /// Unit tests for GAgentFactoryExtensions
 /// Tests MCP server configuration management and GAgent retrieval functionality
 /// </summary>
-public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
+public sealed class ExtensionMethodsTests : AevatarMCPTestBase
 {
     private readonly IGAgentFactory _gAgentFactory;
 
-    public GAgentFactoryExtensionsTests()
+    public ExtensionMethodsTests()
     {
         _gAgentFactory = GetRequiredService<IGAgentFactory>();
     }
@@ -58,22 +55,23 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
             ["filesystem"] = CreateFileSystemServerConfig(),
             ["sqlite"] = CreateSQLiteServerConfig()
         };
-        
+
         var configJson = JsonSerializer.Serialize(servers);
 
         // Act
-        var result = await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify configuration was actually stored
         var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
         var requestEvent = new ConfigRequestEvent
         {
-            ConfigType = GAgentFactoryExtensions.MCPWhitelistConfigTypeFullName
+            ConfigType = MCPServerConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName
         };
-        
+
         var response = await configManager.RequestConfigAsync(requestEvent);
         response.Success.ShouldBeTrue();
         response.ConfigJson.ShouldNotBeEmpty();
@@ -83,7 +81,8 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
     public async Task ConfigMCPWhitelistAsync_EmptyConfig_ShouldReturnFalse()
     {
         // Act
-        var result = await _gAgentFactory.ConfigMCPWhitelistAsync("");
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.ConfigMCPWhitelistAsync("");
 
         // Assert
         result.ShouldBeFalse();
@@ -93,7 +92,8 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
     public async Task ConfigMCPWhitelistAsync_NullConfig_ShouldReturnFalse()
     {
         // Act
-        var result = await _gAgentFactory.ConfigMCPWhitelistAsync([]);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.ConfigMCPWhitelistAsync([]);
 
         // Assert
         result.ShouldBeFalse();
@@ -105,10 +105,11 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         // Arrange
         var invalidJson = "{invalid json format";
 
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         // Act & Assert
         await Should.ThrowAsync<JsonException>(async () =>
         {
-            await _gAgentFactory.ConfigMCPWhitelistAsync(invalidJson);
+            await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(invalidJson);
         });
     }
 
@@ -142,28 +143,29 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
             ["sqlite"] = new MCPServerConfig
             {
                 ServerName = "sqlite",
-                Command = "npx", 
+                Command = "npx",
                 Args = ["@modelcontextprotocol/server-sqlite", "--db-path", "/data/app.db"],
                 Description = "SQLite database access",
                 Type = MCPServerType.Stdio
             }
         };
-        
+
         var configJson = JsonSerializer.Serialize(servers);
 
         // Act
-        var result = await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Assert
         result.ShouldBeTrue();
-        
+
         // Verify complex configuration was stored correctly
-        var retrievedServers = await _gAgentFactory.GetMCPWhiteListAsync();
+        var retrievedServers = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
         retrievedServers.Count.ShouldBe(3);
         retrievedServers.ShouldContainKey("filesystem");
         retrievedServers.ShouldContainKey("web-search");
         retrievedServers.ShouldContainKey("sqlite");
-        
+
         var fsServer = retrievedServers["filesystem"];
         fsServer.Args.Count.ShouldBe(2);
         fsServer.Env.Count.ShouldBe(2);
@@ -183,19 +185,20 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
             ["filesystem"] = CreateFileSystemServerConfig(),
             ["sqlite"] = CreateSQLiteServerConfig()
         };
-        
+
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
-        var result = await _gAgentFactory.GetMCPWhiteListAsync();
+        var result = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
         result.ShouldContainKey("filesystem");
         result.ShouldContainKey("sqlite");
-        
+
         var fsServer = result["filesystem"];
         fsServer.ServerName.ShouldBe("filesystem");
         fsServer.Command.ShouldBe("mock-filesystem");
@@ -206,11 +209,11 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
     public async Task GetMCPWhiteListAsync_NoConfigStored_ShouldReturnEmptyDictionary()
     {
         // Arrange - Use a new factory instance to ensure clean state
-        var freshGuid = Guid.NewGuid();
         var freshFactory = GetRequiredService<IGAgentFactory>();
 
         // Act
-        var result = await freshFactory.GetMCPWhiteListAsync();
+        var mcpServerConfigGAgent = await freshFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert
         result.ShouldNotBeNull();
@@ -224,12 +227,13 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
         await configManager.UpdateConfigAsync(new ConfigUpdateEvent
         {
-            ConfigType = GAgentFactoryExtensions.MCPWhitelistConfigTypeFullName,
+            ConfigType = MCPServerConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName,
             ConfigJson = "invalid json"
         });
 
         // Act
-        var result = await _gAgentFactory.GetMCPWhiteListAsync();
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        var result = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert
         result.ShouldNotBeNull();
@@ -242,10 +246,11 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         // Arrange
         var emptyServers = new Dictionary<string, MCPServerConfig>();
         var configJson = JsonSerializer.Serialize(emptyServers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
-        var result = await _gAgentFactory.GetMCPWhiteListAsync();
+        var result = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert
         result.ShouldNotBeNull();
@@ -265,9 +270,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
             ["filesystem"] = CreateFileSystemServerConfig(),
             ["sqlite"] = CreateSQLiteServerConfig()
         };
-        
+
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
         var mcpGAgent = await _gAgentFactory.GetMCPGAgentAsync("filesystem");
@@ -285,9 +291,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         {
             ["filesystem"] = CreateFileSystemServerConfig()
         };
-        
+
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
         var mcpGAgent = await _gAgentFactory.GetMCPGAgentAsync("non-existent-server");
@@ -314,9 +321,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         {
             ["filesystem"] = CreateFileSystemServerConfig()
         };
-        
+
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
         var mcpGAgent = await _gAgentFactory.GetMCPGAgentAsync("");
@@ -333,9 +341,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         {
             ["filesystem"] = CreateFileSystemServerConfig()
         };
-        
+
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Act
         var mcpGAgent = await _gAgentFactory.GetMCPGAgentAsync("   ");
@@ -359,15 +368,16 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
             ["error-server"] = CreateErrorServerConfig()
         };
 
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         // Act 1 - Configure MCP whitelist
         var configJson = JsonSerializer.Serialize(servers);
-        var configResult = await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        var configResult = await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(configJson);
 
         // Assert 1 - Configuration succeeded
         configResult.ShouldBeTrue();
 
         // Act 2 - Retrieve whitelist
-        var whitelist = await _gAgentFactory.GetMCPWhiteListAsync();
+        var whitelist = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert 2 - Whitelist contains all servers
         whitelist.Count.ShouldBe(3);
@@ -392,7 +402,7 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         var state = await configManager.GetStateAsync();
 
         // Assert 4 - State is consistent
-        state.ConfigType.ShouldBe(GAgentFactoryExtensions.MCPWhitelistConfigTypeFullName);
+        state.ConfigType.ShouldBe(MCPServerConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName);
         state.ConfigJson.ShouldNotBeEmpty();
         state.TotalUpdates.ShouldBe(1);
     }
@@ -405,9 +415,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         {
             ["filesystem"] = CreateFileSystemServerConfig()
         };
-        
+
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
         var initialConfigJson = JsonSerializer.Serialize(initialServers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(initialConfigJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(initialConfigJson);
 
         // Act 1 - Add more servers
         var updatedServers = new Dictionary<string, MCPServerConfig>
@@ -422,12 +433,12 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
                 Description = "New server for testing updates"
             }
         };
-        
+
         var updatedConfigJson = JsonSerializer.Serialize(updatedServers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(updatedConfigJson);
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(updatedConfigJson);
 
         // Act 2 - Retrieve updated whitelist
-        var whitelist = await _gAgentFactory.GetMCPWhiteListAsync();
+        var whitelist = await mcpServerConfigGAgent.GetMCPWhiteListAsync();
 
         // Assert - Updated configuration is reflected
         whitelist.Count.ShouldBe(3);
@@ -454,15 +465,15 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
         await configManager.UpdateConfigAsync(new ConfigUpdateEvent
         {
-            ConfigType = GAgentFactoryExtensions.MCPWhitelistConfigTypeFullName,
+            ConfigType = MCPServerConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName,
             ConfigJson = "{\"invalidStructure\": \"notAServerConfig\"}"
         });
 
-        // Act
-        var mcpGAgent = await _gAgentFactory.GetMCPGAgentAsync("invalidStructure");
-
-        // Assert
-        mcpGAgent.ShouldBeNull();
+        // Act & Assert
+        Should.Throw<ArgumentException>(async () =>
+        {
+            await _gAgentFactory.GetMCPGAgentAsync("invalidStructure");
+        });
     }
 
     [Fact]
@@ -490,12 +501,13 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
                 Description = "Server with dots"
             }
         };
-        
+
         var configJson = JsonSerializer.Serialize(servers);
 
         // Act
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
-        var whitelist = await _gAgentFactory.GetMCPWhiteListAsync();
+        var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
+        await configManager.ConfigMCPWhitelistAsync(configJson);
+        var whitelist = await configManager.GetMCPWhiteListAsync();
 
         // Assert
         whitelist.Count.ShouldBe(3);
@@ -512,9 +524,10 @@ public sealed class GAgentFactoryExtensionsTests : AevatarMCPTestBase
         {
             ["FileSystem"] = CreateFileSystemServerConfig("FileSystem")
         };
-        
+
+        var configManager = await _gAgentFactory.GetMCPServerConfigGAgent();
         var configJson = JsonSerializer.Serialize(servers);
-        await _gAgentFactory.ConfigMCPWhitelistAsync(configJson);
+        await configManager.ConfigMCPWhitelistAsync(configJson);
 
         // Act
         var exactMatchAgent = await _gAgentFactory.GetMCPGAgentAsync("FileSystem");

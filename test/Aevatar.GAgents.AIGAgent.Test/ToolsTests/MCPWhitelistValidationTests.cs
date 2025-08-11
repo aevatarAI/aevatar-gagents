@@ -303,7 +303,8 @@ public sealed class MCPWhitelistValidationTests : AevatarAIGAgentTestBase
     /// </summary>
     private async Task SetupWhitelistAsync(Dictionary<string, MCPServerConfig> whitelist)
     {
-        await _gAgentFactory.ConfigMCPWhitelistAsync(whitelist);
+        var mcpServerConfigGAgent = await _gAgentFactory.GetMCPServerConfigGAgent();
+        await mcpServerConfigGAgent.ConfigMCPWhitelistAsync(whitelist);
     }
 
     /// <summary>

@@ -11,6 +11,11 @@ public class MCPServerConfig
     [Id(4)] public string Description { get; set; } = string.Empty;
     [Id(5)] public string? Url { get; set; }
     [Id(6)] public MCPServerType Type { get; set; }
+
+    public bool IsValid()
+    {
+        return !Command.IsNullOrWhiteSpace() || !Url.IsNullOrWhiteSpace();
+    }
 }
 
 /// <summary>

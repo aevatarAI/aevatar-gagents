@@ -11,7 +11,7 @@ public static class GAgentFactoryExtensions
 {
     public static async Task<IConfigManagerGAgent> GetMCPServerConfigGAgent(this IGAgentFactory gAgentFactory)
     {
-        return await gAgentFactory.GetGAgentAsync<IConfigManagerGAgent>(ConfigManagerGAgentExtensions
+        return await gAgentFactory.GetGAgentAsync<IConfigManagerGAgent>(MCPServerConfigManagerGAgentExtensions
             .MCPWhitelistConfigGuid);
     }
 
@@ -20,7 +20,7 @@ public static class GAgentFactoryExtensions
         var configManagerGAgent = await gAgentFactory.GetMCPServerConfigGAgent();
         var configResponseEvent = await configManagerGAgent.RequestConfigAsync(new ConfigRequestEvent
         {
-            ConfigType = ConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName,
+            ConfigType = MCPServerConfigManagerGAgentExtensions.MCPWhitelistConfigTypeFullName,
             ConfigKey = mcpServerName
         });
         if (!configResponseEvent.Success)
@@ -31,7 +31,7 @@ public static class GAgentFactoryExtensions
         try
         {
             var config = JsonSerializer.Deserialize<MCPServerConfig>(configResponseEvent.ConfigJson);
-            if (config != null)
+            if (config != null && config.IsValid())
             {
                 return await gAgentFactory.GetGAgentAsync<IMCPGAgent>(new MCPGAgentConfig
                 {

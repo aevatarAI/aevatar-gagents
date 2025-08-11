@@ -470,7 +470,7 @@ public class ConfigManagerGAgent : GAgentBase<ConfigManagerGAgentState, ConfigMa
             }
 
             // If a specific key is requested, extract it from the JSON
-            if (!string.IsNullOrEmpty(requestEvent.ConfigKey))
+            if (requestEvent.ConfigKey != null)
             {
                 try
                 {
@@ -502,6 +502,17 @@ public class ConfigManagerGAgent : GAgentBase<ConfigManagerGAgentState, ConfigMa
                     Logger.LogError(ex, "Failed to extract configuration key: {ConfigKey}", requestEvent.ConfigKey);
                     // If extraction fails, return the whole config
                 }
+            }
+
+            if (requestEvent.ConfigKey == string.Empty)
+            {
+                return new ConfigResponseEvent
+                {
+                    ConfigType = requestEvent.ConfigType,
+                    ConfigJson = string.Empty,
+                    Success = false,
+                    ErrorMessage = "Request config key is empty"
+                };
             }
 
             Logger.LogInformation("Successfully retrieved configuration for type: {ConfigType}, " +

@@ -8,7 +8,7 @@ using Aevatar.GAgents.MCP.Options;
 namespace Aevatar.GAgents.MCP.Core.Extensions;
 
 // ReSharper disable InconsistentNaming
-public static class ConfigManagerGAgentExtensions
+public static class MCPServerConfigManagerGAgentExtensions
 {
     public static readonly string MCPWhitelistConfigTypeFullName = typeof(MCPServerOptions).FullName!;
     public static Guid MCPWhitelistConfigGuid = MCPWhitelistConfigTypeFullName.ToGuid();
