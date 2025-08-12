@@ -17,31 +17,86 @@ public enum ChatAISystemLLMEnum
     /// <summary>
     /// OpenAI GPT models for text generation and completion
     /// </summary>
-    [Description("{\"value\":\"OpenAI\",\"description\":\"OpenAI's GPT models for text generation and completion\",\"provider\":\"OpenAI\",\"performance\":\"High-quality responses, fast inference\",\"useCase\":\"General text generation, conversational AI\"}")]
+    [Description("OpenAI's GPT models for text generation and completion")]
+    [LLMProviderMetadata(
+        provider: "OpenAI",
+        displayName: "OpenAI GPT",
+        performance: "High-quality responses, fast inference",
+        useCase: "General text generation, conversational AI",
+        isEnterprise: false,
+        isEmbedding: false,
+        pricingTier: "Premium",
+        features: "GPT-4,Function Calling,Vision,Streaming",
+        icon: "openai",
+        category: "TextGeneration")]
     OpenAI = 0,
     
     /// <summary>
     /// DeepSeek's advanced language models optimized for reasoning
     /// </summary>
-    [Description("{\"value\":\"DeepSeek\",\"description\":\"DeepSeek's advanced language models optimized for reasoning\",\"provider\":\"DeepSeek\",\"performance\":\"Excellent reasoning capabilities, cost-effective\",\"useCase\":\"Complex reasoning tasks, coding assistance\"}")]
+    [Description("DeepSeek's advanced language models optimized for reasoning")]
+    [LLMProviderMetadata(
+        provider: "DeepSeek",
+        displayName: "DeepSeek AI",
+        performance: "Excellent reasoning capabilities, cost-effective",
+        useCase: "Complex reasoning tasks, coding assistance",
+        isEnterprise: false,
+        isEmbedding: false,
+        pricingTier: "Budget",
+        features: "Code Generation,Reasoning,Math,Cost-Effective",
+        icon: "deepseek",
+        category: "TextGeneration")]
     DeepSeek = 1,
     
     /// <summary>
     /// Azure-hosted OpenAI models with enterprise security
     /// </summary>
-    [Description("{\"value\":\"AzureOpenAI\",\"description\":\"Azure-hosted OpenAI models with enterprise security\",\"provider\":\"Microsoft Azure\",\"performance\":\"Enterprise-grade reliability, regional deployment\",\"useCase\":\"Enterprise applications, regulated industries\"}")]
+    [Description("Azure-hosted OpenAI models with enterprise security")]
+    [LLMProviderMetadata(
+        provider: "Microsoft Azure",
+        displayName: "Azure OpenAI",
+        performance: "Enterprise-grade reliability, regional deployment",
+        useCase: "Enterprise applications, regulated industries",
+        isEnterprise: true,
+        isEmbedding: false,
+        pricingTier: "Enterprise",
+        features: "Enterprise Security,SLA,Regional Deployment,Compliance",
+        icon: "azure",
+        category: "TextGeneration")]
     AzureOpenAI = 2,
     
     /// <summary>
     /// Azure OpenAI embedding models for semantic search
     /// </summary>
-    [Description("{\"value\":\"AzureOpenAIEmbeddings\",\"description\":\"Azure OpenAI embedding models for semantic search\",\"provider\":\"Microsoft Azure\",\"performance\":\"High-dimensional vector embeddings, batch processing\",\"useCase\":\"Semantic search, recommendation systems, RAG\"}")]
+    [Description("Azure OpenAI embedding models for semantic search")]
+    [LLMProviderMetadata(
+        provider: "Microsoft Azure",
+        displayName: "Azure OpenAI Embeddings",
+        performance: "High-dimensional vector embeddings, batch processing",
+        useCase: "Semantic search, recommendation systems, RAG",
+        isEnterprise: true,
+        isEmbedding: true,
+        pricingTier: "Enterprise",
+        features: "Batch Processing,Enterprise Security,High Throughput",
+        icon: "azure",
+        category: "Embeddings")]
     AzureOpenAIEmbeddings = 3,
     
     /// <summary>
     /// OpenAI embedding models for semantic understanding
     /// </summary>
-    [Description("{\"value\":\"OpenAIEmbeddings\",\"description\":\"OpenAI embedding models for semantic understanding\",\"provider\":\"OpenAI\",\"performance\":\"State-of-the-art text embeddings, real-time processing\",\"useCase\":\"Document similarity, content recommendation, search\"}")]
+    [Description("OpenAI embedding models for semantic understanding")]
+    [LLMProviderMetadata(
+        provider: "OpenAI",
+        displayName: "OpenAI Embeddings",
+        performance: "State-of-the-art text embeddings, real-time processing",
+        useCase: "Document similarity, content recommendation, search",
+        isEnterprise: false,
+        isEmbedding: true,
+        pricingTier: "Standard",
+        features: "Real-time,High Quality,Semantic Search",
+        icon: "openai",
+        category: "Embeddings")]
     OpenAIEmbeddings = 4
 }
 
