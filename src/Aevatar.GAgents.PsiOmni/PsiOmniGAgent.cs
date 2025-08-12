@@ -727,7 +727,11 @@ public partial class
                 else if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
                 {
                     LogEventDebug("Scheduling initialization upon InitializeEvent");
-                    ScheduleTask(InitializeAsync);
+                    ScheduleTask(async () => await PublishAsyncWithTracing(this.GetGrainId(), new ContinuationEvent()
+                    {
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Initialize
+                    }));
                 }
 
                 break;
@@ -747,7 +751,11 @@ public partial class
                 if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
                 {
                     LogEventDebug("Scheduling initialization upon UpdateSendConfigEvent");
-                    ScheduleTask(InitializeAsync);
+                    ScheduleTask(async () => await PublishAsyncWithTracing(this.GetGrainId(), new ContinuationEvent()
+                    {
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Initialize
+                    }));
                 }
 
                 break;
@@ -775,7 +783,12 @@ public partial class
                     if (state.RealizationStatus != RealizationStatus.Unrealized)
                     {
                         LogEventDebug("Scheduling RunAsync for user message");
-                        ScheduleTask(async () => await RunAsync($"User Message {payload.Event}"));
+                        ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                        {
+                            TargetAgentId = this.GetGrainId().ToString(),
+                            ContinuationType = ContinuationType.Run,
+                            RunArg = $"User Message {payload.Event}"
+                        }));
                     }
                 }
 
@@ -792,12 +805,12 @@ public partial class
                     state.Tools = payload.Tools;
                     LogEventDebug("Agent realized as {Status}", payload.RealizationStatus);
                 }
-
-                ScheduleTask(async () =>
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    await DoSelfReportAsync();
-                    await RunAsync("RealizationEvent");
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.SelfReportAndRun,
+                    RunArg = "RealizationEvent"
+                }));
                 break;
             case ReceiveAgentMessageEvent payload:
             {
@@ -821,14 +834,12 @@ public partial class
                     state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
                 if (agentDescriptor != null)
                     state.AgentUsage.Remove(agentDescriptor.Name);
-                ScheduleTask(async () =>
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts",
-                        payload.Event.Content, payload.Event.Artifacts.Count);
-                    await RunAsync($"Agent Message {payload.Event}");
-                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts",
-                        payload.Event.Content, payload.Event.Artifacts.Count);
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.Run,
+                    RunArg = $"Agent Message {payload.Event}"
+                }));
                 break;
             }
 
@@ -844,14 +855,12 @@ public partial class
 
                 var newAgentIds = payload.NewAgents.Select(x => x.AgentId);
 
-                ScheduleTask(async () =>
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    foreach (var newAgent in newAgentIds)
-                    {
-                        var child = GrainFactory.GetGrain<IGAgent>(GrainId.Parse(newAgent));
-                        await RegisterAsync(child);
-                    }
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.RegisterAgents,
+                    RegisterAgentIds = newAgentIds.ToList()
+                }));
 
                 break;
             case UpdateChildEvent payload:
@@ -881,13 +890,15 @@ public partial class
 
                 LogEventDebug("Child agent update: RefreshDescription={RefreshDescription}", refreshDescription);
                 state.ChildAgents[payload.LastChildDescriptor.Name] = payload.LastChildDescriptor;
-                ScheduleTask(async () =>
+                if (refreshDescription)
                 {
-                    if (refreshDescription)
+                    // ScheduleTask(RunIntrospectionAsync);
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
-                        await RunIntrospectionAsync();
-                    }
-                });
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Retrospect
+                    }));
+                }
                 break;
             }
             case GrowChatHistoryEvent payload:
@@ -994,14 +1005,20 @@ public partial class
                 if (!finalResult.Response.IsNullOrEmpty())
                 {
                     state.Examples.Last().Response = finalResult.Response;
-                    ScheduleTask(async () =>
+                    // ScheduleTask(async () =>
+                    // {
+                    //     LogEventDebug("Starting report and reply: {Content}", finalResult.Response);
+                    //     // TODO: Maybe update description.
+                    //     await DoSelfReportAsync();
+                    //     await ReplyAsync(finalResult);
+                    //     LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
+                    // });
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
-                        LogEventDebug("Starting report and reply: {Content}", finalResult.Response);
-                        // TODO: Maybe update description.
-                        await DoSelfReportAsync();
-                        await ReplyAsync(finalResult);
-                        LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
-                    });
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.SelfReportAndReply,
+                        FinalResponse = finalResult
+                    }));
                 }
                 else
                 {
@@ -1037,7 +1054,13 @@ public partial class
                         state.ChatHistory.Add(crankMessage);
 
                         // Schedule task run later
-                        ScheduleTask(async () => await RunAsync("crank message continuation"));
+                        // ScheduleTask(async () => await RunAsync("crank message continuation"));
+                        ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                        {
+                            TargetAgentId = this.GetGrainId().ToString(),
+                            ContinuationType = ContinuationType.Run,
+                            RunArg = "crank message continuation"
+                        }));
                     }
                 }
 
@@ -1045,7 +1068,12 @@ public partial class
             case UpdateSelfDescription payload:
                 LogEventInfo("Updating self description: NewDescription={Description}", payload.Description);
                 state.Description = payload.Description;
-                ScheduleTask(DoSelfReportAsync);
+                // ScheduleTask(DoSelfReportAsync);
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                {
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.SelfReport
+                }));
                 break;
             case WriteTask payload:
                 LogEventInfo("Writing task: Task={Task}", payload.Task);
