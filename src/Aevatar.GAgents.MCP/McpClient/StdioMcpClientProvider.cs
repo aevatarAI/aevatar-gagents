@@ -13,7 +13,8 @@ public class StdioMcpClientProvider : McpClientProviderBase
         {
             Name = config.ServerName,
             Command = config.Command,
-            Arguments = config.Args
+            Arguments = config.Args,
+            EnvironmentVariables = config.Env!
         });
     }
 }
