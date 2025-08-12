@@ -25,6 +25,8 @@ public class MCPServerConfig
     [RegularExpression(@"^https?://[^\s/$.?#].[^\s]*$", ErrorMessage = "URL must start with http:// or https://")]
     public string? Url { get; set; }
     [Id(6)] public MCPServerType Type { get; set; }
+    
+    [Id(7)] public Dictionary<string, string> Headers { get; set; } = new();
 }
 
 /// <summary>

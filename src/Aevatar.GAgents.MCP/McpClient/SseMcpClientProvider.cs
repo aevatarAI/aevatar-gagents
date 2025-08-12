@@ -12,7 +12,8 @@ public class SseMcpClientProvider : McpClientProviderBase
         return new SseClientTransport(new SseClientTransportOptions
         {
             Name = config.ServerName,
-            Endpoint = new Uri(config.Url!)
+            Endpoint = new Uri(config.Url!),
+            AdditionalHeaders = config.Headers
         });
     }
 }
