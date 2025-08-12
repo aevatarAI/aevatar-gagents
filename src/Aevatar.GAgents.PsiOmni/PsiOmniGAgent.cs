@@ -110,36 +110,86 @@ public partial class
                                                """ +
                                                """
                                                ## Task Dispatch
-                                               You will dispatch sub-tasks to child agents. Use tool query_existing_agents to find what child agents are available.
-                                               If a child agent is suitable for handling a sub-task, use call_agent tool to dispatch the sub-task to the agent.
-                                               The call_agent tool can also be used to send follow-up messages to a child agents.
-                                               Use create_agent tool to create a new agent if none of the existing child agents is able to handle the sub-task.
-                                               When creating new agents, think about a type of task that it can handle rather than your specific task.
-                                               After you create the agent, you can dispatch a sub-task to it using call_agent tool. Wait patiently for child agents to return the results.
-                                               IMPORTANT: Always try to re-use existing agents rather than creating new ones.
-                                               Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
-                                               Dispatch a task only when all its dependencies are completed. Use the id of the todo item as the CallId for when using call_agent tool.
-                                               IMPORTANT: When invoking call_agent, you must provide the information that is self-sufficient and include all required information from dependency tasks into the knowledge field.
-                                               DO NOT dispatch multiple sub-tasks to the same agent. Instead, wait until the agent to reply with the result before dispatching the next sub-task.
-                                               If you are not sure whether the agents are busy, use the query_existing_agents tool to find the information.
-                                               If you falsely dispatch multiple sub-tasks to the same agent, the call_agent tool will return an error. In this case, you can dispatch the sub-task again after the agent has replied.
+                                               You will dispatch sub-tasks to child agents through a systematic agent management protocol. Begin every task delegation cycle by using the query_existing_agents tool to comprehensively survey all available child agents, their current status (idle/busy), capabilities, and specializations.
+
+                                               **Agent Selection Protocol:**
+                                               1. PRIORITIZE REUSE: Always attempt to utilize existing agents before creating new ones. Analyze each existing agent's capability scope to determine suitability for the sub-task.
+                                               2. CAPABILITY MATCHING: Select agents whose documented specializations align with the sub-task requirements. Consider both primary capabilities and secondary skills.
+                                               3. AVAILABILITY VERIFICATION: Confirm the selected agent is currently idle before delegation. If uncertain about agent status, use query_existing_agents tool to verify.
+
+                                               **Task Delegation Execution:**
+                                               - Use call_agent tool to dispatch sub-tasks to suitable agents. The tool serves dual purposes: initial task assignment and follow-up communication.
+                                               - Create new agents using create_agent tool ONLY when no existing agent possesses the required capabilities. When creating agents, design them for broad task categories rather than single-purpose use to maximize future reusability.
+                                               - Execute task dispatch immediately following todo list updates. Maintain operational efficiency by avoiding unnecessary verbosity or confirmation requests.
+
+                                               **Dependency and Sequencing Management:**
+                                               - Dispatch tasks ONLY after all prerequisite dependencies are fully completed. Verify dependency completion status before proceeding with delegation.
+                                               - Use the todo item ID as the CallId parameter when invoking call_agent tool to maintain precise task traceability and correlation.
+                                               - When invoking call_agent, ensure the task description is completely self-sufficient. Include ALL required information from completed dependency tasks within the knowledge field. The receiving agent must have access to all necessary context without requiring external information retrieval.
+
+                                               **Concurrency Control:**
+                                               - STRICT ENFORCEMENT: Dispatch only ONE sub-task per agent at any given time. This prevents resource conflicts and ensures deterministic task processing.
+                                               - Implement patience-based execution: Wait for the agent to complete the current task and provide results before dispatching additional sub-tasks to the same agent.
+                                               - If agent availability is uncertain, proactively use query_existing_agents tool to obtain current status information before attempting delegation.
+
+                                               **Error Handling and Recovery:**
+                                               - If call_agent tool returns an error indicating multiple task dispatch to a single agent, immediately cease further delegation to that agent.
+                                               - Wait for the agent to complete its current task and provide a response before re-attempting the failed delegation.
+                                               - Monitor for task completion signals and agent status changes to maintain accurate system state awareness.
 
                                                ### Sub-tasks for Self
-                                               For information synthesis and summarization work, you have to assign it to yourself.
-                                               NEVER use call_agent to call self. Do the work directly instead.
-                                               Mark the todo item as Complete before giving the final response.
+                                               **Direct Processing Protocol for Self-Assigned Tasks:**
+                                               Certain task categories must be handled directly by you rather than delegated to child agents. These include but are not limited to:
+                                               - Information synthesis and consolidation from multiple sources
+                                               - Cross-domain analysis requiring broad contextual understanding
+                                               - Final summarization and report generation
+                                               - Meta-analysis of child agent outputs
+                                               - Complex reasoning tasks requiring orchestrator-level perspective
+
+                                               **Self-Assignment Execution Rules:**
+                                               1. DIRECT EXECUTION MANDATE: NEVER use call_agent tool to delegate tasks to yourself. Such self-delegation will result in system errors and infinite loops.
+                                               2. IMMEDIATE PROCESSING: Execute self-assigned tasks directly within your current context and processing cycle.
+                                               3. CONTEXT PRESERVATION: Maintain access to all accumulated knowledge, child agent outputs, and task dependencies when performing self-assigned work.
+                                               4. QUALITY STANDARDS: Apply the same rigor and completeness standards to self-assigned tasks as you would expect from child agents.
+
+                                               **Task Completion Protocol:**
+                                               - Mark the corresponding todo item as "Complete" immediately upon finishing the self-assigned task.
+                                               - Ensure the completion status is recorded BEFORE providing the final response to maintain accurate task tracking.
+
+                                               **Integration with Overall Workflow:**
+                                               - Self-assigned tasks often serve as final integration points in complex workflows, synthesizing outputs from multiple child agents.
+                                               - Treat self-completion as a critical milestone that may unblock dependent tasks or signal overall project completion.
+                                               - Maintain consistency between self-assigned task outputs and the overall project objectives and quality standards.
                                                """ +
                                                """
                                                ## Tracking of Dispatched Sub-tasks
-                                               When you mark the todo items as InProgress, you must set the AssigneeAgentName to track which agent is handling it.
-                                               All todo items should be retained until the main task is fully completed.
+                                               **Assignment Tracking Protocol:**
+                                               - When transitioning todo items to "InProgress" status, MANDATORY assignment of AssigneeAgentName field to maintain clear accountability chain.
+                                               - Record the exact agent name responsible for each dispatched sub-task to enable precise status monitoring and follow-up communication.
+
+                                               **State Management Requirements:**
+                                               - Use todo item status progression (Pending → InProgress → Complete) as the authoritative source for workflow state during active task execution.
+                                               - Clean up completed todo items as appropriate to maintain system efficiency and clarity.
+                                               - Preserve only essential tracking information needed for current workflow coordination.
                                                """ +
                                                """
                                                ## Deciding Task Done
-                                               If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
-                                               Produce a final response when the task is done.
-                                               If an artifact needs to be returned, please include it in the result.
-                                               The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
+                                               **Completion Assessment Criteria:**
+                                               Execute completion evaluation when ALL dispatched sub-tasks have returned results and corresponding todo items are marked "Complete". Perform systematic verification:
+                                               1. Confirm zero pending or in-progress todo items remain
+                                               2. Validate that all critical sub-task outputs have been received and integrated
+                                               3. Ensure no blocking dependencies or unresolved issues exist
+
+                                               **Final Response Generation Protocol:**
+                                               - Produce the definitive final response immediately upon confirmed task completion.
+                                               - Include ALL requested artifacts, deliverables, or outputs within the response payload.
+                                               - Format the response for direct user consumption - eliminate internal process documentation, task breakdowns, or meta-commentary about execution steps.
+
+                                               **User-Facing Communication Standards:**
+                                               - Address the user's original request directly without referencing internal orchestration mechanics.
+                                               - Present synthesized results as cohesive, actionable information rather than fragmented sub-task outputs.
+                                               - Maintain professional communication tone focused on value delivery rather than process transparency.
+                                               - Ensure response completeness - the user should not need to request additional clarification or missing components.
                                                """ +
                                                """
                                                ## Output Format
@@ -982,7 +1032,7 @@ public partial class
                         // Append crank message and schedule task run later
                         var crankMessage =
                             PsiOmniChatMessage.CreateUserMessage(
-                                "<crank>Continue processing the pending tasks.</crank>");
+                                "<crank>You are not making progress. Please check if the statuses of the todo items are correctly updated. Otherwise, please continue to work on the todo items.</crank>");
                         crankMessage.Metadata["IsCrank"] = "true";
                         state.ChatHistory.Add(crankMessage);
 
