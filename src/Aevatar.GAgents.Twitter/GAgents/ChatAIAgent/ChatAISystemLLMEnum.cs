@@ -17,26 +17,31 @@ public enum ChatAISystemLLMEnum
     /// <summary>
     /// OpenAI GPT models for text generation and completion
     /// </summary>
+    [Description("{\"value\":\"OpenAI\",\"description\":\"OpenAI's GPT models for text generation and completion\",\"provider\":\"OpenAI\",\"performance\":\"High-quality responses, fast inference\",\"useCase\":\"General text generation, conversational AI\"}")]
     OpenAI = 0,
     
     /// <summary>
     /// DeepSeek's advanced language models optimized for reasoning
     /// </summary>
+    [Description("{\"value\":\"DeepSeek\",\"description\":\"DeepSeek's advanced language models optimized for reasoning\",\"provider\":\"DeepSeek\",\"performance\":\"Excellent reasoning capabilities, cost-effective\",\"useCase\":\"Complex reasoning tasks, coding assistance\"}")]
     DeepSeek = 1,
     
     /// <summary>
     /// Azure-hosted OpenAI models with enterprise security
     /// </summary>
+    [Description("{\"value\":\"AzureOpenAI\",\"description\":\"Azure-hosted OpenAI models with enterprise security\",\"provider\":\"Microsoft Azure\",\"performance\":\"Enterprise-grade reliability, regional deployment\",\"useCase\":\"Enterprise applications, regulated industries\"}")]
     AzureOpenAI = 2,
     
     /// <summary>
     /// Azure OpenAI embedding models for semantic search
     /// </summary>
+    [Description("{\"value\":\"AzureOpenAIEmbeddings\",\"description\":\"Azure OpenAI embedding models for semantic search\",\"provider\":\"Microsoft Azure\",\"performance\":\"High-dimensional vector embeddings, batch processing\",\"useCase\":\"Semantic search, recommendation systems, RAG\"}")]
     AzureOpenAIEmbeddings = 3,
     
     /// <summary>
     /// OpenAI embedding models for semantic understanding
     /// </summary>
+    [Description("{\"value\":\"OpenAIEmbeddings\",\"description\":\"OpenAI embedding models for semantic understanding\",\"provider\":\"OpenAI\",\"performance\":\"State-of-the-art text embeddings, real-time processing\",\"useCase\":\"Document similarity, content recommendation, search\"}")]
     OpenAIEmbeddings = 4
 }
 
