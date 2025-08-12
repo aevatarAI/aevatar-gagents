@@ -33,6 +33,7 @@ public enum DefaultMCPServer
     /// Env key: API_KEY, API_SECRET_KEY, ACCESS_TOKEN, ACCESS_TOKEN_SECRET
     /// <br/>
     /// Ref: https://github.com/EnesCinr/twitter-mcp
+    /// Note: May have Node.js v22+ compatibility issues due to twitter-api-v2 dependency conflicts
     /// </summary>
     EnesCinrTwitter,
     
@@ -42,6 +43,41 @@ public enum DefaultMCPServer
     /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/google-maps
     /// </summary>
     GoogleMaps,
+
+    /// <summary>
+    /// Env key: DATABASE_URL (PostgreSQL connection string)
+    /// <br/>
+    /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/postgres
+    /// </summary>
+    PostgreSQL,
+
+    /// <summary>
+    /// No env required - Browser automation server
+    /// <br/>
+    /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/puppeteer
+    /// </summary>
+    Puppeteer,
+
+    /// <summary>
+    /// Env key: SLACK_BOT_TOKEN
+    /// <br/>
+    /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/slack
+    /// </summary>
+    Slack,
+
+    /// <summary>
+    /// Env key: SENTRY_DSN
+    /// <br/>
+    /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/sentry
+    /// </summary>
+    Sentry,
+
+    /// <summary>
+    /// Env key: BRAVE_SEARCH_API_KEY
+    /// <br/>
+    /// Ref: https://github.com/modelcontextprotocol/servers-archived/tree/main/src/brave-search
+    /// </summary>
+    BraveSearch,
 }
 
 // ReSharper disable once InconsistentNaming
@@ -61,6 +97,11 @@ public static class DefaultMCPServers
     public const string GitLabMCPServerName = "gitlab";
     public const string EnesCinrTwitterMCPServerName = "enescinar-twitter";
     public const string GoogleMapsMCPServerName = "google-maps";
+    public const string PostgreSQLMCPServerName = "postgres";
+    public const string PuppeteerMCPServerName = "puppeteer";
+    public const string SlackMCPServerName = "slack";
+    public const string SentryMCPServerName = "sentry";
+    public const string BraveSearchMCPServerName = "brave-search";
 
     private static readonly Dictionary<DefaultMCPServer, string> Names = new()
     {
@@ -74,6 +115,12 @@ public static class DefaultMCPServers
         [DefaultMCPServer.GitHub] = GitHubMCPServerName,
         [DefaultMCPServer.GitLab] = GitLabMCPServerName,
         [DefaultMCPServer.EnesCinrTwitter] = EnesCinrTwitterMCPServerName,
+        [DefaultMCPServer.GoogleMaps] = GoogleMapsMCPServerName,
+        [DefaultMCPServer.PostgreSQL] = PostgreSQLMCPServerName,
+        [DefaultMCPServer.Puppeteer] = PuppeteerMCPServerName,
+        [DefaultMCPServer.Slack] = SlackMCPServerName,
+        [DefaultMCPServer.Sentry] = SentryMCPServerName,
+        [DefaultMCPServer.BraveSearch] = BraveSearchMCPServerName,
     };
 
     public static Dictionary<string, MCPServerConfig> Configs = new()
@@ -189,14 +236,20 @@ public static class DefaultMCPServers
         {
             ServerName = EnesCinrTwitterMCPServerName,
             Command = "npx",
-            Args = ["-y", "@enescinar/twitter-mcp"],
+            Args = ["-y", "@enescinar/twitter-mcp@latest"],
             Env =
             {
                 ["API_KEY"] = "your_api_key_here",
                 ["API_SECRET_KEY"] = "your_api_secret_key_here",
                 ["ACCESS_TOKEN"] = "your_access_token_here",
                 ["ACCESS_TOKEN_SECRET"] = "your_access_token_secret_here"
-            }
+            },
+            Description = "Twitter/X API integration server providing social media interaction capabilities. " +
+                          "Supports tweet posting, searching, user management, and timeline operations. " +
+                          "Note: May experience Node.js v22+ compatibility issues due to twitter-api-v2 " +
+                          "dependency conflicts. If encountering MODULE_NOT_FOUND errors, try: " +
+                          "1) Use Node.js v18 LTS, 2) Clear npx cache: 'npx clear-npx-cache', " +
+                          "3) Use alternative: 'npm install -g @enescinar/twitter-mcp && twitter-mcp'"
         },
         [GoogleMapsMCPServerName] = new MCPServerConfig
         {
@@ -207,6 +260,77 @@ public static class DefaultMCPServers
             {
                 ["GOOGLE_MAPS_API_KEY"] = "your_api_key_here",
             }
+        },
+        [PostgreSQLMCPServerName] = new MCPServerConfig
+        {
+            ServerName = PostgreSQLMCPServerName,
+            Command = "npx",
+            Args = ["-y", "@modelcontextprotocol/server-postgres"],
+            Env =
+            {
+                ["DATABASE_URL"] = "postgresql://username:password@localhost:5432/database_name"
+            },
+            Description = "Provides secure read-only access to PostgreSQL databases with schema " +
+                          "introspection and data querying capabilities. Supports complex SQL queries, " +
+                          "table structure exploration, and data analysis operations, enabling AI " +
+                          "assistants to interact with relational databases safely and efficiently " +
+                          "for data retrieval and analytics tasks."
+        },
+        [PuppeteerMCPServerName] = new MCPServerConfig
+        {
+            ServerName = PuppeteerMCPServerName,
+            Command = "npx",
+            Args = ["-y", "@modelcontextprotocol/server-puppeteer"],
+            Description = "Browser automation and web scraping server that provides headless " +
+                          "Chrome/Chromium control for dynamic web content interaction. Supports " +
+                          "page navigation, element interaction, screenshot capture, and PDF " +
+                          "generation, enabling AI assistants to automate web tasks, extract " +
+                          "dynamic content, and perform web-based operations with full JavaScript support."
+        },
+        [SlackMCPServerName] = new MCPServerConfig
+        {
+            ServerName = SlackMCPServerName,
+            Command = "npx",
+            Args = ["-y", "@modelcontextprotocol/server-slack"],
+            Env =
+            {
+                ["SLACK_BOT_TOKEN"] = "xoxb-your-bot-token-here"
+            },
+            Description = "Slack workspace integration server providing comprehensive team " +
+                          "communication and collaboration capabilities. Supports channel management, " +
+                          "message sending/receiving, user interactions, and workspace administration, " +
+                          "enabling AI assistants to participate in team communications, automate " +
+                          "workflows, and facilitate seamless team collaboration through Slack."
+        },
+        [SentryMCPServerName] = new MCPServerConfig
+        {
+            ServerName = SentryMCPServerName,
+            Command = "npx",
+            Args = ["-y", "@modelcontextprotocol/server-sentry"],
+            Env =
+            {
+                ["SENTRY_DSN"] = "https://your-sentry-dsn@sentry.io/project-id"
+            },
+            Description = "Application monitoring and error tracking server that provides " +
+                          "real-time error analysis and performance monitoring capabilities. " +
+                          "Supports error collection, issue tracking, performance metrics, and " +
+                          "debugging information, enabling AI assistants to monitor application " +
+                          "health, analyze error patterns, and assist in troubleshooting and debugging."
+        },
+        [BraveSearchMCPServerName] = new MCPServerConfig
+        {
+            ServerName = BraveSearchMCPServerName,
+            Command = "npx",
+            Args = ["-y", "@modelcontextprotocol/server-brave-search"],
+            Env =
+            {
+                ["BRAVE_SEARCH_API_KEY"] = "your_brave_search_api_key_here"
+            },
+            Description = "Privacy-focused web search server powered by Brave Search API " +
+                          "providing independent web search capabilities without Google dependency. " +
+                          "Supports web search, news search, and image search with privacy protection, " +
+                          "enabling AI assistants to access current web information while respecting " +
+                          "user privacy and avoiding search engine bias."
         },
     };
 

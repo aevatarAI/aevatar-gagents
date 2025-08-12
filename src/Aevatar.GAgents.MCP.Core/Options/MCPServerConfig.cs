@@ -11,6 +11,7 @@ public class MCPServerConfig
     [Id(4)] public string Description { get; set; } = string.Empty;
     [Id(5)] public string? Url { get; set; }
     [Id(6)] public MCPServerType Type { get; set; }
+    [Id(7)] public Dictionary<string, string> Headers { get; set; } = new();
 
     public bool IsValid()
     {
