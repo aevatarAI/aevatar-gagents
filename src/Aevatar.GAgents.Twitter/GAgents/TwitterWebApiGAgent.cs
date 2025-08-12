@@ -20,32 +20,32 @@ namespace Aevatar.GAgents.Twitter.GAgents;
 public interface ITwitterWebApiGAgent : IStateGAgent<TwitterWebApiGAgentState>
 {
     // Tweet Management
-    Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null, CancellationToken cancellationToken = default);
-    Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null, CancellationToken cancellationToken = default);
-    Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text, CancellationToken cancellationToken = default);
-    Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10, CancellationToken cancellationToken = default);
-    Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId, CancellationToken cancellationToken = default);
-    Task<bool> DeleteTweetAsync(string tweetId, CancellationToken cancellationToken = default);
+    Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null);
+    Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null);
+    Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text);
+    Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10);
+    Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId);
+    Task<bool> DeleteTweetAsync(string tweetId);
     
     // User Interactions
-    Task<bool> LikeTweetAsync(string tweetId, CancellationToken cancellationToken = default);
-    Task<bool> UnlikeTweetAsync(string tweetId, CancellationToken cancellationToken = default);
-    Task<bool> RetweetAsync(string tweetId, CancellationToken cancellationToken = default);
-    Task<bool> UnretweetAsync(string tweetId, CancellationToken cancellationToken = default);
+    Task<bool> LikeTweetAsync(string tweetId);
+    Task<bool> UnlikeTweetAsync(string tweetId);
+    Task<bool> RetweetAsync(string tweetId);
+    Task<bool> UnretweetAsync(string tweetId);
     
     // User Profile
-    Task<UserProfileDto?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default);
-    Task<UserProfileDto?> GetMyProfileAsync(CancellationToken cancellationToken = default);
+    Task<UserProfileDto?> GetUserByUsernameAsync(string username);
+    Task<UserProfileDto?> GetMyProfileAsync();
     
     // Relationships
-    Task<bool> FollowUserAsync(string userId, CancellationToken cancellationToken = default);
-    Task<bool> UnfollowUserAsync(string userId, CancellationToken cancellationToken = default);
-    Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100, CancellationToken cancellationToken = default);
-    Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100, CancellationToken cancellationToken = default);
+    Task<bool> FollowUserAsync(string userId);
+    Task<bool> UnfollowUserAsync(string userId);
+    Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100);
+    Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100);
     
     // Timelines
-    Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null, CancellationToken cancellationToken = default);
-    Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null, CancellationToken cancellationToken = default);
+    Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null);
+    Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null);
 }
 
 // DTOs
@@ -327,7 +327,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // Tweet Management Implementation
-    public async Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null, CancellationToken cancellationToken = default)
+    public async Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null)
     {
         try
         {
@@ -337,7 +337,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 media = mediaIds != null ? new { media_ids = mediaIds } : null
             };
             
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
             var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
             
             RaiseEvent(new TweetCreatedLogEvent
@@ -357,7 +357,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null, CancellationToken cancellationToken = default)
+    public async Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null)
     {
         try
         {
@@ -368,7 +368,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 media = mediaIds != null ? new { media_ids = mediaIds } : null
             };
             
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
             var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
             
             RaiseEvent(new TweetCreatedLogEvent
@@ -388,7 +388,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text, CancellationToken cancellationToken = default)
+    public async Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text)
     {
         try
         {
@@ -398,7 +398,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 quote_tweet_id = quotedTweetId
             };
             
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
             var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
             
             RaiseEvent(new TweetCreatedLogEvent
@@ -418,11 +418,11 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<bool> DeleteTweetAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteTweetAsync(string tweetId)
     {
         try
         {
-            await SendRequestAsync(HttpMethod.Delete, $"/tweets/{tweetId}", null, cancellationToken);
+            await SendRequestAsync(HttpMethod.Delete, $"/tweets/{tweetId}", null);
             
             RaiseEvent(new TweetDeletedLogEvent
             {
@@ -440,13 +440,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId)
     {
         try
         {
             var response = await SendRequestAsync(HttpMethod.Get, 
                 $"/tweets/{tweetId}?tweet.fields=created_at,author_id,conversation_id,in_reply_to_user_id,public_metrics", 
-                null, cancellationToken);
+                null);
             
             var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
             return JsonSerializer.Deserialize<TweetDetailDto>(data.GetRawText());
@@ -458,13 +458,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10, CancellationToken cancellationToken = default)
+    public async Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10)
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics", 
-                null, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Get,
+                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics",
+                null);
             
             var doc = JsonDocument.Parse(response);
             var result = new TweetSearchResultDto();
@@ -491,14 +491,14 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // User Interactions
-    public async Task<bool> LikeTweetAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<bool> LikeTweetAsync(string tweetId)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
             var payload = new { tweet_id = tweetId };
             
-            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/likes", payload, cancellationToken);
+            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/likes", payload);
             
             RaiseEvent(new TweetInteractionLogEvent
             {
@@ -517,12 +517,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<bool> UnlikeTweetAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<bool> UnlikeTweetAsync(string tweetId)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/likes/{tweetId}", null, cancellationToken);
+            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
+            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/likes/{tweetId}", null);
             
             RaiseEvent(new TweetInteractionLogEvent
             {
@@ -541,14 +541,14 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<bool> RetweetAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<bool> RetweetAsync(string tweetId)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
             var payload = new { tweet_id = tweetId };
             
-            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/retweets", payload, cancellationToken);
+            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/retweets", payload);
             
             RaiseEvent(new TweetInteractionLogEvent
             {
@@ -567,12 +567,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<bool> UnretweetAsync(string tweetId, CancellationToken cancellationToken = default)
+    public async Task<bool> UnretweetAsync(string tweetId)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/retweets/{tweetId}", null, cancellationToken);
+            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
+            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/retweets/{tweetId}", null);
             
             RaiseEvent(new TweetInteractionLogEvent
             {
@@ -592,13 +592,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // User Profile
-    public async Task<UserProfileDto?> GetUserByUsernameAsync(string username, CancellationToken cancellationToken = default)
+    public async Task<UserProfileDto?> GetUserByUsernameAsync(string username)
     {
         try
         {
             var response = await SendRequestAsync(HttpMethod.Get, 
                 $"/users/by/username/{username}?user.fields=created_at,description,public_metrics,verified,profile_image_url", 
-                null, cancellationToken);
+                null);
             
             var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
             return JsonSerializer.Deserialize<UserProfileDto>(data.GetRawText());
@@ -610,13 +610,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<UserProfileDto?> GetMyProfileAsync(CancellationToken cancellationToken = default)
+    public async Task<UserProfileDto?> GetMyProfileAsync()
     {
         try
         {
             var response = await SendRequestAsync(HttpMethod.Get, 
                 "/users/me?user.fields=created_at,description,public_metrics,verified,profile_image_url", 
-                null, cancellationToken);
+                null);
             
             var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
             var profile = JsonSerializer.Deserialize<UserProfileDto>(data.GetRawText());
@@ -637,14 +637,14 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // Relationships
-    public async Task<bool> FollowUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<bool> FollowUserAsync(string userId)
     {
         try
         {
-            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync();
             var payload = new { target_user_id = userId };
             
-            await SendRequestAsync(HttpMethod.Post, $"/users/{myUserId}/following", payload, cancellationToken);
+            await SendRequestAsync(HttpMethod.Post, $"/users/{myUserId}/following", payload);
             
             RaiseEvent(new UserRelationshipLogEvent
             {
@@ -663,12 +663,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<bool> UnfollowUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<bool> UnfollowUserAsync(string userId)
     {
         try
         {
-            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{myUserId}/following/{userId}", null, cancellationToken);
+            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync();
+            await SendRequestAsync(HttpMethod.Delete, $"/users/{myUserId}/following/{userId}", null);
             
             RaiseEvent(new UserRelationshipLogEvent
             {
@@ -687,14 +687,14 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100, CancellationToken cancellationToken = default)
+    public async Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100)
     {
         try
         {
-            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync();
             var response = await SendRequestAsync(HttpMethod.Get, 
                 $"/users/{targetUserId}/followers?max_results={maxResults}&user.fields=created_at,description,public_metrics,verified", 
-                null, cancellationToken);
+                null);
             
             return ParseUserListResponse(response);
         }
@@ -705,14 +705,14 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100, CancellationToken cancellationToken = default)
+    public async Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100)
     {
         try
         {
-            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync();
             var response = await SendRequestAsync(HttpMethod.Get, 
                 $"/users/{targetUserId}/following?max_results={maxResults}&user.fields=created_at,description,public_metrics,verified", 
-                null, cancellationToken);
+                null);
             
             return ParseUserListResponse(response);
         }
@@ -724,16 +724,16 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // Timelines
-    public async Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null, CancellationToken cancellationToken = default)
+    public async Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync(cancellationToken);
+            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
             var url = $"/users/{userId}/timelines/reverse_chronological?max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics";
             if (!string.IsNullOrEmpty(paginationToken))
                 url += $"&pagination_token={paginationToken}";
             
-            var response = await SendRequestAsync(HttpMethod.Get, url, null, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Get, url, null);
             return ParseTimelineResponse(response);
         }
         catch (Exception ex)
@@ -743,7 +743,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null, CancellationToken cancellationToken = default)
+    public async Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null)
     {
         try
         {
@@ -751,7 +751,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
             if (!string.IsNullOrEmpty(paginationToken))
                 url += $"&pagination_token={paginationToken}";
             
-            var response = await SendRequestAsync(HttpMethod.Get, url, null, cancellationToken);
+            var response = await SendRequestAsync(HttpMethod.Get, url, null);
             return ParseTimelineResponse(response);
         }
         catch (Exception ex)
@@ -888,8 +888,9 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // Helper Methods
-    private async Task<string> SendRequestAsync(HttpMethod method, string endpoint, object? payload, CancellationToken cancellationToken)
+    private async Task<string> SendRequestAsync(HttpMethod method, string endpoint, object? payload, CancellationToken? cancellationToken = null)
     {
+        cancellationToken ??= CancellationToken.None;
         using var request = new HttpRequestMessage(method, $"{State.BaseApiUrl}{endpoint}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", State.BearerToken);
         
@@ -899,11 +900,11 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
         
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value);
         cts.CancelAfter(TimeSpan.FromSeconds(State.RequestTimeoutSeconds));
         
         var response = await HttpClient.SendAsync(request, cts.Token);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken.Value);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -914,9 +915,9 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         return content;
     }
 
-    private async Task<string> GetAuthenticatedUserIdAsync(CancellationToken cancellationToken)
+    private async Task<string> GetAuthenticatedUserIdAsync()
     {
-        var profile = await GetMyProfileAsync(cancellationToken);
+        var profile = await GetMyProfileAsync();
         if (profile == null)
             throw new InvalidOperationException("Failed to get authenticated user ID");
         return profile.Id;
