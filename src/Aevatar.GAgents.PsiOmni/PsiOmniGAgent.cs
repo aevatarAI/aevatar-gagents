@@ -189,7 +189,7 @@ public partial class
                                                </example4>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
-                                               """ + 
+                                               """ +
                                                """
                                                ## ALWAYS Progress
                                                Once you plan to do something, progress with the plan immediately.
@@ -255,9 +255,11 @@ public partial class
             Id = "PsiOmniGAgent",
             Name = "PsiOmni Integration Agent",
             L1Description = "AI agent for PsiOmni platform integration with advanced cognitive capabilities",
-            L2Description = "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.",
+            L2Description =
+                "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.",
             Category = "AI",
-            Capabilities = new List<string> { "cognitive-services", "neural-processing", "intelligent-automation", "complex-problem-solving" },
+            Capabilities = new List<string>
+                { "cognitive-services", "neural-processing", "intelligent-automation", "complex-problem-solving" },
             Tags = new List<string> { "psiomni", "cognitive", "ai", "automation" }
         };
         return Task.FromResult(JsonConverter.SerializeObject(descriptionInfo));
@@ -311,7 +313,7 @@ public partial class
               - "Description": a description of the agent can do. For SPECIALIZED agents: 1) Include the agent's capability derived from the selected tools. 2) DO NOT directly include the task without generalization.
               - "Tools": a list of names of the tools the agent will use (only for SPECIALIZED mode)
             - No other text or explanation.
-            
+
             ## When deciding between "ORCHESTRATOR" and "SPECIALIZED"
             - Prefer SPECIALIZED mode if the agent's depth is more than 3
             - An agent with depth equal to 5 must operate in SPECIALIZED mode
@@ -541,6 +543,7 @@ public partial class
                         ? "Rate limit"
                         : "Other Http Operation Issue";
                 }
+
                 LogEventInfo(
                     "{ErrorType} error for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
                     errorType, operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs,
@@ -609,10 +612,12 @@ public partial class
                     {
                         var firstPart = content.Substring(0, 200);
                         var lastPart = content.Substring(content.Length - 200);
-                        LogEventInfo("Result (first 200 chars):\n{FirstPart}\n...\nResult (last 200 chars):\n{LastPart}", 
+                        LogEventInfo(
+                            "Result (first 200 chars):\n{FirstPart}\n...\nResult (last 200 chars):\n{LastPart}",
                             firstPart, lastPart);
                     }
                 }
+
                 LogEventDebug("No UserAgentId, logging result locally");
                 return;
             }
@@ -746,26 +751,33 @@ public partial class
                 break;
             case ReceiveAgentMessageEvent payload:
             {
-                var content = $"Received reply from agent ({payload.Event.SenderAgentName}):\n\n{payload.Event.Content}";
+                var content = $"<agent_reply><agent_name>{payload.Event.SenderAgentName}</agent_name>\n";
+                content += $"<content>{payload.Event.Content}</content>\n";
+
                 if (!payload.Event.Artifacts.IsNullOrEmpty())
                 {
                     var artifacts = payload.Event.Artifacts.Select(
-                        a => $"<artifact name=\"{a.Name}\" format=\"{a.Format}\">{a.Content}</artifact>"
+                        a => $"<artifact name=\"{a.Name}\" format=\"{a.Format}\">{a.Content}</artifact>\n"
                     ).JoinAsString("\n");
                     content += $"\n\n{artifacts}";
                 }
 
-                var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
+                content += "</agent_reply>";
+
+                var amessage = PsiOmniChatMessage.CreateUserMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                var agentDescriptor = state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
-                if(agentDescriptor != null)
+                var agentDescriptor =
+                    state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
+                if (agentDescriptor != null)
                     state.AgentUsage.Remove(agentDescriptor.Name);
                 ScheduleTask(async () =>
                 {
-                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
+                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts",
+                        payload.Event.Content, payload.Event.Artifacts.Count);
                     await RunAsync($"Agent Message {payload.Event}");
-                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
+                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts",
+                        payload.Event.Content, payload.Event.Artifacts.Count);
                 });
                 break;
             }
@@ -796,7 +808,7 @@ public partial class
             {
                 if (payload.LastChildDescriptor.Name.IsNullOrEmpty())
                     break;
-                    
+
                 LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}",
                     payload.LastChildDescriptor.AgentId, payload.LastChildDescriptor.AgentType);
                 AgentDescriptor? oldObj;
@@ -878,7 +890,7 @@ public partial class
                         if (lastMessage.Contains("<artifact"))
                         {
                             // Support both self-closing and content-containing artifact tags
-                            
+
                             // 1. Handle self-closing artifacts: <artifact name="..." format="..." />
                             var selfClosingMatches = System.Text.RegularExpressions.Regex.Matches(
                                 lastMessage,
@@ -898,7 +910,7 @@ public partial class
                                     });
                                 }
                             }
-                            
+
                             // 2. Handle content-containing artifacts: <artifact name="..." format="...">content</artifact>
                             var contentMatches = System.Text.RegularExpressions.Regex.Matches(
                                 lastMessage,
@@ -910,7 +922,7 @@ public partial class
                                 var artifactName = match.Groups[1].Value.Trim();
                                 var artifactFormat = match.Groups[2].Value.Trim();
                                 var artifactContent = match.Groups[3].Value.Trim();
-                                
+
                                 finalResult.Artifacts.Add(new Artifact
                                 {
                                     Name = artifactName,
@@ -947,9 +959,12 @@ public partial class
                     var lastMessage = state.ChatHistory.LastOrDefault();
                     var hasToolCalls = lastMessage?.ToolCalls?.Count > 0;
                     // Check if there are any InProgress tasks that are not assigned to this agent
-                    var hasInProgressTasks = state.TodoList.Any(x => x.Status == TodoStatus.InProgress && x.AssigneeAgentId != this.GetGrainId().ToString());
-                    var hasPendingTasks = state.TodoList.Any(x => x.Status == TodoStatus.Pending || (x.Status == TodoStatus.InProgress && x.AssigneeAgentId == this.GetGrainId().ToString()));
-                    
+                    var hasInProgressTasks = state.TodoList.Any(x =>
+                        x.Status == TodoStatus.InProgress && x.AssigneeAgentName != "__self__");
+                    var hasPendingTasks = state.TodoList.Any(x =>
+                        x.Status == TodoStatus.Pending ||
+                        (x.Status == TodoStatus.InProgress && x.AssigneeAgentName == "__self__"));
+
                     // Extract thought to check if agent was thinking
                     var hasThought = false;
                     if (state.RealizationStatus == RealizationStatus.Orchestrator && lastMessage != null)
@@ -957,17 +972,20 @@ public partial class
                         var content = lastMessage.Content ?? string.Empty;
                         hasThought = content.Contains("<thought>") && content.Contains("</thought>");
                     }
-                    
+
                     // If the agent returned thought without tool calls, no InProgress tasks but has pending tasks, inject a <crank> message to continue processing.
                     if (hasThought && !hasToolCalls && !hasInProgressTasks && hasPendingTasks)
                     {
-                        LogEventInfo("Detected stuck state: agent returned thought without tool calls, no InProgress tasks but has pending tasks. Injecting <crank> message to continue processing.");
-                        
+                        LogEventInfo(
+                            "Detected stuck state: agent returned thought without tool calls, no InProgress tasks but has pending tasks. Injecting <crank> message to continue processing.");
+
                         // Append crank message and schedule task run later
-                        var crankMessage = PsiOmniChatMessage.CreateUserMessage("<crank>Continue processing the pending tasks.</crank>");
+                        var crankMessage =
+                            PsiOmniChatMessage.CreateUserMessage(
+                                "<crank>Continue processing the pending tasks.</crank>");
                         crankMessage.Metadata["IsCrank"] = "true";
                         state.ChatHistory.Add(crankMessage);
-                        
+
                         // Schedule task run later
                         ScheduleTask(async () => await RunAsync("crank message continuation"));
                     }
