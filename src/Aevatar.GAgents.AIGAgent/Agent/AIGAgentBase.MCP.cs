@@ -797,7 +797,8 @@ public abstract partial class AIGAgentBase<TState, TStateLogEvent, TEvent, TConf
         {
             if (!server.IsValid())
             {
-                Logger.LogWarning("Skipping invalid MCP server configuration for {ServerName}", server.ServerName);
+                Logger.LogWarning("Skipping invalid MCP server configuration for {ServerName}, {ServerConfig}",
+                    server.ServerName, server);
                 continue;
             }
 
