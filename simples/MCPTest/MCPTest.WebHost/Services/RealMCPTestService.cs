@@ -474,6 +474,90 @@ public class RealMCPTestService
         };
     }
 
+    private string ExtractContentText(object? content)
+    {
+        if (content == null)
+        {
+            return "No content returned";
+        }
+
+        try
+        {
+            // Check if it's a TextContentBlock or similar
+            var contentType = content.GetType();
+            _logger.LogDebug("Processing content of type: {ContentType}", contentType.Name);
+
+            // Try to get Text property using reflection
+            var textProperty = contentType.GetProperty("Text");
+            if (textProperty != null)
+            {
+                var textValue = textProperty.GetValue(content);
+                if (textValue != null)
+                {
+                    _logger.LogDebug("Extracted text: {Text}", textValue);
+                    return textValue.ToString() ?? "Empty text content";
+                }
+            }
+
+            // Try to get Content property
+            var contentProperty = contentType.GetProperty("Content");
+            if (contentProperty != null)
+            {
+                var contentValue = contentProperty.GetValue(content);
+                if (contentValue != null)
+                {
+                    _logger.LogDebug("Extracted content: {Content}", contentValue);
+                    return contentValue.ToString() ?? "Empty content";
+                }
+            }
+
+            // Try to serialize the whole object to see its structure
+            var serialized = JsonSerializer.Serialize(content, new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
+            
+            _logger.LogDebug("Serialized content: {SerializedContent}", serialized);
+
+            // Try to parse the serialized JSON to extract text
+            try
+            {
+                using var doc = JsonDocument.Parse(serialized);
+                var root = doc.RootElement;
+
+                // Look for common text properties
+                if (root.TryGetProperty("text", out var textElement))
+                {
+                    return textElement.GetString() ?? "Empty text";
+                }
+
+                if (root.TryGetProperty("content", out var contentElement))
+                {
+                    return contentElement.GetString() ?? contentElement.ToString();
+                }
+
+                if (root.TryGetProperty("value", out var valueElement))
+                {
+                    return valueElement.GetString() ?? valueElement.ToString();
+                }
+
+                // If no specific property found, return the formatted JSON
+                return serialized;
+            }
+            catch (JsonException)
+            {
+                // If JSON parsing fails, return the string representation
+                return content.ToString() ?? "Unable to extract content";
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract content text from {ContentType}", content.GetType().Name);
+            return $"Error extracting content: {ex.Message}";
+        }
+    }
+
     public async Task<MCPToolResult> CallToolAsync(string serverName, string toolName, Dictionary<string, object> arguments)
     {
         try
@@ -485,7 +569,7 @@ public class RealMCPTestService
             var response = await client.CallToolAsync(toolName, argumentsDict);
             
             var content = response.Content?.FirstOrDefault();
-            var resultText = content?.ToString() ?? JsonSerializer.Serialize(content);
+            var resultText = ExtractContentText(content);
 
             return new MCPToolResult
             {
