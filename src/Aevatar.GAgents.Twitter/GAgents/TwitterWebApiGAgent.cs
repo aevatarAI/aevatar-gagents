@@ -118,6 +118,8 @@ public class TwitterWebApiGAgentState : StateBase
     [Id(3)] public string? OAuthTokenSecret { get; set; }
     [Id(4)] public string? UserId { get; set; }
     [Id(5)] public int RequestTimeoutSeconds { get; set; } = 30;
+    [Id(6)] public string? ConsumerKey { get; set; }
+    [Id(7)] public string? ConsumerSecret { get; set; }
     
     [Id(10)] public List<string> RecentTweetIds { get; set; } = new();
     [Id(11)] public List<string> LikedTweetIds { get; set; } = new();
@@ -126,6 +128,24 @@ public class TwitterWebApiGAgentState : StateBase
     [Id(14)] public string LastSearchQuery { get; set; } = string.Empty;
     [Id(15)] public DateTime LastOperationUtc { get; set; } = DateTime.MinValue;
     [Id(16)] public Dictionary<string, int> OperationCounts { get; set; } = new();
+}
+
+// Authentication Types
+public enum TwitterAuthenticationMode
+{
+    BearerToken,      // App-only authentication for read-only operations
+    OAuth1a,          // User context authentication for write operations
+    OAuth2UserContext, // OAuth 2.0 user context (future support)
+    Auto              // Automatically choose the best available authentication method
+}
+
+[GenerateSerializer]
+public class TwitterAuthenticationResult
+{
+    [Id(0)] public bool IsSuccess { get; set; }
+    [Id(1)] public string ErrorMessage { get; set; } = string.Empty;
+    [Id(2)] public TwitterAuthenticationMode AuthMode { get; set; }
+    [Id(3)] public Dictionary<string, string> Headers { get; set; } = new();
 }
 
 // Configuration
@@ -139,6 +159,8 @@ public class TwitterWebApiGAgentConfiguration : ConfigurationBase
     [Id(4)] public string? ConsumerKey { get; set; }
     [Id(5)] public string? ConsumerSecret { get; set; }
     [Id(6)] public int RequestTimeoutSeconds { get; set; } = 30;
+    // Removed PreferredAuthMode - now supports both authentication methods simultaneously
+    [Id(8)] public bool EnableDebugLogging { get; set; } = false;
 }
 
 // State Log Events
@@ -151,6 +173,10 @@ public class TwitterConfigSetLogEvent : TwitterWebApiStateLogEvent
     [Id(0)] public string BaseApiUrl { get; set; } = string.Empty;
     [Id(1)] public string BearerToken { get; set; } = string.Empty;
     [Id(2)] public int RequestTimeoutSeconds { get; set; }
+    [Id(3)] public string? ConsumerKey { get; set; }
+    [Id(4)] public string? ConsumerSecret { get; set; }
+    [Id(5)] public string? OAuthToken { get; set; }
+    [Id(6)] public string? OAuthTokenSecret { get; set; }
 }
 
 [GenerateSerializer]
@@ -249,14 +275,94 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
 
     protected override async Task PerformConfigAsync(TwitterWebApiGAgentConfiguration configuration)
     {
+        // Validate configuration
+        var validationResult = ValidateConfiguration(configuration);
+        if (!validationResult.IsSuccess)
+        {
+            Logger.LogError("TwitterWebApiGAgent configuration validation failed: {Error}", validationResult.ErrorMessage);
+            throw new InvalidOperationException($"Configuration validation failed: {validationResult.ErrorMessage}");
+        }
+        
         RaiseEvent(new TwitterConfigSetLogEvent
         {
             BaseApiUrl = configuration.BaseApiUrl,
             BearerToken = configuration.BearerToken,
-            RequestTimeoutSeconds = configuration.RequestTimeoutSeconds
+            RequestTimeoutSeconds = configuration.RequestTimeoutSeconds,
+            ConsumerKey = configuration.ConsumerKey,
+            ConsumerSecret = configuration.ConsumerSecret,
+            OAuthToken = configuration.OAuthToken,
+            OAuthTokenSecret = configuration.OAuthTokenSecret
         });
         
         await ConfirmEvents();
+        
+        if (configuration.EnableDebugLogging)
+        {
+            var authMethods = new List<string>();
+            if (!string.IsNullOrEmpty(configuration.BearerToken))
+                authMethods.Add("Bearer Token");
+            if (!string.IsNullOrEmpty(configuration.OAuthToken))
+                authMethods.Add("OAuth 1.0a");
+            
+            Logger.LogInformation("TwitterWebApiGAgent configured with authentication methods: {AuthMethods}", 
+                string.Join(", ", authMethods));
+        }
+    }
+    
+    private TwitterAuthenticationResult ValidateConfiguration(TwitterWebApiGAgentConfiguration configuration)
+    {
+        var result = new TwitterAuthenticationResult();
+        var errors = new List<string>();
+        
+        // Check basic configuration
+        if (string.IsNullOrEmpty(configuration.BaseApiUrl))
+            errors.Add("BaseApiUrl is required");
+        
+        if (configuration.RequestTimeoutSeconds <= 0)
+            errors.Add("RequestTimeoutSeconds must be positive");
+        
+        // Check that at least one authentication method is configured
+        bool hasBearerToken = !string.IsNullOrEmpty(configuration.BearerToken);
+        bool hasOAuthCredentials = !string.IsNullOrEmpty(configuration.ConsumerKey) &&
+                                  !string.IsNullOrEmpty(configuration.ConsumerSecret) &&
+                                  !string.IsNullOrEmpty(configuration.OAuthToken) &&
+                                  !string.IsNullOrEmpty(configuration.OAuthTokenSecret);
+        
+        if (!hasBearerToken && !hasOAuthCredentials)
+        {
+            errors.Add("At least one authentication method must be configured (Bearer Token or OAuth 1.0a)");
+        }
+        
+        // Validate OAuth credentials if provided
+        if (!string.IsNullOrEmpty(configuration.ConsumerKey) || 
+            !string.IsNullOrEmpty(configuration.ConsumerSecret) ||
+            !string.IsNullOrEmpty(configuration.OAuthToken) ||
+            !string.IsNullOrEmpty(configuration.OAuthTokenSecret))
+        {
+            if (string.IsNullOrEmpty(configuration.ConsumerKey))
+                errors.Add("ConsumerKey is required when using OAuth 1.0a authentication");
+            
+            if (string.IsNullOrEmpty(configuration.ConsumerSecret))
+                errors.Add("ConsumerSecret is required when using OAuth 1.0a authentication");
+            
+            if (string.IsNullOrEmpty(configuration.OAuthToken))
+                errors.Add("OAuthToken is required when using OAuth 1.0a authentication");
+            
+            if (string.IsNullOrEmpty(configuration.OAuthTokenSecret))
+                errors.Add("OAuthTokenSecret is required when using OAuth 1.0a authentication");
+        }
+        
+        if (errors.Any())
+        {
+            result.ErrorMessage = string.Join("; ", errors);
+            result.IsSuccess = false;
+        }
+        else
+        {
+            result.IsSuccess = true;
+        }
+        
+        return result;
     }
 
     protected override void GAgentTransitionState(TwitterWebApiGAgentState state, StateLogEventBase<TwitterWebApiStateLogEvent> @event)
@@ -267,6 +373,10 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 state.BaseApiUrl = e.BaseApiUrl;
                 state.BearerToken = e.BearerToken;
                 state.RequestTimeoutSeconds = e.RequestTimeoutSeconds;
+                state.ConsumerKey = e.ConsumerKey;
+                state.ConsumerSecret = e.ConsumerSecret;
+                state.OAuthToken = e.OAuthToken;
+                state.OAuthTokenSecret = e.OAuthTokenSecret;
                 break;
                 
             case TweetCreatedLogEvent e:
@@ -331,11 +441,17 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var payload = new
+            // Build payload dynamically to avoid null fields
+            var payload = new Dictionary<string, object>
             {
-                text,
-                media = mediaIds != null ? new { media_ids = mediaIds } : null
+                ["text"] = text
             };
+            
+            // Only include media field if mediaIds are provided
+            if (mediaIds != null && mediaIds.Count > 0)
+            {
+                payload["media"] = new { media_ids = mediaIds };
+            }
             
             var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
             var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
@@ -361,12 +477,18 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var payload = new
+            // Build payload dynamically to avoid null fields
+            var payload = new Dictionary<string, object>
             {
-                text,
-                reply = new { in_reply_to_tweet_id = inReplyToTweetId },
-                media = mediaIds != null ? new { media_ids = mediaIds } : null
+                ["text"] = text,
+                ["reply"] = new { in_reply_to_tweet_id = inReplyToTweetId }
             };
+            
+            // Only include media field if mediaIds are provided
+            if (mediaIds != null && mediaIds.Count > 0)
+            {
+                payload["media"] = new { media_ids = mediaIds };
+            }
             
             var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
             var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
@@ -462,8 +584,8 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get,
-                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics",
+            var response = await SendRequestAsync(HttpMethod.Get, 
+                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics", 
                 null);
             
             var doc = JsonDocument.Parse(response);
@@ -888,31 +1010,387 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     // Helper Methods
+    private TwitterAuthenticationResult ValidateAuthentication(TwitterAuthenticationMode requiredMode)
+    {
+        var result = new TwitterAuthenticationResult { AuthMode = requiredMode };
+        
+        switch (requiredMode)
+        {
+            case TwitterAuthenticationMode.BearerToken:
+                if (string.IsNullOrEmpty(State.BearerToken))
+                {
+                    result.ErrorMessage = "Bearer Token is required but not configured";
+                    return result;
+                }
+                break;
+                
+            case TwitterAuthenticationMode.OAuth1a:
+                if (string.IsNullOrEmpty(State.ConsumerKey) || 
+                    string.IsNullOrEmpty(State.ConsumerSecret) ||
+                    string.IsNullOrEmpty(State.OAuthToken) || 
+                    string.IsNullOrEmpty(State.OAuthTokenSecret))
+                {
+                    result.ErrorMessage = "OAuth 1.0a requires ConsumerKey, ConsumerSecret, OAuthToken, and OAuthTokenSecret";
+                    return result;
+                }
+                break;
+                
+            case TwitterAuthenticationMode.Auto:
+                // For Auto mode, check if we have any valid authentication method
+                bool hasBearerToken = !string.IsNullOrEmpty(State.BearerToken);
+                bool hasOAuth = !string.IsNullOrEmpty(State.OAuthToken) &&
+                               !string.IsNullOrEmpty(State.OAuthTokenSecret) &&
+                               !string.IsNullOrEmpty(State.ConsumerKey) &&
+                               !string.IsNullOrEmpty(State.ConsumerSecret);
+                
+                if (!hasBearerToken && !hasOAuth)
+                {
+                    result.ErrorMessage = "At least one authentication method (Bearer Token or OAuth 1.0a) is required";
+                    return result;
+                }
+                break;
+                
+            case TwitterAuthenticationMode.OAuth2UserContext:
+                result.ErrorMessage = "OAuth 2.0 User Context not yet implemented";
+                return result;
+        }
+        
+        result.IsSuccess = true;
+        return result;
+    }
+    
+    private string GenerateOAuth1aSignature(HttpMethod method, string url, Dictionary<string, string> parameters, string consumerSecret, string tokenSecret)
+    {
+        try
+        {
+            // Sort parameters
+            var sortedParams = parameters
+                .OrderBy(p => p.Key)
+                .ThenBy(p => p.Value)
+                .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}")
+                .ToList();
+            
+            var paramString = string.Join("&", sortedParams);
+            var baseString = $"{method.Method.ToUpper()}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(paramString)}";
+            var signingKey = $"{Uri.EscapeDataString(consumerSecret)}&{Uri.EscapeDataString(tokenSecret)}";
+            
+            Logger.LogInformation("OAuth Base String: {BaseString}", baseString);
+            Logger.LogInformation("OAuth Signing Key: {SigningKey}", $"{Uri.EscapeDataString(consumerSecret)}&[REDACTED]");
+            
+            using var hmac = new System.Security.Cryptography.HMACSHA1(Encoding.UTF8.GetBytes(signingKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(baseString));
+            var signature = Convert.ToBase64String(hash);
+            
+            Logger.LogInformation("OAuth Signature: {Signature}", signature);
+            return signature;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to generate OAuth 1.0a signature");
+            throw new InvalidOperationException("OAuth signature generation failed", ex);
+        }
+    }
+    
+    private TwitterAuthenticationResult PrepareOAuth1aHeaders(HttpMethod method, string url, object? payload)
+    {
+        var result = new TwitterAuthenticationResult { AuthMode = TwitterAuthenticationMode.OAuth1a };
+        
+        try
+        {
+            if (string.IsNullOrEmpty(State.ConsumerKey) || string.IsNullOrEmpty(State.ConsumerSecret))
+            {
+                result.ErrorMessage = "ConsumerKey and ConsumerSecret are required for OAuth 1.0a";
+                return result;
+            }
+            
+            var consumerKey = State.ConsumerKey;
+            var consumerSecret = State.ConsumerSecret;
+            
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var nonce = Guid.NewGuid().ToString("N");
+            
+            var oauthParams = new Dictionary<string, string>
+            {
+                ["oauth_consumer_key"] = consumerKey,
+                ["oauth_token"] = State.OAuthToken!,
+                ["oauth_signature_method"] = "HMAC-SHA1",
+                ["oauth_timestamp"] = timestamp,
+                ["oauth_nonce"] = nonce,
+                ["oauth_version"] = "1.0"
+            };
+            
+            // Parse URL to separate base URL and query parameters
+            var uri = new Uri(url);
+            var baseUrl = $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}";
+            var signatureParams = new Dictionary<string, string>(oauthParams);
+            
+            // Add query parameters to signature (for GET/DELETE requests)
+            if (!string.IsNullOrEmpty(uri.Query))
+            {
+                var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                foreach (string key in queryParams.Keys)
+                {
+                    if (key != null && queryParams[key] != null)
+                    {
+                        signatureParams[key] = queryParams[key]!;
+                    }
+                }
+            }
+            
+            // For Twitter API v2, JSON payload does not participate in OAuth signature
+            var signature = GenerateOAuth1aSignature(method, baseUrl, signatureParams, consumerSecret, State.OAuthTokenSecret!);
+            oauthParams["oauth_signature"] = signature;
+            
+            var authHeader = "OAuth " + string.Join(", ", 
+                oauthParams.Select(p => $"{Uri.EscapeDataString(p.Key)}=\"{Uri.EscapeDataString(p.Value)}\""));
+            
+            result.Headers["Authorization"] = authHeader;
+            result.IsSuccess = true;
+            
+            // Enhanced debugging for OAuth 1.0a
+            Logger.LogInformation("OAuth 1.0a signature generated for {Method} {Url}", method, url);
+            Logger.LogInformation("OAuth parameters: {Parameters}", string.Join(", ", oauthParams.Where(p => p.Key != "oauth_signature").Select(p => $"{p.Key}={p.Value}")));
+            Logger.LogInformation("Authorization header: {AuthHeader}", authHeader);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to prepare OAuth 1.0a headers");
+            result.ErrorMessage = $"OAuth 1.0a preparation failed: {ex.Message}";
+            return result;
+        }
+    }
+    
+    private TwitterAuthenticationMode DetermineRequiredAuthMode(HttpMethod method, string endpoint)
+    {
+        // Write operations require OAuth 1.0a user context
+        if (method == HttpMethod.Post || method == HttpMethod.Delete || method == HttpMethod.Put || method == HttpMethod.Patch)
+        {
+            return TwitterAuthenticationMode.OAuth1a;
+        }
+        
+        // Read operations that need user context
+        if (endpoint.Contains("/me") || 
+            endpoint.Contains("/users/") && (endpoint.Contains("/following") || endpoint.Contains("/followers") || endpoint.Contains("/timelines")))
+        {
+            return TwitterAuthenticationMode.OAuth1a;
+        }
+        
+        // Public read operations can use Bearer Token
+        return TwitterAuthenticationMode.BearerToken;
+    }
+    
+    private TwitterAuthenticationMode SelectBestAvailableAuthMode(TwitterAuthenticationMode preferredMode)
+    {
+        // Check if we have the credentials for the preferred mode
+        bool hasBearerToken = !string.IsNullOrEmpty(State.BearerToken);
+        bool hasOAuth = !string.IsNullOrEmpty(State.OAuthToken) &&
+                       !string.IsNullOrEmpty(State.OAuthTokenSecret) &&
+                       !string.IsNullOrEmpty(State.ConsumerKey) &&
+                       !string.IsNullOrEmpty(State.ConsumerSecret);
+        
+        switch (preferredMode)
+        {
+            case TwitterAuthenticationMode.OAuth1a:
+                // OAuth 1.0a is preferred, use it if available
+                if (hasOAuth)
+                {
+                    Logger.LogDebug("Using OAuth 1.0a authentication (preferred for this operation)");
+                    return TwitterAuthenticationMode.OAuth1a;
+                }
+                // Fallback to Bearer Token for read operations only
+                if (hasBearerToken)
+                {
+                    Logger.LogWarning("OAuth 1.0a not available, falling back to Bearer Token (limited functionality)");
+                    return TwitterAuthenticationMode.BearerToken;
+                }
+                break;
+                
+            case TwitterAuthenticationMode.BearerToken:
+                // Bearer Token is preferred, use it if available
+                if (hasBearerToken)
+                {
+                    Logger.LogDebug("Using Bearer Token authentication (preferred for this operation)");
+                    return TwitterAuthenticationMode.BearerToken;
+                }
+                // Fallback to OAuth 1.0a if available
+                if (hasOAuth)
+                {
+                    Logger.LogDebug("Bearer Token not available, using OAuth 1.0a authentication");
+                    return TwitterAuthenticationMode.OAuth1a;
+                }
+                break;
+        }
+        
+        // If we get here, neither authentication method is available
+        throw new UnauthorizedAccessException($"No valid authentication credentials available for {preferredMode} operation");
+    }
+    
+    private TwitterAuthenticationResult PrepareBearerTokenHeaders()
+    {
+        var result = new TwitterAuthenticationResult();
+        
+        if (string.IsNullOrEmpty(State.BearerToken))
+        {
+            result.ErrorMessage = "Bearer Token is not configured";
+            return result;
+        }
+        
+        result.Headers["Authorization"] = $"Bearer {State.BearerToken}";
+        result.IsSuccess = true;
+        
+        Logger.LogDebug("Bearer Token authentication headers prepared");
+        return result;
+    }
+    
     private async Task<string> SendRequestAsync(HttpMethod method, string endpoint, object? payload, CancellationToken? cancellationToken = null)
     {
         cancellationToken ??= CancellationToken.None;
-        using var request = new HttpRequestMessage(method, $"{State.BaseApiUrl}{endpoint}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", State.BearerToken);
         
+        // Determine preferred authentication mode based on API requirements
+        var preferredAuthMode = DetermineRequiredAuthMode(method, endpoint);
+        var fullUrl = $"{State.BaseApiUrl}{endpoint}";
+        
+        // Try to use the preferred authentication mode, with fallback to available alternatives
+        var authMode = SelectBestAvailableAuthMode(preferredAuthMode);
+        
+        // Validate the selected authentication method
+        var authValidation = ValidateAuthentication(authMode);
+        if (!authValidation.IsSuccess)
+        {
+            Logger.LogError("Authentication validation failed for {Method} {Endpoint} with {AuthMode}: {Error}", 
+                method, endpoint, authMode, authValidation.ErrorMessage);
+            throw new UnauthorizedAccessException($"Authentication failed: {authValidation.ErrorMessage}");
+        }
+        
+        using var request = new HttpRequestMessage(method, fullUrl);
+        
+        // Prepare authentication headers based on selected mode
+        TwitterAuthenticationResult authResult;
+        
+        switch (authMode)
+        {
+            case TwitterAuthenticationMode.BearerToken:
+                authResult = PrepareBearerTokenHeaders();
+                break;
+                
+            case TwitterAuthenticationMode.OAuth1a:
+                authResult = PrepareOAuth1aHeaders(method, fullUrl, payload);
+                if (!authResult.IsSuccess)
+                {
+                    Logger.LogError("OAuth 1.0a preparation failed: {Error}", authResult.ErrorMessage);
+                    throw new UnauthorizedAccessException($"OAuth 1.0a failed: {authResult.ErrorMessage}");
+                }
+                break;
+                
+            default:
+                throw new NotSupportedException($"Authentication mode {authMode} is not supported");
+        }
+        
+        // Apply authentication headers
+        foreach (var header in authResult.Headers)
+        {
+            if (header.Key == "Authorization")
+            {
+                request.Headers.Add("Authorization", header.Value);
+            }
+            else
+            {
+                request.Headers.Add(header.Key, header.Value);
+            }
+        }
+        
+        // Add content if provided
         if (payload != null)
         {
             var json = JsonSerializer.Serialize(payload);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
         
+        // Debug logging
+        if (Logger.IsEnabled(LogLevel.Debug))
+        {
+            Logger.LogDebug("Sending {Method} request to {Url} with {AuthMode} authentication", 
+                method, endpoint, authMode);
+        }
+        
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value);
         cts.CancelAfter(TimeSpan.FromSeconds(State.RequestTimeoutSeconds));
         
+        try
+        {
         var response = await HttpClient.SendAsync(request, cts.Token);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken.Value);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken.Value);
         
         if (!response.IsSuccessStatusCode)
         {
-            Logger.LogWarning("Twitter API request failed: {Status} - {Content}", response.StatusCode, content);
-            throw new HttpRequestException($"Twitter API error: {response.StatusCode}");
-        }
+                // Enhanced error logging with authentication context
+                Logger.LogWarning("Twitter API request failed: {Method} {Endpoint} - Status: {Status}, Auth: {AuthMode}, Content: {Content}", 
+                    method, endpoint, response.StatusCode, authMode, content);
+                
+                var errorMessage = $"Twitter API error: {response.StatusCode}";
+                
+                // Provide more specific error messages based on status
+                switch (response.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.Unauthorized:
+                        errorMessage += $" - Authentication failed using {authMode}. Please check your credentials.";
+                        break;
+                    case System.Net.HttpStatusCode.Forbidden:
+                        errorMessage += $" - Access forbidden. Your app may not have the required permissions for this operation, or OAuth tokens may be invalid.";
+                        break;
+                    case System.Net.HttpStatusCode.TooManyRequests:
+                        errorMessage += " - Rate limit exceeded. Please wait before retrying.";
+                        break;
+                }
+                
+                if (!string.IsNullOrEmpty(content))
+                {
+                    try
+                    {
+                        var errorDoc = JsonDocument.Parse(content);
+                        if (errorDoc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+                        {
+                            var errorMessages = errors.EnumerateArray()
+                                .Select(e => e.GetProperty("message").GetString())
+                                .Where(m => !string.IsNullOrEmpty(m))
+                                .ToList();
+                            
+                            if (errorMessages.Any())
+                            {
+                                errorMessage += $" Details: {string.Join(", ", errorMessages)}";
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore JSON parsing errors, use original content
+                    }
+                }
+                
+                throw new HttpRequestException(errorMessage);
+            }
+            
+            Logger.LogDebug("Twitter API request successful: {Method} {Endpoint} with {AuthMode}", 
+                method, endpoint, authMode);
         
         return content;
+        }
+        catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+        {
+            Logger.LogError("Twitter API request timeout: {Method} {Endpoint}", method, endpoint);
+            throw new TimeoutException($"Twitter API request timed out after {State.RequestTimeoutSeconds} seconds");
+        }
+        catch (HttpRequestException)
+        {
+            throw; // Re-throw HTTP errors with enhanced messaging
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error during Twitter API request: {Method} {Endpoint}", method, endpoint);
+            throw new InvalidOperationException($"Twitter API request failed: {ex.Message}", ex);
+        }
     }
 
     private async Task<string> GetAuthenticatedUserIdAsync()
