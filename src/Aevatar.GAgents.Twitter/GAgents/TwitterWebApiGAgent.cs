@@ -2,319 +2,149 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Aevatar.Core;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Twitter.Authentication;
+using Aevatar.GAgents.Twitter.Client;
 using Aevatar.GAgents.Twitter.GEvents;
+using Aevatar.GAgents.Twitter.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans;
 
 namespace Aevatar.GAgents.Twitter.GAgents;
 
-// Interface definition with comprehensive Twitter API v2 support
-public interface ITwitterWebApiGAgent : IStateGAgent<TwitterWebApiGAgentState>
-{
-    // Tweet Management
-    Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null);
-    Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null);
-    Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text);
-    Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10);
-    Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId);
-    Task<bool> DeleteTweetAsync(string tweetId);
-    
-    // User Interactions
-    Task<bool> LikeTweetAsync(string tweetId);
-    Task<bool> UnlikeTweetAsync(string tweetId);
-    Task<bool> RetweetAsync(string tweetId);
-    Task<bool> UnretweetAsync(string tweetId);
-    
-    // User Profile
-    Task<UserProfileDto?> GetUserByUsernameAsync(string username);
-    Task<UserProfileDto?> GetMyProfileAsync();
-    
-    // Relationships
-    Task<bool> FollowUserAsync(string userId);
-    Task<bool> UnfollowUserAsync(string userId);
-    Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100);
-    Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100);
-    
-    // Timelines
-    Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null);
-    Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null);
-}
-
-// DTOs
-[GenerateSerializer]
-public class TweetResponseDto
-{
-    [Id(0)] public string Id { get; set; } = string.Empty;
-    [Id(1)] public string Text { get; set; } = string.Empty;
-    [Id(2)] public string CreatedAt { get; set; } = string.Empty;
-    [Id(3)] public string? EditHistoryTweetIds { get; set; }
-}
-
-[GenerateSerializer]
-public class TweetDetailDto
-{
-    [Id(0)] public string Id { get; set; } = string.Empty;
-    [Id(1)] public string Text { get; set; } = string.Empty;
-    [Id(2)] public string AuthorId { get; set; } = string.Empty;
-    [Id(3)] public string CreatedAt { get; set; } = string.Empty;
-    [Id(4)] public Dictionary<string, int>? PublicMetrics { get; set; }
-    [Id(5)] public string? ConversationId { get; set; }
-    [Id(6)] public string? InReplyToUserId { get; set; }
-}
-
-[GenerateSerializer]
-public class TweetSearchResultDto
-{
-    [Id(0)] public List<TweetDetailDto> Tweets { get; set; } = new();
-    [Id(1)] public int ResultCount { get; set; }
-    [Id(2)] public string? NextToken { get; set; }
-}
-
-[GenerateSerializer]
-public class UserProfileDto
-{
-    [Id(0)] public string Id { get; set; } = string.Empty;
-    [Id(1)] public string Username { get; set; } = string.Empty;
-    [Id(2)] public string Name { get; set; } = string.Empty;
-    [Id(3)] public string? Description { get; set; }
-    [Id(4)] public string CreatedAt { get; set; } = string.Empty;
-    [Id(5)] public Dictionary<string, int>? PublicMetrics { get; set; }
-    [Id(6)] public bool Verified { get; set; }
-    [Id(7)] public string? ProfileImageUrl { get; set; }
-}
-
-[GenerateSerializer]
-public class UserListResultDto
-{
-    [Id(0)] public List<UserProfileDto> Users { get; set; } = new();
-    [Id(1)] public int ResultCount { get; set; }
-    [Id(2)] public string? NextToken { get; set; }
-}
-
-[GenerateSerializer]
-public class TimelineResultDto
-{
-    [Id(0)] public List<TweetDetailDto> Tweets { get; set; } = new();
-    [Id(1)] public int ResultCount { get; set; }
-    [Id(2)] public string? NextToken { get; set; }
-    [Id(3)] public string? PreviousToken { get; set; }
-}
-
-// State
-[GenerateSerializer]
-public class TwitterWebApiGAgentState : StateBase
-{
-    [Id(0)] public string BaseApiUrl { get; set; } = "https://api.twitter.com/2";
-    [Id(1)] public string BearerToken { get; set; } = string.Empty;
-    [Id(2)] public string? OAuthToken { get; set; }
-    [Id(3)] public string? OAuthTokenSecret { get; set; }
-    [Id(4)] public string? UserId { get; set; }
-    [Id(5)] public int RequestTimeoutSeconds { get; set; } = 30;
-    
-    [Id(10)] public List<string> RecentTweetIds { get; set; } = new();
-    [Id(11)] public List<string> LikedTweetIds { get; set; } = new();
-    [Id(12)] public List<string> RetweetedTweetIds { get; set; } = new();
-    [Id(13)] public List<string> FollowingUserIds { get; set; } = new();
-    [Id(14)] public string LastSearchQuery { get; set; } = string.Empty;
-    [Id(15)] public DateTime LastOperationUtc { get; set; } = DateTime.MinValue;
-    [Id(16)] public Dictionary<string, int> OperationCounts { get; set; } = new();
-}
-
-// Configuration
-[GenerateSerializer]
-public class TwitterWebApiGAgentConfiguration : ConfigurationBase
-{
-    [Id(0)] public string BaseApiUrl { get; set; } = "https://api.twitter.com/2";
-    [Id(1)] public string BearerToken { get; set; } = string.Empty;
-    [Id(2)] public string? OAuthToken { get; set; }
-    [Id(3)] public string? OAuthTokenSecret { get; set; }
-    [Id(4)] public string? ConsumerKey { get; set; }
-    [Id(5)] public string? ConsumerSecret { get; set; }
-    [Id(6)] public int RequestTimeoutSeconds { get; set; } = 30;
-}
-
-// State Log Events
-[GenerateSerializer]
-public class TwitterWebApiStateLogEvent : StateLogEventBase<TwitterWebApiStateLogEvent> { }
-
-[GenerateSerializer]
-public class TwitterConfigSetLogEvent : TwitterWebApiStateLogEvent
-{
-    [Id(0)] public string BaseApiUrl { get; set; } = string.Empty;
-    [Id(1)] public string BearerToken { get; set; } = string.Empty;
-    [Id(2)] public int RequestTimeoutSeconds { get; set; }
-}
-
-[GenerateSerializer]
-public class TweetCreatedLogEvent : TwitterWebApiStateLogEvent
-{
-    [Id(0)] public string TweetId { get; set; } = string.Empty;
-    [Id(1)] public string Text { get; set; } = string.Empty;
-    [Id(2)] public DateTime CreatedAt { get; set; }
-}
-
-[GenerateSerializer]
-public class TweetDeletedLogEvent : TwitterWebApiStateLogEvent
-{
-    [Id(0)] public string TweetId { get; set; } = string.Empty;
-    [Id(1)] public DateTime DeletedAt { get; set; }
-}
-
-[GenerateSerializer]
-public class TweetInteractionLogEvent : TwitterWebApiStateLogEvent
-{
-    [Id(0)] public string TweetId { get; set; } = string.Empty;
-    [Id(1)] public string InteractionType { get; set; } = string.Empty; // like, unlike, retweet, unretweet
-    [Id(2)] public DateTime InteractedAt { get; set; }
-}
-
-[GenerateSerializer]
-public class UserRelationshipLogEvent : TwitterWebApiStateLogEvent
-{
-    [Id(0)] public string TargetUserId { get; set; } = string.Empty;
-    [Id(1)] public string RelationshipAction { get; set; } = string.Empty; // follow, unfollow
-    [Id(2)] public DateTime ActionAt { get; set; }
-}
-
-// GAgent Implementation
+/// <summary>
+/// Twitter Web API GAgent using modular components
+/// </summary>
 [GAgent("twitter-webapi", "social.twitter")]
-public class TwitterWebApiGAgent : GAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>, ITwitterWebApiGAgent
+public class TwitterWebApiGAgent :
+    GAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>,
+    ITwitterWebApiGAgent
 {
-    private HttpClient? _httpClient;
-    
-    private HttpClient HttpClient => _httpClient ??= ServiceProvider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    private Client.ITwitterApiClient? _apiClient;
+    private Authentication.ITwitterAuthenticationHandler? _authHandler;
+    private RateLimiting.ITwitterRateLimiter? _rateLimiter;
 
-    public override Task<string> GetDescriptionAsync()
+    // Lazy-loaded services
+    private Client.ITwitterApiClient ApiClient => _apiClient ??= CreateApiClient();
+    private Authentication.ITwitterAuthenticationHandler AuthHandler => _authHandler ??= CreateAuthHandler();
+    private RateLimiting.ITwitterRateLimiter RateLimiter => _rateLimiter ??= CreateRateLimiter();
+
+    #region Service Creation
+
+    private Client.ITwitterApiClient CreateApiClient()
     {
-        var description = @"Twitter Web API GAgent  - Comprehensive Twitter/X API v2 Integration
+        var httpClient = ServiceProvider.GetRequiredService<IHttpClientFactory>().CreateClient();
+        httpClient.BaseAddress = new Uri(State.Configuration?.BaseApiUrl ?? "https://api.twitter.com/2");
 
-CAPABILITIES:
+        var config = new Client.TwitterApiClientConfiguration
+        {
+            BaseApiUrl = State.Configuration?.BaseApiUrl ?? "https://api.twitter.com/2",
+            RequestTimeoutSeconds = State.Configuration?.RequestTimeoutSeconds ?? 30,
+            BearerToken = State.Configuration?.BearerToken,
+            ConsumerKey = State.Configuration?.ConsumerKey,
+            ConsumerSecret = State.Configuration?.ConsumerSecret,
+            OAuthToken = State.Configuration?.OAuthToken,
+            OAuthTokenSecret = State.Configuration?.OAuthTokenSecret
+        };
 
-[TWEET MANAGEMENT]
-• PostTweetEvent - Create new tweet with text and optional media
-• ReplyToTweetEvent - Reply to existing tweet with threading
-• QuoteTweetEvent - Quote retweet with commentary
-• DeleteTweetEvent - Delete your own tweet by ID
-• GetTweetEvent - Retrieve detailed tweet information
-• SearchRecentTweetsEvent - Search tweets from last 7 days
-
-[USER INTERACTIONS]
-• LikeTweetEvent - Like/favorite a tweet
-• UnlikeTweetEvent - Remove like from tweet
-• RetweetEvent - Retweet without quote text
-• UnretweetEvent - Remove retweet
-
-[USER PROFILES]
-• GetUserByUsernameEvent - Lookup user profile by @username
-• GetUserByIdEvent - Lookup user profile by numeric ID
-• GetMyProfileEvent - Get authenticated user's profile
-
-[RELATIONSHIPS]
-• FollowUserEvent - Follow a user account
-• UnfollowUserEvent - Unfollow a user account
-• GetFollowersEvent - List user's followers with pagination
-• GetFollowingEvent - List accounts user follows
-
-[TIMELINES & FEEDS]
-• GetHomeTimelineEvent - Authenticated user's home timeline
-• GetUserTimelineEvent - Specific user's tweet timeline
-• GetMentionsTimelineEvent - Mentions of authenticated user
-
-[CONFIGURATION]
-Configure via ConfigAsync with TwitterWebApiGAgentConfiguration:
-- BearerToken: Required for API authentication
-- OAuthToken/Secret: For user-context operations
-- BaseApiUrl: API endpoint (default: https://api.twitter.com/2)
-- RequestTimeoutSeconds: HTTP timeout (default: 30)
-
-[RATE LIMITS]
-Respects Twitter API rate limits:
-- Tweet creation: 200/15min
-- Likes: 1000/24hr
-- Follows: 400/24hr
-- Search: 180/15min
-
-All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.";
-        
-        return Task.FromResult(description);
+        return new Client.TwitterApiClient(
+            httpClient,
+            AuthHandler,
+            RateLimiter,
+            ServiceProvider.GetRequiredService<ILogger<Client.TwitterApiClient>>(),
+            config);
     }
+
+    private Authentication.ITwitterAuthenticationHandler CreateAuthHandler()
+    {
+        return new Authentication.TwitterAuthenticationHandler(
+            ServiceProvider.GetRequiredService<ILogger<Authentication.TwitterAuthenticationHandler>>());
+    }
+
+    private RateLimiting.ITwitterRateLimiter CreateRateLimiter()
+    {
+        return new RateLimiting.TwitterRateLimiter(
+            ServiceProvider.GetRequiredService<ILogger<RateLimiting.TwitterRateLimiter>>());
+    }
+
+    #endregion
+
+    #region GAgent Overrides
 
     protected override async Task PerformConfigAsync(TwitterWebApiGAgentConfiguration configuration)
     {
-        RaiseEvent(new TwitterConfigSetLogEvent
+        RaiseEvent(new ConfigurationSetLogEvent
         {
-            BaseApiUrl = configuration.BaseApiUrl,
-            BearerToken = configuration.BearerToken,
-            RequestTimeoutSeconds = configuration.RequestTimeoutSeconds
+            ConfigurationJson = JsonSerializer.Serialize(configuration),
+            ConfiguredAt = DateTime.UtcNow
         });
-        
+
         await ConfirmEvents();
+
+        // Re-create services with new configuration
+        _apiClient = null;
+        _authHandler = null;
+        _rateLimiter = null;
     }
 
-    protected override void GAgentTransitionState(TwitterWebApiGAgentState state, StateLogEventBase<TwitterWebApiStateLogEvent> @event)
+    protected override void GAgentTransitionState(TwitterWebApiGAgentState state,
+        StateLogEventBase<TwitterWebApiStateLogEvent> @event)
     {
         switch (@event)
         {
-            case TwitterConfigSetLogEvent e:
-                state.BaseApiUrl = e.BaseApiUrl;
-                state.BearerToken = e.BearerToken;
-                state.RequestTimeoutSeconds = e.RequestTimeoutSeconds;
+            case ConfigurationSetLogEvent e:
+                state.Configuration = JsonSerializer.Deserialize<TwitterWebApiGAgentConfiguration>(e.ConfigurationJson);
+                state.LastOperationUtc = e.ConfiguredAt;
                 break;
-                
-            case TweetCreatedLogEvent e:
-                state.RecentTweetIds.Add(e.TweetId);
-                if (state.RecentTweetIds.Count > 100)
-                    state.RecentTweetIds.RemoveAt(0);
-                state.LastOperationUtc = e.CreatedAt;
+
+            case TweetPostedLogEvent e:
+                state.TweetsPosted.Add(e.TweetId);
                 IncrementOperationCount(state, "tweets_posted");
+                state.LastOperationUtc = e.PostedAt;
                 break;
-                
+
             case TweetDeletedLogEvent e:
-                state.RecentTweetIds.Remove(e.TweetId);
-                state.LastOperationUtc = e.DeletedAt;
+                state.TweetsPosted.Remove(e.TweetId);
                 IncrementOperationCount(state, "tweets_deleted");
+                state.LastOperationUtc = e.DeletedAt;
                 break;
-                
+
             case TweetInteractionLogEvent e:
+                if (e.InteractionType == "like")
+                    state.LikedTweets.Add(e.TweetId);
+                else if (e.InteractionType == "unlike")
+                    state.LikedTweets.Remove(e.TweetId);
+                else if (e.InteractionType == "retweet")
+                    state.RetweetedTweets.Add(e.TweetId);
+                else if (e.InteractionType == "unretweet")
+                    state.RetweetedTweets.Remove(e.TweetId);
+                IncrementOperationCount(state, $"tweets_{e.InteractionType}d");
                 state.LastOperationUtc = e.InteractedAt;
-                switch (e.InteractionType)
-                {
-                    case "like":
-                        state.LikedTweetIds.Add(e.TweetId);
-                        IncrementOperationCount(state, "tweets_liked");
-                        break;
-                    case "unlike":
-                        state.LikedTweetIds.Remove(e.TweetId);
-                        break;
-                    case "retweet":
-                        state.RetweetedTweetIds.Add(e.TweetId);
-                        IncrementOperationCount(state, "tweets_retweeted");
-                        break;
-                    case "unretweet":
-                        state.RetweetedTweetIds.Remove(e.TweetId);
-                        break;
-                }
                 break;
-                
+
             case UserRelationshipLogEvent e:
-                state.LastOperationUtc = e.ActionAt;
                 if (e.RelationshipAction == "follow")
                 {
-                    state.FollowingUserIds.Add(e.TargetUserId);
+                    state.FollowingUsers.Add(e.TargetUserId);
                     IncrementOperationCount(state, "users_followed");
                 }
                 else if (e.RelationshipAction == "unfollow")
                 {
-                    state.FollowingUserIds.Remove(e.TargetUserId);
+                    state.FollowingUsers.Remove(e.TargetUserId);
+                    IncrementOperationCount(state, "users_unfollowed");
                 }
+
+                state.LastOperationUtc = e.ActionAt;
+                break;
+
+            case UserProfileUpdatedLogEvent e:
+                state.UserId = e.UserId;
+                state.LastOperationUtc = e.UpdatedAt;
                 break;
         }
     }
@@ -326,111 +156,114 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         state.OperationCounts[operation]++;
     }
 
-    // Tweet Management Implementation
-    public async Task<TweetResponseDto> PostTweetAsync(string text, List<string>? mediaIds = null)
+    public override Task<string> GetDescriptionAsync()
     {
-        try
-        {
-            var payload = new
-            {
-                text,
-                media = mediaIds != null ? new { media_ids = mediaIds } : null
-            };
-            
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
-            var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
-            
-            RaiseEvent(new TweetCreatedLogEvent
-            {
-                TweetId = result!.Id,
-                Text = text,
-                CreatedAt = DateTime.UtcNow
-            });
-            await ConfirmEvents();
-            
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to post tweet");
-            throw;
-        }
+        return Task.FromResult(@"Twitter Web API GAgent (Refactored) - Modular Twitter/X API v2 Integration
+
+ARCHITECTURE:
+• TwitterApiClient - Handles HTTP communication with rate limiting
+• TwitterAuthenticationHandler - Manages OAuth 1.0a and Bearer token auth
+• TwitterRateLimiter - Implements token bucket rate limiting
+
+CAPABILITIES:
+• Tweet Management (post, reply, quote, delete, search)
+• User Interactions (like, retweet, follow)
+• Timeline Operations (home, mentions, user timelines)
+• User Profile Management
+• Relationship Management
+
+All operations use event sourcing for state management and support both
+interface methods and event handlers for maximum flexibility.");
     }
 
-    public async Task<TweetResponseDto> ReplyToTweetAsync(string inReplyToTweetId, string text, List<string>? mediaIds = null)
+    #endregion
+
+    #region Tweet Management
+
+    public async Task<TweetDto> PostTweetAsync(string text, List<string>? mediaIds = null)
     {
-        try
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("Tweet text cannot be empty", nameof(text));
+
+        var payload = new
         {
-            var payload = new
-            {
-                text,
-                reply = new { in_reply_to_tweet_id = inReplyToTweetId },
-                media = mediaIds != null ? new { media_ids = mediaIds } : null
-            };
-            
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
-            var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
-            
-            RaiseEvent(new TweetCreatedLogEvent
-            {
-                TweetId = result!.Id,
-                Text = text,
-                CreatedAt = DateTime.UtcNow
-            });
-            await ConfirmEvents();
-            
-            return result;
-        }
-        catch (Exception ex)
+            text,
+            media = mediaIds != null ? new { media_ids = mediaIds } : null
+        };
+
+        var response = await ApiClient.SendRequestAsync<TweetResponseDto>(
+            HttpMethod.Post,
+            "/tweets",
+            payload);
+
+        RaiseEvent(new TweetPostedLogEvent
         {
-            Logger.LogError(ex, "Failed to reply to tweet");
-            throw;
-        }
+            TweetId = response.Data.Id,
+            Text = text,
+            PostedAt = DateTime.UtcNow
+        });
+        await ConfirmEvents();
+
+        return response.Data;
     }
 
-    public async Task<TweetResponseDto> QuoteTweetAsync(string quotedTweetId, string text)
+    public async Task<TweetDto> ReplyToTweetAsync(string tweetId, string text)
     {
-        try
+        if (string.IsNullOrWhiteSpace(tweetId))
+            throw new ArgumentException("Tweet ID cannot be empty", nameof(tweetId));
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("Reply text cannot be empty", nameof(text));
+
+        var payload = new
         {
-            var payload = new
-            {
-                text,
-                quote_tweet_id = quotedTweetId
-            };
-            
-            var response = await SendRequestAsync(HttpMethod.Post, "/tweets", payload);
-            var result = JsonSerializer.Deserialize<TweetResponseDto>(response);
-            
-            RaiseEvent(new TweetCreatedLogEvent
-            {
-                TweetId = result!.Id,
-                Text = text,
-                CreatedAt = DateTime.UtcNow
-            });
-            await ConfirmEvents();
-            
-            return result;
-        }
-        catch (Exception ex)
+            text,
+            reply = new { in_reply_to_tweet_id = tweetId }
+        };
+
+        var response = await ApiClient.SendRequestAsync<TweetResponseDto>(
+            HttpMethod.Post,
+            "/tweets",
+            payload);
+
+        return response.Data;
+    }
+
+    public async Task<TweetDto> QuoteTweetAsync(string tweetId, string text)
+    {
+        if (string.IsNullOrWhiteSpace(tweetId))
+            throw new ArgumentException("Tweet ID cannot be empty", nameof(tweetId));
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("Quote text cannot be empty", nameof(text));
+
+        var payload = new
         {
-            Logger.LogError(ex, "Failed to quote tweet");
-            throw;
-        }
+            text,
+            quote_tweet_id = tweetId
+        };
+
+        var response = await ApiClient.SendRequestAsync<TweetResponseDto>(
+            HttpMethod.Post,
+            "/tweets",
+            payload);
+
+        return response.Data;
     }
 
     public async Task<bool> DeleteTweetAsync(string tweetId)
     {
         try
         {
-            await SendRequestAsync(HttpMethod.Delete, $"/tweets/{tweetId}", null);
-            
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Delete,
+                $"/tweets/{tweetId}");
+
             RaiseEvent(new TweetDeletedLogEvent
             {
                 TweetId = tweetId,
                 DeletedAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -440,16 +273,15 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetDetailDto?> GetTweetByIdAsync(string tweetId)
+    public async Task<TweetDto?> GetTweetByIdAsync(string tweetId)
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                $"/tweets/{tweetId}?tweet.fields=created_at,author_id,conversation_id,in_reply_to_user_id,public_metrics", 
-                null);
-            
-            var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
-            return JsonSerializer.Deserialize<TweetDetailDto>(data.GetRawText());
+            var response = await ApiClient.SendRequestAsync<TweetResponseDto>(
+                HttpMethod.Get,
+                $"/tweets/{tweetId}");
+
+            return response.Data;
         }
         catch (Exception ex)
         {
@@ -458,48 +290,38 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    public async Task<TweetSearchResultDto> SearchRecentTweetsAsync(string query, int maxResults = 10)
+    public async Task<List<TweetDto>> SearchRecentTweetsAsync(string query, int maxResults = 10)
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get,
-                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics",
-                null);
-            
-            var doc = JsonDocument.Parse(response);
-            var result = new TweetSearchResultDto();
-            
-            if (doc.RootElement.TryGetProperty("data", out var data))
-            {
-                result.Tweets = JsonSerializer.Deserialize<List<TweetDetailDto>>(data.GetRawText()) ?? new();
-                result.ResultCount = result.Tweets.Count;
-            }
-            
-            if (doc.RootElement.TryGetProperty("meta", out var meta) && 
-                meta.TryGetProperty("next_token", out var nextToken))
-            {
-                result.NextToken = nextToken.GetString();
-            }
-            
-            return result;
+            var response = await ApiClient.SendRequestAsync<TweetsResponseDto>(
+                HttpMethod.Get,
+                $"/tweets/search/recent?query={Uri.EscapeDataString(query)}&max_results={maxResults}");
+
+            return response.Data ?? new List<TweetDto>();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to search tweets");
-            throw;
+            Logger.LogError(ex, "Failed to search tweets with query: {Query}", query);
+            return new List<TweetDto>();
         }
     }
 
-    // User Interactions
+    #endregion
+
+    #region User Interactions
+
     public async Task<bool> LikeTweetAsync(string tweetId)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var payload = new { tweet_id = tweetId };
-            
-            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/likes", payload);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Post,
+                $"/users/{userId}/likes",
+                new { tweet_id = tweetId });
+
             RaiseEvent(new TweetInteractionLogEvent
             {
                 TweetId = tweetId,
@@ -507,7 +329,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 InteractedAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -521,9 +343,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/likes/{tweetId}", null);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Delete,
+                $"/users/{userId}/likes/{tweetId}");
+
             RaiseEvent(new TweetInteractionLogEvent
             {
                 TweetId = tweetId,
@@ -531,7 +356,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 InteractedAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -545,11 +370,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var payload = new { tweet_id = tweetId };
-            
-            await SendRequestAsync(HttpMethod.Post, $"/users/{userId}/retweets", payload);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Post,
+                $"/users/{userId}/retweets",
+                new { tweet_id = tweetId });
+
             RaiseEvent(new TweetInteractionLogEvent
             {
                 TweetId = tweetId,
@@ -557,7 +384,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 InteractedAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -571,9 +398,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{userId}/retweets/{tweetId}", null);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Delete,
+                $"/users/{userId}/retweets/{tweetId}");
+
             RaiseEvent(new TweetInteractionLogEvent
             {
                 TweetId = tweetId,
@@ -581,7 +411,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 InteractedAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
@@ -591,21 +421,40 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         }
     }
 
-    // User Profile
+    #endregion
+
+    #region User Management
+
     public async Task<UserProfileDto?> GetUserByUsernameAsync(string username)
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                $"/users/by/username/{username}?user.fields=created_at,description,public_metrics,verified,profile_image_url", 
-                null);
-            
-            var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
-            return JsonSerializer.Deserialize<UserProfileDto>(data.GetRawText());
+            var response = await ApiClient.SendRequestAsync<UserResponseDto>(
+                HttpMethod.Get,
+                $"/users/by/username/{username}");
+
+            return response.Data;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get user by username {Username}", username);
+            Logger.LogError(ex, "Failed to get user by username: {Username}", username);
+            return null;
+        }
+    }
+
+    public async Task<UserProfileDto?> GetUserByIdAsync(string userId)
+    {
+        try
+        {
+            var response = await ApiClient.SendRequestAsync<UserResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}");
+
+            return response.Data;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get user by ID: {UserId}", userId);
             return null;
         }
     }
@@ -614,154 +463,189 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     {
         try
         {
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                "/users/me?user.fields=created_at,description,public_metrics,verified,profile_image_url", 
-                null);
-            
-            var data = JsonDocument.Parse(response).RootElement.GetProperty("data");
-            var profile = JsonSerializer.Deserialize<UserProfileDto>(data.GetRawText());
-            
-            // Cache user ID for future operations
-            if (profile != null && State.UserId != profile.Id)
+            var response = await ApiClient.SendRequestAsync<UserResponseDto>(
+                HttpMethod.Get,
+                "/users/me");
+
+            if (response.Data != null && State.UserId != response.Data.Id)
             {
-                State.UserId = profile.Id;
+                RaiseEvent(new UserProfileUpdatedLogEvent
+                {
+                    UserId = response.Data.Id,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await ConfirmEvents();
             }
-            
-            return profile;
+
+            return response.Data;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get authenticated user profile");
+            Logger.LogError(ex, "Failed to get my profile");
             return null;
         }
     }
 
-    // Relationships
-    public async Task<bool> FollowUserAsync(string userId)
+    #endregion
+
+    #region Relationship Management
+
+    public async Task<bool> FollowUserAsync(string targetUserId)
     {
         try
         {
-            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var payload = new { target_user_id = userId };
-            
-            await SendRequestAsync(HttpMethod.Post, $"/users/{myUserId}/following", payload);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Post,
+                $"/users/{userId}/following",
+                new { target_user_id = targetUserId });
+
             RaiseEvent(new UserRelationshipLogEvent
             {
-                TargetUserId = userId,
+                TargetUserId = targetUserId,
                 RelationshipAction = "follow",
                 ActionAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to follow user {UserId}", userId);
+            Logger.LogError(ex, "Failed to follow user {UserId}", targetUserId);
             return false;
         }
     }
 
-    public async Task<bool> UnfollowUserAsync(string userId)
+    public async Task<bool> UnfollowUserAsync(string targetUserId)
     {
         try
         {
-            var myUserId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            await SendRequestAsync(HttpMethod.Delete, $"/users/{myUserId}/following/{userId}", null);
-            
+            var userId = await EnsureUserIdAsync();
+
+            await ApiClient.SendRequestAsync(
+                HttpMethod.Delete,
+                $"/users/{userId}/following/{targetUserId}");
+
             RaiseEvent(new UserRelationshipLogEvent
             {
-                TargetUserId = userId,
+                TargetUserId = targetUserId,
                 RelationshipAction = "unfollow",
                 ActionAt = DateTime.UtcNow
             });
             await ConfirmEvents();
-            
+
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to unfollow user {UserId}", userId);
+            Logger.LogError(ex, "Failed to unfollow user {UserId}", targetUserId);
             return false;
         }
     }
 
-    public async Task<UserListResultDto> GetFollowersAsync(string? userId = null, int maxResults = 100)
+    public async Task<List<UserProfileDto>> GetFollowersAsync(string? userId = null, int maxResults = 100)
     {
         try
         {
-            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                $"/users/{targetUserId}/followers?max_results={maxResults}&user.fields=created_at,description,public_metrics,verified", 
-                null);
-            
-            return ParseUserListResponse(response);
+            userId ??= await EnsureUserIdAsync();
+
+            var response = await ApiClient.SendRequestAsync<UsersResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}/followers?max_results={maxResults}");
+
+            return response.Data ?? new List<UserProfileDto>();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get followers");
-            return new UserListResultDto();
+            Logger.LogError(ex, "Failed to get followers for user {UserId}", userId);
+            return new List<UserProfileDto>();
         }
     }
 
-    public async Task<UserListResultDto> GetFollowingAsync(string? userId = null, int maxResults = 100)
+    public async Task<List<UserProfileDto>> GetFollowingAsync(string? userId = null, int maxResults = 100)
     {
         try
         {
-            var targetUserId = userId ?? State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var response = await SendRequestAsync(HttpMethod.Get, 
-                $"/users/{targetUserId}/following?max_results={maxResults}&user.fields=created_at,description,public_metrics,verified", 
-                null);
-            
-            return ParseUserListResponse(response);
+            userId ??= await EnsureUserIdAsync();
+
+            var response = await ApiClient.SendRequestAsync<UsersResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}/following?max_results={maxResults}");
+
+            return response.Data ?? new List<UserProfileDto>();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get following");
-            return new UserListResultDto();
+            Logger.LogError(ex, "Failed to get following for user {UserId}", userId);
+            return new List<UserProfileDto>();
         }
     }
 
-    // Timelines
-    public async Task<TimelineResultDto> GetHomeTimelineAsync(int maxResults = 100, string? paginationToken = null)
+    #endregion
+
+    #region Timeline Operations
+
+    public async Task<List<TweetDto>> GetHomeTimelineAsync(int maxResults = 10)
     {
         try
         {
-            var userId = State.UserId ?? await GetAuthenticatedUserIdAsync();
-            var url = $"/users/{userId}/timelines/reverse_chronological?max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics";
-            if (!string.IsNullOrEmpty(paginationToken))
-                url += $"&pagination_token={paginationToken}";
-            
-            var response = await SendRequestAsync(HttpMethod.Get, url, null);
-            return ParseTimelineResponse(response);
+            var userId = await EnsureUserIdAsync();
+
+            var response = await ApiClient.SendRequestAsync<TweetsResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}/timelines/reverse_chronological?max_results={maxResults}");
+
+            return response.Data ?? new List<TweetDto>();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to get home timeline");
-            return new TimelineResultDto();
+            return new List<TweetDto>();
         }
     }
 
-    public async Task<TimelineResultDto> GetUserTimelineAsync(string userId, int maxResults = 100, string? paginationToken = null)
+    public async Task<List<TweetDto>> GetUserTimelineAsync(string userId, int maxResults = 10)
     {
         try
         {
-            var url = $"/users/{userId}/tweets?max_results={maxResults}&tweet.fields=created_at,author_id,public_metrics";
-            if (!string.IsNullOrEmpty(paginationToken))
-                url += $"&pagination_token={paginationToken}";
-            
-            var response = await SendRequestAsync(HttpMethod.Get, url, null);
-            return ParseTimelineResponse(response);
+            var response = await ApiClient.SendRequestAsync<TweetsResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}/tweets?max_results={maxResults}");
+
+            return response.Data ?? new List<TweetDto>();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get user timeline for {UserId}", userId);
-            return new TimelineResultDto();
+            Logger.LogError(ex, "Failed to get timeline for user {UserId}", userId);
+            return new List<TweetDto>();
         }
     }
 
-    // Event Handlers
+    public async Task<List<TweetDto>> GetMentionsTimelineAsync(int maxResults = 10)
+    {
+        try
+        {
+            var userId = await EnsureUserIdAsync();
+
+            var response = await ApiClient.SendRequestAsync<TweetsResponseDto>(
+                HttpMethod.Get,
+                $"/users/{userId}/mentions?max_results={maxResults}");
+
+            return response.Data ?? new List<TweetDto>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get mentions timeline");
+            return new List<TweetDto>();
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+
     [EventHandler]
     public async Task HandlePostTweetEventAsync(PostTweetEvent @event)
     {
@@ -771,7 +655,7 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     [EventHandler]
     public async Task HandleReplyToTweetEventAsync(ReplyToTweetEvent @event)
     {
-        await ReplyToTweetAsync(@event.InReplyToTweetId, @event.Text, @event.MediaIds);
+        await ReplyToTweetAsync(@event.InReplyToTweetId, @event.Text);
     }
 
     [EventHandler]
@@ -784,23 +668,6 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     public async Task HandleDeleteTweetEventAsync(DeleteTweetEvent @event)
     {
         await DeleteTweetAsync(@event.TweetId);
-    }
-
-    [EventHandler]
-    public async Task HandleGetTweetEventAsync(GetTweetEvent @event)
-    {
-        var tweet = await GetTweetByIdAsync(@event.TweetId);
-        if (tweet != null)
-        {
-            Logger.LogInformation("Retrieved tweet {TweetId}: {Text}", tweet.Id, tweet.Text);
-        }
-    }
-
-    [EventHandler]
-    public async Task HandleSearchRecentTweetsEventAsync(SearchRecentTweetsEvent @event)
-    {
-        var results = await SearchRecentTweetsAsync(@event.Query, @event.MaxResults);
-        Logger.LogInformation("Found {Count} tweets for query: {Query}", results.ResultCount, @event.Query);
     }
 
     [EventHandler]
@@ -828,26 +695,6 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
     }
 
     [EventHandler]
-    public async Task HandleGetUserByUsernameEventAsync(GetUserByUsernameEvent @event)
-    {
-        var user = await GetUserByUsernameAsync(@event.Username);
-        if (user != null)
-        {
-            Logger.LogInformation("Found user @{Username}: {Name} ({Id})", user.Username, user.Name, user.Id);
-        }
-    }
-
-    [EventHandler]
-    public async Task HandleGetMyProfileEventAsync(GetMyProfileEvent @event)
-    {
-        var profile = await GetMyProfileAsync();
-        if (profile != null)
-        {
-            Logger.LogInformation("My profile: @{Username} ({Id})", profile.Username, profile.Id);
-        }
-    }
-
-    [EventHandler]
     public async Task HandleFollowUserEventAsync(FollowUserEvent @event)
     {
         await FollowUserAsync(@event.TargetUserId);
@@ -859,109 +706,42 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
         await UnfollowUserAsync(@event.TargetUserId);
     }
 
-    [EventHandler]
-    public async Task HandleGetFollowersEventAsync(GetFollowersEvent @event)
-    {
-        var followers = await GetFollowersAsync(@event.TargetUserId, @event.MaxResults);
-        Logger.LogInformation("Retrieved {Count} followers", followers.ResultCount);
-    }
+    #endregion
 
-    [EventHandler]
-    public async Task HandleGetFollowingEventAsync(GetFollowingEvent @event)
-    {
-        var following = await GetFollowingAsync(@event.TargetUserId, @event.MaxResults);
-        Logger.LogInformation("Retrieved {Count} following", following.ResultCount);
-    }
+    #region Helper Methods
 
-    [EventHandler]
-    public async Task HandleGetHomeTimelineEventAsync(GetHomeTimelineEvent @event)
+    private async Task<string> EnsureUserIdAsync()
     {
-        var timeline = await GetHomeTimelineAsync(@event.MaxResults, @event.PaginationToken);
-        Logger.LogInformation("Retrieved {Count} tweets from home timeline", timeline.ResultCount);
-    }
+        if (!string.IsNullOrEmpty(State.UserId))
+            return State.UserId;
 
-    [EventHandler]
-    public async Task HandleGetUserTimelineEventAsync(GetUserTimelineEvent @event)
-    {
-        var timeline = await GetUserTimelineAsync(@event.TargetUserId, @event.MaxResults, @event.PaginationToken);
-        Logger.LogInformation("Retrieved {Count} tweets from user timeline", timeline.ResultCount);
-    }
-
-    // Helper Methods
-    private async Task<string> SendRequestAsync(HttpMethod method, string endpoint, object? payload, CancellationToken? cancellationToken = null)
-    {
-        cancellationToken ??= CancellationToken.None;
-        using var request = new HttpRequestMessage(method, $"{State.BaseApiUrl}{endpoint}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", State.BearerToken);
-        
-        if (payload != null)
-        {
-            var json = JsonSerializer.Serialize(payload);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        }
-        
-        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken.Value);
-        cts.CancelAfter(TimeSpan.FromSeconds(State.RequestTimeoutSeconds));
-        
-        var response = await HttpClient.SendAsync(request, cts.Token);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken.Value);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            Logger.LogWarning("Twitter API request failed: {Status} - {Content}", response.StatusCode, content);
-            throw new HttpRequestException($"Twitter API error: {response.StatusCode}");
-        }
-        
-        return content;
-    }
-
-    private async Task<string> GetAuthenticatedUserIdAsync()
-    {
         var profile = await GetMyProfileAsync();
         if (profile == null)
-            throw new InvalidOperationException("Failed to get authenticated user ID");
+            throw new InvalidOperationException("Failed to get user profile");
+
         return profile.Id;
     }
 
-    private UserListResultDto ParseUserListResponse(string response)
-    {
-        var doc = JsonDocument.Parse(response);
-        var result = new UserListResultDto();
-        
-        if (doc.RootElement.TryGetProperty("data", out var data))
-        {
-            result.Users = JsonSerializer.Deserialize<List<UserProfileDto>>(data.GetRawText()) ?? new();
-            result.ResultCount = result.Users.Count;
-        }
-        
-        if (doc.RootElement.TryGetProperty("meta", out var meta) && 
-            meta.TryGetProperty("next_token", out var nextToken))
-        {
-            result.NextToken = nextToken.GetString();
-        }
-        
-        return result;
-    }
+    #endregion
+}
 
-    private TimelineResultDto ParseTimelineResponse(string response)
-    {
-        var doc = JsonDocument.Parse(response);
-        var result = new TimelineResultDto();
-        
-        if (doc.RootElement.TryGetProperty("data", out var data))
-        {
-            result.Tweets = JsonSerializer.Deserialize<List<TweetDetailDto>>(data.GetRawText()) ?? new();
-            result.ResultCount = result.Tweets.Count;
-        }
-        
-        if (doc.RootElement.TryGetProperty("meta", out var meta))
-        {
-            if (meta.TryGetProperty("next_token", out var nextToken))
-                result.NextToken = nextToken.GetString();
-            if (meta.TryGetProperty("previous_token", out var prevToken))
-                result.PreviousToken = prevToken.GetString();
-        }
-        
-        return result;
-    }
+// Response DTOs
+public class TweetResponseDto
+{
+    public TweetDto Data { get; set; } = new();
+}
+
+public class TweetsResponseDto
+{
+    public List<TweetDto>? Data { get; set; }
+}
+
+public class UserResponseDto
+{
+    public UserProfileDto Data { get; set; } = new();
+}
+
+public class UsersResponseDto
+{
+    public List<UserProfileDto>? Data { get; set; }
 }

@@ -177,6 +177,10 @@ public class ClusterFixture : IDisposable, ISingletonDependency
                     // 注册Mock MCP客户端提供者用于测试（与TestBase保持一致使用Singleton）
                     services.AddSingleton<IMcpClientProvider, MockStdioMcpClientProvider>();
                     services.AddSingleton<MockStdioMcpClientProvider>();
+                    
+                    // Register HttpClientFactory used by grains during tests
+                    services.AddHttpClient();
+                    services.AddSingleton<IHttpClientFactory, Aevatar.GAgents.TestBase.Http.TestHttpClientFactory>();
                 })
                 .UseAevatar(true)
                 .AddMemoryStreams("Aevatar")
