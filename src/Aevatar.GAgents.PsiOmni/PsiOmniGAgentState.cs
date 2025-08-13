@@ -136,5 +136,6 @@ public class WriteDraftResponse : PsiOmniGAgentStateLogEvent
 [GenerateSerializer]
 public class UpdateTodoList : PsiOmniGAgentStateLogEvent
 {
-    [Id(0)] public List<TodoItem> Todos { get; set; } = new();
+    [Id(0)] public List<TodoItem> AddedTodos { get; set; } = new();
+    [Id(1)] public List<string> RemovedTodoIds { get; set; } = new();
 }

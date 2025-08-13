@@ -64,8 +64,9 @@ public partial class
                                                1. Analyze the task and note down the important information about the task
                                                2. Plan the todo items
                                                3. Dispatch sub-tasks that are ready (all dependency tasks have completed). (Some tasks may need to wait if their assigned agents are busy.)
-                                               4. Once you receive the response from a sub-task, decide if you need to revise the plan (amend todo list)
+                                               4. Once you receive the response from a sub-task, decide if you need to revise the plan (amend todo list). CRITICAL: Any follow-up work identified must be added as NEW todo items using todo_write tool before delegation.
                                                5. Repeat 3 and 4 until the main tasks is done
+                                               IMPORTANT: You MUST come out with a work plan and delegate the tasks to child agents.
 
                                                ## How to stay on track
                                                Before breaking down that task, understand the intention of the user, rewrite the task in a format that
@@ -79,7 +80,7 @@ public partial class
                                                If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
                                                IMPORTANT: Make sure you identify the dependencies among the todo items.
 
-                                               It is critical that you mark todos as completed as soon as you are done with a sub-task. Do not batch up multiple sub-tasks before marking them as completed.
+                                               IMPORTANT: Todo item status updates are handled automatically by the system - you do not need to manually mark todos as completed. The system will automatically update todo statuses when you delegate tasks or receive responses from child agents.
 
                                                Examples:
 
@@ -121,6 +122,7 @@ public partial class
                                                - Use call_agent tool to dispatch sub-tasks to suitable agents. The tool serves dual purposes: initial task assignment and follow-up communication.
                                                - Create new agents using create_agent tool ONLY when no existing agent possesses the required capabilities. When creating agents, design them for broad task categories rather than single-purpose use to maximize future reusability.
                                                - Execute task dispatch immediately following todo list updates. Maintain operational efficiency by avoiding unnecessary verbosity or confirmation requests.
+                                               - NEVER use call_agent tool to delegate tasks to yourself. For tasks requiring orchestrator-level analysis or synthesis, these should be self-assigned and completed using todo_complete tool.
 
                                                **Dependency and Sequencing Management:**
                                                - Dispatch tasks ONLY after all prerequisite dependencies are fully completed. Verify dependency completion status before proceeding with delegation.
@@ -137,24 +139,18 @@ public partial class
                                                - Wait for the agent to complete its current task and provide a response before re-attempting the failed delegation.
                                                - Monitor for task completion signals and agent status changes to maintain accurate system state awareness.
 
-                                               ### Sub-tasks for Self
-                                               **Direct Processing Protocol for Self-Assigned Tasks:**
-                                               Certain task categories must be handled directly by you rather than delegated to child agents. These include but are not limited to:
-                                               - Information synthesis and consolidation from multiple sources
-                                               - Cross-domain analysis requiring broad contextual understanding
-                                               - Final summarization and report generation
-                                               - Meta-analysis of child agent outputs
-                                               - Complex reasoning tasks requiring orchestrator-level perspective
+                                               **Status Monitoring and Clarity Protocol:**
+                                               - When uncertain about current todo item statuses or agent availability, ALWAYS use todo_read tool to check the current state of your todo list before proceeding.
+                                               - When confused about which agents are available or their current workload, ALWAYS use query_existing_agents tool to get up-to-date information about all child agents and their status.
+                                               - If you receive confusing or contradictory information about task progress, use both tools in combination to clarify the current system state before making delegation decisions.
+                                               - These query tools provide authoritative, real-time information about system state - rely on them rather than assumptions when planning next steps.
 
-                                               **Self-Assignment Execution Rules:**
-                                               1. DIRECT EXECUTION MANDATE: NEVER use call_agent tool to delegate tasks to yourself. Such self-delegation will result in system errors and infinite loops.
-                                               2. IMMEDIATE PROCESSING: Execute self-assigned tasks directly within your current context and processing cycle.
-                                               3. CONTEXT PRESERVATION: Maintain access to all accumulated knowledge, child agent outputs, and task dependencies when performing self-assigned work.
-                                               4. QUALITY STANDARDS: Apply the same rigor and completeness standards to self-assigned tasks as you would expect from child agents.
-
-                                               **Task Completion Protocol:**
-                                               - Mark the corresponding todo item as "Complete" immediately upon finishing the self-assigned task.
-                                               - Ensure the completion status is recorded BEFORE providing the final response to maintain accurate task tracking.
+                                               **Task Status Update Protocol - AUTOMATIC SYSTEM:**
+                                               - IMPORTANT: Todo item statuses are automatically updated by the system. DO NOT attempt to manually change todo statuses.
+                                               - When you use call_agent tool, the system automatically marks the todo item as "InProgress" and sets the AssigneeAgentName field to the target agent.
+                                               - The orchestrator primarily focuses on delegation via call_agent tool, but may handle synthesis/analysis tasks directly using todo_complete tool.
+                                               - For self-assigned tasks (synthesis, analysis, final reporting), use todo_complete tool to mark completion and provide results directly.
+                                               - NEVER use manual status update commands - the system handles all status transitions automatically.
 
                                                **Integration with Overall Workflow:**
                                                - Self-assigned tasks often serve as final integration points in complex workflows, synthesizing outputs from multiple child agents.
@@ -367,6 +363,7 @@ public partial class
             ## When deciding between "ORCHESTRATOR" and "SPECIALIZED"
             - Prefer SPECIALIZED mode if the agent's depth is more than 3
             - An agent with depth equal to 5 must operate in SPECIALIZED mode
+            - A root agent (with depth value 0) should always operate in ORCHESTRATOR mode.
             """;
         systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -751,7 +748,7 @@ public partial class
                 if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
                 {
                     LogEventDebug("Scheduling initialization upon UpdateSendConfigEvent");
-                    ScheduleTask(async () => await PublishAsyncWithTracing(this.GetGrainId(), new ContinuationEvent()
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
                         TargetAgentId = this.GetGrainId().ToString(),
                         ContinuationType = ContinuationType.Initialize
@@ -805,6 +802,7 @@ public partial class
                     state.Tools = payload.Tools;
                     LogEventDebug("Agent realized as {Status}", payload.RealizationStatus);
                 }
+
                 ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
                     TargetAgentId = this.GetGrainId().ToString(),
@@ -826,14 +824,26 @@ public partial class
                 }
 
                 content += "</agent_reply>";
+                
+                var todoItem = state.TodoList.Find(x =>
+                    x.Id == payload.Event.CallId
+                    && x.Status == TodoStatus.InProgress
+                    && x.AssigneeAgentName == payload.Event.SenderAgentName
+                );
+                if (todoItem == null)
+                {
+                    LogEventDebug("Agent Message received for unknown todo item: CallId={CallId}",
+                        payload.Event.CallId);
+                }
+                else
+                {
+                    todoItem.Status = TodoStatus.Completed;
+                    content += "\nTodo item {} is marked completed";
+                }
 
                 var amessage = PsiOmniChatMessage.CreateUserMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                var agentDescriptor =
-                    state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
-                if (agentDescriptor != null)
-                    state.AgentUsage.Remove(agentDescriptor.Name);
                 ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
                     TargetAgentId = this.GetGrainId().ToString(),
@@ -899,6 +909,7 @@ public partial class
                         ContinuationType = ContinuationType.Retrospect
                     }));
                 }
+
                 break;
             }
             case GrowChatHistoryEvent payload:
@@ -1084,15 +1095,26 @@ public partial class
                 state.DraftResponse = payload.DraftResponse;
                 break;
             case CallAgent payload:
+            {
                 LogEventInfo("Calling agent: AgentName={}, TargetAgentId={TargetAgentId}, CallId={CallId}",
                     payload.AgentCall.AgentName,
                     payload.AgentCall.AgentId, payload.AgentCall.CallId);
-                if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentName))
+
+                var todoItem = state.TodoList.Find(x =>
+                    x.Id == payload.AgentCall.CallId
+                    && x.Status == TodoStatus.InProgress
+                );
+                if (todoItem == null)
                 {
-                    state.AgentUsage.Add(payload.AgentCall.AgentName, payload.AgentCall.CallId);
+                    LogEventDebug("Agent Message received for unknown todo item: CallId={CallId}",
+                        payload.AgentCall.CallId);
+                } else {
+                    todoItem.Status = TodoStatus.InProgress;
+                    todoItem.AssigneeAgentName = payload.AgentCall.AgentName;
                 }
 
-                break;
+                break;                
+            }
             case WriteArtifact payload:
                 LogEventInfo("Writing artifact: Name={ArtifactName}, Format={Format}, ContentLength={ContentLength}",
                     payload.Name, payload.Format, payload.Content?.Length ?? 0);

@@ -134,7 +134,8 @@ public enum TodoStatus
     Undefined,
     Pending,
     InProgress,
-    Completed
+    Completed,
+    Canceled
 }
 
 [GenerateSerializer]
