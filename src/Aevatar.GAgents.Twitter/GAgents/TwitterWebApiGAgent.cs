@@ -210,7 +210,19 @@ public class UserRelationshipLogEvent : TwitterWebApiStateLogEvent
     [Id(2)] public DateTime ActionAt { get; set; }
 }
 
+[GenerateSerializer]
+public class UserProfileUpdatedLogEvent : TwitterWebApiStateLogEvent
+{
+    [Id(0)] public string UserId { get; set; } = string.Empty;
+    [Id(1)] public DateTime UpdatedAt { get; set; }
+}
+
 // GAgent Implementation
+// Error Handling Pattern:
+// - Methods returning DTOs: throw exceptions on failure
+// - Methods returning bool: return false on failure (with error logging)
+// - Methods returning nullable DTOs: return null on failure (with error logging)
+// - Methods returning collections: return empty collection on failure (with error logging)
 [GAgent("twitter-webapi", "social.twitter")]
 public class TwitterWebApiGAgent : GAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>, ITwitterWebApiGAgent
 {
@@ -424,7 +436,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
                 else if (e.RelationshipAction == "unfollow")
                 {
                     state.FollowingUserIds.Remove(e.TargetUserId);
+                    IncrementOperationCount(state, "users_unfollowed");
                 }
+                break;
+                
+            case UserProfileUpdatedLogEvent e:
+                state.UserId = e.UserId;
+                state.LastOperationUtc = e.UpdatedAt;
                 break;
         }
     }
@@ -746,7 +764,12 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
             // Cache user ID for future operations
             if (profile != null && State.UserId != profile.Id)
             {
-                State.UserId = profile.Id;
+                RaiseEvent(new UserProfileUpdatedLogEvent 
+                { 
+                    UserId = profile.Id,
+                    UpdatedAt = DateTime.UtcNow
+                });
+                await ConfirmEvents();
             }
             
             return profile;
@@ -1074,14 +1097,13 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
             var baseString = $"{method.Method.ToUpper()}&{Uri.EscapeDataString(url)}&{Uri.EscapeDataString(paramString)}";
             var signingKey = $"{Uri.EscapeDataString(consumerSecret)}&{Uri.EscapeDataString(tokenSecret)}";
             
-            Logger.LogInformation("OAuth Base String: {BaseString}", baseString);
-            Logger.LogInformation("OAuth Signing Key: {SigningKey}", $"{Uri.EscapeDataString(consumerSecret)}&[REDACTED]");
+            Logger.LogDebug("Creating OAuth signature for {Method} {Url}", method.Method.ToUpper(), url);
             
             using var hmac = new System.Security.Cryptography.HMACSHA1(Encoding.UTF8.GetBytes(signingKey));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(baseString));
             var signature = Convert.ToBase64String(hash);
             
-            Logger.LogInformation("OAuth Signature: {Signature}", signature);
+            Logger.LogDebug("OAuth signature created successfully");
             return signature;
         }
         catch (Exception ex)
@@ -1147,10 +1169,9 @@ All event handlers accept events from Aevatar.GAgents.Twitter.GEvents namespace.
             result.Headers["Authorization"] = authHeader;
             result.IsSuccess = true;
             
-            // Enhanced debugging for OAuth 1.0a
-            Logger.LogInformation("OAuth 1.0a signature generated for {Method} {Url}", method, url);
-            Logger.LogInformation("OAuth parameters: {Parameters}", string.Join(", ", oauthParams.Where(p => p.Key != "oauth_signature").Select(p => $"{p.Key}={p.Value}")));
-            Logger.LogInformation("Authorization header: {AuthHeader}", authHeader);
+            // Debug logging without sensitive data
+            Logger.LogDebug("OAuth 1.0a authentication prepared for {Method} {Url}", method, url);
+            Logger.LogDebug("OAuth parameters count: {Count}", oauthParams.Count);
             
             return result;
         }
