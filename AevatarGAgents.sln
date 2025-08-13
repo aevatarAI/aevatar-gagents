@@ -110,6 +110,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resource", "resource", "{22
 		resource\Directory.Packages.props = Directory.Packages.props
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Python", "src\Aevatar.GAgents.Python\Aevatar.GAgents.Python.csproj", "{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Python.Test", "test\Aevatar.GAgents.Python.Test\Aevatar.GAgents.Python.Test.csproj", "{197407FA-3082-4C71-AF54-E81E842191A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -260,6 +264,14 @@ Global
 		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375}.Release|Any CPU.Build.0 = Release|Any CPU
+		{197407FA-3082-4C71-AF54-E81E842191A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{197407FA-3082-4C71-AF54-E81E842191A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{197407FA-3082-4C71-AF54-E81E842191A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{197407FA-3082-4C71-AF54-E81E842191A2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -306,6 +318,8 @@ Global
 		{E43A1BB3-09FC-4C89-B73E-3F4B8FF1E208} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{FF631364-5246-4867-84D5-A00E9EDA40F0} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{D848D7DB-CAB3-453C-8EFE-9AD1BA75D375} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
+		{197407FA-3082-4C71-AF54-E81E842191A2} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
