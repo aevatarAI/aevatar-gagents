@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,7 +41,8 @@ namespace Aevatar.GAgents.Twitter.Client;
 
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
         public async Task<T> SendRequestAsync<T>(
@@ -98,7 +100,7 @@ namespace Aevatar.GAgents.Twitter.Client;
         // Add payload if present
         if (payload != null)
         {
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, JsonOptions);
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
