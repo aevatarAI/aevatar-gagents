@@ -213,19 +213,8 @@ namespace Aevatar.GAgents.Twitter.Client;
             // Ignore JSON parsing errors
         }
 
-        switch (statusCode)
-        {
-            case HttpStatusCode.TooManyRequests:
-                throw new TwitterRateLimitException(errorMessage);
-            case HttpStatusCode.Unauthorized:
-                throw new TwitterAuthenticationException(errorMessage);
-            case HttpStatusCode.Forbidden:
-                throw new TwitterAuthorizationException(errorMessage);
-            case HttpStatusCode.NotFound:
-                throw new TwitterNotFoundException(errorMessage);
-            default:
-                throw new TwitterApiException(errorMessage, statusCode);
-        }
+        // Throw standard HttpRequestException so Orleans can serialize across grain boundaries
+        throw new HttpRequestException(errorMessage, null, statusCode);
     }
 }
 

@@ -76,7 +76,7 @@ public sealed class TwitterWebApiGAgentTests : AevatarTwitterTestBase
         var config = CreateTestConfiguration();
         var mediaIds = new List<string> { "media123", "media456" };
 
-        SetupHttpResponse(HttpMethod.Post, "/tweets", CreateTestTweetResponse());
+        SetupHttpResponse(HttpMethod.Post, "/tweets", CreateTestTweetResponse(text: "Tweet with media"));
 
         var agent = await _gAgentFactory.GetGAgentAsync<ITwitterWebApiGAgent>(agentId, config);
 
@@ -724,7 +724,7 @@ public sealed class TwitterWebApiGAgentTests : AevatarTwitterTestBase
         state.RetweetedTweets.ShouldContain(tweet.Id);
         state.OperationCounts["tweets_posted"].ShouldBe(1);
         state.OperationCounts["tweets_liked"].ShouldBe(1);
-        state.OperationCounts["tweets_retweeted"].ShouldBe(1);
+        state.OperationCounts["tweets_retweetd"].ShouldBe(1);
 
         _testOutputHelper.WriteLine("End-to-end tweet lifecycle completed successfully");
     }
