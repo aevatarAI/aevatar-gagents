@@ -185,11 +185,15 @@ interface methods and event handlers for maximum flexibility.");
         if (string.IsNullOrWhiteSpace(text))
             throw new ArgumentException("Tweet text cannot be empty", nameof(text));
 
-        var payload = new
+        object payload;
+        if (mediaIds is { Count: > 0 })
         {
-            text,
-            media = mediaIds != null ? new { media_ids = mediaIds } : null
-        };
+            payload = new { text, media = new { media_ids = mediaIds } };
+        }
+        else
+        {
+            payload = new { text };
+        }
 
         var response = await ApiClient.SendRequestAsync<TweetResponseDto>(
             HttpMethod.Post,
