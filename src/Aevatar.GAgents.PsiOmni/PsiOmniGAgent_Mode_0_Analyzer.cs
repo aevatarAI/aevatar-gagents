@@ -7,11 +7,11 @@ namespace Aevatar.GAgents.PsiOmni;
 
 public partial class PsiOmniGAgent
 {
-    private Kernel GetKernel_Analyzer()
+    private Kernel GetKernel_Plain()
     {
         var kernel = _kernelFactory.CreateKernel(
             State.Configuration!
-        ); // Orchestrator doesn't have specialized tools.
+        );
         if (kernel == null)
             throw new InvalidOperationException("Kernel is not configured for tool execution.");
 
@@ -20,8 +20,13 @@ public partial class PsiOmniGAgent
 
     private void OnChatDoneAsync_Analyzer(ChatHistory chatHistory, int preChatHistoryLength)
     {
+        LogEventDebug("Processing analyzer chat messages for AgentId={AgentId}, NewMessages={Count}", 
+            AgentId, chatHistory.Count - preChatHistoryLength);
+            
         var result = chatHistory.Last().Content ?? string.Empty;
-        Logger.LogInformation("OnChatDoneAsync_Analyzer Result: {Result}", result);
+        LogEventInfo("OnChatDoneAsync_Analyzer Result for AgentId={AgentId}: {Result}", 
+            AgentId, result.Substring(0, Math.Min(200, result.Length)) + "...");
+            
         if (result.Contains("ORCHESTRATOR") || result.Contains("SPECIALIZED"))
         {
             var jsonStartIndex = result.IndexOf('{');
