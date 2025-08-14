@@ -13,7 +13,7 @@ env:
   DOTNET_INSTALL_DIR: "./.dotnet"
 
 jobs:
-  test-aigagent:
+  test:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -29,191 +29,35 @@ jobs:
         run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
         run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test AIGAgent
+      - name: Test with coverage
         run: |
-          dotnet test test/Aevatar.GAgents.AIGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-aigagent --collect:"XPlat Code Coverage"
-      - name: Upload AIGAgent coverage artifacts
+          dotnet test test/Aevatar.GAgents.AIGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.Twitter.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.GroupChat.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.MCP.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.Workflow.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.ChatAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/Aevatar.GAgents.MultiAIChatGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-aigagent
-          path: coverage-aigagent/
-
-  test-twitter:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test Twitter
-        run: |
-          dotnet test test/Aevatar.GAgents.Twitter.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-twitter --collect:"XPlat Code Coverage"
-      - name: Upload Twitter coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-twitter
-          path: coverage-twitter/
-
-  test-groupchat:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test GroupChat
-        run: |
-          dotnet test test/Aevatar.GAgents.GroupChat.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-groupchat --collect:"XPlat Code Coverage"
-      - name: Upload GroupChat coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-groupchat
-          path: coverage-groupchat/
-
-  test-mcp:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test MCP
-        run: |
-          dotnet test test/Aevatar.GAgents.MCP.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-mcp --collect:"XPlat Code Coverage"
-      - name: Upload MCP coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-mcp
-          path: coverage-mcp/
-
-  test-workflow:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test Workflow
-        run: |
-          dotnet test test/Aevatar.GAgents.Workflow.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-workflow --collect:"XPlat Code Coverage"
-      - name: Upload Workflow coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-workflow
-          path: coverage-workflow/
-
-  test-chatagent:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test ChatAgent
-        run: |
-          dotnet test test/Aevatar.GAgents.ChatAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-chatagent --collect:"XPlat Code Coverage"
-      - name: Upload ChatAgent coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-chatagent
-          path: coverage-chatagent/
-
-  test-multiaichat:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Install dependencies
-        run: dotnet restore AevatarGAgents.sln --verbosity quiet
-      - name: Build
-        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
-      - name: Test MultiAIChat
-        run: |
-          dotnet test test/Aevatar.GAgents.MultiAIChatGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-multiaichat --collect:"XPlat Code Coverage"
-      - name: Upload MultiAIChat coverage artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-multiaichat
-          path: coverage-multiaichat/
+          name: coverage
+          path: coverage/
 
   upload-coverage:
     runs-on: ubuntu-22.04
-    needs: [test-aigagent, test-twitter, test-groupchat, test-mcp, test-workflow, test-chatagent, test-multiaichat]
+    needs: [test]
     permissions:
       pull-requests: write
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download AIGAgent coverage
+      - name: Download coverage
         uses: actions/download-artifact@v4
         with:
-          name: coverage-aigagent
-          path: coverage-aigagent/
-      - name: Download Twitter coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-twitter
-          path: coverage-twitter/
-      - name: Download GroupChat coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-groupchat
-          path: coverage-groupchat/
-      - name: Download MCP coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-mcp
-          path: coverage-mcp/
-      - name: Download Workflow coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-workflow
-          path: coverage-workflow/
-      - name: Download ChatAgent coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-chatagent
-          path: coverage-chatagent/
-      - name: Download MultiAIChat coverage
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-multiaichat
-          path: coverage-multiaichat/
+          name: coverage
+          path: coverage/
       - name: Upload unified coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
