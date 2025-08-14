@@ -41,7 +41,7 @@ public partial class PsiOmniGAgent
     {
         if (State.Artifacts.ContainsKey(name))
         {
-            return await Task.FromResult<string>("Failed to write artifact: name {name} exits. Pick another name.");
+            return await Task.FromResult<string>($"Failed to write artifact: name {name} exits. Pick another name.");
         }
 
         State.Artifacts.TryAdd(name, new Artifact
