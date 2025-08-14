@@ -31,12 +31,12 @@
   - Continues to expose the existing contract defined in `IPythonExecutionGAgent` within `@PythonExecutionGAgent.cs`.
 
 - **`PythonSandboxClientGrain` (per-run grain, `IGrainWithGuidKey`)**
-  - One grain per execution keyed by `correlationId`.
+  - One grain per execution keyed by `sandboxExecutionId`.
   - Publishes request, awaits response, returns result, `DeactivateOnIdle()` after completion.
 
 - **ResponseRouter (per-silo singleton component)**
   - Holds a single subscription to the shared responses namespace.
-  - Correlates `correlationId` → TaskCompletionSource; completes waiting per-run grains.
+  - Correlates `sandboxExecutionId` → TaskCompletionSource; completes waiting per-run grains.
   - Prevents N subscriptions overhead.
 
 - **ABP `PythonSandboxService` (Kubernetes Deployment)**
@@ -45,10 +45,10 @@
 
 ### Flow
 1. `PythonExecutionGAgent` validates script (static checks).
-2. Agent generates `correlationId`, activates `PythonSandboxClientGrain` keyed by it.
+2. Agent generates `sandboxExecutionId`, activates `PythonSandboxClientGrain` keyed by it.
 3. Client grain registers a waiter with ResponseRouter.
-4. Client grain publishes `PythonExecRequest` on `python.exec.requests` (streamId = `correlationId`).
-5. ABP worker consumes request, runs code in sandbox, publishes `PythonExecResponse` on `python.exec.responses` (same `correlationId`).
+4. Client grain publishes `PythonExecRequest` on `python.exec.requests` (streamId = `sandboxExecutionId`).
+5. ABP worker consumes request, runs code in sandbox, publishes `PythonExecResponse` on `python.exec.responses` (same `sandboxExecutionId`).
 6. ResponseRouter completes the waiter; client grain returns and deactivates.
 7. Agent maps to `ScriptExecutionResult`, raises events, returns to caller.
 
@@ -57,16 +57,16 @@
   - Requests: `python.exec.requests`
   - Responses: `python.exec.responses`
   - Dead letter (optional): `python.exec.dlq`
-- StreamId: `correlationId` (Guid). Requests and responses use the same id.
-- Partitioning: key by `correlationId` for locality.
-- Delivery: At-least-once. Use `idempotencyKey` (default `correlationId`) for dedupe at worker.
+- StreamId: `sandboxExecutionId` (Guid). Requests and responses use the same id.
+- Partitioning: key by `sandboxExecutionId` for locality.
+- Delivery: At-least-once. Use `idempotencyKey` (default `sandboxExecutionId`) for dedupe at worker.
 
 ## Message Contracts
 
 ```json
 {
   "PythonExecRequest": {
-    "correlationId": "string-guid",
+      "sandboxExecutionId": "string-guid",
     "grainId": "string",
     "code": "string",
     "timeoutSeconds": 30,
@@ -82,7 +82,7 @@
 ```json
 {
   "PythonExecResponse": {
-    "correlationId": "string-guid",
+      "sandboxExecutionId": "string-guid",
     "success": true,
     "stdout": "string-truncated",
     "stderr": "string-truncated",
@@ -120,7 +120,7 @@
 - Autoscaling: KEDA on Kafka consumer lag (min replicas small, e.g., 3).
 - SecurityContext: runAsNonRoot, readOnlyRootFilesystem, drop linux caps, seccomp/apparmor.
 - NetworkPolicy: deny egress for sandboxed execution path.
-- Observability: Prometheus metrics (exec time, memory, exit codes); logs include `correlationId`, `scriptHash`, `grainId`.
+- Observability: Prometheus metrics (exec time, memory, exit codes); logs include `sandboxExecutionId`, `scriptHash`, `grainId`.
 
 ## Configuration Defaults
 - Per-agent in-flight: 3
@@ -148,7 +148,7 @@
   - Agent fails fast when concurrency gate is full (log + event).
 
 ## Observability and Audit
-- Correlate with `correlationId` and `scriptHash`.
+- Correlate with `sandboxExecutionId` and `scriptHash`.
 - Metrics: execution duration, memory usage, exit codes, denials.
 - Domain events:
   - `SecurityValidationFailedEvent`
@@ -161,7 +161,7 @@
 - Phase 2: Remove local process code and helpers.
 
 ## Rationale: Per-run Grain vs Client Service
-- Use a per-run `PythonSandboxClientGrain` (key = `correlationId`) for clean 1:1 lifecycle, isolation, and simple correlation.
+- Use a per-run `PythonSandboxClientGrain` (key = `sandboxExecutionId`) for clean 1:1 lifecycle, isolation, and simple correlation.
 - Avoid N-subscriptions using a per-silo ResponseRouter with a single shared response subscription and in-memory correlation map.
 - This balances clarity and scalability without per-client topic sprawl.
 
