@@ -1,3 +1,8 @@
+using System;
+using System.Linq;
+
+namespace Aevatar.GAgents.Basic;
+
 [AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 public class GenericMetaAttribute : Attribute
 {
