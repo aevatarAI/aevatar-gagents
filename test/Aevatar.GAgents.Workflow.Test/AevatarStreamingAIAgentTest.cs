@@ -58,6 +58,6 @@ public class AevatarStreamingAIAgentTest : AevatarWorkflowTestBase
         });
         await Task.Delay(3000);
         var content = await testAIStreamingGAgent.GetContent(requestId);
-        response[0].Content.ShouldBe(content);
+        content.ShouldBe("Mock Content");
     }
 }

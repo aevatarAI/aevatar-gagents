@@ -28,6 +28,8 @@ jobs:
           dotnet-version: '9.0.x'
       - name: Install dependencies
         run: dotnet restore AevatarGAgents.sln --verbosity quiet
+      - name: Install coverlet collector
+        run: dotnet add AevatarGAgents.sln package coverlet.collector --version 6.0.2
       - name: Build
         run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test with coverage
