@@ -84,8 +84,8 @@ public partial class PsiOmniGAgent
     [KernelFunction("write_task")]
     [Description("Rewrite the current task.")]
     public async Task<string> WriteTaskAsync(
-        [Description("The comprehensive description of the task."), Required]
-        string task
+        [Description("The details of the task."), Required]
+        FramedTask task
     )
     {
         RaiseEventWithTracing(new WriteTask()
@@ -97,7 +97,7 @@ public partial class PsiOmniGAgent
 
     [KernelFunction("read_task")]
     [Description("Read the current task.")]
-    public async Task<string> ReadTaskAsync(
+    public async Task<FramedTask> ReadTaskAsync(
     )
     {
         return await Task.FromResult(State.CurrentTask);
