@@ -1,4 +1,5 @@
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.MCP.Core;
 using Aevatar.GAgents.MCP.Core.State;
 using Aevatar.GAgents.MCP.Options;
@@ -10,7 +11,7 @@ namespace Aevatar.GAgents.MCP.GAgents;
 /// MCP GAgent implementation using official SDK
 /// </summary>
 [GenerateSerializer]
-[GAgent("mcp", "aevatar")]
+[GAgent(AevatarGAgentsConstants.MCPGAgentAlias, "aevatar")]
 public class MCPGAgent : MCPGAgentBase<MCPGAgentState, MCPGAgentStateLogEvent, EventBase, MCPGAgentConfig>,
     IMCPGAgent
 {

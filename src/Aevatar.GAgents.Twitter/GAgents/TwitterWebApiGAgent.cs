@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.Twitter.GEvents;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
@@ -15,7 +16,7 @@ namespace Aevatar.GAgents.Twitter.GAgents;
 /// <summary>
 /// Twitter Web API GAgent using modular components
 /// </summary>
-[GAgent("twitter-webapi", "social.twitter")]
+[GAgent("twitter", AevatarGAgentsConstants.ToolGAgentNamespace)]
 public class TwitterWebApiGAgent :
     MemberGAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>,
     ITwitterWebApiGAgent

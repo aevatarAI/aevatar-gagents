@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Aevatar.AI;
 using Aevatar.AI.Exceptions;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AI.Brain;
@@ -14,6 +15,7 @@ using Aevatar.GAgents.AI.Options;
 using Aevatar.GAgents.AIGAgent.State;
 using Aevatar.GAgents.AIGAgent.Dtos;
 using Aevatar.GAgents.AIGAgent.GEvents;
+using Aevatar.GAgents.Basic;
 using Aevatar.GAgents.MCP.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -56,7 +58,7 @@ public abstract partial class
     protected override async Task PerformConfigAsync(TConfiguration configuration)
     {
         await base.PerformConfigAsync(configuration);
-        
+
     }
 
     public async Task<bool> InitializeAsync(InitializeDto initializeDto)
@@ -343,6 +345,7 @@ public abstract partial class
         {
             cts.CancelAfter(TimeSpan.FromMilliseconds(streamingConfig.TimeOutInternal));
         }
+
         _cancellationTokenSource = cts;
         cancellationToken = cts.Token;
 
@@ -579,6 +582,7 @@ public abstract partial class
                 {
                     State.ToolCallHistory = State.ToolCallHistory.TakeLast(100).ToList();
                 }
+
                 break;
             case ClearToolCallHistoryStateLogEvent _:
                 State.ToolCallHistory.Clear();
@@ -788,9 +792,44 @@ public abstract partial class
     protected override async Task OnPrepareResourceContextAsync(ResourceContext context)
     {
         await base.OnPrepareResourceContextAsync(context);
-        
+
         // Check if any resources are MCPGAgent instances and register their tools
         await RegisterMCPToolsFromResourcesAsync(context);
+        await RegisterToolGAgentFromResourcesAsync(context);
+    }
+
+    /// <summary>
+    /// Common helper to scan <see cref="ResourceContext"/> and collect resources
+    /// whose GrainType string matches a predicate. Provides consistent logging.
+    /// </summary>
+    private List<GrainId> FindMatchingResources(ResourceContext context, string label, Func<string, bool> typeMatch)
+    {
+        var matches = new List<GrainId>();
+        foreach (var grainId in context.AvailableResources)
+        {
+            Logger.LogInformation("Checking resource: {GrainId}, Type: {GrainType}", grainId, grainId.Type);
+            try
+            {
+                var grainTypeString = grainId.Type.ToString();
+                if (typeMatch(grainTypeString!))
+                {
+                    matches.Add(grainId);
+                    Logger.LogInformation("Matched {Label} resource: {GrainId}, Type: {GrainType}", label, grainId,
+                        grainTypeString);
+                }
+                else
+                {
+                    Logger.LogDebug("Skipping non-{Label} resource: {GrainId}, Type: {GrainType}", label, grainId,
+                        grainTypeString);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Failed to resolve resource {GrainId}: {Exception}", grainId, ex.Message);
+            }
+        }
+
+        return matches;
     }
 
     /// <summary>
@@ -806,47 +845,29 @@ public abstract partial class
 
         var gAgentFactory = ServiceProvider.GetRequiredService<IGAgentFactory>();
         var mcpAgentsFound = new List<IMCPGAgent>();
-        
-        // Identify MCPGAgent instances in the resource context
-        foreach (var grainId in context.AvailableResources)
+
+        // Identify candidates first via common matcher
+        var candidates = FindMatchingResources(context, "MCPGAgent",
+            t => t.Contains(AevatarGAgentsConstants.MCPGAgentAlias, StringComparison.OrdinalIgnoreCase));
+        // Resolve to IMCPGAgent instances
+        foreach (var grainId in candidates)
         {
-            Logger.LogInformation("Checking resource: {GrainId}, Type: {GrainType}", grainId, grainId.Type);
             try
             {
-                // Check if this is an MCPGAgent by examining the GrainType
-                var grainTypeString = grainId.Type.ToString();
-                if (grainTypeString.Contains("mcp", StringComparison.OrdinalIgnoreCase))
-                {
-                    // This is an MCP agent, try to get it as IMCPGAgent
-                    try
-                    {
-                        var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(grainId);
-                        if (mcpAgent != null)
-                        {
-                            mcpAgentsFound.Add(mcpAgent);
-                            Logger.LogInformation("Found MCPGAgent resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
-                        }
-                    }
-                    catch (InvalidCastException)
-                    {
-                        Logger.LogWarning("Resource {GrainId} has MCP type but cannot be cast to IMCPGAgent", grainId);
-                    }
-                }
-                else
-                {
-                    Logger.LogDebug("Skipping non-MCP resource: {GrainId}, Type: {GrainType}", grainId, grainTypeString);
-                }
+                var mcpAgent = await gAgentFactory.GetGAgentAsync<IMCPGAgent>(grainId);
+                mcpAgentsFound.Add(mcpAgent);
+                Logger.LogInformation("Resolved MCPGAgent resource: {GrainId}", grainId);
             }
-            catch (Exception ex)
+            catch (InvalidCastException)
             {
-                Logger.LogWarning("Failed to resolve resource {GrainId}: {Exception}", grainId, ex.Message);
+                Logger.LogWarning("Resource {GrainId} has MCP type but cannot be cast to IMCPGAgent", grainId);
             }
         }
 
         if (mcpAgentsFound.Any())
         {
             Logger.LogInformation("Registering MCP tools from {Count} MCPGAgent resources", mcpAgentsFound.Count);
-            
+
             // Configure the MCP agents (this will register tools to kernel)
             var success = await ConfigureMCPServersAsync(mcpAgentsFound);
             if (success)
@@ -861,6 +882,39 @@ public abstract partial class
         else
         {
             Logger.LogDebug("No MCPGAgent resources found in context");
+        }
+    }
+
+    private async Task RegisterToolGAgentFromResourcesAsync(ResourceContext context)
+    {
+        if (_brain == null || context.AvailableResources.IsNullOrEmpty())
+        {
+            Logger.LogDebug("Skipping Tool GAgent registration: brain not initialized or no resources available");
+            return;
+        }
+
+        // Identify ToolGAgent candidates via common matcher
+        var toolCandidates = FindMatchingResources(context, "ToolGAgent",
+            t => t.Contains(AevatarGAgentsConstants.ToolGAgentNamespace, StringComparison.OrdinalIgnoreCase));
+
+        if (toolCandidates.Count != 0)
+        {
+            Logger.LogInformation("Registering ToolGAgent from {Count} Tool GAgent resources", toolCandidates.Count);
+
+            // Configure the ToolGAgents (this will register tools to kernel)
+            var success = await ConfigureToolGAgentsAsync(toolCandidates);
+            if (success)
+            {
+                Logger.LogInformation("Successfully registered ToolGAgents from resource context");
+            }
+            else
+            {
+                Logger.LogWarning("Failed to register some ToolGAgents from resource context");
+            }
+        }
+        else
+        {
+            Logger.LogDebug("No ToolGAgent resources found in context");
         }
     }
 }
