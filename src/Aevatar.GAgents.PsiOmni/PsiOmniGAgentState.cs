@@ -27,6 +27,12 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(8)] public string UserAgentId { get; set; } = string.Empty;
     [Id(9)] public string CallId { get; set; } = string.Empty;
     [Id(10)] public List<PsiOmniChatMessage> ChatHistory { get; set; } = new();
+    [Id(11)] public List<TodoItem> TodoList { get; set; } = new();
+    [Id(12)] public string CurrentTask { get; set; } = string.Empty;
+    [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
+    [Id(14)] public Dictionary<string, Artifact> Artifacts { get; set; } = new();
+    [Id(15)] public string DraftResponse { get; set; } = string.Empty;
+    [Id(16)] public string Name { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -36,9 +42,13 @@ public class PsiOmniGAgentStateLogEvent : StateLogEventBase<PsiOmniGAgentStateLo
 }
 
 [GenerateSerializer]
-public class SetDepthEvent : PsiOmniGAgentStateLogEvent
+public class InitializeEvent : PsiOmniGAgentStateLogEvent
 {
-    [Id(0)] public int Depth { get; set; } = 0;
+    [Id(0)] public string ParentId { get; set; } = string.Empty;
+    [Id(1)] public string Name { get; set; } = string.Empty;
+    [Id(2)] public int Depth { get; set; } = 0;
+    [Id(3)] public string Description { get; set; } = string.Empty;
+    [Id(4)] public string Examples { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -89,4 +99,42 @@ public class RealizationEvent : PsiOmniGAgentStateLogEvent
 public class UpdateSelfDescription : PsiOmniGAgentStateLogEvent
 {
     [Id(0)] public string Description { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class AddNewAgent : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public AgentDescriptor NewAgent { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class CallAgent : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public AgentCall AgentCall { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class WriteArtifact : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string Format { get; set; } = string.Empty;
+    [Id(2)] public string Content { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class WriteTask : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string Task { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class WriteDraftResponse : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public string DraftResponse { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
+public class UpdateTodoList : PsiOmniGAgentStateLogEvent
+{
+    [Id(0)] public List<TodoItem> Todos { get; set; } = new();
 }

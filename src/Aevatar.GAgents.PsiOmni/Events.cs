@@ -6,10 +6,11 @@ namespace Aevatar.GAgents.PsiOmni;
 [GenerateSerializer]
 public class AgentConfigEvent : EventBase
 {
-    [Id(0)] public AgentConfiguration Configuration { get; set; } = new();
-    [Id(1)] public string ParentAgentId { get; set; } = string.Empty;
+    [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
+    [Id(1)] public AgentConfiguration Configuration { get; set; } = new();
+    [Id(2)] public string ParentAgentId { get; set; } = string.Empty;
 
-    [Id(2)]
+    [Id(3)]
     public List<string> Tools { get; set; } = new(); //TODO: Kept here to cater to old code. Need to be delelted.
 }
 
@@ -38,9 +39,12 @@ public class UserMessageEvent : EventBase
 public class AgentMessageEvent : EventBase
 {
     [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
-    [Id(1)] public string TargetAgentId { get; set; }
-    [Id(2)] public string CallId { get; set; }
-    [Id(3)] public string Content { get; set; }
+    [Id(1)] public string TargetAgentId { get; set; } = string.Empty;
+    [Id(2)] public string CallId { get; set; } = string.Empty;
+    [Id(3)] public string Content { get; set; } = string.Empty;
+    [Id(4)] public string SenderAgentId { get; set; } = string.Empty;
+    [Id(5)] public string SenderAgentName { get; set; } = string.Empty;
+    [Id(6)] public List<Artifact> Artifacts { get; set; } = new();
 
     public override string ToString()
     {

@@ -19,7 +19,5 @@ public class AevatarGAgentsTwitterModule : AbpModule
         });
 
         context.Services.AddSingleton<ITwitterProvider, TwitterProvider>();
-        // var configuration = context.Services.GetConfiguration();
-        // Configure<TwitterOptions>(configuration.GetSection("Twitter")); 
     }
 }

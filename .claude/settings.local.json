@@ -32,7 +32,13 @@
       "Bash(/usr/local/share/dotnet/dotnet test test/Aevatar.GAgents.AIGAgent.Test/ --verbosity normal)",
       "Bash(exec zsh)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(gh pr review:*)",
+      "Bash(gh api:*)"
     ],
     "deny": []
   }

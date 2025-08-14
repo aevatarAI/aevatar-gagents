@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Aevatar.GAgents.PsiOmni;
@@ -36,17 +38,19 @@ public class AgentExample : IEquatable<AgentExample>
 [GenerateSerializer]
 public class AgentDescriptor : IEquatable<AgentDescriptor>
 {
-    [Id(0)] public string AgentId { get; set; } = string.Empty;
-    [Id(1)] public string AgentType { get; set; } = string.Empty; // Orchestrator, Specialized
-    [Id(2)] public string Description { get; set; } = string.Empty;
-    [Id(3)] public List<AgentExample> Examples { get; set; } = new();
-    [Id(4)] public List<ToolDefinition> Tools { get; set; } = new();
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string AgentId { get; set; } = string.Empty;
+    [Id(2)] public string AgentType { get; set; } = string.Empty; // Orchestrator, Specialized
+    [Id(3)] public string Description { get; set; } = string.Empty;
+    [Id(4)] public List<AgentExample> Examples { get; set; } = new();
+    [Id(5)] public List<ToolDefinition> Tools { get; set; } = new();
 
     public bool Equals(AgentDescriptor? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
-        return AgentId == other.AgentId &&
+        return Name == other.Name &&
+            AgentId == other.AgentId &&
                AgentType == other.AgentType &&
                Description == other.Description &&
                Examples.SequenceEqual(other.Examples) &&
@@ -74,6 +78,12 @@ public class AgentDescriptor : IEquatable<AgentDescriptor>
 }
 
 [GenerateSerializer]
+public class AgentWithUsage: AgentDescriptor
+{
+    [Id(1)] public string HandlingTask { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
 public class RealizationResult
 {
     [Id(0)] public string OperationMode { get; set; } = "UNKNOWN";
@@ -84,9 +94,10 @@ public class RealizationResult
 [GenerateSerializer]
 public class AgentCall
 {
-    [Id(0)] public string AgentId { get; set; } = string.Empty;
-    [Id(1)] public string CallId { get; set; } = string.Empty;
-    [Id(2)] public string Message { get; set; } = string.Empty;
+    [Id(0)] public string AgentName { get; set; } = string.Empty;
+    [Id(1)] public string AgentId { get; set; } = string.Empty;
+    [Id(2)] public string CallId { get; set; } = string.Empty;
+    [Id(3)] public string Message { get; set; } = string.Empty;
 }
 
 [GenerateSerializer]
@@ -110,8 +121,81 @@ public class ToolParameter
 public class OrchestratorMessage
 {
     [Id(0), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Intermediate { get; set; }
+    public string? Thought { get; set; }
 
     [Id(1), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string? Final { get; set; }
+    public string? Response { get; set; }
 }
+
+[GenerateSerializer]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum TodoStatus
+{
+    Undefined,
+    Pending,
+    InProgress,
+    Completed
+}
+
+[GenerateSerializer]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum TodoPriority
+{
+    Undefined,
+    High,
+    Medium,
+    Low,
+}
+
+[GenerateSerializer]
+public class TodoItem
+{
+    [Id(0), Required, Description("The id of the todo item. It's required.")]
+    public string Id { get; set; } = string.Empty;
+
+    [Id(1), Required, Description("The status of the todo item. It's required.")]
+    public TodoStatus Status { get; set; } = TodoStatus.Undefined;
+
+    [Id(2), Required, Description("The description of the todo task. It's required.")]
+    public string Content { get; set; } = string.Empty;
+
+    [Id(3), Required, Description("The priority of the todo item. It's required.")]
+    public TodoPriority Priority { get; set; } = TodoPriority.Undefined;
+
+    [Id(4), Required, Description("The list of Id's of other todo items this item depends on. It's required.")]
+    public List<string> Dependencies { get; set; } = new();
+
+    [Id(5), Description("The id of the agent this task is dispatched to.")]
+    public string AssigneeAgentId { get; set; } = string.Empty;
+}
+
+[GenerateSerializer, Description("Contains all information the child agent to perform the task.")]
+public class TaskDispatch
+{
+    [Id(1), Description("The description of the task to be performed.")]
+    public string Task { get; set; } = string.Empty;
+
+    [Id(2),
+     Description(
+         "Provide the background of the task explaining why we need to do it in the context of the parent task.")]
+    public string Background { get; set; } = string.Empty;
+
+    [Id(3), Description("Provides all known information that is needed to perform the task.")]
+    public List<string> Knowledge { get; set; } = new();
+}
+
+[GenerateSerializer]
+public class Artifact
+{
+    [Id(0)] public string Name { get; set; } = string.Empty;
+    [Id(1)] public string Format { get; set; } = string.Empty;
+    [Id(2)] public string Content { get; set; } = string.Empty;
+}
+
+
+[GenerateSerializer]
+public class FinalResponse
+{
+    [Id(0)] public string Response { get; set; } = string.Empty;
+    [Id(1)] public List<Artifact> Artifacts { get; set; } = new();
+}  

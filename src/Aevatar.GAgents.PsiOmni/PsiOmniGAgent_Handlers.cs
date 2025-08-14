@@ -8,79 +8,125 @@ public partial class PsiOmniGAgent
     [EventHandler]
     public async Task HandleSendConfigEventAsync(AgentConfigEvent @event)
     {
-        Logger.LogInformation("SendConfigEvent: {Task}", @event.Configuration.Model.ModelId);
-        RaiseEvent(new UpdateSendConfigEvent()
+        await TraceEventHandlerAsync(@event, async () =>
         {
-            Event = @event
+            if(_receivedMessageIds.Contains(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate config event detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
+
+            LogEventInfo("SendConfigEvent received: UniqueId={UniqueId}, ModelId={ModelId}", 
+                @event.UniqueId, @event.Configuration.Model.ModelId);
+            
+            if (!_receivedMessageIds.Add(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate config event detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
+            
+            RaiseEventWithTracing(new UpdateSendConfigEvent()
+            {
+                Event = @event
+            });
+            await ConfirmEventsWithTracing();
         });
-        await ConfirmEvents();
     }
 
     [EventHandler]
     public async Task HandleUserMessageEventAsync(UserMessageEvent @event)
     {
-        Logger.LogInformation("{Message}", @event);
+        // Check if the message is for this agent
         if (@event.TargetAgentId != this.GetGrainId().ToString())
         {
-            // Not for me
+            // LogEventDebug("Message not for this agent, ignoring");
             return;
         }
-
-        if (!_receivedMessageIds.Add(@event.UniqueId))
+        
+        await TraceEventHandlerAsync(@event, async () =>
         {
-            return;
-        }
+            
+            LogEventDebug("UserMessageEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content}",
+                @event.UniqueId, @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)));
+            
+            if(_receivedMessageIds.Contains(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate user message event detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
 
-        RaiseEvent(new ReceiveUserMessageEvent
-        {
-            Event = @event
+            if (!_receivedMessageIds.Add(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate message detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
+
+            RaiseEventWithTracing(new ReceiveUserMessageEvent
+            {
+                Event = @event
+            });
+            await ConfirmEventsWithTracing();
         });
-        await ConfirmEvents();
     }
 
     [EventHandler]
     public async Task HandleAgentMessageEventAsync(AgentMessageEvent @event)
     {
+        // Check if the message is for this agent
         if (@event.TargetAgentId != this.GetGrainId().ToString())
         {
-            // Not for me
+            // LogEventDebug("Message not for this agent, ignoring");
             return;
         }
-
-        if (_receivedMessageIds.Contains(@event.UniqueId))
+        
+        await TraceEventHandlerAsync(@event, async () =>
         {
-            return;
-        }
+            LogEventDebug("AgentMessageEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, CallId={CallId}, Content={Content} with {ArtifactCount} artifacts",
+                @event.UniqueId, @event.TargetAgentId, @event.CallId, @event.Content?.Substring(0, Math.Min(@event.Content.Length, 100)), @event.Artifacts.Count);
+            if (_receivedMessageIds.Contains(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate agent message detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
 
-        _receivedMessageIds.Add(@event.UniqueId);
+            _receivedMessageIds.Add(@event.UniqueId);
 
-        RaiseEvent(new ReceiveAgentMessageEvent()
-        {
-            Event = @event
+            RaiseEventWithTracing(new ReceiveAgentMessageEvent()
+            {
+                Event = @event
+            });
+            await ConfirmEventsWithTracing();
         });
-        await ConfirmEvents();
     }
 
     [EventHandler]
     public async Task HandleSelfReportEventAsync(SelfReportEvent @event)
     {
+        // Check if the message is for this agent
         if (@event.TargetAgentId != this.GetGrainId().ToString())
         {
-            // Not for me
+            // LogEventDebug("Self report not for this agent, ignoring");
             return;
         }
-
-        if (_receivedMessageIds.Contains(@event.UniqueId))
+        
+        await TraceEventHandlerAsync(@event, async () =>
         {
-            return;
-        }
+            LogEventDebug("SelfReportEvent received: UniqueId={UniqueId}, TargetAgentId={TargetAgentId}, ReportingAgent={ReportingAgent}, AgentType={AgentType}",
+                @event.UniqueId, @event.TargetAgentId, @event.SelfReport.AgentId, @event.SelfReport.AgentType);
 
-        _receivedMessageIds.Add(@event.UniqueId);
+            if (_receivedMessageIds.Contains(@event.UniqueId))
+            {
+                LogEventDebug("Duplicate self report detected, ignoring: UniqueId={UniqueId}", @event.UniqueId);
+                return;
+            }
 
-        RaiseEvent(new UpdateChildEvent()
-        {
-            LastChildDescriptor = @event.SelfReport
+            _receivedMessageIds.Add(@event.UniqueId);
+
+            RaiseEventWithTracing(new UpdateChildEvent()
+            {
+                LastChildDescriptor = @event.SelfReport
+            });
+            await ConfirmEventsWithTracing();
         });
-        await ConfirmEvents();
     }
 }
