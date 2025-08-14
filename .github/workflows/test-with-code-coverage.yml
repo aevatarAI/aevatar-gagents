@@ -26,9 +26,9 @@ jobs:
         run: |
           if [ -d /home/runneradmin ]; then sudo chown -R $USER:$USER /home/runneradmin; fi
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test AIGAgent
         run: |
           dotnet test test/Aevatar.GAgents.AIGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-aigagent --collect:"XPlat Code Coverage"
@@ -48,9 +48,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test Twitter
         run: |
           dotnet test test/Aevatar.GAgents.Twitter.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-twitter --collect:"XPlat Code Coverage"
@@ -70,9 +70,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test GroupChat
         run: |
           dotnet test test/Aevatar.GAgents.GroupChat.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-groupchat --collect:"XPlat Code Coverage"
@@ -92,9 +92,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test MCP
         run: |
           dotnet test test/Aevatar.GAgents.MCP.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-mcp --collect:"XPlat Code Coverage"
@@ -114,9 +114,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test Workflow
         run: |
           dotnet test test/Aevatar.GAgents.Workflow.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-workflow --collect:"XPlat Code Coverage"
@@ -136,9 +136,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test ChatAgent
         run: |
           dotnet test test/Aevatar.GAgents.ChatAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-chatagent --collect:"XPlat Code Coverage"
@@ -158,9 +158,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
       - name: Install dependencies
-        run: dotnet restore --verbosity quiet
+        run: dotnet restore AevatarGAgents.sln --verbosity quiet
       - name: Build
-        run: dotnet build --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
+        run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test MultiAIChat
         run: |
           dotnet test test/Aevatar.GAgents.MultiAIChatGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory ../coverage-multiaichat --collect:"XPlat Code Coverage"
