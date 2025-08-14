@@ -3,17 +3,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.AIGAgent.Agent;
-using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
-using Aevatar.GAgents.AI.Common;
-using GroupChat.GAgent;
-using JsonConverter = Newtonsoft.Json.JsonConvert;
 
 namespace Aevatar.GAgents.PsiOmni;
 
