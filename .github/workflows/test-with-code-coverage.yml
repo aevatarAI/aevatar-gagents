@@ -31,13 +31,7 @@ jobs:
         run: dotnet build AevatarGAgents.sln --no-restore /clp:ErrorsOnly /p:GeneratePackageOnBuild=false --verbosity quiet
       - name: Test with coverage
         run: |
-          dotnet test test/Aevatar.GAgents.AIGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.Twitter.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.GroupChat.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.MCP.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.Workflow.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.ChatAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
-          dotnet test test/Aevatar.GAgents.MultiAIChatGAgent.Test --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
+          dotnet test test/ --no-restore --no-build --verbosity normal --logger trx --settings CodeCoverage.runsettings --results-directory coverage --collect:"XPlat Code Coverage"
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
