@@ -1,19 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
-using Aevatar.Core;
 using Aevatar.Core.Abstractions;
-using Aevatar.GAgents.Twitter.Authentication;
-using Aevatar.GAgents.Twitter.Client;
 using Aevatar.GAgents.Twitter.GEvents;
-using Aevatar.GAgents.Twitter.RateLimiting;
+using GroupChat.GAgent;
+using GroupChat.GAgent.Feature.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Orleans;
 
 namespace Aevatar.GAgents.Twitter.GAgents;
 
@@ -22,7 +17,7 @@ namespace Aevatar.GAgents.Twitter.GAgents;
 /// </summary>
 [GAgent("twitter-webapi", "social.twitter")]
 public class TwitterWebApiGAgent :
-    GAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>,
+    MemberGAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>,
     ITwitterWebApiGAgent
 {
     private Client.ITwitterApiClient? _apiClient;
@@ -75,6 +70,20 @@ public class TwitterWebApiGAgent :
     #endregion
 
     #region GAgent Overrides
+
+    protected override Task<int> GetInterestValueAsync(Guid blackboardId)
+    {
+        return Task.FromResult(1);
+    }
+
+    protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? coordinatorMessages)
+    {
+        return Task.FromResult(new ChatResponse
+        {
+            Skip = true,
+            Continue = false
+        });
+    }
 
     protected override async Task PerformConfigAsync(TwitterWebApiGAgentConfiguration configuration)
     {
