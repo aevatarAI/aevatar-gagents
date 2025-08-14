@@ -29,7 +29,6 @@ public class PsiOmniGAgentState : GroupMemberState
     [Id(10)] public List<PsiOmniChatMessage> ChatHistory { get; set; } = new();
     [Id(11)] public List<TodoItem> TodoList { get; set; } = new();
     [Id(12)] public string CurrentTask { get; set; } = string.Empty;
-    [Id(13)] public Dictionary<string, string> AgentUsage { get; set; } = new();
     [Id(14)] public Dictionary<string, Artifact> Artifacts { get; set; } = new();
     [Id(15)] public string DraftResponse { get; set; } = string.Empty;
     [Id(16)] public string Name { get; set; } = string.Empty;

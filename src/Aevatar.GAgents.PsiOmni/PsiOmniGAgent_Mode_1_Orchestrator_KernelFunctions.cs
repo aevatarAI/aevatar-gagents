@@ -271,7 +271,6 @@ public partial class PsiOmniGAgent
 
                 LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
                     agentId, callId);
-                State.AgentUsage.TryAdd(name, callId);
                 RaiseEventWithTracing(new CallAgent()
                 {
                     AgentCall = call
