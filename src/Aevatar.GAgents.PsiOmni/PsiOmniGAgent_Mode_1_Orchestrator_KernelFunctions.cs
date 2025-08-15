@@ -294,13 +294,19 @@ public partial class PsiOmniGAgent
         string todoId
     )
     {
+        var otherAgentsTodo = State.TodoList.Find(x => x.Id == todoId && !x.AssigneeAgentName.IsNullOrEmpty());
+        if (otherAgentsTodo != null)
+        {
+            return $"Use todo_complete tool only for self assigned task. The todo item {todoId} is assigned to agent {otherAgentsTodo.AssigneeAgentName}";            
+        }
+        
         var todo = State.TodoList.Find(x => x.Id == todoId && x.Status == TodoStatus.Pending);
         if (todo == null)
         {
             return $"Failed to start self handling todo item {todoId}: Todo item is not found or not pending.";
         }
         todo.Status = TodoStatus.Completed;
-        todo.AssigneeAgentName = this.GetGrainId().ToString();
+        todo.AssigneeAgentName = "__self__";
         RaiseEventWithTracing(new CallAgent()
         {
             AgentCall = new AgentCall()

@@ -822,7 +822,7 @@ public partial class
                 else
                 {
                     todoItem.Status = TodoStatus.Completed;
-                    content += $"\nTodo item {payload.Event.CallId} is marked completed";
+                    content += $"\n<system_note>Todo item {payload.Event.CallId} is marked as Completed. You don't need to mark it again.</system_note>";
                 }
 
                 var amessage = PsiOmniChatMessage.CreateUserMessage(content);
