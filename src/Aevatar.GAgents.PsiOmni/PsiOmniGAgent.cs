@@ -14,7 +14,8 @@ namespace Aevatar.GAgents.PsiOmni;
 
 public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
 
-[Description("Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.")]
+[Description(
+    "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.")]
 [GAgent("omni", "psi")]
 public partial class
     PsiOmniGAgent : PsiOmniAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>,
@@ -761,6 +762,7 @@ public partial class
                     });
                     if (state.RealizationStatus != RealizationStatus.Unrealized)
                     {
+                        state.IterationCount = 0;
                         LogEventDebug("Scheduling RunAsync for user message");
                         ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                         {
@@ -806,7 +808,7 @@ public partial class
                 }
 
                 content += "</agent_reply>";
-                
+
                 var todoItem = state.TodoList.Find(x =>
                     x.Id == payload.Event.CallId
                     && x.Status == TodoStatus.InProgress
@@ -820,7 +822,7 @@ public partial class
                 else
                 {
                     todoItem.Status = TodoStatus.Completed;
-                    content += "\nTodo item {} is marked completed";
+                    content += $"\nTodo item {payload.Event.CallId} is marked completed";
                 }
 
                 var amessage = PsiOmniChatMessage.CreateUserMessage(content);
@@ -1009,7 +1011,7 @@ public partial class
                     ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
                         TargetAgentId = this.GetGrainId().ToString(),
-                        ContinuationType = ContinuationType.SelfReportAndReply,
+                        ContinuationType = ContinuationType.IterateOrSelfReportAndReply,
                         FinalResponse = finalResult
                     }));
                 }
@@ -1090,12 +1092,14 @@ public partial class
                 {
                     LogEventDebug("Agent Message received for unknown todo item: CallId={CallId}",
                         payload.AgentCall.CallId);
-                } else {
+                }
+                else
+                {
                     todoItem.Status = TodoStatus.InProgress;
                     todoItem.AssigneeAgentName = payload.AgentCall.AgentName;
                 }
 
-                break;                
+                break;
             }
             case WriteArtifact payload:
                 LogEventInfo("Writing artifact: Name={ArtifactName}, Format={Format}, ContentLength={ContentLength}",
@@ -1110,6 +1114,21 @@ public partial class
                     });
                 }
 
+                break;
+            case IterateEvent payload:
+                state.IterationCount += 1;
+                var userMessage = PsiOmniChatMessage.CreateUserMessage(
+                    $"<review_comment>{payload.Comment}</review_comment>\n"+
+                    "<system_reminder>Please give a self-contained response. DO NOT ask the user to reference previous response!!!</system_reminder>"
+                );
+                userMessage.Metadata["IsReviewComment"] = true;
+                state.ChatHistory.Add(userMessage);
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                {
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.Run,
+                    RunArg = "iterate response"
+                }));
                 break;
         }
 

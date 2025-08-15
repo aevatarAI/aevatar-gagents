@@ -220,6 +220,23 @@ public class Artifact
     public string Content { get; set; } = string.Empty;
 }
 
+
+[GenerateSerializer, JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ReviewDecision
+{
+    UNDEFINED,
+    APPROVED,
+    NEEDS_FIXES,
+    MAJOR_ISSUES
+}
+
+[GenerateSerializer]
+public class ReviewResult
+{
+    [Id(0)] public ReviewDecision Decision { get; set; } = ReviewDecision.APPROVED;
+    [Id(1)] public string Comment { get; set; } = string.Empty;
+}
+
 [GenerateSerializer]
 public class FinalResponse
 {
