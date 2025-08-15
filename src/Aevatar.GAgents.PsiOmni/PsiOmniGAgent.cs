@@ -1119,7 +1119,7 @@ public partial class
                 state.IterationCount += 1;
                 var userMessage = PsiOmniChatMessage.CreateUserMessage(
                     $"<review_comment>{payload.Comment}</review_comment>\n"+
-                    "<system_reminder>Please give a self-contained response. DO NOT ask the user to reference previous response!!!</system_reminder>"
+                    "<system_note>Use a tone as if this is the first response. DO NOT mention revision or iteration to user in your response. Please give a self-contained response. DO NOT ask the user to reference previous response!!!</system_note>"
                 );
                 userMessage.Metadata["IsReviewComment"] = true;
                 state.ChatHistory.Add(userMessage);
