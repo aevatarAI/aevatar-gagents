@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace Aevatar.GAgents.Twitter.GAgents;
 /// <summary>
 /// Twitter Web API GAgent using modular components
 /// </summary>
+[Description("A powerful GAgent for interacting with Twitter/X API v2, providing comprehensive Twitter platform integration capabilities.")]
 [GAgent("twitter", AevatarGAgentsConstants.ToolGAgentNamespace)]
 public class TwitterWebApiGAgent :
     MemberGAgentBase<TwitterWebApiGAgentState, TwitterWebApiStateLogEvent, EventBase, TwitterWebApiGAgentConfiguration>,
@@ -168,22 +170,104 @@ public class TwitterWebApiGAgent :
 
     public override Task<string> GetDescriptionAsync()
     {
-        return Task.FromResult(@"Twitter Web API GAgent (Refactored) - Modular Twitter/X API v2 Integration
+        return Task.FromResult(@"# Twitter Web API GAgent
 
-ARCHITECTURE:
-• TwitterApiClient - Handles HTTP communication with rate limiting
-• TwitterAuthenticationHandler - Manages OAuth 1.0a and Bearer token auth
-• TwitterRateLimiter - Implements token bucket rate limiting
+A powerful GAgent for interacting with Twitter/X API v2, providing comprehensive Twitter platform integration capabilities.
 
-CAPABILITIES:
-• Tweet Management (post, reply, quote, delete, search)
-• User Interactions (like, retweet, follow)
-• Timeline Operations (home, mentions, user timelines)
-• User Profile Management
-• Relationship Management
+## Core Features
 
-All operations use event sourcing for state management and support both
-interface methods and event handlers for maximum flexibility.");
+### Tweet Management
+- Post new tweets with text and media
+- Reply to existing tweets
+- Quote tweets with comments
+- Delete your own tweets
+- Search recent tweets by query
+
+### User Interactions
+- Like/Unlike tweets
+- Retweet/Unretweet posts
+- Follow/Unfollow users
+- View user profiles
+- Manage relationships
+
+### Timeline Operations
+- Fetch home timeline
+- Get user timeline
+- View mentions timeline
+- Access tweet threads
+
+### Profile Management
+- View and update profile
+- Manage account settings
+- Track follower/following lists
+
+## Event Handlers
+
+This GAgent supports event-driven operations through the following handlers:
+
+### Tweet Operations
+- HandlePostTweetEventAsync: Post a new tweet
+  - Input: text (required), mediaIds (optional)
+  - Returns: TweetPosted event with tweet details
+
+- HandleReplyToTweetEventAsync: Reply to a tweet
+  - Input: inReplyToTweetId (required), text (required)
+  - Returns: TweetPosted event
+
+- HandleQuoteTweetEventAsync: Quote a tweet
+  - Input: quotedTweetId (required), text (required)
+  - Returns: TweetPosted event
+
+### Tweet Interactions
+- HandleLikeTweetEventAsync: Like a tweet
+  - Input: tweetId (required)
+  - Returns: TweetLiked event
+
+- HandleUnlikeTweetEventAsync: Unlike a tweet
+  - Input: tweetId (required)
+  - Returns: TweetUnliked event
+
+- HandleRetweetEventAsync: Retweet a post
+  - Input: tweetId (required)
+  - Returns: Retweeted event
+
+### User Management
+- HandleFollowUserEventAsync: Follow a user
+  - Input: targetUserId (required)
+  - Returns: UserFollowed event
+
+- HandleUnfollowUserEventAsync: Unfollow a user
+  - Input: targetUserId (required)
+  - Returns: UserUnfollowed event
+
+## State Management
+
+The GAgent maintains state for:
+- Posted tweets history
+- Liked tweets tracking
+- Retweet history
+- Following relationships
+- Operation counts
+- Last operation timestamp
+
+## Technical Details
+
+- API Version: Twitter API v2
+- Authentication: OAuth 1.0a and Bearer Token support
+- Rate Limiting: Intelligent token bucket implementation
+- Event Sourcing: All state changes tracked via events
+- Modular Design: Separate components for API, Auth, and Rate Limiting
+
+## Usage Notes
+
+1. Configure the GAgent with appropriate credentials:
+   - Bearer Token (recommended)
+   - OAuth credentials (for user-context operations)
+
+2. Use event handlers for asynchronous operations
+3. Monitor rate limits via state tracking
+4. Handle errors through event responses
+5. Check operation success via return events");
     }
 
     #endregion
@@ -661,7 +745,9 @@ interface methods and event handlers for maximum flexibility.");
     #region Event Handlers
 
     [EventHandler]
-    public async Task HandlePostTweetEventAsync(PostTweetEvent @event)
+    [Description("Handles posting a new tweet. Takes tweet text and optional media IDs, returns TweetPosted event with the new tweet details.")]
+    public async Task HandlePostTweetEventAsync(
+        [Description("Event containing the tweet text and optional media IDs")] PostTweetEvent @event)
     {
         var result = await PostTweetAsync(@event.Text, @event.MediaIds);
         await PublishAsync(new TweetPosted
@@ -676,7 +762,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleReplyToTweetEventAsync(ReplyToTweetEvent @event)
+    [Description("Handles replying to an existing tweet. Takes the tweet ID to reply to and reply text, returns TweetPosted event.")]
+    public async Task HandleReplyToTweetEventAsync(
+        [Description("Event containing the tweet ID to reply to and the reply text")] ReplyToTweetEvent @event)
     {
         var result = await ReplyToTweetAsync(@event.InReplyToTweetId, @event.Text);
         await PublishAsync(new TweetPosted
@@ -691,7 +779,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleQuoteTweetEventAsync(QuoteTweetEvent @event)
+    [Description("Handles quoting a tweet. Takes the tweet ID to quote and quote text, returns TweetPosted event.")]
+    public async Task HandleQuoteTweetEventAsync(
+        [Description("Event containing the tweet ID to quote and the quote text")] QuoteTweetEvent @event)
     {
         var result = await QuoteTweetAsync(@event.QuotedTweetId, @event.Text);
         await PublishAsync(new TweetPosted
@@ -706,7 +796,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleDeleteTweetEventAsync(DeleteTweetEvent @event)
+    [Description("Handles deleting a tweet. Takes the tweet ID to delete, returns TweetDeleted event with success status.")]
+    public async Task HandleDeleteTweetEventAsync(
+        [Description("Event containing the tweet ID to delete")] DeleteTweetEvent @event)
     {
         var result = await DeleteTweetAsync(@event.TweetId);
         await PublishAsync(new TweetDeleted
@@ -718,7 +810,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleLikeTweetEventAsync(LikeTweetEvent @event)
+    [Description("Handles liking a tweet. Takes the tweet ID to like, returns TweetLiked event with success status.")]
+    public async Task HandleLikeTweetEventAsync(
+        [Description("Event containing the tweet ID to like")] LikeTweetEvent @event)
     {
         var result = await LikeTweetAsync(@event.TweetId);
         await PublishAsync(new TweetLiked
@@ -730,7 +824,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleUnlikeTweetEventAsync(UnlikeTweetEvent @event)
+    [Description("Handles unliking a tweet. Takes the tweet ID to unlike, returns TweetUnliked event with success status.")]
+    public async Task HandleUnlikeTweetEventAsync(
+        [Description("Event containing the tweet ID to unlike")] UnlikeTweetEvent @event)
     {
         var result = await UnlikeTweetAsync(@event.TweetId);
         await PublishAsync(new TweetUnliked
@@ -742,7 +838,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleRetweetEventAsync(RetweetEvent @event)
+    [Description("Handles retweeting a tweet. Takes the tweet ID to retweet, returns Retweeted event with success status.")]
+    public async Task HandleRetweetEventAsync(
+        [Description("Event containing the tweet ID to retweet")] RetweetEvent @event)
     {
         var result = await RetweetAsync(@event.TweetId);
         await PublishAsync(new Retweeted
@@ -754,7 +852,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleUnretweetEventAsync(UnretweetEvent @event)
+    [Description("Handles unretweeting a tweet. Takes the tweet ID to unretweet, returns Unretweeted event with success status.")]
+    public async Task HandleUnretweetEventAsync(
+        [Description("Event containing the tweet ID to unretweet")] UnretweetEvent @event)
     {
         var result = await UnretweetAsync(@event.TweetId);
         await PublishAsync(new Unretweeted
@@ -766,7 +866,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleFollowUserEventAsync(FollowUserEvent @event)
+    [Description("Handles following a user. Takes the user ID to follow, returns UserFollowed event with success status.")]
+    public async Task HandleFollowUserEventAsync(
+        [Description("Event containing the user ID to follow")] FollowUserEvent @event)
     {
         var result = await FollowUserAsync(@event.TargetUserId);
         await PublishAsync(new UserFollowed
@@ -778,7 +880,9 @@ interface methods and event handlers for maximum flexibility.");
     }
 
     [EventHandler]
-    public async Task HandleUnfollowUserEventAsync(UnfollowUserEvent @event)
+    [Description("Handles unfollowing a user. Takes the user ID to unfollow, returns UserUnfollowed event with success status.")]
+    public async Task HandleUnfollowUserEventAsync(
+        [Description("Event containing the user ID to unfollow")] UnfollowUserEvent @event)
     {
         var result = await UnfollowUserAsync(@event.TargetUserId);
         await PublishAsync(new UserUnfollowed
