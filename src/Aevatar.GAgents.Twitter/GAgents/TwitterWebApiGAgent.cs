@@ -481,7 +481,7 @@ interface methods and event handlers for maximum flexibility.");
                 HttpMethod.Get,
                 "/users/me");
 
-            if (response.Data != null && State.UserId != response.Data.Id)
+            if (State.UserId != response.Data.Id)
             {
                 RaiseEvent(new UserProfileUpdatedLogEvent
                 {
@@ -663,61 +663,130 @@ interface methods and event handlers for maximum flexibility.");
     [EventHandler]
     public async Task HandlePostTweetEventAsync(PostTweetEvent @event)
     {
-        await PostTweetAsync(@event.Text, @event.MediaIds);
+        var result = await PostTweetAsync(@event.Text, @event.MediaIds);
+        await PublishAsync(new TweetPosted
+        {
+            Id = result.Id,
+            Text = result.Text,
+            AuthorId = result.AuthorId,
+            CreatedAt = result.CreatedAt,
+            EditHistoryTweetIds = result.EditHistoryTweetIds,
+            PublicMetrics = result.PublicMetrics
+        });
     }
 
     [EventHandler]
     public async Task HandleReplyToTweetEventAsync(ReplyToTweetEvent @event)
     {
-        await ReplyToTweetAsync(@event.InReplyToTweetId, @event.Text);
+        var result = await ReplyToTweetAsync(@event.InReplyToTweetId, @event.Text);
+        await PublishAsync(new TweetPosted
+        {
+            Id = result.Id,
+            Text = result.Text,
+            AuthorId = result.AuthorId,
+            CreatedAt = result.CreatedAt,
+            EditHistoryTweetIds = result.EditHistoryTweetIds,
+            PublicMetrics = result.PublicMetrics
+        });
     }
 
     [EventHandler]
     public async Task HandleQuoteTweetEventAsync(QuoteTweetEvent @event)
     {
-        await QuoteTweetAsync(@event.QuotedTweetId, @event.Text);
+        var result = await QuoteTweetAsync(@event.QuotedTweetId, @event.Text);
+        await PublishAsync(new TweetPosted
+        {
+            Id = result.Id,
+            Text = result.Text,
+            AuthorId = result.AuthorId,
+            CreatedAt = result.CreatedAt,
+            EditHistoryTweetIds = result.EditHistoryTweetIds,
+            PublicMetrics = result.PublicMetrics
+        });
     }
 
     [EventHandler]
     public async Task HandleDeleteTweetEventAsync(DeleteTweetEvent @event)
     {
-        await DeleteTweetAsync(@event.TweetId);
+        var result = await DeleteTweetAsync(@event.TweetId);
+        await PublishAsync(new TweetDeleted
+        {
+            Id = @event.TweetId,
+            DeletedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleLikeTweetEventAsync(LikeTweetEvent @event)
     {
-        await LikeTweetAsync(@event.TweetId);
+        var result = await LikeTweetAsync(@event.TweetId);
+        await PublishAsync(new TweetLiked
+        {
+            Id = @event.TweetId,
+            LikedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleUnlikeTweetEventAsync(UnlikeTweetEvent @event)
     {
-        await UnlikeTweetAsync(@event.TweetId);
+        var result = await UnlikeTweetAsync(@event.TweetId);
+        await PublishAsync(new TweetUnliked
+        {
+            Id = @event.TweetId,
+            UnlikedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleRetweetEventAsync(RetweetEvent @event)
     {
-        await RetweetAsync(@event.TweetId);
+        var result = await RetweetAsync(@event.TweetId);
+        await PublishAsync(new Retweeted
+        {
+            Id = @event.TweetId,
+            RetweetAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleUnretweetEventAsync(UnretweetEvent @event)
     {
-        await UnretweetAsync(@event.TweetId);
+        var result = await UnretweetAsync(@event.TweetId);
+        await PublishAsync(new Unretweeted
+        {
+            Id = @event.TweetId,
+            UnretweetedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleFollowUserEventAsync(FollowUserEvent @event)
     {
-        await FollowUserAsync(@event.TargetUserId);
+        var result = await FollowUserAsync(@event.TargetUserId);
+        await PublishAsync(new UserFollowed
+        {
+            Id = @event.TargetUserId,
+            UserFollowedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     [EventHandler]
     public async Task HandleUnfollowUserEventAsync(UnfollowUserEvent @event)
     {
-        await UnfollowUserAsync(@event.TargetUserId);
+        var result = await UnfollowUserAsync(@event.TargetUserId);
+        await PublishAsync(new UserUnfollowed
+        {
+            Id = @event.TargetUserId,
+            UserUnfollowedAt = DateTime.UtcNow,
+            Success = result
+        });
     }
 
     #endregion
