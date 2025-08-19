@@ -2,6 +2,8 @@ using System.Text.Json;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.PsiOmni.Models;
 using Microsoft.SemanticKernel;
+using OpenAI.Chat;
+using ChatMessageContent = Microsoft.SemanticKernel.ChatMessageContent;
 
 namespace Aevatar.GAgents.PsiOmni;
 
@@ -21,15 +23,6 @@ public partial class PsiOmniGAgent
         });
     }
 
-    private async Task PublishAsync<T>(GrainId grainId, T @event) where T : EventBase
-    {
-        var grainIdString = grainId.ToString();
-        var streamId = StreamId.Create(AevatarOptions!.StreamNamespace, grainIdString);
-        var stream = StreamProvider.GetStream<EventWrapperBase>(streamId);
-        var eventWrapper = new EventWrapper<T>(@event, Guid.NewGuid(), this.GetGrainId());
-        await stream.OnNextAsync(eventWrapper);
-    }
-
     private static PsiOmniChatMessage ConvertOpenAiChatMessage(OpenAIChatMessageContent content)
     {
         var json = JsonSerializer.Serialize(content);
@@ -38,9 +31,21 @@ public partial class PsiOmniGAgent
             TypeFullName = typeof(OpenAIChatMessageContent).FullName,
             Json = json
         };
+        TokenUsage? tokenUsage = null;
+        if (content.InnerContent is ChatCompletion cc)
+        {
+            tokenUsage = new TokenUsage
+            {
+                PromptTokens = cc.Usage.InputTokenCount,
+                CompletionTokens = cc.Usage.OutputTokenCount,
+                TotalTokens = cc.Usage.TotalTokenCount
+            };
+        }
+
         return new PsiOmniChatMessage(content.Role.ToString(), content.Content)
         {
-            Serialized = serialized
+            Serialized = serialized,
+            TokenUsage = tokenUsage
         };
     }
 

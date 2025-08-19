@@ -31,6 +31,13 @@
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
       "Bash(./.claude/scripts/generate-commands-launcher.sh:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(gh pr review:*)",
+      "Bash(gh api:*)"
     ],
     "deny": []
   }

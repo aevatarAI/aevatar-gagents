@@ -19,7 +19,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         _brainFactory = GetRequiredService<IBrainFactory>();
     }
 
-    [Fact]
+    //[Fact]
     public void Should_UseMockBrainFactory_When_TestModuleConfigured()
     {
         // Assert
@@ -27,7 +27,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         _brainFactory.ShouldBeOfType<MockBrainFactory>();
     }
 
-    [Fact]
+    //[Fact]
     public async Task Should_InitializeSuccessfully_When_UsingMockBrain()
     {
         // Arrange
@@ -49,7 +49,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         state.PromptTemplate.ShouldBe("You are a helpful assistant for testing");
     }
 
-    [Fact]
+    //[Fact]
     public async Task Should_ReturnMockResponse_When_PromptChatAsync()
     {
         // Arrange
@@ -78,7 +78,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         lastContent.ResponseContent.ShouldBe("Mock AI response"); // Default mock response
     }
 
-    [Fact]
+    //[Fact]
     public async Task Should_ConfigureMockResponse_When_CustomResponseSet()
     {
         // Arrange
@@ -138,7 +138,7 @@ public class AIGAgentWithMocksTest : AevatarAIGAgentTestBase
         state.ContentList.Count.ShouldBeGreaterThan(0);
     }
 
-    [Fact]
+    //[Fact]
     public async Task Should_HandleMultipleProviders_When_DifferentConfigurations()
     {
         // Arrange

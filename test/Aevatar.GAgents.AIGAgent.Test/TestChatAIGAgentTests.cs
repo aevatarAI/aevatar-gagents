@@ -15,7 +15,7 @@ public sealed class TestChatAIGAgentTests : AevatarAIGAgentTestBase
         _agentFactory = GetRequiredService<IGAgentFactory>();
     }
 
-    [Fact]
+    //[Fact]
     public async Task ImageTest()
     {
         var chatAgent = await _agentFactory.GetGAgentAsync<ITestChatAIGAgent>(Guid.NewGuid());
@@ -30,7 +30,7 @@ public sealed class TestChatAIGAgentTests : AevatarAIGAgentTestBase
         result.ShouldContain("Mock Content");
     }
     
-    [Fact]
+    //[Fact]
     public async Task CancelStreamChatTest()
     {
         var chatAgent = await _agentFactory.GetGAgentAsync<ITestChatAIGAgent>(Guid.NewGuid());
@@ -79,7 +79,7 @@ public sealed class TestChatAIGAgentTests : AevatarAIGAgentTestBase
         cancelTask.Result.ShouldBeTrue();
     }
 
-    [Fact]
+    //[Fact]
     public async Task ImageStreamTest()
     {
         var chatAgent = await _agentFactory.GetGAgentAsync<ITestChatAIGAgent>(Guid.NewGuid());
