@@ -112,6 +112,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "resource", "resource", "{22
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.Twitter.Test", "test\Aevatar.GAgents.Twitter.Test\Aevatar.GAgents.Twitter.Test.csproj", "{B80BB2E9-3B5D-45B9-992C-A67D4C18B149}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aevatar.GAgents.ConfigValidateGagent", "src\Aevatar.GAgents.ConfigValidateGagent\Aevatar.GAgents.ConfigValidateGagent.csproj", "{394CC95D-2C22-4790-A299-1659B443BB05}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -266,6 +268,10 @@ Global
 		{B80BB2E9-3B5D-45B9-992C-A67D4C18B149}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B80BB2E9-3B5D-45B9-992C-A67D4C18B149}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B80BB2E9-3B5D-45B9-992C-A67D4C18B149}.Release|Any CPU.Build.0 = Release|Any CPU
+		{394CC95D-2C22-4790-A299-1659B443BB05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{394CC95D-2C22-4790-A299-1659B443BB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{394CC95D-2C22-4790-A299-1659B443BB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{394CC95D-2C22-4790-A299-1659B443BB05}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -313,6 +319,7 @@ Global
 		{FF631364-5246-4867-84D5-A00E9EDA40F0} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{9FC9D7CF-F4C1-4DED-855D-C7174AE95D35} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 		{B80BB2E9-3B5D-45B9-992C-A67D4C18B149} = {04DBDB01-70F4-4E06-B468-8F87850B22BE}
+		{394CC95D-2C22-4790-A299-1659B443BB05} = {CA9AC87F-097E-4F15-8393-4BC07735A5B0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28315BFD-90E7-4E14-A2EA-F3D23AF4126F}
