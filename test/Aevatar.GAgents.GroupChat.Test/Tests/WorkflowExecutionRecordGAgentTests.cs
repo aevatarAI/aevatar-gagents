@@ -142,6 +142,40 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
     }
 
     [Fact]
+    public async Task Handle_ChatResponseEvent_Failure_Test()
+    {
+        var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var recordAgent = await _agentFactory.GetGAgentAsync<IWorkflowExecutionRecordGAgent>(Guid.NewGuid());
+        await groupAgent.RegisterAsync(recordAgent);
+        var workerGrainId = groupAgent.GetGrainId();
+
+        await StartExecuteWorkflowAsync(groupAgent, workerGrainId);
+
+        var startExecuteGrain = new StartExecuteWorkUnitEvent
+        {
+            WorkUnitGrainId = workerGrainId.ToString(),
+            CoordinatorMessages = new List<ChatMessage> { new ChatMessage { Content = "Input A" } }
+        };
+        await groupAgent.PublishEventAsync(startExecuteGrain);
+        await Task.Delay(500);
+
+        var failure = new ChatResponseEvent
+        {
+            PublisherGrainId = workerGrainId,
+            FailureSummary = "unit crashed"
+        };
+        await groupAgent.PublishEventAsync(failure);
+        await Task.Delay(1000);
+
+        var state = await recordAgent.GetStateAsync();
+        state.Status.ShouldBe(WorkflowExecutionStatus.Failed);
+        var unit = state.WorkUnitRecords.First(o => o.WorkUnitGrainId == workerGrainId.ToString());
+        unit.Status.ShouldBe(WorkflowExecutionStatus.Failed);
+        unit.FailureSummary.ShouldBe("unit crashed");
+        unit.EndTime.ShouldNotBeNull();
+    }
+
+    [Fact]
     public async Task IncorrectSequence_Test()
     {
         var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
