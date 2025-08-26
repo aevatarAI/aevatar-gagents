@@ -65,7 +65,7 @@ public enum ContinuationType
     SelfReportAndRun,
     RegisterAgents,
     Retrospect,
-    SelfReportAndReply,
+    IterateOrSelfReportAndReply,
     SelfReport
 }
 
