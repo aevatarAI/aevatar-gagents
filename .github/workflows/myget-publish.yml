@@ -40,8 +40,7 @@ jobs:
           Aevatar.GAgents.MCP.Core,
           Aevatar.GAgents.Executor,
           Aevatar.GAgents.InputGAgent,
-          Aevatar.GAgents.GroupChat.GroupMember,
-          Aevatar.GAgents.ConfigValidateGagent
+          Aevatar.GAgents.GroupChat.GroupMember
         ]
     steps:
       - name: Checkout code
