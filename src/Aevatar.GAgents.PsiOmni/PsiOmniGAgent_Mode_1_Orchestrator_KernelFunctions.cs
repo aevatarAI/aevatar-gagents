@@ -174,8 +174,23 @@ public partial class PsiOmniGAgent
             // There's a publisher tied to each parent agent.
 
             var agent = await _gAgentFactory.GetGAgentAsync<IPsiOmniGAgent>(agentId);
+
+            // Use the same priority system as AIGAgentBase.GetCurrentLLMConfigAsync()
+            string? configKeyToPass = null;
             SelfLLMConfig? selfLlmConfig = null;
-            if (State.LLM != null)
+
+            // Priority 1: LLMConfigKey (if PsiOmni supported it)
+            if (!State.LLMConfigKey.IsNullOrEmpty())
+            {
+                configKeyToPass = State.LLMConfigKey;
+            }
+            // Priority 2: SystemLLM 
+            else if (!State.SystemLLM.IsNullOrEmpty())
+            {
+                configKeyToPass = State.SystemLLM;
+            }
+            // Priority 3: Fallback to resolved LLM
+            else if (State.LLM != null)
             {
                 selfLlmConfig = new SelfLLMConfig
                 {
@@ -192,7 +207,7 @@ public partial class PsiOmniGAgent
             {
                 LLMConfig = new LLMConfigDto()
                 {
-                    SystemLLM = State.SystemLLM,
+                    SystemLLM = configKeyToPass,  // Pass the key, not just State.SystemLLM
                     SelfLLMConfig = selfLlmConfig
                 }
             });
