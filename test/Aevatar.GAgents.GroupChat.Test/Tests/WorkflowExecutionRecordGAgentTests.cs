@@ -6,6 +6,7 @@ using Aevatar.GAgents.GroupChat.Core.Dto;
 using Aevatar.GAgents.GroupChat.Core.States;
 using Aevatar.GAgents.GroupChat.Test.GAgents;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator;
+using Aevatar.GAgents.GroupChat.WorkflowCoordinator.Dto;
 using Aevatar.GAgents.GroupChat.WorkflowCoordinator.GEvent;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
@@ -14,6 +15,7 @@ using Newtonsoft.Json;
 using Shouldly;
 using Aevatar.GAgents.InputGAgent.GAgent;
 using Aevatar.GAgents.InputGAgent.Dto;
+using Volo.Abp;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;
 
@@ -391,6 +393,39 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
         s.LastInterestValue.ShouldBe(100);
         s.LastInterestChatTerm.ShouldBe(9);
     }
+    
+    [Fact]
+    public async Task Workflow_WithExecutionRecord_Failure_ShouldMarkFailed()
+    {
+        var toni = await _agentFactory.GetGAgentAsync<IFailInputGAgent>(Guid.NewGuid());
+        await toni.ConfigAsync(new InputConfigDto { MemberName = "Scorer", Input = "whatever" });
+        var leader = await _agentFactory.GetGAgentAsync<ILeaderGAgent>(Guid.NewGuid());
+        await leader.ConfigAsync(new GroupMemberConfigDto() { MemberName = "Leader" });
+
+        var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var workflows = new List<WorkflowUnitDto>()
+        {
+            new WorkflowUnitDto() { GrainId = toni.GetGrainId().ToString(), NextGrainId = leader.GetGrainId().ToString() },
+            new WorkflowUnitDto() { GrainId = leader.GetGrainId().ToString(), NextGrainId = "" }
+        };
+
+        var coordinator = await _agentFactory.GetGAgentAsync<IWorkflowCoordinatorGAgent>(Guid.NewGuid());
+        await coordinator.ConfigAsync(new WorkflowCoordinatorConfigDto
+        {
+            WorkflowUnitList = workflows,
+            InitContent = "init",
+            EnableExecutionRecord = true
+        });
+
+        await groupAgent.RegisterAsync(coordinator);
+        await groupAgent.PublishEventAsync(new StartWorkflowCoordinatorEvent());
+        
+        // Wait a bit for first unit to be activated and term to be set
+        await Task.Delay(1500);
+
+        var cstate = await coordinator.GetStateAsync();
+        cstate.WorkflowStatus.ShouldBe(WorkflowCoordinatorStatus.Failed);
+    }
 
     // Test helper agents for coverage
     [GAgent(nameof(EventCollectorGAgent))]
@@ -550,6 +585,19 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
 
     [GenerateSerializer]
     public class TestMemberEventLog : StateLogEventBase<TestMemberEventLog>
+    {
+    }
+    
+    [GAgent(nameof(FailInputGAgent))]
+    public class FailInputGAgent : InputGAgent.GAgent.InputGAgent, IFailInputGAgent
+    {
+        protected override Task<ChatResponse> ChatAsync(Guid blackboardId, List<ChatMessage>? messages)
+        {
+            throw new UserFriendlyException("InputGAgent fail");
+        }
+    }
+    
+    public interface IFailInputGAgent : IInputGAgent
     {
     }
 }
