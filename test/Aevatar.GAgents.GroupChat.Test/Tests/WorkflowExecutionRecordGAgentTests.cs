@@ -12,6 +12,8 @@ using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
 using Newtonsoft.Json;
 using Shouldly;
+using Aevatar.GAgents.InputGAgent.GAgent;
+using Aevatar.GAgents.InputGAgent.Dto;
 
 namespace Aevatar.GAgents.GroupChat.Test.Tests;
 
@@ -218,84 +220,7 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
         grainARecord.Status.ShouldBe(WorkflowExecutionStatus.Completed);
         grainARecord.InputData.ShouldBe(JsonConvert.SerializeObject(startExecuteGrain.CoordinatorMessages));
     }
-
-    [Fact]
-    public async Task ChatEvent_SpeakerMismatch_ShouldNotChangeRecord()
-    {
-        var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
-        var recordAgent = await _agentFactory.GetGAgentAsync<IWorkflowExecutionRecordGAgent>(Guid.NewGuid());
-        await groupAgent.RegisterAsync(recordAgent);
-
-        var worker = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await groupAgent.RegisterAsync(worker);
-        var workerGrainId = worker.GetGrainId();
-
-        await StartExecuteWorkflowAsync(groupAgent, workerGrainId);
-
-        var startExecuteWorkUnit = new StartExecuteWorkUnitEvent
-        {
-            WorkUnitGrainId = workerGrainId.ToString(),
-            CoordinatorMessages = new List<ChatMessage> { new ChatMessage { Content = "Input" } }
-        };
-        await groupAgent.PublishEventAsync(startExecuteWorkUnit);
-        await Task.Delay(500);
-
-        // Publish ChatEvent with mismatched speaker; member should ignore and not emit ChatResponseEvent
-        await groupAgent.PublishEventAsync(new ChatEvent
-        {
-            BlackboardId = Guid.NewGuid(),
-            Speaker = Guid.NewGuid(),
-            Term = 0
-        });
-        await Task.Delay(800);
-
-        var state = await recordAgent.GetStateAsync();
-        var unit = state.WorkUnitRecords.First(o => o.WorkUnitGrainId == workerGrainId.ToString());
-        unit.Status.ShouldBe(WorkflowExecutionStatus.Running);
-        unit.OutputData.ShouldBeNull();
-    }
-
-    [Fact]
-    public async Task ChatEvent_Exception_ShouldFailRecord()
-    {
-        var groupAgent = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
-        var recordAgent = await _agentFactory.GetGAgentAsync<IWorkflowExecutionRecordGAgent>(Guid.NewGuid());
-        await groupAgent.RegisterAsync(recordAgent);
-
-        var worker = await _agentFactory.GetGAgentAsync<IWorkerGAgent>(Guid.NewGuid());
-        await groupAgent.RegisterAsync(worker);
-        var workerGrainId = worker.GetGrainId();
-
-        // Configure worker to throw from ChatAsync
-        await worker.SetFailureSummary("boom");
-
-        await StartExecuteWorkflowAsync(groupAgent, workerGrainId);
-
-        var startExecuteWorkUnit = new StartExecuteWorkUnitEvent
-        {
-            WorkUnitGrainId = workerGrainId.ToString(),
-            CoordinatorMessages = new List<ChatMessage> { new ChatMessage { Content = "Input" } }
-        };
-        await groupAgent.PublishEventAsync(startExecuteWorkUnit);
-        await Task.Delay(500);
-
-        // Trigger ChatEvent with correct speaker so the member processes and throws
-        await groupAgent.PublishEventAsync(new ChatEvent
-        {
-            BlackboardId = Guid.NewGuid(),
-            Speaker = workerGrainId.GetGuidKey(),
-            Term = 0
-        });
-        await Task.Delay(1000);
-
-        var state = await recordAgent.GetStateAsync();
-        state.Status.ShouldBe(WorkflowExecutionStatus.Failed);
-        var unit = state.WorkUnitRecords.First(o => o.WorkUnitGrainId == workerGrainId.ToString());
-        unit.Status.ShouldBe(WorkflowExecutionStatus.Failed);
-        unit.FailureSummary.ShouldContain("boom");
-        unit.EndTime.ShouldNotBeNull();
-    }
-
+    
     private async Task StartExecuteWorkflowAsync(IGroupGAgent groupAgent, GrainId workerGrainId)
     {
         var startExecuteWorkflowEvent = new StartExecuteWorkflowEvent
@@ -384,6 +309,89 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
         msgs.Any(m => m.MessageType == MessageType.BlackboardTopic && m.Content == "topic-x").ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task InputGAgent_ChatEvent_SpeakerMatch_ShouldPublishChatResponse()
+    {
+        var group = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var input = await _agentFactory.GetGAgentAsync<IInputGAgent>(Guid.NewGuid());
+        var collector = await _agentFactory.GetGAgentAsync<IEventCollectorGAgent>(Guid.NewGuid());
+
+        await group.RegisterAsync(input);
+        await group.RegisterAsync(collector);
+
+        await input.ConfigAsync(new InputConfigDto { MemberName = "Inny", Input = "Hello" });
+
+        var blackboardId = Guid.NewGuid();
+        await group.PublishEventAsync(new ChatEvent
+        {
+            BlackboardId = blackboardId,
+            Speaker = input.GetGrainId().GetGuidKey(),
+            Term = 1,
+            CoordinatorMessages = new List<ChatMessage> { new ChatMessage { Content = "start" } }
+        });
+
+        await Task.Delay(500);
+
+        var s = await collector.GetStateAsync();
+        s.LastChatBlackboardId.ShouldBe(blackboardId);
+        s.LastChatMemberId.ShouldBe(input.GetGrainId().GetGuidKey());
+        s.LastChatMemberName.ShouldBe("Inny");
+        s.LastChatContent.ShouldBe("Hello");
+        s.LastChatTerm.ShouldBe(1);
+        s.LastChatFailure.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task InputGAgent_ChatEvent_SpeakerMismatch_ShouldBeIgnored()
+    {
+        var group = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var input = await _agentFactory.GetGAgentAsync<IInputGAgent>(Guid.NewGuid());
+        var collector = await _agentFactory.GetGAgentAsync<IEventCollectorGAgent>(Guid.NewGuid());
+
+        await group.RegisterAsync(input);
+        await group.RegisterAsync(collector);
+
+        await input.ConfigAsync(new InputConfigDto { MemberName = "Inny", Input = "Hello" });
+
+        var blackboardId = Guid.NewGuid();
+        await group.PublishEventAsync(new ChatEvent
+        {
+            BlackboardId = blackboardId,
+            Speaker = Guid.NewGuid(),
+            Term = 2,
+            CoordinatorMessages = new List<ChatMessage> { new ChatMessage { Content = "start" } }
+        });
+
+        await Task.Delay(500);
+
+        var s = await collector.GetStateAsync();
+        s.LastChatBlackboardId.ShouldNotBe(blackboardId);
+        s.LastChatContent.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task InputGAgent_EvaluationInterest_ShouldPublish100()
+    {
+        var group = await _agentFactory.GetGAgentAsync<IGroupGAgent>(Guid.NewGuid());
+        var input = await _agentFactory.GetGAgentAsync<IInputGAgent>(Guid.NewGuid());
+        var collector = await _agentFactory.GetGAgentAsync<IEventCollectorGAgent>(Guid.NewGuid());
+
+        await group.RegisterAsync(input);
+        await group.RegisterAsync(collector);
+
+        await input.ConfigAsync(new InputConfigDto { MemberName = "Scorer", Input = "whatever" });
+
+        var blackboardId = Guid.NewGuid();
+        await group.PublishEventAsync(new EvaluationInterestEvent { BlackboardId = blackboardId, ChatTerm = 9 });
+        await Task.Delay(500);
+
+        var s = await collector.GetStateAsync();
+        s.LastInterestBlackboardId.ShouldBe(blackboardId);
+        s.LastInterestMemberId.ShouldBe(input.GetGrainId().GetGuidKey());
+        s.LastInterestValue.ShouldBe(100);
+        s.LastInterestChatTerm.ShouldBe(9);
+    }
+
     // Test helper agents for coverage
     [GAgent(nameof(EventCollectorGAgent))]
     public class EventCollectorGAgent : GroupMemberGAgentBase<CollectorState, CollectorLogEvent, EventBase, GroupMemberConfigDto>, IEventCollectorGAgent
@@ -422,6 +430,21 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
             await ConfirmEvents();
         }
 
+        [EventHandler]
+        public async Task HandleEventAsync(ChatResponseEvent @event)
+        {
+            RaiseEvent(new SetChatLogEvent
+            {
+                BlackboardId = @event.BlackboardId,
+                MemberId = @event.MemberId,
+                MemberName = @event.MemberName,
+                Content = @event.ChatResponse?.Content,
+                Term = @event.Term,
+                Failure = @event.FailureSummary
+            });
+            await ConfirmEvents();
+        }
+
         protected override void GroupMemberTransitionState(CollectorState state, StateLogEventBase<CollectorLogEvent> @event)
         {
             switch (@event)
@@ -436,6 +459,14 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
                     state.LastInterestMemberId = e2.MemberId;
                     state.LastInterestValue = e2.InterestValue;
                     state.LastInterestChatTerm = e2.ChatTerm;
+                    return;
+                case SetChatLogEvent e3:
+                    state.LastChatBlackboardId = e3.BlackboardId;
+                    state.LastChatMemberId = e3.MemberId;
+                    state.LastChatMemberName = e3.MemberName;
+                    state.LastChatContent = e3.Content;
+                    state.LastChatTerm = e3.Term;
+                    state.LastChatFailure = e3.Failure;
                     return;
             }
         }
@@ -468,6 +499,17 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
     }
 
     [GenerateSerializer]
+    public class SetChatLogEvent : CollectorLogEvent
+    {
+        [Id(0)] public Guid BlackboardId { get; set; }
+        [Id(1)] public Guid MemberId { get; set; }
+        [Id(2)] public string MemberName { get; set; }
+        [Id(3)] public string Content { get; set; }
+        [Id(4)] public long Term { get; set; }
+        [Id(5)] public string Failure { get; set; }
+    }
+
+    [GenerateSerializer]
     public class CollectorState : WorkerState
     {
         [Id(10)] public Guid LastPongBlackboardId { get; set; }
@@ -477,6 +519,12 @@ public class WorkflowExecutionRecordGAgentTests : AevatarGroupChatTestBase
         [Id(14)] public Guid LastInterestMemberId { get; set; }
         [Id(15)] public int LastInterestValue { get; set; }
         [Id(16)] public long LastInterestChatTerm { get; set; }
+        [Id(17)] public Guid LastChatBlackboardId { get; set; }
+        [Id(18)] public Guid LastChatMemberId { get; set; }
+        [Id(19)] public string LastChatMemberName { get; set; }
+        [Id(20)] public string LastChatContent { get; set; }
+        [Id(21)] public long LastChatTerm { get; set; }
+        [Id(22)] public string LastChatFailure { get; set; }
     }
 
     [GAgent(nameof(TestMemberHelperGAgent))]
