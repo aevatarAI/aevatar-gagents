@@ -281,13 +281,22 @@ public partial class
         InitializeTracing();
 
         // Initialize the AI agent with the provided configuration
-        await InitializeAsync(new InitializeDto
+        if (!configuration.SystemLLM.IsNullOrEmpty() || !configuration.SelfLlmConfig.ApiKey.IsNullOrEmpty())
         {
-            Instructions = string.Empty,
-            LLMConfig = new LLMConfigDto { SystemLLM = configuration.SystemLLM }
-        });
+            await InitializeAsync(new InitializeDto
+            {
+                Instructions = string.Empty,
+                LLMConfig = new LLMConfigDto
+                {
+                    SystemLLM = configuration.SystemLLM,
+                    SelfLLMConfig = configuration.SelfLlmConfig.ApiKey.IsNullOrEmpty()
+                        ? null
+                        : configuration.SelfLlmConfig
+                }
+            });
+        }
 
-        
+
         State.Name = configuration.Name;
 
         RaiseEventWithTracing(new InitializeEvent
@@ -667,7 +676,6 @@ public partial class
                 LogEventDebug("No UserAgentId, logging result locally");
                 if (State.BlackboardId != Guid.Empty)
                 {
-                    
                     var contentWithArtifacts = content ?? "";
                     if (!finalResult.Artifacts.IsNullOrEmpty())
                     {
@@ -690,6 +698,7 @@ public partial class
                         Term = 0
                     });
                 }
+
                 return;
             }
 
@@ -864,7 +873,8 @@ public partial class
                 else
                 {
                     todoItem.Status = TodoStatus.Completed;
-                    content += $"\n<system_note>Todo item {payload.Event.CallId} is marked as Completed. You don't need to mark it again.</system_note>";
+                    content +=
+                        $"\n<system_note>Todo item {payload.Event.CallId} is marked as Completed. You don't need to mark it again.</system_note>";
                 }
 
                 var amessage = PsiOmniChatMessage.CreateUserMessage(content);
@@ -1161,7 +1171,7 @@ public partial class
             case IterateEvent payload:
                 state.IterationCount += 1;
                 var userMessage = PsiOmniChatMessage.CreateUserMessage(
-                    $"<review_comment>{payload.Comment}</review_comment>\n"+
+                    $"<review_comment>{payload.Comment}</review_comment>\n" +
                     "<system_note>Use a tone as if this is the first response. DO NOT mention revision or iteration to user in your response. Please give a self-contained response. DO NOT ask the user to reference previous response!!!</system_note>"
                 );
                 userMessage.Metadata["IsReviewComment"] = true;
