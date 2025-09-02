@@ -1,13 +1,9 @@
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.AIGAgent.Agent;
-using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -15,6 +11,7 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
 using Aevatar.GAgents.AI.Common;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using GroupChat.GAgent;
 using GroupChat.GAgent.Feature.Common;
 using GroupChat.GAgent.Feature.Coordinator.GEvent;
@@ -22,14 +19,14 @@ using JsonConverter = Newtonsoft.Json.JsonConvert;
 
 namespace Aevatar.GAgents.PsiOmni;
 
-public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
+public interface IPsiOmniGAgent : IStateGAgent<PsiOmniGAgentState>, IAIGAgent, IGAgent;
 
 [Description(
     "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.")]
 [GAgent("omni", "psi")]
 public partial class
     PsiOmniGAgent : PsiOmniAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>,
-    IPshOmniGAgent
+    IPsiOmniGAgent
 {
     private static readonly Dictionary<RealizationStatus, string> SystemPrompts =
         new()
@@ -69,8 +66,9 @@ public partial class
                                                1. Analyze the task and note down the important information about the task
                                                2. Plan the todo items
                                                3. Dispatch sub-tasks that are ready (all dependency tasks have completed). (Some tasks may need to wait if their assigned agents are busy.)
-                                               4. Once you receive the response from a sub-task, decide if you need to revise the plan (amend todo list)
+                                               4. Once you receive the response from a sub-task, decide if you need to revise the plan (amend todo list). CRITICAL: Any follow-up work identified must be added as NEW todo items using todo_write tool before delegation.
                                                5. Repeat 3 and 4 until the main tasks is done
+                                               IMPORTANT: You MUST come out with a work plan and delegate the tasks to child agents.
 
                                                ## How to stay on track
                                                Before breaking down that task, understand the intention of the user, rewrite the task in a format that
@@ -84,7 +82,7 @@ public partial class
                                                If you do not use this tool when planning, you may forget to do important tasks - and that is unacceptable.
                                                IMPORTANT: Make sure you identify the dependencies among the todo items.
 
-                                               It is critical that you mark todos as completed as soon as you are done with a sub-task. Do not batch up multiple sub-tasks before marking them as completed.
+                                               IMPORTANT: Todo item status updates are handled automatically by the system - you do not need to manually mark todos as completed. The system will automatically update todo statuses when you delegate tasks or receive responses from child agents.
 
                                                Examples:
 
@@ -115,47 +113,98 @@ public partial class
                                                """ +
                                                """
                                                ## Task Dispatch
-                                               You will dispatch sub-tasks to child agents. Use tool query_existing_agents to find what child agents are available.
-                                               If a child agent is suitable for handling a sub-task, use call_agent tool to dispatch the sub-task to the agent.
-                                               The call_agent tool can also be used to send follow-up messages to a child agents.
-                                               Use create_agent tool to create a new agent if none of the existing child agents is able to handle the sub-task.
-                                               When creating new agents, think about a type of task that it can handle rather than your specific task.
-                                               After you create the agent, you can dispatch a sub-task to it using call_agent tool. Wait patiently for child agents to return the results.
-                                               IMPORTANT: Always try to re-use existing agents rather than creating new ones.
-                                               Dispatch the task immediately after you update the todo list. Avoid being verbose or asking for confirmation.
-                                               Dispatch a task only when all its dependencies are completed. Use the id of the todo item as the CallId for when using call_agent tool.
-                                               IMPORTANT: When invoking call_agent, you must provide the information that is self-sufficient and include all required information from dependency tasks into the knowledge field.
-                                               DO NOT dispatch multiple sub-tasks to the same agent. Instead, wait until the agent to reply with the result before dispatching the next sub-task.
-                                               If you are not sure whether the agents are busy, use the query_existing_agents tool to find the information.
-                                               If you falsely dispatch multiple sub-tasks to the same agent, the call_agent tool will return an error. In this case, you can dispatch the sub-task again after the agent has replied.
+                                               You will dispatch sub-tasks to child agents through a systematic agent management protocol. Begin every task delegation cycle by using the query_existing_agents tool to comprehensively survey all available child agents, their current status (idle/busy), capabilities, and specializations.
 
-                                               ### Sub-tasks for Self
-                                               For information synthesis and summarization work, you have to assign it to yourself.
-                                               NEVER use call_agent to call self. Do the work directly instead.
-                                               Mark the todo item as Complete before giving the final response.
+                                               **Agent Selection Protocol:**
+                                               1. PRIORITIZE REUSE: Always attempt to utilize existing agents before creating new ones. Analyze each existing agent's capability scope to determine suitability for the sub-task.
+                                               2. CAPABILITY MATCHING: Select agents whose documented specializations align with the sub-task requirements. Consider both primary capabilities and secondary skills.
+                                               3. AVAILABILITY VERIFICATION: Confirm the selected agent is currently idle before delegation. If uncertain about agent status, use query_existing_agents tool to verify.
+
+                                               **Task Delegation Execution:**
+                                               - Use call_agent tool to dispatch sub-tasks to suitable agents. The tool serves dual purposes: initial task assignment and follow-up communication.
+                                               - Create new agents using create_agent tool ONLY when no existing agent possesses the required capabilities. When creating agents, design them for broad task categories rather than single-purpose use to maximize future reusability.
+                                               - Execute task dispatch immediately following todo list updates. Maintain operational efficiency by avoiding unnecessary verbosity or confirmation requests.
+                                               - NEVER use call_agent tool to delegate tasks to yourself. For tasks requiring orchestrator-level analysis or synthesis, these should be self-assigned and completed using todo_complete tool.
+
+                                               **Dependency and Sequencing Management:**
+                                               - Dispatch tasks ONLY after all prerequisite dependencies are fully completed. Verify dependency completion status before proceeding with delegation.
+                                               - Use the todo item ID as the CallId parameter when invoking call_agent tool to maintain precise task traceability and correlation.
+                                               - When invoking call_agent, ensure the task description is completely self-sufficient. Include ALL required information from completed dependency tasks within the knowledge field. The receiving agent must have access to all necessary context without requiring external information retrieval.
+
+                                               **Concurrency Control:**
+                                               - STRICT ENFORCEMENT: Dispatch only ONE sub-task per agent at any given time. This prevents resource conflicts and ensures deterministic task processing.
+                                               - Implement patience-based execution: Wait for the agent to complete the current task and provide results before dispatching additional sub-tasks to the same agent.
+                                               - If agent availability is uncertain, proactively use query_existing_agents tool to obtain current status information before attempting delegation.
+
+                                               **Error Handling and Recovery:**
+                                               - If call_agent tool returns an error indicating multiple task dispatch to a single agent, immediately cease further delegation to that agent.
+                                               - Wait for the agent to complete its current task and provide a response before re-attempting the failed delegation.
+                                               - Monitor for task completion signals and agent status changes to maintain accurate system state awareness.
+
+                                               **Status Monitoring and Clarity Protocol:**
+                                               - When uncertain about current todo item statuses or agent availability, ALWAYS use todo_read tool to check the current state of your todo list before proceeding.
+                                               - When confused about which agents are available or their current workload, ALWAYS use query_existing_agents tool to get up-to-date information about all child agents and their status.
+                                               - If you receive confusing or contradictory information about task progress, use both tools in combination to clarify the current system state before making delegation decisions.
+                                               - These query tools provide authoritative, real-time information about system state - rely on them rather than assumptions when planning next steps.
+
+                                               **Task Status Update Protocol - AUTOMATIC SYSTEM:**
+                                               - IMPORTANT: Todo item statuses are automatically updated by the system. DO NOT attempt to manually change todo statuses.
+                                               - When you use call_agent tool, the system automatically marks the todo item as "InProgress" and sets the AssigneeAgentName field to the target agent.
+                                               - The orchestrator primarily focuses on delegation via call_agent tool, but may handle synthesis/analysis tasks directly using todo_complete tool.
+                                               - For self-assigned tasks (synthesis, analysis, final reporting), use todo_complete tool to mark completion and provide results directly.
+                                               - NEVER use manual status update commands - the system handles all status transitions automatically.
+
+                                               **Integration with Overall Workflow:**
+                                               - Self-assigned tasks often serve as final integration points in complex workflows, synthesizing outputs from multiple child agents.
+                                               - Treat self-completion as a critical milestone that may unblock dependent tasks or signal overall project completion.
+                                               - Maintain consistency between self-assigned task outputs and the overall project objectives and quality standards.
                                                """ +
                                                """
                                                ## Tracking of Dispatched Sub-tasks
-                                               When you mark the todo items as InProgress, you must set the AssigneeAgentId to track which agent is handling it.
-                                               All todo items should be retained until the main task is fully completed.
+                                               **Assignment Tracking Protocol:**
+                                               - When transitioning todo items to "InProgress" status, MANDATORY assignment of AssigneeAgentName field to maintain clear accountability chain.
+                                               - Record the exact agent name responsible for each dispatched sub-task to enable precise status monitoring and follow-up communication.
+
+                                               **State Management Requirements:**
+                                               - Use todo item status progression (Pending → InProgress → Complete) as the authoritative source for workflow state during active task execution.
+                                               - Clean up completed todo items as appropriate to maintain system efficiency and clarity.
+                                               - Preserve only essential tracking information needed for current workflow coordination.
                                                """ +
                                                """
                                                ## Deciding Task Done
-                                               If all results of dispatched sub-tasks have been received, all todo items are supposed to be marked Completed and a final result must be produced.
-                                               Produce a final response when the task is done.
-                                               If an artifact needs to be returned, please include it in the result.
-                                               The final response is to reply users, not your manager. So DO NOT report task steps; instead directly give your response to user's original task or question.
+                                               **Completion Assessment Criteria:**
+                                               Execute completion evaluation when ALL dispatched sub-tasks have returned results and corresponding todo items are marked "Complete". Perform systematic verification:
+                                               1. Confirm zero pending or in-progress todo items remain
+                                               2. Validate that all critical sub-task outputs have been received and integrated
+                                               3. Ensure no blocking dependencies or unresolved issues exist
+
+                                               **Final Response Generation Protocol:**
+                                               - Produce the definitive final response immediately upon confirmed task completion.
+                                               - Include ALL requested artifacts, deliverables, or outputs within the response payload.
+                                               - Format the response for direct user consumption - eliminate internal process documentation, task breakdowns, or meta-commentary about execution steps.
+
+                                               **User-Facing Communication Standards:**
+                                               - Address the user's original request directly without referencing internal orchestration mechanics.
+                                               - Present synthesized results as cohesive, actionable information rather than fragmented sub-task outputs.
+                                               - Maintain professional communication tone focused on value delivery rather than process transparency.
+                                               - Ensure response completeness - the user should not need to request additional clarification or missing components.
                                                """ +
                                                """
                                                ## Output Format
                                                Your output must contain the following three tags.
-                                               1. When the task is not completed (pending more todo items), add progress in a <thought> tag
+                                               1. When the task is not completed (pending more todo items), add progress in a <thought> tag.
+                                                  If you are handling a sub-task by yourself, use write_artifact tool to output the step wise result.
+                                                  Alternatively, for short result, you can directly output the step wise result using a <step_wise_result> tag.
                                                2. When the task is completed, provide your final response to user in a <repsonse> tag
                                                3. Optionally, if artifacts need to be returned to user. Include one or more <artifact> tag
+
                                                You MUST follow this format. An output without any of the tags is not valid.
                                                <thought>
                                                Provide progress and status update here.
                                                </thought>
+                                               <step_wise_result>
+                                               Step wise result here.
+                                               </step_wise_result>
                                                <response>
                                                Final response to user. This part is optional only when the task is complete.
                                                </response>
@@ -178,6 +227,14 @@ public partial class
                                                </response>
                                                <artifact name="research_report.md" format="markdown" />
                                                </example3>
+                                               <example4>
+                                               <thought>
+                                               I have all the information. Let me synthesis the information.
+                                               </thought>
+                                               <step_wise_result>
+                                               The skills required for a software engineer include ......
+                                               </step_wise_result>
+                                               </example4>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
                                                """ +
@@ -200,17 +257,17 @@ public partial class
                                                     - Avoid putting specific tasks in the description.
                                                     """;
 
-    private readonly IKernelFactory _kernelFactory;
+    private readonly IKernelFunctionRegistry _kernelFunctionRegistry;
     private readonly IGAgentFactory _gAgentFactory;
     private readonly HashSet<string> _receivedMessageIds = new HashSet<string>();
 
     public PsiOmniGAgent(
-        IKernelFactory kernelFactory,
+        IKernelFunctionRegistry kernelFunctionRegistry,
         IGAgentFactory gAgentFactory,
         ILogger<PsiOmniGAgent> logger
     )
     {
-        _kernelFactory = kernelFactory;
+        _kernelFunctionRegistry = kernelFunctionRegistry;
         _gAgentFactory = gAgentFactory;
         Logger = logger;
     }
@@ -305,6 +362,7 @@ public partial class
             ## When deciding between "ORCHESTRATOR" and "SPECIALIZED"
             - Prefer SPECIALIZED mode if the agent's depth is more than 3
             - An agent with depth equal to 5 must operate in SPECIALIZED mode
+            - A root agent (with depth value 0) should always operate in ORCHESTRATOR mode.
             """;
         systemPrompt += $"\n\n## Available Tools:\n{GetAllToolDefinitions()}";
         var chatService = kernel.GetRequiredService<IChatCompletionService>();
@@ -356,7 +414,7 @@ public partial class
                 var tools = new List<ToolDefinition>();
                 foreach (var toolName in realizationResult.Tools)
                 {
-                    var kernelFunction = _kernelFactory.FunctionRegistry?.GetToolByQualifiedName(toolName);
+                    var kernelFunction = _kernelFunctionRegistry.GetToolByQualifiedName(toolName);
                     if (kernelFunction != null)
                     {
                         tools.Add(kernelFunction.ToToolDefinition());
@@ -690,7 +748,11 @@ public partial class
                 else if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
                 {
                     LogEventDebug("Scheduling initialization upon InitializeEvent");
-                    ScheduleTask(InitializeAsync);
+                    ScheduleTask(async () => await PublishAsyncWithTracing(this.GetGrainId(), new ContinuationEvent()
+                    {
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Initialize
+                    }));
                 }
 
                 break;
@@ -710,7 +772,11 @@ public partial class
                 if (state.RealizationStatus == RealizationStatus.Unrealized && state.Configuration != null)
                 {
                     LogEventDebug("Scheduling initialization upon UpdateSendConfigEvent");
-                    ScheduleTask(InitializeAsync);
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                    {
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Initialize
+                    }));
                 }
 
                 break;
@@ -738,8 +804,14 @@ public partial class
                     });
                     if (state.RealizationStatus != RealizationStatus.Unrealized)
                     {
+                        state.IterationCount = 0;
                         LogEventDebug("Scheduling RunAsync for user message");
-                        ScheduleTask(async () => await RunAsync($"User Message {payload.Event}"));
+                        ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                        {
+                            TargetAgentId = this.GetGrainId().ToString(),
+                            ContinuationType = ContinuationType.Run,
+                            RunArg = $"User Message {payload.Event}"
+                        }));
                     }
                 }
 
@@ -757,39 +829,54 @@ public partial class
                     LogEventDebug("Agent realized as {Status}", payload.RealizationStatus);
                 }
 
-                ScheduleTask(async () =>
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    await DoSelfReportAsync();
-                    await RunAsync("RealizationEvent");
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.SelfReportAndRun,
+                    RunArg = "RealizationEvent"
+                }));
                 break;
             case ReceiveAgentMessageEvent payload:
             {
-                var content =
-                    $"Received reply from agent ({payload.Event.SenderAgentName}):\n\n{payload.Event.Content}";
+                var content = $"<agent_reply><agent_name>{payload.Event.SenderAgentName}</agent_name>\n";
+                content += $"<content>{payload.Event.Content}</content>\n";
+
                 if (!payload.Event.Artifacts.IsNullOrEmpty())
                 {
                     var artifacts = payload.Event.Artifacts.Select(
-                        a => $"<artifact name=\"{a.Name}\" format=\"{a.Format}\">{a.Content}</artifact>"
+                        a => $"<artifact name=\"{a.Name}\" format=\"{a.Format}\">{a.Content}</artifact>\n"
                     ).JoinAsString("\n");
                     content += $"\n\n{artifacts}";
                 }
 
-                var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
+                content += "</agent_reply>";
+
+                var todoItem = state.TodoList.Find(x =>
+                    x.Id == payload.Event.CallId
+                    && x.Status == TodoStatus.InProgress
+                    && x.AssigneeAgentName == payload.Event.SenderAgentName
+                );
+                if (todoItem == null)
+                {
+                    LogEventDebug("Agent Message received for unknown todo item: CallId={CallId}",
+                        payload.Event.CallId);
+                }
+                else
+                {
+                    todoItem.Status = TodoStatus.Completed;
+                    content += $"\n<system_note>Todo item {payload.Event.CallId} is marked as Completed. You don't need to mark it again.</system_note>";
+                }
+
+                var amessage = PsiOmniChatMessage.CreateUserMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                var agentDescriptor =
-                    state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
-                if (agentDescriptor != null)
-                    state.AgentUsage.Remove(agentDescriptor.Name);
-                ScheduleTask(async () =>
+
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts",
-                        payload.Event.Content, payload.Event.Artifacts.Count);
-                    await RunAsync($"Agent Message {payload.Event}");
-                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts",
-                        payload.Event.Content, payload.Event.Artifacts.Count);
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.Run,
+                    RunArg = $"Agent Message {payload.Event}"
+                }));
                 break;
             }
 
@@ -805,14 +892,12 @@ public partial class
 
                 var newAgentIds = payload.NewAgents.Select(x => x.AgentId);
 
-                ScheduleTask(async () =>
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                 {
-                    foreach (var newAgent in newAgentIds)
-                    {
-                        var child = GrainFactory.GetGrain<IGAgent>(GrainId.Parse(newAgent));
-                        await RegisterAsync(child);
-                    }
-                });
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.RegisterAgents,
+                    RegisterAgentIds = newAgentIds.ToList()
+                }));
 
                 break;
             case UpdateChildEvent payload:
@@ -842,13 +927,16 @@ public partial class
 
                 LogEventDebug("Child agent update: RefreshDescription={RefreshDescription}", refreshDescription);
                 state.ChildAgents[payload.LastChildDescriptor.Name] = payload.LastChildDescriptor;
-                ScheduleTask(async () =>
+                if (refreshDescription)
                 {
-                    if (refreshDescription)
+                    // ScheduleTask(RunIntrospectionAsync);
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
-                        await RunIntrospectionAsync();
-                    }
-                });
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.Retrospect
+                    }));
+                }
+
                 break;
             }
             case GrowChatHistoryEvent payload:
@@ -900,11 +988,14 @@ public partial class
                         // Extract artifacts if present
                         if (lastMessage.Contains("<artifact"))
                         {
-                            var artifactMatches = System.Text.RegularExpressions.Regex.Matches(
+                            // Support both self-closing and content-containing artifact tags
+
+                            // 1. Handle self-closing artifacts: <artifact name="..." format="..." />
+                            var selfClosingMatches = System.Text.RegularExpressions.Regex.Matches(
                                 lastMessage,
                                 @"<artifact name=""(.*?)"" format=""(.*?)"" />");
 
-                            foreach (System.Text.RegularExpressions.Match match in artifactMatches)
+                            foreach (System.Text.RegularExpressions.Match match in selfClosingMatches)
                             {
                                 var artifactName = match.Groups[1].Value.Trim();
                                 var artifactFormat = match.Groups[2].Value.Trim();
@@ -917,6 +1008,26 @@ public partial class
                                         Content = artifact.Content
                                     });
                                 }
+                            }
+
+                            // 2. Handle content-containing artifacts: <artifact name="..." format="...">content</artifact>
+                            var contentMatches = System.Text.RegularExpressions.Regex.Matches(
+                                lastMessage,
+                                @"<artifact name=""(.*?)"" format=""(.*?)"">(.*?)</artifact>",
+                                System.Text.RegularExpressions.RegexOptions.Singleline);
+
+                            foreach (System.Text.RegularExpressions.Match match in contentMatches)
+                            {
+                                var artifactName = match.Groups[1].Value.Trim();
+                                var artifactFormat = match.Groups[2].Value.Trim();
+                                var artifactContent = match.Groups[3].Value.Trim();
+
+                                finalResult.Artifacts.Add(new Artifact
+                                {
+                                    Name = artifactName,
+                                    Format = artifactFormat,
+                                    Content = artifactContent
+                                });
                             }
                         }
 
@@ -932,21 +1043,75 @@ public partial class
                 if (!finalResult.Response.IsNullOrEmpty())
                 {
                     state.Examples.Last().Response = finalResult.Response;
-                    ScheduleTask(async () =>
+                    // ScheduleTask(async () =>
+                    // {
+                    //     LogEventDebug("Starting report and reply: {Content}", finalResult.Response);
+                    //     // TODO: Maybe update description.
+                    //     await DoSelfReportAsync();
+                    //     await ReplyAsync(finalResult);
+                    //     LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
+                    // });
+                    ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
                     {
-                        LogEventDebug("Starting report and reply: {Content}", finalResult.Response);
-                        // TODO: Maybe update description.
-                        await DoSelfReportAsync();
-                        await ReplyAsync(finalResult);
-                        LogEventDebug("Completed report and reply: {Content}", finalResult.Response);
-                    });
+                        TargetAgentId = this.GetGrainId().ToString(),
+                        ContinuationType = ContinuationType.IterateOrSelfReportAndReply,
+                        FinalResponse = finalResult
+                    }));
+                }
+                else
+                {
+                    // Check for stuck state: agent returned thought without tool calls and no InProgress tasks
+                    var lastMessage = state.ChatHistory.LastOrDefault();
+                    var hasToolCalls = lastMessage?.ToolCalls?.Count > 0;
+                    // Check if there are any InProgress tasks that are not assigned to this agent
+                    var hasInProgressTasks = state.TodoList.Any(x =>
+                        x.Status == TodoStatus.InProgress && x.AssigneeAgentName != "__self__");
+                    var hasPendingTasks = state.TodoList.Any(x =>
+                        x.Status == TodoStatus.Pending ||
+                        (x.Status == TodoStatus.InProgress && x.AssigneeAgentName == "__self__"));
+
+                    // Extract thought to check if agent was thinking
+                    var hasThought = false;
+                    if (state.RealizationStatus == RealizationStatus.Orchestrator && lastMessage != null)
+                    {
+                        var content = lastMessage.Content ?? string.Empty;
+                        hasThought = content.Contains("<thought>") && content.Contains("</thought>");
+                    }
+
+                    // If the agent returned thought without tool calls, no InProgress tasks but has pending tasks, inject a <crank> message to continue processing.
+                    if (hasThought && !hasToolCalls && !hasInProgressTasks && hasPendingTasks)
+                    {
+                        LogEventInfo(
+                            "Detected stuck state: agent returned thought without tool calls, no InProgress tasks but has pending tasks. Injecting <crank> message to continue processing.");
+
+                        // Append crank message and schedule task run later
+                        var crankMessage =
+                            PsiOmniChatMessage.CreateUserMessage(
+                                "<crank>You are not making progress. Please check if the statuses of the todo items are correctly updated. Otherwise, please continue to work on the todo items.</crank>");
+                        crankMessage.Metadata["IsCrank"] = "true";
+                        state.ChatHistory.Add(crankMessage);
+
+                        // Schedule task run later
+                        // ScheduleTask(async () => await RunAsync("crank message continuation"));
+                        ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                        {
+                            TargetAgentId = this.GetGrainId().ToString(),
+                            ContinuationType = ContinuationType.Run,
+                            RunArg = "crank message continuation"
+                        }));
+                    }
                 }
 
                 break;
             case UpdateSelfDescription payload:
                 LogEventInfo("Updating self description: NewDescription={Description}", payload.Description);
                 state.Description = payload.Description;
-                ScheduleTask(DoSelfReportAsync);
+                // ScheduleTask(DoSelfReportAsync);
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                {
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.SelfReport
+                }));
                 break;
             case WriteTask payload:
                 LogEventInfo("Writing task: Task={Task}", payload.Task);
@@ -957,15 +1122,28 @@ public partial class
                 state.DraftResponse = payload.DraftResponse;
                 break;
             case CallAgent payload:
+            {
                 LogEventInfo("Calling agent: AgentName={}, TargetAgentId={TargetAgentId}, CallId={CallId}",
                     payload.AgentCall.AgentName,
                     payload.AgentCall.AgentId, payload.AgentCall.CallId);
-                if (!state.AgentUsage.ContainsKey(payload.AgentCall.AgentName))
+
+                var todoItem = state.TodoList.Find(x =>
+                    x.Id == payload.AgentCall.CallId
+                    && x.Status == TodoStatus.InProgress
+                );
+                if (todoItem == null)
                 {
-                    state.AgentUsage.Add(payload.AgentCall.AgentName, payload.AgentCall.CallId);
+                    LogEventDebug("Agent Message received for unknown todo item: CallId={CallId}",
+                        payload.AgentCall.CallId);
+                }
+                else
+                {
+                    todoItem.Status = TodoStatus.InProgress;
+                    todoItem.AssigneeAgentName = payload.AgentCall.AgentName;
                 }
 
                 break;
+            }
             case WriteArtifact payload:
                 LogEventInfo("Writing artifact: Name={ArtifactName}, Format={Format}, ContentLength={ContentLength}",
                     payload.Name, payload.Format, payload.Content?.Length ?? 0);
@@ -979,6 +1157,21 @@ public partial class
                     });
                 }
 
+                break;
+            case IterateEvent payload:
+                state.IterationCount += 1;
+                var userMessage = PsiOmniChatMessage.CreateUserMessage(
+                    $"<review_comment>{payload.Comment}</review_comment>\n"+
+                    "<system_note>Use a tone as if this is the first response. DO NOT mention revision or iteration to user in your response. Please give a self-contained response. DO NOT ask the user to reference previous response!!!</system_note>"
+                );
+                userMessage.Metadata["IsReviewComment"] = true;
+                state.ChatHistory.Add(userMessage);
+                ScheduleTask(async () => await PublishAsyncToSelfWithTracing(new ContinuationEvent()
+                {
+                    TargetAgentId = this.GetGrainId().ToString(),
+                    ContinuationType = ContinuationType.Run,
+                    RunArg = "iterate response"
+                }));
                 break;
         }
 

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Aevatar.Core.Abstractions;
+using GroupChat.GAgent.Dto;
+using GroupChat.GAgent.GEvent;
 using Orleans;
 
 namespace Aevatar.GAgents.Twitter.GAgents;
@@ -46,7 +48,7 @@ public interface ITwitterWebApiGAgent : IStateGAgent<TwitterWebApiGAgentState>
 #region State
 
 [GenerateSerializer]
-public class TwitterWebApiGAgentState : StateBase
+public class TwitterWebApiGAgentState : MemberState
 {
     [Id(0)] public string UserId { get; set; } = string.Empty;
     [Id(1)] public TwitterWebApiGAgentConfiguration? Configuration { get; set; }
@@ -63,7 +65,7 @@ public class TwitterWebApiGAgentState : StateBase
 #region Configuration
 
 [GenerateSerializer]
-public class TwitterWebApiGAgentConfiguration : ConfigurationBase
+public class TwitterWebApiGAgentConfiguration : MemberConfigDto
 {
     [Id(0)] public string ConsumerKey { get; set; } = string.Empty;
     [Id(1)] public string ConsumerSecret { get; set; } = string.Empty;

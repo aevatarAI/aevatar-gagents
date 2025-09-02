@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using Aevatar.GAgents.AI.Options;
+using Aevatar.GAgents.AIGAgent.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
@@ -23,7 +25,9 @@ public partial class PsiOmniGAgent
             Description = x.Description,
             Examples = x.Examples,
             Tools = x.Tools,
-            HandlingTask = State.AgentUsage.GetOrDefault(x.Name) ?? string.Empty
+            HandlingTask =
+                State.TodoList.Find(y => y.AssigneeAgentName == x.Name && y.Status == TodoStatus.InProgress)?.Id ??
+                string.Empty
         }).ToList();
         return await Task.FromResult(result);
     }
@@ -31,7 +35,9 @@ public partial class PsiOmniGAgent
     [KernelFunction("write_artifact")]
     [Description("Write an artifact.")]
     public async Task<string> WriteArtifactAsync(
-        [Description("The name of the artifact. It has to be unique and must be a valid file name with a valid extension."), Required]
+        [Description(
+             "The name of the artifact. It has to be unique and must be a valid file name with a valid extension."),
+         Required]
         string name,
         [Description("The format of the artifact. It has to be a valid file extension."), Required]
         string format,
@@ -41,7 +47,7 @@ public partial class PsiOmniGAgent
     {
         if (State.Artifacts.ContainsKey(name))
         {
-            return await Task.FromResult<string>("Failed to write artifact: name {name} exits. Pick another name.");
+            return await Task.FromResult<string>($"Failed to write artifact: name {name} exits. Pick another name.");
         }
 
         State.Artifacts.TryAdd(name, new Artifact
@@ -56,14 +62,38 @@ public partial class PsiOmniGAgent
             Format = format,
             Content = content
         });
-        return await Task.FromResult("Written artifact.");
+        return await Task.FromResult($"Written artifact {name}.");
     }
-    
+
+    [KernelFunction("read_artifact")]
+    [Description("Read an artifact.")]
+    public async Task<Artifact?> ReadArtifactAsync(
+        [Description(
+             "The name of the artifact. It has to be unique and must be a valid file name with a valid extension."),
+         Required]
+        string name
+    )
+    {
+        if (!State.Artifacts.TryGetValue(name, out var artifact))
+        {
+            return null;
+        }
+
+        return await Task.FromResult(artifact);
+    }
+
+    [KernelFunction("list_artifacts")]
+    [Description("List all artifacts.")]
+    public async Task<List<string>> ListArtifactsAsync()
+    {
+        return await Task.FromResult(State.Artifacts.Keys.OrderBy(x => x).ToList());
+    }
+
     [KernelFunction("write_task")]
     [Description("Rewrite the current task.")]
     public async Task<string> WriteTaskAsync(
-        [Description("The comprehensive description of the task."), Required]
-        string task
+        [Description("The details of the task."), Required]
+        FramedTask task
     )
     {
         RaiseEventWithTracing(new WriteTask()
@@ -75,7 +105,7 @@ public partial class PsiOmniGAgent
 
     [KernelFunction("read_task")]
     [Description("Read the current task.")]
-    public async Task<string> ReadTaskAsync(
+    public async Task<FramedTask> ReadTaskAsync(
     )
     {
         return await Task.FromResult(State.CurrentTask);
@@ -94,7 +124,7 @@ public partial class PsiOmniGAgent
         });
         return await Task.FromResult("Written draft response.");
     }
-    
+
     /// <summary>
     /// Create a new specialized agent with custom prompt and tools
     /// </summary>
@@ -114,6 +144,7 @@ public partial class PsiOmniGAgent
         {
             return $"Failed. Agent with name {name} already exists. Please pick another name.";
         }
+
         var parentAgentId = this.GetGrainId().ToString();
         try
         {
@@ -141,6 +172,46 @@ public partial class PsiOmniGAgent
             });
             var agentId = psi.GetGrainId();
             // There's a publisher tied to each parent agent.
+
+            var agent = await _gAgentFactory.GetGAgentAsync<IPsiOmniGAgent>(agentId);
+
+            // Use the same priority system as AIGAgentBase.GetCurrentLLMConfigAsync()
+            string? configKeyToPass = null;
+            SelfLLMConfig? selfLlmConfig = null;
+
+            // Priority 1: LLMConfigKey (if PsiOmni supported it)
+            if (!State.LLMConfigKey.IsNullOrEmpty())
+            {
+                configKeyToPass = State.LLMConfigKey;
+            }
+            // Priority 2: SystemLLM 
+            else if (!State.SystemLLM.IsNullOrEmpty())
+            {
+                configKeyToPass = State.SystemLLM;
+            }
+            // Priority 3: Fallback to resolved LLM
+            else if (State.LLM != null)
+            {
+                selfLlmConfig = new SelfLLMConfig
+                {
+                    ProviderEnum = State.LLM.ProviderEnum,
+                    ModelId = State.LLM.ModelIdEnum,
+                    ModelName = State.LLM.ModelName,
+                    ApiKey = State.LLM.ApiKey,
+                    Endpoint = State.LLM.Endpoint,
+                    Memo = State.LLM.Memo
+                };
+            }
+
+            await agent.InitializeAsync(new InitializeDto()
+            {
+                LLMConfig = new LLMConfigDto()
+                {
+                    SystemLLM = configKeyToPass,  // Pass the key, not just State.SystemLLM
+                    SelfLLMConfig = selfLlmConfig
+                }
+            });
+
             var configEvent = new AgentConfigEvent
             {
                 Configuration = agentConfig,
@@ -154,7 +225,7 @@ public partial class PsiOmniGAgent
                 AgentId = agentId.ToString(),
                 Description = description
             };
-            
+
             State.ChildAgents.Add(name, descriptor);
 
             RaiseEventWithTracing(new AddNewAgent()
@@ -207,11 +278,22 @@ public partial class PsiOmniGAgent
 
         return await TraceMethodAsync(async () =>
         {
-            if (State.AgentUsage.TryGetValue(name, out var anotherCallId))
+            var nowHandling =
+                State.TodoList.Find(x => x.AssigneeAgentName == name && x.Status == TodoStatus.InProgress);
+            if (nowHandling != null)
             {
-                Logger.LogWarning("Agent {AgentId} is in use. Hanlding another call: {CallId}", agentId, anotherCallId);
-                return $"Failed to call agent {name}. Agent is handling another call.";
+                return $"Failed to call agent {name}. Agent is handling call {nowHandling.Id}.";
             }
+
+            var thisTodo = State.TodoList.Find(x => x.Id == callId);
+            if (thisTodo == null)
+            {
+                return $"Failed to call agent {name}. Todo item {callId} is not found.";
+            }
+
+            thisTodo.Status = TodoStatus.InProgress;
+            thisTodo.AssigneeAgentName = name;
+
             Logger.LogInformation("🔗 Generic agent proxy called for {AgentId} with message: {Message}", agentId,
                 message);
             LogEventInfo(
@@ -241,7 +323,6 @@ public partial class PsiOmniGAgent
 
                 LogEventInfo("Agent call sent successfully: TargetAgent={TargetAgent}, CallId={CallId}",
                     agentId, callId);
-                State.AgentUsage.TryAdd(name, callId);
                 RaiseEventWithTracing(new CallAgent()
                 {
                     AgentCall = call
@@ -256,6 +337,40 @@ public partial class PsiOmniGAgent
                 return $"Error calling agent '{agentId}': {ex.Message}";
             }
         }, new { parentAgentId, agentId, callId, messageLength = message?.Length });
+    }
+
+    [KernelFunction("todo_complete")]
+    [Description("Make todo item as complete. Only applicable to task that can be handled by self.")]
+    public async Task<string> MarkTodoCompleteAsync(
+        [Description("The id of the todo item.")]
+        string todoId
+    )
+    {
+        var otherAgentsTodo = State.TodoList.Find(x => x.Id == todoId && !x.AssigneeAgentName.IsNullOrEmpty());
+        if (otherAgentsTodo != null)
+        {
+            return
+                $"Use todo_complete tool only for self assigned task. The todo item {todoId} is assigned to agent {otherAgentsTodo.AssigneeAgentName}";
+        }
+
+        var todo = State.TodoList.Find(x => x.Id == todoId && x.Status == TodoStatus.Pending);
+        if (todo == null)
+        {
+            return $"Failed to start self handling todo item {todoId}: Todo item is not found or not pending.";
+        }
+
+        todo.Status = TodoStatus.Completed;
+        todo.AssigneeAgentName = "__self__";
+        RaiseEventWithTracing(new CallAgent()
+        {
+            AgentCall = new AgentCall()
+            {
+                AgentName = "__self__",
+                AgentId = this.GetGrainId().ToString(),
+                CallId = todoId
+            }
+        });
+        return $"Completed todo item {todoId}.";
     }
 
     [KernelFunction("todo_read")]
@@ -284,74 +399,64 @@ the status of the current task list. You should make use of this tool as often a
 
     [KernelFunction("todo_write")]
     [Description(
-        @"Update the todo list for the current session. To be used proactively and often to track progress and pending tasks.
-Use this tool to create and manage a structured task list for your current coding session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
-    It also helps the user understand the progress of the task and overall progress of their requests.
+        @"Update the todo list for the current session. To be used proactively and often to keep track of the work plan.
+Use this tool to create and manage a structured task list for your current session. This helps you track progress, organize complex tasks, and demonstrate thoroughness to the user.
 
     ## When to Use This Tool
     Use this tool proactively in these scenarios:
 
-    1. Task planning - When a task needs to be broken down
-    2. User explicitly requests todo list - When the user directly asks you to use the todo list
-    3. User provides multiple tasks - When users provide a list of things to be done (numbered or comma-separated)
-    4. After receiving new instructions - Immediately capture user requirements as todos
-    5. When you start working on a task - Mark it as in_progress after delegating a task to a child agent
-    6. After receiving a callback from a child task that completes it - Mark it as completed and add any new follow-up tasks discovered during implementation
+    1. Task planning - When a task needs to be broken down into sub-tasks
+    2. After a sub-task is completed and work plan needs to be updated
 
     ## When NOT to Use This Tool
 
     Skip using this tool when:
     1. The task is purely conversational or informational
-
-    ## Examples of When to Use the Todo List
-
-    <example>
-    User: Research on machine learning techniques and prepare an html format cheatsheet for me
-    Assistant: Let me create a todo list.
-    *Creates todo list with the following items:*
-    1. Research on popular and useful machine learning techniques
-    2. Use the research result from todo item 1 and create an html (dependency on todo item 1)
-    </example>
-
-    ## Task States and Management
-
-    1. **Task States**: Use these states to track progress:
-       - Pending: Task not yet started
-       - InProgress: Task is started but result is not received yet
-       - Completed: Task finished successfully
-
-    2. **Task Management**:
-       - Update task status in real-time as you work
-       - Mark tasks complete IMMEDIATELY after receiving the result from the agent handling it even if the handling agent returns an unsuccessful result
-       - Create a new todo item for retry or rephrased tasks
-       - Retain all tasks until the main task is fully completed
-
-    3. **Task Breakdown**:
-       - Create specific, actionable items
-       - Break complex tasks into smaller, manageable steps
-       - Use clear, descriptive task names
-
-    ## Requirements for Input Data
-    Todo items must have an id assigned to it (use a running integer as the id).
-    InProgress and Completed todo items must have the AssigneeAgentId.
-
-    When in doubt, use this tool. Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully.
 ")
     ]
     public async Task<string> WriteTodosAsync(
         [Description(
-            "The updated list of todo items. Please supply the full list as this operation overwrites all data.")]
-        List<TodoItem> updatedTodos
+            "The list of todo items to add. The ids of the todo items to add must be unique and must not be in the current todo list.")]
+        List<TodoItem> newTodos,
+        [Description("The ids of the todo items to cancel.")]
+        List<string> todoIdsToRemove
     )
     {
         LogEventInfo("Updating todo list: OldCount={OldCount}, NewCount={NewCount}, Changes={Changes}",
-            State.TodoList.Count, updatedTodos.Count,
-            GetTodoChanges(State.TodoList, updatedTodos));
+            State.TodoList.Count, newTodos.Count,
+            GetTodoChanges(State.TodoList, newTodos));
 
-        State.TodoList = updatedTodos;
+        var newTodoIds = newTodos.Select(x => x.Id).ToHashSet();
+        var oldTodoIds = State.TodoList.Select(x => x.Id).ToHashSet();
+
+        if (newTodoIds.Intersect(oldTodoIds).Any())
+        {
+            return "Failed to update todo list: Cannot add todo items with the same id.";
+        }
+
+        State.TodoList.AddRange(newTodos);
+
+        var inProgressTodos = newTodos.Where(x => x.Status == TodoStatus.InProgress).Select(x => x.Id).ToList();
+        var cancelInProgressTodos = inProgressTodos.Intersect(todoIdsToRemove).Any();
+
+        if (cancelInProgressTodos)
+        {
+            return "Failed to update todo list: Cannot cancel in-progress todo items.";
+        }
+
+        foreach (var todoId in todoIdsToRemove)
+        {
+            var todo = State.TodoList.Find(x => x.Id == todoId);
+            if (todo != null)
+            {
+                todo.Status = TodoStatus.Canceled;
+            }
+        }
+
         RaiseEventWithTracing(new UpdateTodoList()
         {
-            Todos = updatedTodos
+            AddedTodos = newTodos,
+            RemovedTodoIds = todoIdsToRemove
         });
         // await ConfirmEventsWithTracing();
         return "Successfully updated todo list";

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Aevatar.Core.Abstractions;
 using Aevatar.GAgents.PsiOmni.Models;
 
@@ -50,6 +51,36 @@ public class AgentMessageEvent : EventBase
     {
         return Content;
     }
+}
+
+
+
+[GenerateSerializer]
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ContinuationType
+{
+    Unspecified,
+    Initialize,
+    Run,
+    SelfReportAndRun,
+    RegisterAgents,
+    Retrospect,
+    IterateOrSelfReportAndReply,
+    SelfReport
+}
+
+/// <summary>
+/// Send to self to continue processing
+/// </summary>
+[GenerateSerializer]
+public class ContinuationEvent : EventBase
+{
+    [Id(0)] public string UniqueId { get; } = Guid.NewGuid().ToString();
+    [Id(1)] public string TargetAgentId { get; set; } = string.Empty;
+    [Id(2)] public ContinuationType ContinuationType { get; set; }
+    [Id(3)] public string RunArg { get; set; } = string.Empty;
+    [Id(4)] public List<string> RegisterAgentIds { get; set; } = new();
+    [Id(5)] public FinalResponse FinalResponse { get; set; } = new();
 }
 
 [GenerateSerializer]

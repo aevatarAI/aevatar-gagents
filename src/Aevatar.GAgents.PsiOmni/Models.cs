@@ -50,7 +50,7 @@ public class AgentDescriptor : IEquatable<AgentDescriptor>
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return Name == other.Name &&
-            AgentId == other.AgentId &&
+               AgentId == other.AgentId &&
                AgentType == other.AgentType &&
                Description == other.Description &&
                Examples.SequenceEqual(other.Examples) &&
@@ -78,7 +78,7 @@ public class AgentDescriptor : IEquatable<AgentDescriptor>
 }
 
 [GenerateSerializer]
-public class AgentWithUsage: AgentDescriptor
+public class AgentWithUsage : AgentDescriptor
 {
     [Id(1)] public string HandlingTask { get; set; } = string.Empty;
 }
@@ -128,13 +128,35 @@ public class OrchestratorMessage
 }
 
 [GenerateSerializer]
+[Description("Holds the detailed PRD of the task")]
+public class FramedTask
+{
+    [Id(0), Description("The title of the task in a few word.")]
+    public string Title { get; set; } = string.Empty;
+
+    [Id(1), Description("Understand user's intention in user's scenario.")]
+    public string Intention { get; set; } = string.Empty;
+
+    [Id(2), Description("A detailed description of the task.")]
+    public string DetailedDescription { get; set; } = string.Empty;
+
+    [Id(3), Description(
+         @"List of multi-dimensional criteria for evaluating the quality of the result. It ensures the result is thorough,
+         comprehensive and meets the user's expectations. It has to be useful for the user.
+         "
+         )]
+    public string AcceptanceCriteria { get; set; } = string.Empty;
+}
+
+[GenerateSerializer]
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TodoStatus
 {
     Undefined,
     Pending,
     InProgress,
-    Completed
+    Completed,
+    Canceled
 }
 
 [GenerateSerializer]
@@ -166,7 +188,7 @@ public class TodoItem
     public List<string> Dependencies { get; set; } = new();
 
     [Id(5), Description("The id of the agent this task is dispatched to.")]
-    public string AssigneeAgentId { get; set; } = string.Empty;
+    public string AssigneeAgentName { get; set; } = string.Empty;
 }
 
 [GenerateSerializer, Description("Contains all information the child agent to perform the task.")]
@@ -187,15 +209,37 @@ public class TaskDispatch
 [GenerateSerializer]
 public class Artifact
 {
-    [Id(0)] public string Name { get; set; } = string.Empty;
-    [Id(1)] public string Format { get; set; } = string.Empty;
-    [Id(2)] public string Content { get; set; } = string.Empty;
+    [Id(0),
+     Description("The name of the artifact. It has to be unique and must be a valid file name with a valid extension.")]
+    public string Name { get; set; } = string.Empty;
+
+    [Id(1), Description("The format of the artifact. It has to be a valid file extension.")]
+    public string Format { get; set; } = string.Empty;
+
+    [Id(2), Description("The content of the artifact.")]
+    public string Content { get; set; } = string.Empty;
 }
 
+
+[GenerateSerializer, JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ReviewDecision
+{
+    UNDEFINED,
+    APPROVED,
+    NEEDS_FIXES,
+    MAJOR_ISSUES
+}
+
+[GenerateSerializer]
+public class ReviewResult
+{
+    [Id(0)] public ReviewDecision Decision { get; set; } = ReviewDecision.APPROVED;
+    [Id(1)] public string Comment { get; set; } = string.Empty;
+}
 
 [GenerateSerializer]
 public class FinalResponse
 {
     [Id(0)] public string Response { get; set; } = string.Empty;
     [Id(1)] public List<Artifact> Artifacts { get; set; } = new();
-}  
+}
