@@ -16,13 +16,16 @@ using Aevatar.GAgents.PsiOmni.Interfaces;
 using Aevatar.GAgents.PsiOmni.Models;
 using Aevatar.GAgents.AI.Common;
 using GroupChat.GAgent;
+using GroupChat.GAgent.Feature.Common;
+using GroupChat.GAgent.Feature.Coordinator.GEvent;
 using JsonConverter = Newtonsoft.Json.JsonConvert;
 
 namespace Aevatar.GAgents.PsiOmni;
 
 public interface IPshOmniGAgent : IStateGAgent<PsiOmniGAgentState>;
 
-[Description("Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.")]
+[Description(
+    "Sophisticated PsiOmni platform agent that provides advanced AI cognitive services, neural network processing, and intelligent automation capabilities for complex problem-solving scenarios.")]
 [GAgent("omni", "psi")]
 public partial class
     PsiOmniGAgent : PsiOmniAgentBase<PsiOmniGAgentState, PsiOmniGAgentStateLogEvent, EventBase, PsiOmniGAgentConfig>,
@@ -177,7 +180,7 @@ public partial class
                                                </example3>
 
                                                Make sure you include all information and artifacts in the response. DO NOT respond with a status update without the complete content.
-                                               """ + 
+                                               """ +
                                                """
                                                ## ALWAYS Progress
                                                Once you plan to do something, progress with the plan immediately.
@@ -219,6 +222,15 @@ public partial class
 
         // Initialize tracing after the grain is activated to ensure agent ID is available
         InitializeTracing();
+
+        // Initialize the AI agent with the provided configuration
+        await InitializeAsync(new InitializeDto
+        {
+            Instructions = string.Empty,
+            LLMConfig = new LLMConfigDto { SystemLLM = configuration.SystemLLM }
+        });
+
+        
         State.Name = configuration.Name;
 
         RaiseEventWithTracing(new InitializeEvent
@@ -289,7 +301,7 @@ public partial class
               - "Description": a description of the agent can do. For SPECIALIZED agents: 1) Include the agent's capability derived from the selected tools. 2) DO NOT directly include the task without generalization.
               - "Tools": a list of names of the tools the agent will use (only for SPECIALIZED mode)
             - No other text or explanation.
-            
+
             ## When deciding between "ORCHESTRATOR" and "SPECIALIZED"
             - Prefer SPECIALIZED mode if the agent's depth is more than 3
             - An agent with depth equal to 5 must operate in SPECIALIZED mode
@@ -519,6 +531,7 @@ public partial class
                         ? "Rate limit"
                         : "Other Http Operation Issue";
                 }
+
                 LogEventInfo(
                     "{ErrorType} error for {Operation}, attempt {Attempt}/{MaxRetries}. Waiting {Delay}ms (base: {BaseDelay}ms, additional: {Additional}ms) before retry. Error: {Message}",
                     errorType, operationName, attempt + 1, MaxRetries, actualDelayMs, baseDelayMs,
@@ -587,11 +600,38 @@ public partial class
                     {
                         var firstPart = content.Substring(0, 200);
                         var lastPart = content.Substring(content.Length - 200);
-                        LogEventInfo("Result (first 200 chars):\n{FirstPart}\n...\nResult (last 200 chars):\n{LastPart}", 
+                        LogEventInfo(
+                            "Result (first 200 chars):\n{FirstPart}\n...\nResult (last 200 chars):\n{LastPart}",
                             firstPart, lastPart);
                     }
                 }
+
                 LogEventDebug("No UserAgentId, logging result locally");
+                if (State.BlackboardId != Guid.Empty)
+                {
+                    
+                    var contentWithArtifacts = content ?? "";
+                    if (!finalResult.Artifacts.IsNullOrEmpty())
+                    {
+                        contentWithArtifacts = content + finalResult.Artifacts
+                            .Select(x => $"<artifact name=\"{x.Name}\" format=\"{x.Format}\">{x.Content}</artifact>")
+                            .JoinAsString("\n");
+                    }
+
+                    await PublishAsync(new ChatResponseEvent
+                    {
+                        BlackboardId = State.BlackboardId,
+                        MemberId = this.GetPrimaryKey(),
+                        MemberName = State.MemberName,
+                        ChatResponse = new ChatResponse()
+                        {
+                            Skip = false,
+                            Continue = false,
+                            Content = contentWithArtifacts
+                        },
+                        Term = 0
+                    });
+                }
                 return;
             }
 
@@ -687,6 +727,7 @@ public partial class
                 if (!payload.Event.Content.IsNullOrEmpty())
                 {
                     state.UserAgentId = payload.Event.ReplyToAgentId;
+                    state.BlackboardId = payload.BlackboardId;
                     var message = PsiOmniChatMessage.CreateUserMessage(payload.Event.Content);
                     message.Metadata["CallId"] = payload.Event.CallId;
                     state.ChatHistory.Add(message);
@@ -724,7 +765,8 @@ public partial class
                 break;
             case ReceiveAgentMessageEvent payload:
             {
-                var content = $"Received reply from agent ({payload.Event.SenderAgentName}):\n\n{payload.Event.Content}";
+                var content =
+                    $"Received reply from agent ({payload.Event.SenderAgentName}):\n\n{payload.Event.Content}";
                 if (!payload.Event.Artifacts.IsNullOrEmpty())
                 {
                     var artifacts = payload.Event.Artifacts.Select(
@@ -736,14 +778,17 @@ public partial class
                 var amessage = PsiOmniChatMessage.CreateAssistantMessage(content);
                 amessage.Metadata["CallId"] = payload.Event.CallId;
                 state.ChatHistory.Add(amessage);
-                var agentDescriptor = state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
-                if(agentDescriptor != null)
+                var agentDescriptor =
+                    state.ChildAgents.Values.SingleOrDefault(a => a.AgentId == payload.Event.SenderAgentId);
+                if (agentDescriptor != null)
                     state.AgentUsage.Remove(agentDescriptor.Name);
                 ScheduleTask(async () =>
                 {
-                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
+                    LogEventDebug("Starting run due to Agent Message: {Content} with {ArtifactCount} artifacts",
+                        payload.Event.Content, payload.Event.Artifacts.Count);
                     await RunAsync($"Agent Message {payload.Event}");
-                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts", payload.Event.Content, payload.Event.Artifacts.Count);
+                    LogEventDebug("Completed run due to Agent Message: {Content} with {ArtifactCount} artifacts",
+                        payload.Event.Content, payload.Event.Artifacts.Count);
                 });
                 break;
             }
@@ -774,7 +819,7 @@ public partial class
             {
                 if (payload.LastChildDescriptor.Name.IsNullOrEmpty())
                     break;
-                    
+
                 LogEventInfo("Updating child agent: AgentId={ChildAgentId}, AgentType={AgentType}",
                     payload.LastChildDescriptor.AgentId, payload.LastChildDescriptor.AgentType);
                 AgentDescriptor? oldObj;

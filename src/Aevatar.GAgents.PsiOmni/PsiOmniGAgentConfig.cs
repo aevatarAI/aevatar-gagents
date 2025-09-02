@@ -9,7 +9,9 @@ public class PsiOmniGAgentConfig : GroupMemberConfigDto
     [Id(0)] public string ParentId { get; set; } = string.Empty;
     [Id(1)] public string Name { get; set; } = string.Empty;
     [Id(2)] public int Depth { get; set; } = 0;
-    [Id(3)] public LLMConfigDto? LLMConfig { get; set; }
+
+    // ReSharper disable once InconsistentNaming
+    [Id(3)] public string SystemLLM { get; set; } = "OpenAI";
     [Id(4)] public string Description { get; set; } = string.Empty;
     [Id(5)] public string Examples { get; set; } = string.Empty;
 }
