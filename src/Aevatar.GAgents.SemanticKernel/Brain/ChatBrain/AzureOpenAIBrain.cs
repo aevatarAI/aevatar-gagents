@@ -71,6 +71,8 @@ public sealed class AzureOpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item.Metadata != null && item.Metadata.TryGetValue("Usage", out var value))
@@ -84,6 +86,27 @@ public sealed class AzureOpenAIBrain : BrainBase
                 inputUsage += tokenInfo.InputTokenCount;
                 outputUsage += tokenInfo.OutputTokenCount;
                 totalUsage += tokenInfo.TotalTokenCount;
+                
+                // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                if (tokenInfo.InputTokenDetails != null)
+                {
+                    cachedTokens += tokenInfo.InputTokenDetails.CachedTokenCount;
+                }
+            }
+        }
+
+        // Log cache monitoring information
+        if (inputUsage > 0)
+        {
+            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
+            
+            if (cachedTokens > 0)
+            {
+                Logger.LogInformation($"[AzureOpenAIBrain] ✅ Cache Hit! Input: {inputUsage}, Output: {outputUsage}, Cached: {cachedTokens}, Hit Rate: {cacheHitRate:F1}%");
+            }
+            else
+            {
+                Logger.LogInformation($"[AzureOpenAIBrain] ❌ Cache Miss. Input: {inputUsage}, Output: {outputUsage}");
             }
         }
 
@@ -99,6 +122,8 @@ public sealed class AzureOpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item is StreamingChatMessageContent streamingChatMessageContent)
@@ -114,7 +139,28 @@ public sealed class AzureOpenAIBrain : BrainBase
                     inputUsage += tokenInfo.InputTokenCount;
                     outputUsage += tokenInfo.OutputTokenCount;
                     totalUsage += tokenInfo.TotalTokenCount;
+                    
+                    // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                    if (tokenInfo.InputTokenDetails != null)
+                    {
+                        cachedTokens += tokenInfo.InputTokenDetails.CachedTokenCount;
+                    }
                 }
+            }
+        }
+
+        // Log cache monitoring information
+        if (inputUsage > 0)
+        {
+            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
+            
+            if (cachedTokens > 0)
+            {
+                Logger.LogInformation($"[AzureOpenAIBrain][Streaming] ✅ Cache Hit! Input: {inputUsage}, Output: {outputUsage}, Cached: {cachedTokens}, Hit Rate: {cacheHitRate:F1}%");
+            }
+            else
+            {
+                Logger.LogInformation($"[AzureOpenAIBrain][Streaming] ❌ Cache Miss. Input: {inputUsage}, Output: {outputUsage}");
             }
         }
 
