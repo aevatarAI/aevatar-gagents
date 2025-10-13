@@ -67,6 +67,8 @@ public class OpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item.InnerContent is ChatCompletion completions)
@@ -74,6 +76,31 @@ public class OpenAIBrain : BrainBase
                 inputUsage += completions.Usage.InputTokenCount;
                 outputUsage += completions.Usage.OutputTokenCount;
                 totalUsage += completions.Usage.TotalTokenCount;
+                
+                // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                if (completions.Usage.InputTokenDetails != null)
+                {
+                    cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
+                }
+            }
+        }
+
+        // Log cache monitoring information
+        if (inputUsage > 0)
+        {
+            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
+            
+            if (cachedTokens > 0)
+            {
+                Logger.LogInformation(
+                    "[OpenAIBrain] ✅ Cache Hit! Input: {InputTokens}, Output: {OutputTokens}, Cached: {CachedTokens}, Hit Rate: {CacheHitRate:F1}%",
+                    inputUsage, outputUsage, cachedTokens, cacheHitRate);
+            }
+            else
+            {
+                Logger.LogInformation(
+                    "[OpenAIBrain] ❌ Cache Miss. Input: {InputTokens}, Output: {OutputTokens}",
+                    inputUsage, outputUsage);
             }
         }
 
@@ -89,6 +116,8 @@ public class OpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item is StreamingChatMessageContent streamingChatMessageContent)
@@ -98,7 +127,32 @@ public class OpenAIBrain : BrainBase
                     inputUsage += completions.Usage.InputTokenCount;
                     outputUsage += completions.Usage.OutputTokenCount;
                     totalUsage += completions.Usage.TotalTokenCount;
+                    
+                    // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                    if (completions.Usage.InputTokenDetails != null)
+                    {
+                        cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
+                    }
                 }
+            }
+        }
+
+        // Log cache monitoring information (streaming)
+        if (inputUsage > 0)
+        {
+            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
+            
+            if (cachedTokens > 0)
+            {
+                Logger.LogInformation(
+                    "[OpenAIBrain][Streaming] ✅ Cache Hit! Input: {InputTokens}, Output: {OutputTokens}, Cached: {CachedTokens}, Hit Rate: {CacheHitRate:F1}%",
+                    inputUsage, outputUsage, cachedTokens, cacheHitRate);
+            }
+            else
+            {
+                Logger.LogInformation(
+                    "[OpenAIBrain][Streaming] ❌ Cache Miss. Input: {InputTokens}, Output: {OutputTokens}",
+                    inputUsage, outputUsage);
             }
         }
 
