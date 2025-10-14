@@ -67,6 +67,8 @@ public class OpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item.InnerContent is ChatCompletion completions)
@@ -74,12 +76,21 @@ public class OpenAIBrain : BrainBase
                 inputUsage += completions.Usage.InputTokenCount;
                 outputUsage += completions.Usage.OutputTokenCount;
                 totalUsage += completions.Usage.TotalTokenCount;
+                
+                // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                if (completions.Usage.InputTokenDetails != null)
+                {
+                    cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
+                }
             }
         }
 
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
@@ -89,6 +100,8 @@ public class OpenAIBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item is StreamingChatMessageContent streamingChatMessageContent)
@@ -98,13 +111,22 @@ public class OpenAIBrain : BrainBase
                     inputUsage += completions.Usage.InputTokenCount;
                     outputUsage += completions.Usage.OutputTokenCount;
                     totalUsage += completions.Usage.TotalTokenCount;
+                    
+                    // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                    if (completions.Usage.InputTokenDetails != null)
+                    {
+                        cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
+                    }
                 }
             }
         }
 
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
