@@ -118,8 +118,38 @@ public sealed class AzureOpenAIBrain : BrainBase
         {
             if (item is StreamingChatMessageContent streamingChatMessageContent)
             {
-                // Try InnerContent first (similar to OpenAIBrain)
-                if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
+                // Try Metadata first (verified working in openai-cache-test)
+                if (streamingChatMessageContent.Metadata != null && streamingChatMessageContent.Metadata.ContainsKey("Usage"))
+                {
+                    var usage = streamingChatMessageContent.Metadata["Usage"];
+                    Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found Usage in Metadata, Type: {usage?.GetType().Name ?? "null"}");
+                    
+                    if (usage is ChatTokenUsage tokenUsage)
+                    {
+                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] ChatTokenUsage - Input:{tokenUsage.InputTokenCount}, Output:{tokenUsage.OutputTokenCount}, Total:{tokenUsage.TotalTokenCount}");
+                        
+                        inputUsage += tokenUsage.InputTokenCount;
+                        outputUsage += tokenUsage.OutputTokenCount;
+                        totalUsage += tokenUsage.TotalTokenCount;
+                        
+                        // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                        if (tokenUsage.InputTokenDetails != null)
+                        {
+                            cachedTokens += tokenUsage.InputTokenDetails.CachedTokenCount;
+                            Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found CachedTokens: {tokenUsage.InputTokenDetails.CachedTokenCount}");
+                        }
+                        else
+                        {
+                            Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] InputTokenDetails is NULL");
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Failed to cast Usage to ChatTokenUsage");
+                    }
+                }
+                // Fallback to InnerContent (for compatibility)
+                else if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
                 {
                     Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found ChatCompletion in InnerContent - Input:{completions.Usage.InputTokenCount}, Output:{completions.Usage.OutputTokenCount}");
                     
@@ -131,35 +161,12 @@ public sealed class AzureOpenAIBrain : BrainBase
                     if (completions.Usage.InputTokenDetails != null)
                     {
                         cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
-                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found CachedTokens: {completions.Usage.InputTokenDetails.CachedTokenCount}");
-                    }
-                }
-                // Fallback to Metadata (backward compatibility)
-                else if (streamingChatMessageContent.Metadata != null && streamingChatMessageContent.Metadata.TryGetValue("Usage", out var value))
-                {
-                    Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found Usage in Metadata");
-                    
-                    var tokenInfo = value as ChatTokenUsage;
-                    if (tokenInfo == null)
-                    {
-                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Failed to cast to ChatTokenUsage");
-                        continue;
-                    }
-
-                    inputUsage += tokenInfo.InputTokenCount;
-                    outputUsage += tokenInfo.OutputTokenCount;
-                    totalUsage += tokenInfo.TotalTokenCount;
-                    
-                    // Extract cached tokens from InputTokenDetails (Prompt Caching)
-                    if (tokenInfo.InputTokenDetails != null)
-                    {
-                        cachedTokens += tokenInfo.InputTokenDetails.CachedTokenCount;
-                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found CachedTokens in Metadata: {tokenInfo.InputTokenDetails.CachedTokenCount}");
+                        Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] Found CachedTokens in InnerContent: {completions.Usage.InputTokenDetails.CachedTokenCount}");
                     }
                 }
                 else
                 {
-                    Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] No Usage found in InnerContent or Metadata. InnerContent type: {streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
+                    Logger.LogDebug($"[AzureOpenAIBrain][GetStreamingTokenUsage] No Usage found. Metadata has Usage: {streamingChatMessageContent.Metadata?.ContainsKey("Usage")}, InnerContent type: {streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
                 }
             }
         }
