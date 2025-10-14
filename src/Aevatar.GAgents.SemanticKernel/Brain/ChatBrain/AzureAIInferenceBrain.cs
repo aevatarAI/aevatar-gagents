@@ -62,6 +62,8 @@ public abstract class AzureAIInferenceBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item.InnerContent is ChatCompletions completions)
@@ -69,12 +71,34 @@ public abstract class AzureAIInferenceBrain : BrainBase
                 inputUsage += completions.Usage.PromptTokens;
                 outputUsage += completions.Usage.CompletionTokens;
                 totalUsage += completions.Usage.TotalTokens;
+                
+                // Try to extract cached tokens if available (for OpenAI-compatible models via Azure AI Inference)
+                try
+                {
+                    var usageType = completions.Usage.GetType();
+                    var cachedProperty = usageType.GetProperty("CachedTokens");
+                    if (cachedProperty != null)
+                    {
+                        var value = cachedProperty.GetValue(completions.Usage);
+                        if (value is int cached)
+                        {
+                            cachedTokens += cached;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore if CachedTokens property doesn't exist
+                }
             }
         }
 
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
@@ -84,6 +108,8 @@ public abstract class AzureAIInferenceBrain : BrainBase
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
+        int cachedTokens = 0;
+        
         foreach (var item in messageList)
         {
             if (item is StreamingChatMessageContent streamingChatMessageContent)
@@ -93,13 +119,35 @@ public abstract class AzureAIInferenceBrain : BrainBase
                     inputUsage += completions.Usage.PromptTokens;
                     outputUsage += completions.Usage.CompletionTokens;
                     totalUsage += completions.Usage.TotalTokens;
+                    
+                    // Try to extract cached tokens if available (for OpenAI-compatible models via Azure AI Inference)
+                    try
+                    {
+                        var usageType = completions.Usage.GetType();
+                        var cachedProperty = usageType.GetProperty("CachedTokens");
+                        if (cachedProperty != null)
+                        {
+                            var value = cachedProperty.GetValue(completions.Usage);
+                            if (value is int cached)
+                            {
+                                cachedTokens += cached;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if CachedTokens property doesn't exist
+                    }
                 }
             }
         }
 
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
