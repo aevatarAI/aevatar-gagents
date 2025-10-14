@@ -64,7 +64,8 @@ public abstract class
 
     protected sealed override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
         string? errorMessage,
-        AIStreamChatContent? content)
+        AIStreamChatContent? content,
+        TokenUsageStatistics? tokenUsage = null)
     {
         if (content is { IsAggregationMsg: true })
         {

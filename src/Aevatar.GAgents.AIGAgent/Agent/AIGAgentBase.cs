@@ -235,6 +235,7 @@ public abstract partial class
         [Id(2)] public int OutputToken { get; set; }
         [Id(3)] public int TotalUsageToken { get; set; }
         [Id(4)] public long CreateTime { get; set; }
+        [Id(5)] public int CachedTokens { get; set; }
     }
 
     protected async Task<List<ChatMessage>?> ChatWithHistory(string prompt, List<ChatMessage>? history = null,

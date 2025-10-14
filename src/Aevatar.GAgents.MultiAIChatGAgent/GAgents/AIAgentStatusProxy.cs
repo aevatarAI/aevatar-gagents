@@ -55,7 +55,8 @@ public class AIAgentStatusProxy :
 
     protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
         string? errorMessage,
-        AIStreamChatContent? content)
+        AIStreamChatContent? content,
+        TokenUsageStatistics? tokenUsage = null)
     {
         if (errorEnum == AIExceptionEnum.RequestLimitError)
         {

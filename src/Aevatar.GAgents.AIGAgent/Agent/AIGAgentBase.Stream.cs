@@ -92,18 +92,20 @@ public abstract partial class
                 InputToken = arg.TokenUsageStatistics.InputToken,
                 OutputToken = arg.TokenUsageStatistics.OutputToken,
                 TotalUsageToken = arg.TokenUsageStatistics.TotalUsageToken,
-                CreateTime = arg.TokenUsageStatistics.CreateTime
+                CreateTime = arg.TokenUsageStatistics.CreateTime,
+                CachedTokens = arg.TokenUsageStatistics.CachedTokens
             };
 
             RaiseEvent(tokenUsage);
         }
 
-        await AIChatHandleStreamAsync(arg.Context, arg.ErrorEnum, arg.ErrorMessage, arg.ChatContent);
+        await AIChatHandleStreamAsync(arg.Context, arg.ErrorEnum, arg.ErrorMessage, arg.ChatContent, arg.TokenUsageStatistics);
     }
 
     protected virtual Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
         string? errorMessage,
-        AIStreamChatContent? content)
+        AIStreamChatContent? content,
+        TokenUsageStatistics? tokenUsage = null)
     {
         return Task.CompletedTask;
     }

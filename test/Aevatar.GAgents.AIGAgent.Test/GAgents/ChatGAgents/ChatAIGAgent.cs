@@ -198,7 +198,8 @@ public class ChatAIGAgent : AIGAgentBase<ChatAIGStateBase, ChatAIStateLogEvent>,
 
     protected override async Task AIChatHandleStreamAsync(AIChatContextDto context, AIExceptionEnum errorEnum,
         string? errorMessage,
-        AIStreamChatContent? content)
+        AIStreamChatContent? content,
+        TokenUsageStatistics? tokenUsage = null)
     {
         if (content != null)
         {
