@@ -68,8 +68,6 @@ public sealed class AzureOpenAIBrain : BrainBase
     
     protected override TokenUsageStatistics GetTokenUsage(IReadOnlyCollection<ChatMessageContent> messageList)
     {
-        Logger.LogInformation($"[AzureOpenAIBrain][GetTokenUsage] ENTRY - MessageList count: {messageList.Count}");
-        
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
@@ -82,7 +80,6 @@ public sealed class AzureOpenAIBrain : BrainBase
                 var tokenInfo = value as ChatTokenUsage;
                 if (tokenInfo == null)
                 {
-                    Logger.LogWarning($"[AzureOpenAIBrain][GetTokenUsage] tokenInfo is null");
                     continue;
                 }
 
@@ -94,41 +91,22 @@ public sealed class AzureOpenAIBrain : BrainBase
                 if (tokenInfo.InputTokenDetails != null)
                 {
                     cachedTokens += tokenInfo.InputTokenDetails.CachedTokenCount;
-                    Logger.LogInformation($"[AzureOpenAIBrain][GetTokenUsage] InputTokenDetails found - CachedTokenCount: {tokenInfo.InputTokenDetails.CachedTokenCount}");
                 }
-                else
-                {
-                    Logger.LogInformation($"[AzureOpenAIBrain][GetTokenUsage] InputTokenDetails is NULL");
-                }
-            }
-        }
-
-        // Log cache monitoring information
-        if (inputUsage > 0)
-        {
-            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
-            
-            if (cachedTokens > 0)
-            {
-                Logger.LogInformation($"[AzureOpenAIBrain] ✅ Cache Hit! Input: {inputUsage}, Output: {outputUsage}, Cached: {cachedTokens}, Hit Rate: {cacheHitRate:F1}%");
-            }
-            else
-            {
-                Logger.LogInformation($"[AzureOpenAIBrain] ❌ Cache Miss. Input: {inputUsage}, Output: {outputUsage}");
             }
         }
 
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }
 
     public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
     {
-        Logger.LogInformation($"[AzureOpenAIBrain][GetStreamingTokenUsage] ENTRY - MessageList count: {messageList.Count}");
-        
         int inputUsage = 0;
         int outputUsage = 0;
         int totalUsage = 0;
@@ -143,7 +121,6 @@ public sealed class AzureOpenAIBrain : BrainBase
                     var tokenInfo = value as ChatTokenUsage;
                     if (tokenInfo == null)
                     {
-                        Logger.LogWarning($"[AzureOpenAIBrain][GetStreamingTokenUsage] tokenInfo is null");
                         continue;
                     }
 
@@ -155,34 +132,17 @@ public sealed class AzureOpenAIBrain : BrainBase
                     if (tokenInfo.InputTokenDetails != null)
                     {
                         cachedTokens += tokenInfo.InputTokenDetails.CachedTokenCount;
-                        Logger.LogInformation($"[AzureOpenAIBrain][GetStreamingTokenUsage] InputTokenDetails found - CachedTokenCount: {tokenInfo.InputTokenDetails.CachedTokenCount}");
-                    }
-                    else
-                    {
-                        Logger.LogInformation($"[AzureOpenAIBrain][GetStreamingTokenUsage] InputTokenDetails is NULL");
                     }
                 }
             }
         }
 
-        // Log cache monitoring information
-        if (inputUsage > 0)
-        {
-            double cacheHitRate = cachedTokens > 0 ? (cachedTokens * 100.0 / inputUsage) : 0;
-            
-            if (cachedTokens > 0)
-            {
-                Logger.LogInformation($"[AzureOpenAIBrain][Streaming] ✅ Cache Hit! Input: {inputUsage}, Output: {outputUsage}, Cached: {cachedTokens}, Hit Rate: {cacheHitRate:F1}%");
-            }
-            else
-            {
-                Logger.LogInformation($"[AzureOpenAIBrain][Streaming] ❌ Cache Miss. Input: {inputUsage}, Output: {outputUsage}");
-            }
-        }
-
         return new TokenUsageStatistics()
         {
-            InputToken = inputUsage, OutputToken = outputUsage, TotalUsageToken = totalUsage,
+            InputToken = inputUsage, 
+            OutputToken = outputUsage, 
+            TotalUsageToken = totalUsage,
+            CachedTokens = cachedTokens,
             CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         };
     }

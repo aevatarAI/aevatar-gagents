@@ -33,17 +33,7 @@ public class BrainFactory : IBrainFactory
 
     public IChatBrain? GetChatBrain(LLMProviderConfig llmProviderConfig)
     {
-        _logger.LogInformation($"[BrainFactory][GetChatBrain] Request for ProviderEnum: {llmProviderConfig.ProviderEnum}, ModelIdEnum: {llmProviderConfig.ModelIdEnum}");
-        var brain = GetBrain<IChatBrain>(llmProviderConfig);
-        if (brain != null)
-        {
-            _logger.LogInformation($"[BrainFactory][GetChatBrain] Created brain type: {brain.GetType().Name}");
-        }
-        else
-        {
-            _logger.LogWarning($"[BrainFactory][GetChatBrain] Failed to create brain for ProviderEnum: {llmProviderConfig.ProviderEnum}, ModelIdEnum: {llmProviderConfig.ModelIdEnum}");
-        }
-        return brain;
+        return GetBrain<IChatBrain>(llmProviderConfig);
     }
 
     public ITextToImageBrain? GetTextToImageBrain(LLMProviderConfig llmProviderConfig)
