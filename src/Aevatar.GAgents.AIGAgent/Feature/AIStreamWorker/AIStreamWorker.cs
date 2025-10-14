@@ -74,12 +74,15 @@ public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChat
         var brain = _brainFactory.GetChatBrain(chatRequest.LlmConfig);
         if (brain == null)
         {
+            Logger.LogError($"[AIStreamWorker][AIStreamRequestAsync] Failed to get brain for LlmConfig: {JsonConvert.SerializeObject(chatRequest.LlmConfig)}");
             return new AIStreamChatResponseEvent()
             {
                 ErrorEnum = AIExceptionEnum.ArgumentNullError,
                 ErrorMessage = $"Can not found Brain, llmconfig:{JsonConvert.SerializeObject(chatRequest.LlmConfig)}"
             };
         }
+        
+        Logger.LogInformation($"[AIStreamWorker][AIStreamRequestAsync] Got brain type: {brain.GetType().Name}, ProviderEnum: {brain.ProviderEnum}, ModelIdEnum: {brain.ModelIdEnum}");
 
         await brain.InitializeAsync(chatRequest.LlmConfig, chatRequest.VectorId, chatRequest.Instructions);
         if (chatRequest.Context != null)
@@ -155,7 +158,9 @@ public class AIStreamWorker : GrainAsyncWorker<AIStreamChatRequest, AIStreamChat
         completeContent.Append(stringBuilder.ToString());
         var result = new AIStreamChatResponseEvent();
         result.Context = chatRequest.Context;
+        Logger.LogInformation($"[AIStreamWorker][HandleAIResponseAsync] About to call GetStreamingTokenUsage, brain type: {brain.GetType().Name}, messageList count: {streamingMessageContentList.Count}");
         result.TokenUsageStatistics = brain.GetStreamingTokenUsage(streamingMessageContentList);
+        Logger.LogInformation($"[AIStreamWorker][HandleAIResponseAsync] GetStreamingTokenUsage returned, InputToken: {result.TokenUsageStatistics?.InputToken ?? 0}, OutputToken: {result.TokenUsageStatistics?.OutputToken ?? 0}");
         result.ChatContent = new AIStreamChatContent()
         {
             SerialNumber = chunkNumber,
