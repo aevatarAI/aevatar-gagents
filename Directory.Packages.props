@@ -4,7 +4,7 @@
     <AbpVersion>9.0.3</AbpVersion>
     <OrleansVerion>9.0.1</OrleansVerion>
     <AevatarCoreVersion>1.5.2</AevatarCoreVersion>
-    <SkVersion>1.57.0-alpha</SkVersion>
+    <SkVersion>1.66.0</SkVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aevatar" Version="$(AevatarCoreVersion)" />
@@ -136,11 +136,11 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Abstractions" Version="$(SkVersion)" />
     <PackageVersion Include="Microsoft.SemanticKernel.Plugins.Web" Version="$(SkVersion)" />
-    <PackageVersion Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.32.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.57.0-alpha" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="1.57.0-beta" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.33.0-preview" />
-    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="1.57.0-preview" />
+    <PackageVersion Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="$(SkVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Google" Version="$(SkVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureAIInference" Version="$(SkVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="$(SkVersion)" />
+    <PackageVersion Include="Microsoft.SemanticKernel.Agents.OpenAI" Version="$(SkVersion)" />
 
     <!-- Other packages -->
     <PackageVersion Include="Neo4j.Driver" Version="5.27.0" />
