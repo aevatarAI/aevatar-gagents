@@ -106,7 +106,8 @@ public class OpenAIBrain : BrainBase
             
             foreach (var item in messageList)
             {
-                Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Item type: {item?.GetType().Name ?? "null"}");
+                var itemType = item?.GetType().FullName ?? "null";
+                Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Item type: {itemType}");
                 
                 if (item is StreamingChatMessageContent streamingChatMessageContent)
                 {
