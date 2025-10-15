@@ -1,6 +1,7 @@
 using System;
 using System.ClientModel;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Aevatar.GAgents.AI.Common;
 using Aevatar.GAgents.AI.Options;
@@ -49,6 +50,7 @@ public class OpenAIBrain : BrainBase
     protected override PromptExecutionSettings GetPromptExecutionSettings(ExecutionPromptSettings promptSettings)
     {
         var result = new OpenAIPromptExecutionSettings();
+        
         if (promptSettings.Temperature.IsNullOrWhiteSpace() == false)
         {
             result.Temperature = double.Parse(promptSettings.Temperature);
