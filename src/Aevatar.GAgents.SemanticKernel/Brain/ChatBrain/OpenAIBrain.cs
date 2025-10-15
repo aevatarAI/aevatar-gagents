@@ -123,7 +123,22 @@ public class OpenAIBrain : BrainBase
                     
                     if (hasMetadata) metadataCount++;
                     
-                    Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Chunk #{processedCount}: HasMetadata={hasMetadata}, HasUsageKey={hasUsageKey}, InnerContent={streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
+                    // Print entire Metadata for debugging
+                    string metadataJson = "null";
+                    if (hasMetadata)
+                    {
+                        try
+                        {
+                            var metadataDict = streamingChatMessageContent.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? "null");
+                            metadataJson = System.Text.Json.JsonSerializer.Serialize(metadataDict);
+                        }
+                        catch (Exception ex)
+                        {
+                            metadataJson = $"Error serializing: {ex.Message}";
+                        }
+                    }
+                    
+                    Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Chunk #{processedCount}: HasMetadata={hasMetadata}, HasUsageKey={hasUsageKey}, InnerContent={streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}, Metadata={metadataJson}");
                     
                     // Try Metadata first (verified working in openai-cache-test and AzureOpenAIBrain)
                     if (hasUsageKey)
