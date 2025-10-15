@@ -104,13 +104,31 @@ public class OpenAIBrain : BrainBase
             
             Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Processing {messageList.Count} messages");
             
+            int processedCount = 0;
+            int streamingCount = 0;
+            int metadataCount = 0;
+            int usageFoundCount = 0;
+            
             foreach (var item in messageList)
             {
+                processedCount++;
+                
                 if (item is StreamingChatMessageContent streamingChatMessageContent)
                 {
+                    streamingCount++;
+                    
+                    // Log Metadata status
+                    bool hasMetadata = streamingChatMessageContent.Metadata != null;
+                    bool hasUsageKey = hasMetadata && streamingChatMessageContent.Metadata.ContainsKey("Usage");
+                    
+                    if (hasMetadata) metadataCount++;
+                    
+                    Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Chunk #{processedCount}: HasMetadata={hasMetadata}, HasUsageKey={hasUsageKey}, InnerContent={streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
+                    
                     // Try Metadata first (verified working in openai-cache-test and AzureOpenAIBrain)
-                    if (streamingChatMessageContent.Metadata != null && streamingChatMessageContent.Metadata.ContainsKey("Usage"))
+                    if (hasUsageKey)
                     {
+                        usageFoundCount++;
                         var usage = streamingChatMessageContent.Metadata["Usage"];
                         Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found Usage in Metadata, Type: {usage?.GetType().Name ?? "null"}");
                         
@@ -135,12 +153,13 @@ public class OpenAIBrain : BrainBase
                         }
                         else
                         {
-                            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Failed to cast Usage to ChatTokenUsage");
+                            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Failed to cast Usage to ChatTokenUsage, actual type: {usage?.GetType().FullName ?? "null"}");
                         }
                     }
                     // Fallback to InnerContent (for compatibility)
                     else if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
                     {
+                        usageFoundCount++;
                         Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found ChatCompletion in InnerContent - Input:{completions.Usage.InputTokenCount}, Output:{completions.Usage.OutputTokenCount}");
                         
                         inputUsage += completions.Usage.InputTokenCount;
@@ -154,12 +173,14 @@ public class OpenAIBrain : BrainBase
                             Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found CachedTokens in InnerContent: {completions.Usage.InputTokenDetails.CachedTokenCount}");
                         }
                     }
-                    else
-                    {
-                        Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] No Usage found. Metadata has Usage: {streamingChatMessageContent.Metadata?.ContainsKey("Usage")}, InnerContent type: {streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
-                    }
+                }
+                else
+                {
+                    Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Chunk #{processedCount}: Not StreamingChatMessageContent, Type: {item?.GetType().Name ?? "null"}");
                 }
             }
+            
+            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Summary - Total:{processedCount}, Streaming:{streamingCount}, HasMetadata:{metadataCount}, UsageFound:{usageFoundCount}");
 
             Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Final result - Input:{inputUsage}, Output:{outputUsage}, Cached:{cachedTokens}");
 
