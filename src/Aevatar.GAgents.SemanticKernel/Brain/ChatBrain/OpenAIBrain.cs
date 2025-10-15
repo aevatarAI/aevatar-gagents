@@ -95,58 +95,58 @@ public class OpenAIBrain : BrainBase
         };
     }
 
-    public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
-    {
-        int inputUsage = 0;
-        int outputUsage = 0;
-        int totalUsage = 0;
-        int cachedTokens = 0;
-        
-        Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Processing {messageList.Count} messages");
-        
-        foreach (var item in messageList)
+        public override TokenUsageStatistics GetStreamingTokenUsage(List<object> messageList)
         {
-            Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Item type: {item?.GetType().Name ?? "null"}");
+            int inputUsage = 0;
+            int outputUsage = 0;
+            int totalUsage = 0;
+            int cachedTokens = 0;
             
-            if (item is StreamingChatMessageContent streamingChatMessageContent)
+            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Processing {messageList.Count} messages");
+            
+            foreach (var item in messageList)
             {
-                Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Found StreamingChatMessageContent, InnerContent type: {streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
+                Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Item type: {item?.GetType().Name ?? "null"}");
                 
-                if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
+                if (item is StreamingChatMessageContent streamingChatMessageContent)
                 {
-                    Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Found ChatCompletion - Input:{completions.Usage.InputTokenCount}, Output:{completions.Usage.OutputTokenCount}, Total:{completions.Usage.TotalTokenCount}");
+                    Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found StreamingChatMessageContent, InnerContent type: {streamingChatMessageContent.InnerContent?.GetType().Name ?? "null"}");
                     
-                    inputUsage += completions.Usage.InputTokenCount;
-                    outputUsage += completions.Usage.OutputTokenCount;
-                    totalUsage += completions.Usage.TotalTokenCount;
-                    
-                    // Extract cached tokens from InputTokenDetails (Prompt Caching)
-                    if (completions.Usage.InputTokenDetails != null)
+                    if (streamingChatMessageContent.InnerContent is ChatCompletion completions)
                     {
-                        cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
-                        Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Found CachedTokens: {completions.Usage.InputTokenDetails.CachedTokenCount}");
+                        Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found ChatCompletion - Input:{completions.Usage.InputTokenCount}, Output:{completions.Usage.OutputTokenCount}, Total:{completions.Usage.TotalTokenCount}");
+                        
+                        inputUsage += completions.Usage.InputTokenCount;
+                        outputUsage += completions.Usage.OutputTokenCount;
+                        totalUsage += completions.Usage.TotalTokenCount;
+                        
+                        // Extract cached tokens from InputTokenDetails (Prompt Caching)
+                        if (completions.Usage.InputTokenDetails != null)
+                        {
+                            cachedTokens += completions.Usage.InputTokenDetails.CachedTokenCount;
+                            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found CachedTokens: {completions.Usage.InputTokenDetails.CachedTokenCount}");
+                        }
+                        else
+                        {
+                            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] InputTokenDetails is NULL");
+                        }
                     }
                     else
                     {
-                        Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] InputTokenDetails is NULL");
+                        Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] InnerContent is not ChatCompletion");
                     }
                 }
-                else
-                {
-                    Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] InnerContent is not ChatCompletion");
-                }
             }
+
+            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Final result - Input:{inputUsage}, Output:{outputUsage}, Cached:{cachedTokens}");
+
+            return new TokenUsageStatistics()
+            {
+                InputToken = inputUsage, 
+                OutputToken = outputUsage, 
+                TotalUsageToken = totalUsage,
+                CachedTokens = cachedTokens,
+                CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+            };
         }
-
-        Logger.LogDebug($"[OpenAIBrain][GetStreamingTokenUsage] Final result - Input:{inputUsage}, Output:{outputUsage}, Cached:{cachedTokens}");
-
-        return new TokenUsageStatistics()
-        {
-            InputToken = inputUsage, 
-            OutputToken = outputUsage, 
-            TotalUsageToken = totalUsage,
-            CachedTokens = cachedTokens,
-            CreateTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-        };
-    }
 }
