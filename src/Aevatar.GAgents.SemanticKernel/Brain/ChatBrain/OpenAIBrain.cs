@@ -61,6 +61,12 @@ public class OpenAIBrain : BrainBase
             result.MaxTokens = promptSettings.MaxToken;
         }
 
+        // Enable usage statistics in streaming responses
+        result.ExtensionData = new Dictionary<string, object>
+        {
+            ["stream_options"] = new { include_usage = true }
+        };
+
         return result;
     }
 
