@@ -147,7 +147,7 @@ public class OpenAIBrain : BrainBase
                     {
                         usageFoundCount++;
                         var usage = streamingChatMessageContent.Metadata["Usage"];
-                        Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found Usage in Metadata, Type: {usage?.GetType().Name ?? "null"}");
+                        Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Found Usage in Metadata, Type: {usage?.GetType().FullName ?? "null"}, Value: {usage?.ToString() ?? "null"}");
                         
                         if (usage is ChatTokenUsage tokenUsage)
                         {
@@ -170,7 +170,14 @@ public class OpenAIBrain : BrainBase
                         }
                         else
                         {
-                            Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Failed to cast Usage to ChatTokenUsage, actual type: {usage?.GetType().FullName ?? "null"}");
+                            if (usage == null)
+                            {
+                                Logger.LogWarning($"[OpenAIBrain][GetStreamingTokenUsage] ⚠️ Usage key exists but value is NULL! This means OpenAI API (or proxy) did not return usage data. InnerContent: {streamingChatMessageContent.InnerContent?.GetType().FullName ?? "null"}");
+                            }
+                            else
+                            {
+                                Logger.LogInformation($"[OpenAIBrain][GetStreamingTokenUsage] Failed to cast Usage to ChatTokenUsage, actual type: {usage?.GetType().FullName ?? "null"}");
+                            }
                         }
                     }
                     // Fallback to InnerContent (for compatibility)
